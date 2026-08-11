@@ -50,7 +50,7 @@ from scipy.interpolate import CubicSpline
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from master_thesis_code.bayesian_inference.posterior_combination import (
+from darksiren_emri.bayesian_inference.posterior_combination import (
     CombinationStrategy,
     apply_strategy,
     build_likelihood_array,

@@ -43,4 +43,4 @@ case "$TID" in
 esac
 
 echo "calgate-v2 task=$TID args=${ARGS[*]} workers=$WORKERS host=$(hostname) commit=$(git rev-parse HEAD)"
-python -m master_thesis_code.validation.calibration_gate "${ARGS[@]}" --workers "$WORKERS"
+python -m darksiren_emri.validation.calibration_gate "${ARGS[@]}" --workers "$WORKERS"

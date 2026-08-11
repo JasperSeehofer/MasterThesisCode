@@ -43,7 +43,7 @@ Only proceed when it says `VERDICT: READY ✓`. Paths/expectations live in
 2. **Catalog schema.** `reduced_galaxy_catalogue.csv` must be **8 columns**
    (redshift-flag retained, commit 479afdd+). A 6/7-col copy is stale and read
    silently. It is gitignored (~1.6 GB); stage from the dev box:
-   `rsync -avz --partial master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv bwunicluster:MasterThesisCode/master_thesis_code/galaxy_catalogue/`
+   `rsync -avz --partial darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv bwunicluster:MasterThesisCode/darksiren_emri/galaxy_catalogue/`
    (GLADE+.txt is not on the cluster; the reduced csv cannot self-rebuild there.)
 3. **Zombie jobs.** A failed parent leaves dependents `DependencyNeverSatisfied` —
    they never run and clog the view. Preflight flags them; clear with `scancel <id>`.
@@ -101,7 +101,7 @@ Output root:  $WORKSPACE/run_YYYYMMDD_seedS/
 - **Resubmit only failed array tasks:** `bash cluster/resubmit_failed.sh <JOBID> <RUN_DIR> <BASE_SEED> <STEPS>`
 - **Retrieve results:**
   `rsync -avz bwunicluster:$(ssh bwunicluster 'ws_find emri')/run_YYYYMMDD_seedS/ ./results/`
-- **Local evaluate** (dev box, CPU): `uv run python -m master_thesis_code <dir> --evaluate --h_value 0.73 --num_workers N`
+- **Local evaluate** (dev box, CPU): `uv run python -m darksiren_emri <dir> --evaluate --h_value 0.73 --num_workers N`
 
 ### Launching jobs & writing new ones
 Full guide with exact commands for every case: **`cluster/LAUNCHING_JOBS.md`**.

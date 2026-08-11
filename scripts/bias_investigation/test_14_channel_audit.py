@@ -68,7 +68,7 @@ from scipy.interpolate import RegularGridInterpolator
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+from darksiren_emri.bayesian_inference.simulation_detection_probability import (
     _D_INTERMEDIATE_ANCHOR_GPC,
     _P_INTERMEDIATE_EMPIRICAL,
     _P_MAX_EMPIRICAL_ANCHOR,

@@ -8,7 +8,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Clone and set up
 git clone <repo>
-cd MasterThesisCode
+cd darksiren-emri
 uv sync --extra cpu --extra dev
 ```
 
@@ -42,13 +42,13 @@ uv run pytest -m "not gpu and not slow"
 uv run pytest -m "not gpu"
 
 # Single file
-uv run pytest master_thesis_code_test/bayesian_inference/test_bayesian_inference_mwe.py
+uv run pytest darksiren_emri_test/bayesian_inference/test_bayesian_inference_mwe.py
 ```
 
 ## Type checking
 
 ```bash
-uv run mypy master_thesis_code/
+uv run mypy darksiren_emri/
 ```
 
 ## Physics change protocol

@@ -51,25 +51,25 @@ uv sync --extra gpu
 **EMRI simulation** — generates SNR and Cramér-Rao bounds:
 
 ```bash
-uv run python -m master_thesis_code <working_dir> --simulation_steps N [--simulation_index I] [--log_level DEBUG]
+uv run python -m darksiren_emri <working_dir> --simulation_steps N [--simulation_index I] [--log_level DEBUG]
 ```
 
 **Bayesian inference** — evaluate Hubble constant posterior:
 
 ```bash
-uv run python -m master_thesis_code <working_dir> --evaluate [--h_value 0.73]
+uv run python -m darksiren_emri <working_dir> --evaluate [--h_value 0.73]
 ```
 
 **SNR analysis only**:
 
 ```bash
-uv run python -m master_thesis_code <working_dir> --snr_analysis
+uv run python -m darksiren_emri <working_dir> --snr_analysis
 ```
 
 **Injection campaign** — generate detection probability grid data:
 
 ```bash
-uv run python -m master_thesis_code <working_dir> --injection_campaign --simulation_steps N [--seed 42]
+uv run python -m darksiren_emri <working_dir> --injection_campaign --simulation_steps N [--seed 42]
 ```
 
 **Reproducibility:** Pass `--seed <int>` to fix the NumPy random state. When omitted,
@@ -115,25 +115,25 @@ xdg-open docs/build/html/index.html  # Linux
 
 | Module | Description |
 |--------|-------------|
-| `master_thesis_code/parameter_estimation/` | Waveform generation, Fisher matrix, SNR, Cramér-Rao bounds |
-| `master_thesis_code/LISA_configuration.py` | LISA antenna patterns, PSD, frame transformations |
-| `master_thesis_code/datamodels/` | `ParameterSpace`, `Galaxy`, `GalaxyCatalog`, `EMRIDetection`, `Detection` |
-| `master_thesis_code/bayesian_inference/bayesian_inference.py` | Pipeline A (dev cross-check): scalar Gaussian likelihood, synthetic catalog |
-| `master_thesis_code/bayesian_inference/bayesian_statistics.py` | Pipeline B (production): Fisher covariance, GLADE catalog, completeness correction |
-| `master_thesis_code/bayesian_inference/detection_probability.py` | Detection probability: `SimulationDetectionProbability` (IS estimator from injection campaigns) |
-| `master_thesis_code/physical_relations.py` | Cosmological distance functions |
-| `master_thesis_code/constants.py` | Physical constants and simulation configuration |
-| `master_thesis_code/cosmological_model.py` | EMRI event rate model, H₀ evaluation orchestration |
-| `master_thesis_code/galaxy_catalogue/` | GLADE galaxy catalog interface (BallTree lookups) |
-| `master_thesis_code/galaxy_catalogue/glade_completeness.py` | GLADE+ catalog completeness estimation $f(z, H_0)$ |
-| `master_thesis_code/plotting/` | All visualization code (factory functions, style, helpers) |
+| `darksiren_emri/parameter_estimation/` | Waveform generation, Fisher matrix, SNR, Cramér-Rao bounds |
+| `darksiren_emri/LISA_configuration.py` | LISA antenna patterns, PSD, frame transformations |
+| `darksiren_emri/datamodels/` | `ParameterSpace`, `Galaxy`, `GalaxyCatalog`, `EMRIDetection`, `Detection` |
+| `darksiren_emri/bayesian_inference/bayesian_inference.py` | Pipeline A (dev cross-check): scalar Gaussian likelihood, synthetic catalog |
+| `darksiren_emri/bayesian_inference/bayesian_statistics.py` | Pipeline B (production): Fisher covariance, GLADE catalog, completeness correction |
+| `darksiren_emri/bayesian_inference/detection_probability.py` | Detection probability: `SimulationDetectionProbability` (IS estimator from injection campaigns) |
+| `darksiren_emri/physical_relations.py` | Cosmological distance functions |
+| `darksiren_emri/constants.py` | Physical constants and simulation configuration |
+| `darksiren_emri/cosmological_model.py` | EMRI event rate model, H₀ evaluation orchestration |
+| `darksiren_emri/galaxy_catalogue/` | GLADE galaxy catalog interface (BallTree lookups) |
+| `darksiren_emri/galaxy_catalogue/glade_completeness.py` | GLADE+ catalog completeness estimation $f(z, H_0)$ |
+| `darksiren_emri/plotting/` | All visualization code (factory functions, style, helpers) |
 | `analysis/` | Post-hoc analysis: grid quality, importance sampling, injection yield, validation |
 | `scripts/` | Utility scripts for post-processing simulation output |
 | `scripts/bias_investigation/` | H₀ posterior bias diagnostic scripts and findings |
 | `derivations/` | Physics derivation notes (dark siren likelihood) |
 | `interactive/` | Interactive Plotly HTML figures (posteriors, Fisher ellipses, sky map, M_z improvement explorer) |
 | `paper/` | LaTeX paper source (REVTeX4-2 PRD format) |
-| `master_thesis_code_test/` | Test suite (mirrors source layout) |
+| `darksiren_emri_test/` | Test suite (mirrors source layout) |
 
 ---
 

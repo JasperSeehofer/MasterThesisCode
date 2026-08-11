@@ -77,8 +77,8 @@
 
 ### Verification (after each phase)
 - `uv run pytest -m "not gpu and not slow"` — all CPU tests pass
-- `uv run mypy master_thesis_code/` — clean
-- `uv run ruff check master_thesis_code/` — clean
+- `uv run mypy darksiren_emri/` — clean
+- `uv run ruff check darksiren_emri/` — clean
 - Coverage check: `uv run pytest --cov` reports above current gate
 - After physics fixes (PHYS-1 through PHYS-5): re-run simulation with `--seed 42`, compare outputs
 - After ARCH-1: verify `cosmological_model.py` shrunk, evaluation pipeline still works
@@ -211,7 +211,7 @@ Current: 149 tests, 37% coverage (gate 25%), target 50%.
 
 - [ ] **TEST-COORD [P0, S]** Remove xfail markers from `test_coordinate_roundtrip.py` after Phase 36 lands
       Six `@pytest.mark.xfail(strict=True, reason=_XFAIL_REASON)` markers in
-      `master_thesis_code_test/test_coordinate_roundtrip.py` must be removed once Phase 36
+      `darksiren_emri_test/test_coordinate_roundtrip.py` must be removed once Phase 36
       fixes both coordinate-frame bugs (equatorial→ecliptic rotation + BallTree polar embedding).
       When the fix lands, tests flip XPASS → CI fails until markers are removed (by design, D-01).
       **Depends on:** Phase 36 completion.

@@ -4,7 +4,7 @@ Bayesian Inference
 Bayesian Statistics
 -------------------
 
-.. automodule:: master_thesis_code.bayesian_inference.bayesian_statistics
+.. automodule:: darksiren_emri.bayesian_inference.bayesian_statistics
    :members:
    :undoc-members:
    :show-inheritance:
@@ -12,7 +12,7 @@ Bayesian Statistics
 Simulation Detection Probability
 --------------------------------
 
-.. automodule:: master_thesis_code.bayesian_inference.simulation_detection_probability
+.. automodule:: darksiren_emri.bayesian_inference.simulation_detection_probability
    :members:
    :undoc-members:
    :show-inheritance:
@@ -20,7 +20,7 @@ Simulation Detection Probability
 Posterior Combination
 ---------------------
 
-.. automodule:: master_thesis_code.bayesian_inference.posterior_combination
+.. automodule:: darksiren_emri.bayesian_inference.posterior_combination
    :members:
    :undoc-members:
    :show-inheritance:
@@ -28,7 +28,7 @@ Posterior Combination
 Evaluation Report
 -----------------
 
-.. automodule:: master_thesis_code.bayesian_inference.evaluation_report
+.. automodule:: darksiren_emri.bayesian_inference.evaluation_report
    :members:
    :undoc-members:
    :show-inheritance:

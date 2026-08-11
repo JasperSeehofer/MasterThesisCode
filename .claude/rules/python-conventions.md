@@ -1,5 +1,5 @@
 ---
-paths: ["master_thesis_code/**/*.py", "master_thesis_code_test/**/*.py"]
+paths: ["darksiren_emri/**/*.py", "darksiren_emri_test/**/*.py"]
 description: Dataclass and typing conventions — mutable-default handling and mandatory type annotations
 ---
 

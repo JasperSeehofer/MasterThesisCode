@@ -59,7 +59,7 @@ pure-plumbing symlink failure).  ``ch07_c7.json`` carries the landed values in
 ``conflict.decider`` and ``hosts.resolved_by_cellB``; cell B settles C7's
 magnitude and attribution, **not** the G2b↔C7 collision.
 
-Run (read-only against ``master_thesis_code/``, ``docs/`` and ``results/``):
+Run (read-only against ``darksiren_emri/``, ``docs/`` and ``results/``):
 
     /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
         book/generators/gen_ch07.py
@@ -80,14 +80,14 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from scipy.special import roots_legendre  # noqa: E402
 
-from master_thesis_code.bayesian_inference.bayesian_statistics import (  # noqa: E402
+from darksiren_emri.bayesian_inference.bayesian_statistics import (  # noqa: E402
     _GL_NODES_50,
     _GL_WEIGHTS_50,
 )
-from master_thesis_code.constants import H as H_PRODUCTION  # noqa: E402
-from master_thesis_code.constants import OMEGA_DE as OMEGA_DE_PRODUCTION  # noqa: E402
-from master_thesis_code.constants import OMEGA_M as OMEGA_M_PRODUCTION  # noqa: E402
-from master_thesis_code.physical_relations import (  # noqa: E402
+from darksiren_emri.constants import OMEGA_DE as OMEGA_DE_PRODUCTION  # noqa: E402
+from darksiren_emri.constants import OMEGA_M as OMEGA_M_PRODUCTION  # noqa: E402
+from darksiren_emri.constants import H as H_PRODUCTION  # noqa: E402
+from darksiren_emri.physical_relations import (  # noqa: E402
     comoving_volume_element,
     dist_vectorized,
     lambda_cdm_analytic_distance,
@@ -428,7 +428,9 @@ def build_c7() -> dict[str, Any]:
                 "measured_peak_h": round(float(r["median_peak_deconv"]), 4),
                 "measured_frac_shift": round(float(r["median_frac_shift"]), 4),
                 "law_frac_shift": round(c7_law(eps) - 1.0, 4),
-                "superseded_8eps2_form": round(0.5 * (1.0 + math.sqrt(1.0 + 8.0 * eps * eps)) - 1.0, 4),
+                "superseded_8eps2_form": round(
+                    0.5 * (1.0 + math.sqrt(1.0 + 8.0 * eps * eps)) - 1.0, 4
+                ),
                 "frac_peak_above_086": round(float(r["frac_peak_above_086"]), 4),
             }
         )
@@ -844,23 +846,31 @@ def main() -> None:
     print(f"    G2 (G2b §2.3 amplitude table C(z_bar)): {'PASS' if g2_ok else 'FAIL'}")
 
     g3_ok, worst = _gate_g3(c7)
-    print(f"    G3 (C7 corrected law vs delivered peaks, worst |Δ| = {worst:.4f}): "
-          f"{'PASS' if g3_ok else 'FAIL'}")
+    print(
+        f"    G3 (C7 corrected law vs delivered peaks, worst |Δ| = {worst:.4f}): "
+        f"{'PASS' if g3_ok else 'FAIL'}"
+    )
     print("    " + _gate_g4())
 
     print("\n  flags — book/design/flags/ch07_FLAGS.md:")
     ev = c7["event_889"]
-    print(f"    FLAG-1 sigma_dL(EMRI-889): RESOLVED by the D1 mandate 2026-07-31 — "
-          f"absolute {ev['sigma_dL_Gpc']:.3g} Gpc / d_L {ev['d_L_Gpc']:.4g} Gpc "
-          f"=> fractional {ev['rel_dL_recomputed']:.3g} (the retired spec figure was "
-          f"the absolute value under a fractional label)")
-    print(f"    FLAG-2 rail threshold: artifact 0.256 vs law-solved "
-          f"{c7['rail_threshold']['recomputed_from_quoted_law']} — still OPEN, "
-          f"not reconciled")
-    print(f"    cell B (2×2) LANDED 2026-07-31: catalogue-leg rail "
-          f"{c7['hosts']['resolved_by_cellB']['lcat_rail_frac']:.3f} "
-          f"({c7['hosts']['resolved_by_cellB']['n']}) vs "
-          f"{c7['hosts']['resolved_by_cellB']['comparison_scattered']:.3f} scattered")
+    print(
+        f"    FLAG-1 sigma_dL(EMRI-889): RESOLVED by the D1 mandate 2026-07-31 — "
+        f"absolute {ev['sigma_dL_Gpc']:.3g} Gpc / d_L {ev['d_L_Gpc']:.4g} Gpc "
+        f"=> fractional {ev['rel_dL_recomputed']:.3g} (the retired spec figure was "
+        f"the absolute value under a fractional label)"
+    )
+    print(
+        f"    FLAG-2 rail threshold: artifact 0.256 vs law-solved "
+        f"{c7['rail_threshold']['recomputed_from_quoted_law']} — still OPEN, "
+        f"not reconciled"
+    )
+    print(
+        f"    cell B (2×2) LANDED 2026-07-31: catalogue-leg rail "
+        f"{c7['hosts']['resolved_by_cellB']['lcat_rail_frac']:.3f} "
+        f"({c7['hosts']['resolved_by_cellB']['n']}) vs "
+        f"{c7['hosts']['resolved_by_cellB']['comparison_scattered']:.3f} scattered"
+    )
 
     print("\n  outputs:")
     _write("ch07_eddington.json", edd)

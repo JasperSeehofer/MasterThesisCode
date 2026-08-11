@@ -37,7 +37,7 @@
 # grain for any worker count (unit-tested cross-mode, incl. real-K capped-g
 # multi-chunk cases). Seeds then run serially per task, so size the chunk
 # accordingly (e.g. fewer seeds per task, more array tasks). Example:
-#   python -m master_thesis_code.validation.venue_transfer \
+#   python -m darksiren_emri.validation.venue_transfer \
 #     --cell Tc --truth 0.730 --seed-range "$START:$COUNT" \
 #     --workers 41 --grain h \
 #     --out "results/<NEW_RUN_DIR>/Tc_h0p730_results_seeds${START}_${COUNT}.json"
@@ -79,5 +79,5 @@ case "$TID" in
 esac
 
 echo "venue-transfer task=$TID cell=$CELL truth=$TRUTH seed-range=$START:$COUNT workers=$WORKERS host=$(hostname) commit=$(git rev-parse HEAD)"
-python -m master_thesis_code.validation.venue_transfer \
+python -m darksiren_emri.validation.venue_transfer \
   --cell "$CELL" --truth "$TRUTH" --seed-range "$START:$COUNT" --workers "$WORKERS"

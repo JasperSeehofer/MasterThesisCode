@@ -5,8 +5,8 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from master_thesis_code.constants import C
-from master_thesis_code.galaxy_catalogue.handler import (
+from darksiren_emri.constants import C
+from darksiren_emri.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     InternalCatalogColumns,
 )

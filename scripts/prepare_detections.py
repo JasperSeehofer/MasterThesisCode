@@ -23,11 +23,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from master_thesis_code.constants import (
+from darksiren_emri.constants import (
     CRAMER_RAO_BOUNDS_OUTPUT_PATH,
     PREPARED_CRAMER_RAO_BOUNDS_PATH,
 )
-from master_thesis_code.cosmological_model import Detection
+from darksiren_emri.cosmological_model import Detection
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

@@ -37,9 +37,9 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from master_thesis_code.bayesian_inference.evaluation_report import _get_git_commit_safe
-from master_thesis_code.plotting import apply_style
-from master_thesis_code.plotting._helpers import get_figure, save_figure
+from darksiren_emri.bayesian_inference.evaluation_report import _get_git_commit_safe
+from darksiren_emri.plotting import apply_style
+from darksiren_emri.plotting._helpers import get_figure, save_figure
 
 # D-11: Audit bands (degrees). Ordered ascending for markdown table readability.
 _BANDS_DEG: tuple[int, ...] = (5, 10, 15)

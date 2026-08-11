@@ -42,20 +42,17 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+from darksiren_emri.bayesian_inference.simulation_detection_probability import (
     SimulationDetectionProbability,
 )
-from master_thesis_code.constants import INJECTION_DATA_DIR
-from master_thesis_code.physical_relations import dist_vectorized  # noqa: F401
+from darksiren_emri.constants import INJECTION_DATA_DIR
+from darksiren_emri.physical_relations import dist_vectorized  # noqa: F401
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 
 OUTPUT_DIR = PROJECT_ROOT / "scripts" / "bias_investigation" / "outputs" / "phase46_merged"
 PHASE46_CRB = (
-    PROJECT_ROOT
-    / "simulations"
-    / "cluster_run_phase46_merged_20260504"
-    / "cramer_rao_bounds.csv"
+    PROJECT_ROOT / "simulations" / "cluster_run_phase46_merged_20260504" / "cramer_rao_bounds.csv"
 )
 SNR_THRESHOLD = 20.0
 H_TRUTHS = (0.60, 0.65, 0.70, 0.73)
@@ -237,9 +234,7 @@ def analyze_one_truth(
         out_mask = np.array([d != "in_grid" for d in directions])
         if out_mask.sum() == 0:
             continue
-        raw_vals = evaluate_pdet_2d_raw(
-            sdp, float(h_trial), d_L_meas[out_mask], M_meas[out_mask]
-        )
+        raw_vals = evaluate_pdet_2d_raw(sdp, float(h_trial), d_L_meas[out_mask], M_meas[out_mask])
         clipped_vals = evaluate_pdet_2d_clipped(
             sdp, float(h_trial), d_L_meas[out_mask], M_meas[out_mask]
         )
@@ -291,25 +286,27 @@ def analyze_one_truth(
         }
 
     # Print summary
-    print(f"  2D grid bounds: d_L ∈ [{grid_bounds_truth['dl_min']:.3f}, "
-          f"{grid_bounds_truth['dl_max']:.3f}], "
-          f"M ∈ [{grid_bounds_truth['M_min']:.3e}, {grid_bounds_truth['M_max']:.3e}]")
+    print(
+        f"  2D grid bounds: d_L ∈ [{grid_bounds_truth['dl_min']:.3f}, "
+        f"{grid_bounds_truth['dl_max']:.3f}], "
+        f"M ∈ [{grid_bounds_truth['M_min']:.3e}, {grid_bounds_truth['M_max']:.3e}]"
+    )
     print(f"  Event d_L range: [{d_L_meas.min():.3f}, {d_L_meas.max():.3f}]")
     print(f"  Event M range: [{M_meas.min():.3e}, {M_meas.max():.3e}]")
     for d, stats in sorted(fraction_summary.items()):
-        print(f"  {d:30s}  min={stats['min_frac']:.3f}  "
-              f"mean={stats['mean_frac']:.3f}  max={stats['max_frac']:.3f}")
+        print(
+            f"  {d:30s}  min={stats['min_frac']:.3f}  "
+            f"mean={stats['mean_frac']:.3f}  max={stats['max_frac']:.3f}"
+        )
 
     if raw_disagreement_summary:
         max_disagreement = max(
-            (
-                r["abs_clipped_minus_principled_max"] or 0.0
-                for r in raw_disagreement_summary
-            ),
+            (r["abs_clipped_minus_principled_max"] or 0.0 for r in raw_disagreement_summary),
             default=0.0,
         )
-        print(f"  Max |clipped − principled| over h_grid × out-of-grid events: "
-              f"{max_disagreement:.4f}")
+        print(
+            f"  Max |clipped − principled| over h_grid × out-of-grid events: {max_disagreement:.4f}"
+        )
 
     return {
         "h_truth": h_truth,

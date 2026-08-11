@@ -1,5 +1,5 @@
 ---
-paths: ["master_thesis_code/**/*.py", "master_thesis_code_test/**/*.py"]
+paths: ["darksiren_emri/**/*.py", "darksiren_emri_test/**/*.py"]
 description: HPC/GPU best practices — array-namespace xp pattern, guarded cupy imports, vectorization, GPU memory, and the bwUniCluster entry point
 ---
 

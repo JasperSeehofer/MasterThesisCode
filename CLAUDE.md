@@ -63,7 +63,7 @@ The lock file is committed to git, so every machine gets the same versions.
 
 ```bash
 # Run the package
-uv run python -m master_thesis_code <working_dir> --simulation_steps N
+uv run python -m darksiren_emri <working_dir> --simulation_steps N
 
 # Run tests (dev machine) — also prints coverage summary
 uv run pytest -m "not gpu and not slow"
@@ -72,7 +72,7 @@ uv run pytest -m "not gpu and not slow"
 uv run pytest -m "slow" --benchmark-only
 
 # Run mypy
-uv run mypy master_thesis_code/ master_thesis_code_test/
+uv run mypy darksiren_emri/ darksiren_emri_test/
 ```
 
 Note: `fastemriwaveforms` installs as the `few` Python package — `import few`, not `import fastemriwaveforms`.
@@ -86,9 +86,9 @@ Pass `--seed <int>` to fix the random state; when omitted, a random seed is chos
 ### Linting and formatting (run manually or triggered automatically on commit)
 
 ```bash
-uv run ruff check --fix master_thesis_code/   # lint and auto-fix
-uv run ruff format master_thesis_code/        # format
-uv run mypy master_thesis_code/               # type check
+uv run ruff check --fix darksiren_emri/   # lint and auto-fix
+uv run ruff format darksiren_emri/        # format
+uv run mypy darksiren_emri/               # type check
 ```
 
 Pre-commit hooks run ruff, ruff-format, and mypy automatically on every `git commit` (whole-tree;
@@ -102,7 +102,7 @@ Alternatively, activate the virtual environment once for a session:
 
 ```bash
 source .venv/bin/activate
-python -m master_thesis_code ...  # works without uv run prefix
+python -m darksiren_emri ...  # works without uv run prefix
 ```
 
 ### Adding a new dependency
@@ -120,13 +120,13 @@ Never manually edit the dependencies list in `pyproject.toml`.
 
 ```bash
 # EMRI simulation (generates SNR + Cramer-Rao bounds)
-python -m master_thesis_code <working_dir> --simulation_steps N [--simulation_index I] [--log_level DEBUG]
+python -m darksiren_emri <working_dir> --simulation_steps N [--simulation_index I] [--log_level DEBUG]
 
 # Bayesian inference (evaluate Hubble constant posterior)
-python -m master_thesis_code <working_dir> --evaluate [--h_value 0.73]
+python -m darksiren_emri <working_dir> --evaluate [--h_value 0.73]
 
 # SNR analysis only
-python -m master_thesis_code <working_dir> --snr_analysis
+python -m darksiren_emri <working_dir> --snr_analysis
 ```
 
 Every `--evaluate` run emits a per-event both-channel diagnostics CSV — check the run dir before building provenance caveats.
@@ -219,7 +219,7 @@ Any edit to these files that modifies a computed value (not just refactoring/typ
 
 ## Python Conventions
 
-Dataclass mutable-default handling (`field(default_factory=...)`) and mandatory type annotations (modern `list[...]`/`X | None` syntax, `npt.NDArray[np.float64]`, `Callable` typing, mypy config) — live in **`.claude/rules/python-conventions.md`**, auto-loaded when editing `master_thesis_code/**/*.py`.
+Dataclass mutable-default handling (`field(default_factory=...)`) and mandatory type annotations (modern `list[...]`/`X | None` syntax, `npt.NDArray[np.float64]`, `Callable` typing, mypy config) — live in **`.claude/rules/python-conventions.md`**, auto-loaded when editing `darksiren_emri/**/*.py`.
 
 ## Proposing decisions
 

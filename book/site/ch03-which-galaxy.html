@@ -376,7 +376,7 @@
       <p>
         The census and every candidate set on this page are recomputed by
         <code>book/generators/gen_ch03.py</code> from
-        <code>master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv</code>, put
+        <code>darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv</code>, put
         through the production pipeline's own steps — the empirical stellar&#8209;to&#8209;BH mass
         relation, the drop of massless rows, and the shared prune predicate
         <code>_mass_redshift_prune_mask</code> (<code>handler.py:215</code>) at
@@ -1049,7 +1049,7 @@
         <li><span class="badge finding">FINDING</span> <code>ledger #12</code> — the equatorial→ecliptic frame migration: MAP 0.860 → 0.730 on its own</li>
         <li><span class="badge finding">FINDING</span> <code>ledger #41 → #52</code> — &ldquo;information starvation&rdquo; concluded, then overturned</li>
         <li><span class="badge finding">FINDING</span> <code>G2c §4.1 vs §4.2</code> / <code>bayesian_statistics.py:3190</code> — the campaign runs <code>absolute_marginal</code>, whose $\mathcal L^{\rm cat}$ denominator is the <em>global</em> catalogue sum, not the local ratio of sums this chapter teaches</li>
-        <li>Data: <code>master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv</code> (20,834,171 rows after the production prune); <code>results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv</code>, <code>.../real_r1/diagnostics/event_likelihoods.csv</code>, <code>.../seed61000/mixture_leg_log_extract.txt</code>, <code>.../gate_b_20260730/injection_pool_mix200k_20260728/</code></li>
+        <li>Data: <code>darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv</code> (20,834,171 rows after the production prune); <code>results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv</code>, <code>.../real_r1/diagnostics/event_likelihoods.csv</code>, <code>.../seed61000/mixture_leg_log_extract.txt</code>, <code>.../gate_b_20260730/injection_pool_mix200k_20260728/</code></li>
         <li>Hard gate in the generator: baseline pruned row 859360 lifts to $M_g(1+z_g) = M_z$ to a relative 2.96&times;10<sup>&minus;10</sup> — the host index really is an injection-frame position</li>
         <li>Open flags: <code>book/design/flags/ch03_FLAGS.md</code> — F-ch03-1 (σ_dL/dL label — <em>resolved 2026-07-31, see the erratum in &sect;1</em>), F-ch03-2 (&ldquo;tens of thousands&rdquo; is the tail; <em>and the 2026-07-31 search-radius correction</em>), F-ch03-3 (truth vs observed catalogue), F-ch03-4 (ledger #26 bundles two changes), F-ch03-5 (which denominator the run used), F-ch03-8 (the h-grid undersamples 889), F-ch03-9 (per-event size of the rearrangement), F-ch03-13 (the local <code>z_error</code> column is not the campaign parent&rsquo;s), F-ch03-14 (this chapter&rsquo;s search-disc area vs Ch 6&rsquo;s localization ellipse)</li>
       </ul>

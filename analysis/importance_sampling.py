@@ -314,7 +314,7 @@ def run_uniform_weight_verification(csv_dir: str) -> bool:
     Returns:
         True if max absolute difference < 1e-14 for all h-values.
     """
-    from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+    from darksiren_emri.bayesian_inference.simulation_detection_probability import (
         SimulationDetectionProbability,
     )
 

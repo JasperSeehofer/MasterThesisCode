@@ -53,7 +53,7 @@ import numpy.typing as npt
 import pandas as pd
 from astropy.coordinates import BarycentricTrueEcliptic, SkyCoord
 
-from master_thesis_code.constants import ECLIPTIC_FRAME_TAG
+from darksiren_emri.constants import ECLIPTIC_FRAME_TAG
 
 _COORD_FRAME = ECLIPTIC_FRAME_TAG
 _COV_FRAME = ECLIPTIC_FRAME_TAG

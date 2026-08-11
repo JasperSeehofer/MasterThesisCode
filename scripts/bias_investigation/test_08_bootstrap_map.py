@@ -6,7 +6,7 @@ joint MAP per resample. Reports 68% and 95% bootstrap intervals plus a
 verdict ``statistical`` vs ``systematic`` for the +0.0350 residual relative
 to truth h=0.73.
 
-Reuses ``master_thesis_code.bayesian_inference.posterior_combination`` for
+Reuses ``darksiren_emri.bayesian_inference.posterior_combination`` for
 log-space combination so the formula matches the cluster-produced
 ``combined_posterior.json`` exactly (Gray et al. 2020, Eq. A.19).
 
@@ -25,7 +25,7 @@ import numpy.typing as npt
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from master_thesis_code.bayesian_inference.posterior_combination import (
+from darksiren_emri.bayesian_inference.posterior_combination import (
     CombinationStrategy,
     apply_strategy,
     build_likelihood_array,

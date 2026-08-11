@@ -55,7 +55,7 @@ echo "  Virtual environment: $PROJECT_ROOT/.venv"
 # =========================================================================
 echo ""
 echo "=== Verification ==="
-uv run python -c "import master_thesis_code; print('  master_thesis_code importable')"
+uv run python -c "import darksiren_emri; print('  darksiren_emri importable')"
 uv run python -c "import few; print('  few (fastemriwaveforms) importable')"
 uv run python -c "import cupy; print(f'  cupy {cupy.__version__} with CUDA')"
 echo ""

@@ -76,7 +76,7 @@ echo ""
 
 for H_VALUE in "${H_VALUES[@]}"; do
     echo "--- Running h=$H_VALUE ---"
-    python -m master_thesis_code "$RUN_DIR" \
+    python -m darksiren_emri "$RUN_DIR" \
         --evaluate \
         --h_value "$H_VALUE" \
         --log_level INFO

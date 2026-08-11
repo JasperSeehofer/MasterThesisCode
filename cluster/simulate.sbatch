@@ -95,14 +95,14 @@ echo "  GPU:           ${CUDA_VISIBLE_DEVICES:-not set}"
 echo ""
 
 # Simulation code uses relative paths (e.g. simulations/cramer_rao_bounds_*.csv)
-# from CWD, and reads the galaxy catalog via ./master_thesis_code/galaxy_catalogue/
+# from CWD, and reads the galaxy catalog via ./darksiren_emri/galaxy_catalogue/
 # (handler.py:24). Use a PRIVATE per-run CWD (TC-03) instead of re-pointing the
 # shared $PROJECT_ROOT/simulations symlink, so concurrent runs with different
 # RUN_DIRs cannot cross-contaminate.
 JOB_CWD="$RUN_DIR/cwd"
 mkdir -p "$JOB_CWD"
 ln -sfn "$RUN_DIR/simulations" "$JOB_CWD/simulations"
-ln -sfn "$PROJECT_ROOT/master_thesis_code" "$JOB_CWD/master_thesis_code"
+ln -sfn "$PROJECT_ROOT/darksiren_emri" "$JOB_CWD/darksiren_emri"
 cd "$JOB_CWD"
 
 # Smoke-run audit toggle (see header): appends --prescreen_audit when set.
@@ -112,7 +112,7 @@ if [[ "${PRESCREEN_AUDIT:-0}" == "1" ]]; then
     echo "  PRESCREEN_AUDIT=1: quick-SNR gate bypassed, audit pairs logged"
 fi
 
-python -m master_thesis_code "$RUN_DIR" \
+python -m darksiren_emri "$RUN_DIR" \
     --simulation_steps "$SIM_STEPS" \
     --simulation_index "$SLURM_ARRAY_TASK_ID" \
     --seed "$TASK_SEED" \

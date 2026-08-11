@@ -14,7 +14,7 @@ Combined-posterior MAP estimates:
 * **With** M\ :sub:`z` (2D): ``h = 0.732`` (+0.3 %)
 
 All figures are produced by the package itself via
-``python -m master_thesis_code <simulations_dir> --generate_figures <simulations_dir>``
+``python -m darksiren_emri <simulations_dir> --generate_figures <simulations_dir>``
 (the cluster PDFs are converted to PNG for web display).
 
 H\ :sub:`0` inference

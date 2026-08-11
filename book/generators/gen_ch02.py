@@ -91,11 +91,11 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from master_thesis_code.bayesian_inference.posterior_combination import (  # noqa: E402
+from darksiren_emri.bayesian_inference.posterior_combination import (  # noqa: E402
     build_likelihood_array,
     load_posterior_jsons,
 )
-from master_thesis_code.constants import H as H_TRUE  # noqa: E402
+from darksiren_emri.constants import H as H_TRUE  # noqa: E402
 
 # --- repo-relative artifact paths (BOOK_DESIGN sec. 4.2 rule 7) -------------
 CAMPAIGN_REL = Path("results/campaign51_20260728")
@@ -130,10 +130,16 @@ LOG_CLIP = 60.0
 READOUT_R1_MAP = 0.740
 READOUT_R1_MEAN = 0.7321
 READOUT_MAPS = {  # REALISTIC_READOUT.md sec. 1, the "MAP h" column
-    (61000, 1): 0.740, (61000, 2): 0.725, (61000, 3): 0.730,
-    (61000, 4): 0.725, (61000, 5): 0.740,
-    (62000, 1): 0.715, (62000, 2): 0.700, (62000, 3): 0.710,
-    (62000, 4): 0.710, (62000, 5): 0.710,
+    (61000, 1): 0.740,
+    (61000, 2): 0.725,
+    (61000, 3): 0.730,
+    (61000, 4): 0.725,
+    (61000, 5): 0.740,
+    (62000, 1): 0.715,
+    (62000, 2): 0.700,
+    (62000, 3): 0.710,
+    (62000, 4): 0.710,
+    (62000, 5): 0.710,
 }
 # The r1 signed/absolute curvature ratio as PRINTED on the page (sec. 4).
 # Expert-A M5: the page used to print the readout's ensemble 62 % beside r1's
@@ -282,8 +288,12 @@ def _stack(
         prev = n
         shifted = cum - cum.max()
         m = _moments(h, np.exp(np.maximum(shifted, -700.0)))
-        for key, val in (("map", m["map"]), ("mean", m["mean"]),
-                         ("sigma", m["sigma"]), ("edge", m["edge_over_peak"])):
+        for key, val in (
+            ("map", m["map"]),
+            ("mean", m["mean"]),
+            ("sigma", m["sigma"]),
+            ("edge", m["edge_over_peak"]),
+        ):
             summary[key].append(val)
         logs.append(_rd(np.maximum(shifted, -LOG_CLIP)))
     return {
@@ -533,7 +543,9 @@ def build_information() -> dict[str, Any]:
         )
         raise ValueError(msg)
     if not (0.46 <= golden_share <= 0.48):
-        msg = f"G1b FAILED: golden share of the signed total {golden_share:.4f} outside [0.46, 0.48]"
+        msg = (
+            f"G1b FAILED: golden share of the signed total {golden_share:.4f} outside [0.46, 0.48]"
+        )
         raise ValueError(msg)
     if abs(incat_share - 1.0) > 0.02:
         msg = f"G2 FAILED: in-catalogue share {incat_share:.4f} != 1.00 (readout '100 %')"
@@ -544,8 +556,15 @@ def build_information() -> dict[str, Any]:
 
     order = np.argsort(-vals)
     cum = np.cumsum(vals[order]) / total
-    ks = sorted(set(list(range(1, 41)) + list(range(45, 121, 5)) + list(range(140, 401, 20))
-                    + list(range(450, len(vals) + 1, 50)) + [len(vals)]))
+    ks = sorted(
+        set(
+            list(range(1, 41))
+            + list(range(45, 121, 5))
+            + list(range(140, 401, 20))
+            + list(range(450, len(vals) + 1, 50))
+            + [len(vals)]
+        )
+    )
     positives = vals[vals > 0]
     participation = float(positives.sum() ** 2 / np.sum(positives**2))
 
@@ -639,7 +658,13 @@ def build_runs() -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
     for seed in (61000, 62000):
         for r in (1, 2, 3, 4, 5):
-            path = REALISTIC_REL / f"seed{seed}" / f"real_r{r}" / "posteriors" / "combined_posterior.json"
+            path = (
+                REALISTIC_REL
+                / f"seed{seed}"
+                / f"real_r{r}"
+                / "posteriors"
+                / "combined_posterior.json"
+            )
             with open(REPO_ROOT / path) as fh:
                 d = json.load(fh)
             h = np.asarray(d["h_values"], dtype=np.float64)
@@ -654,18 +679,20 @@ def build_runs() -> dict[str, Any]:
                     f"published {published} (REALISTIC_READOUT.md §1)"
                 )
                 raise ValueError(msg)
-            rows.append({
-                "seed": seed,
-                "realization": r,
-                "map": _r(m["map"], 5),
-                "mean": _r(m["mean"], 6),
-                "sigma_h": _r(m["sigma"], 5),
-                "sigma_H0": _r(m["sigma"] * 100.0, 4),
-                "pull": _r(pull, 4),
-                "q16": _r(m["q16"], 5),
-                "q84": _r(m["q84"], 5),
-                "n_events_used": int(d["n_events_used"]),
-            })
+            rows.append(
+                {
+                    "seed": seed,
+                    "realization": r,
+                    "map": _r(m["map"], 5),
+                    "mean": _r(m["mean"], 6),
+                    "sigma_h": _r(m["sigma"], 5),
+                    "sigma_H0": _r(m["sigma"] * 100.0, 4),
+                    "pull": _r(pull, 4),
+                    "q16": _r(m["q16"], 5),
+                    "q84": _r(m["q84"], 5),
+                    "n_events_used": int(d["n_events_used"]),
+                }
+            )
 
     pulls = np.array([row["pull"] for row in rows])
     maps = np.array([row["map"] for row in rows])

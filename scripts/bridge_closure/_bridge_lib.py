@@ -29,9 +29,10 @@ Run rungs via the ``rung_*.py`` scripts; they import from here.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -39,14 +40,14 @@ import pandas as pd
 from scipy.integrate import fixed_quad
 from scipy.stats import norm
 
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
+from darksiren_emri.bayesian_inference.bayesian_statistics import (
     precompute_completion_denominator,
     precompute_global_catalog_selection,
     precompute_missing_completion_denominator,
 )
-from master_thesis_code.emri_rate import R_eff_per_mbh, mbh_mass_function
-from master_thesis_code.galaxy_catalogue.handler import InternalCatalogColumns
-from master_thesis_code.physical_relations import (
+from darksiren_emri.emri_rate import R_eff_per_mbh, mbh_mass_function
+from darksiren_emri.galaxy_catalogue.handler import InternalCatalogColumns
+from darksiren_emri.physical_relations import (
     comoving_volume_element,
     dist,
     dist_to_redshift,
@@ -115,7 +116,9 @@ class MockPdet:
 class ZCompleteness:
     """Completeness f(z) (H0-independent), shared by injection and inference."""
 
-    def __init__(self, f_func: Callable[[npt.NDArray[np.float64]], npt.NDArray[np.float64]]) -> None:
+    def __init__(
+        self, f_func: Callable[[npt.NDArray[np.float64]], npt.NDArray[np.float64]]
+    ) -> None:
         self._f = f_func
 
     def get_completeness_at_redshift(
@@ -378,8 +381,8 @@ def load_real_catalog() -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64
     global _REAL_CATALOG_CACHE
     if _REAL_CATALOG_CACHE is not None:
         return _REAL_CATALOG_CACHE
-    from master_thesis_code.cosmological_model import Model1CrossCheck
-    from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
+    from darksiren_emri.cosmological_model import Model1CrossCheck
+    from darksiren_emri.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
     cm = Model1CrossCheck(rng=np.random.default_rng(0))
     handler = GalaxyCatalogueHandler(
@@ -413,7 +416,9 @@ class BridgeConfig:
     n_events: int = 300
     h_true: float = TRUE_H
     seed: int = 0
-    h_grid: list[float] = field(default_factory=lambda: list(np.round(np.arange(0.60, 0.8701, 0.01), 4)))
+    h_grid: list[float] = field(
+        default_factory=lambda: list(np.round(np.arange(0.60, 0.8701, 0.01), 4))
+    )
 
 
 def _make_completeness(cfg: BridgeConfig) -> ZCompleteness:
@@ -442,9 +447,7 @@ def run_bridge(cfg: BridgeConfig, verbose: bool = True) -> dict:
             pop_z, pop_M = sample_real_nz_population(rng, cfg.n_gal)
         else:
             pop_z, pop_M = sample_population(rng, cfg.n_gal, cfg.h_true)
-        f_at = np.asarray(
-            completeness.get_completeness_at_redshift(pop_z), dtype=np.float64
-        )
+        f_at = np.asarray(completeness.get_completeness_at_redshift(pop_z), dtype=np.float64)
         in_cat_mask = rng.uniform(size=len(pop_z)) < f_at
         cat_z, cat_M = pop_z[in_cat_mask], pop_M[in_cat_mask]
         catalog_obj = _ClosureCatalog(cat_z, cat_M)

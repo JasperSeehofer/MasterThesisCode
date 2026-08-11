@@ -70,7 +70,7 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from master_thesis_code.constants import H as H_TRUE  # noqa: E402
+from darksiren_emri.constants import H as H_TRUE  # noqa: E402
 
 
 def _resolve(rel: Path) -> Path | None:

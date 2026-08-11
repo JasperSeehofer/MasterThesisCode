@@ -19,13 +19,13 @@ from pathlib import Path
 
 import numpy as np
 
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
+from darksiren_emri.bayesian_inference.bayesian_statistics import (
     precompute_completion_denominator,
 )
-from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+from darksiren_emri.bayesian_inference.simulation_detection_probability import (
     SimulationDetectionProbability as F4Estimator,
 )
-from master_thesis_code.constants import OMEGA_DE, OMEGA_M, SNR_THRESHOLD
+from darksiren_emri.constants import OMEGA_DE, OMEGA_M, SNR_THRESHOLD
 
 INJ_DIR = "simulations/injections"
 H_VALUES = [0.72, 0.73, 0.74, 0.76, 0.78]
@@ -36,9 +36,14 @@ OLD_PARENT = "d1087f1^"
 def _load_old_estimator() -> type:
     """Load the pre-F4 histogram estimator class from git, standalone."""
     src = subprocess.run(
-        ["git", "show", f"{OLD_PARENT}:master_thesis_code/bayesian_inference/"
-         "simulation_detection_probability.py"],
-        capture_output=True, text=True, check=True,
+        [
+            "git",
+            "show",
+            f"{OLD_PARENT}:darksiren_emri/bayesian_inference/simulation_detection_probability.py",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout
     tmp = Path(tempfile.mkdtemp()) / "old_sim_det_prob.py"
     tmp.write_text(src)
@@ -51,7 +56,10 @@ def _load_old_estimator() -> type:
 
 def _dh(estimator: object) -> np.ndarray:
     table = precompute_completion_denominator(
-        H_VALUES, estimator, Omega_m=OMEGA_M, Omega_DE=OMEGA_DE,
+        H_VALUES,
+        estimator,
+        Omega_m=OMEGA_M,
+        Omega_DE=OMEGA_DE,
     )
     return np.array([table[h] for h in H_VALUES], dtype=np.float64)
 
@@ -74,7 +82,9 @@ def main() -> None:
     print("\n h      D_old        D_F4        | -N dlogD vs 0.73 (the MAP pull)")
     print(" " + "-" * 70)
     for k, h in enumerate(H_VALUES):
-        print(f" {h:.3f}  {d_old[k]:.4e}  {d_f4[k]:.4e}  |  old {pull_old[k]:+8.2f}   F4 {pull_f4[k]:+8.2f}")
+        print(
+            f" {h:.3f}  {d_old[k]:.4e}  {d_f4[k]:.4e}  |  old {pull_old[k]:+8.2f}   F4 {pull_f4[k]:+8.2f}"
+        )
 
     print("\nInterpretation:")
     print("  'pull' = D(h)-channel contribution to [joint(h) - joint(0.73)].")

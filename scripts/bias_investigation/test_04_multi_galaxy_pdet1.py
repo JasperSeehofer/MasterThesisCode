@@ -20,9 +20,9 @@ from scipy.stats import multivariate_normal, norm
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from master_thesis_code.datamodels.detection import Detection
-from master_thesis_code.galaxy_catalogue.handler import HostGalaxy
-from master_thesis_code.physical_relations import dist, dist_to_redshift, dist_vectorized
+from darksiren_emri.datamodels.detection import Detection
+from darksiren_emri.galaxy_catalogue.handler import HostGalaxy
+from darksiren_emri.physical_relations import dist, dist_to_redshift, dist_vectorized
 
 OUTPUT_DIR = PROJECT_ROOT / "scripts" / "bias_investigation" / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)

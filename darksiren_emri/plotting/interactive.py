@@ -1,0 +1,2250 @@
+"""Interactive Plotly figure factory functions for EMRI thesis results.
+
+Provides browser-explorable versions of 4 key thesis figures:
+- Combined H0 posterior
+- Sky localization map
+- Fisher matrix error ellipses
+- H0 convergence
+
+All factory functions return ``plotly.graph_objects.Figure`` instances.
+Call ``fig.write_html(path, include_plotlyjs="cdn")`` to export.
+
+The top-level :func:`generate_all_interactive` convenience function loads
+data from a working directory and writes all 4 HTML files.
+"""
+
+import json
+import logging
+import os
+import re
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+import numpy as np
+import numpy.typing as npt
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+from darksiren_emri.plotting._colors import (
+    CYCLE,
+    EDGE,
+    METHOD,
+    PLANCK_BAND,
+    PRIOR,
+    REFERENCE,
+    SHOES_BAND,
+    TRUTH,
+    VARIANT_NO_MASS,
+    VARIANT_WITH_MASS,
+)
+from darksiren_emri.plotting._data import PARAMETER_NAMES
+from darksiren_emri.plotting._labels import LABELS
+
+_LOGGER = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Private helpers
+# ---------------------------------------------------------------------------
+
+# Default subsets for convergence analysis (mirrors convergence_plots._DEFAULT_SUBSETS)
+_DEFAULT_SUBSETS: list[int] = [1, 5, 10, 25, 50, 100]
+
+# Default parameter pairs for Fisher ellipses (mirrors fisher_plots._DEFAULT_PAIRS)
+_DEFAULT_PAIRS: list[tuple[str, str]] = [
+    ("M", "mu"),
+    ("luminosity_distance", "qS"),
+    ("qS", "phiS"),
+]
+
+# Planck 2018 and SH0ES reference h ranges (dimensionless h = H0/100)
+_PLANCK_H_RANGE: tuple[float, float] = (0.6736 - 0.0054, 0.6736 + 0.0054)
+_SHOES_H_RANGE: tuple[float, float] = (0.7304 - 0.0104, 0.7304 + 0.0104)
+
+
+def _strip_latex(label: str) -> str:
+    """Strip LaTeX markup from a label string for use as a plain-text axis label.
+
+    Handles the specific patterns present in :data:`LABELS`. This is NOT a
+    general LaTeX parser -- only the patterns used in this project are handled.
+
+    Parameters
+    ----------
+    label:
+        LaTeX-formatted label string, e.g. ``r"$M_\\bullet \\, [M_\\odot]$"``.
+
+    Returns
+    -------
+    str
+        Plain-text version, e.g. ``"M_bullet [M_sun]"``.
+    """
+    s = label
+    # Remove surrounding $
+    s = s.replace("$", "")
+    # \mathrm{...} -> contents
+    s = re.sub(r"\\mathrm\{([^}]*)\}", r"\1", s)
+    # Physics symbols
+    s = s.replace(r"\bullet", "bullet")
+    s = s.replace(r"\odot", "sun")
+    s = s.replace(r"\rho", "rho")
+    s = s.replace(r"\theta", "theta")
+    s = s.replace(r"\phi", "phi")
+    s = s.replace(r"\Phi", "Phi")
+    s = s.replace(r"\mu", "mu")
+    # Thin space
+    s = s.replace(r"\,", " ")
+    # Subscript/superscript (just keep inner text)
+    s = re.sub(r"_\{([^}]*)\}", r"_\1", s)
+    s = re.sub(r"\^\{([^}]*)\}", r"^\1", s)
+    # Collapse multiple spaces
+    s = re.sub(r"  +", " ", s)
+    return s.strip()
+
+
+def _credible_interval_bounds(
+    h_values: npt.NDArray[np.float64],
+    posterior: npt.NDArray[np.float64],
+    level: float = 0.68,
+) -> tuple[float, float]:
+    """Return (lo, hi) bounds of the central credible interval at *level*.
+
+    Parameters
+    ----------
+    h_values:
+        Grid of h values.
+    posterior:
+        Posterior density on *h_values*.
+    level:
+        Probability mass enclosed (default 68%).
+
+    Returns
+    -------
+    tuple[float, float]
+        ``(lo, hi)`` bounds.
+    """
+    norm = np.trapezoid(posterior, h_values)
+    if norm <= 0:
+        return float(h_values[0]), float(h_values[-1])
+    p = posterior / norm
+    dh = np.gradient(h_values)
+    cdf = np.cumsum(p * dh)
+    cdf /= cdf[-1]
+    lo = float(np.interp((1.0 - level) / 2.0, cdf, h_values))
+    hi = float(np.interp((1.0 + level) / 2.0, cdf, h_values))
+    return lo, hi
+
+
+def _credible_interval_width(
+    h_values: npt.NDArray[np.float64],
+    posterior: npt.NDArray[np.float64],
+    level: float = 0.68,
+) -> float:
+    """Return the width of the central credible interval at *level*."""
+    lo, hi = _credible_interval_bounds(h_values, posterior, level)
+    return hi - lo
+
+
+# Target H0-precision band widths (dimensionless h CI width), mirroring the
+# static fig08 convergence reference bands (convergence_plots.py).
+_PLANCK_TARGET_WIDTH: float = 0.010
+_SHOES_TARGET_WIDTH: float = 0.020
+
+
+def _batlow_colorscale(n: int = 16) -> list[list[float | str]]:
+    """Build a Plotly colorscale (list of ``[stop, hex]``) from cmcrameri batlow.
+
+    Falls back to a perceptually-uniform matplotlib built-in (``cividis``) when
+    cmcrameri is not installed so the no-dependency path still renders.
+
+    Parameters
+    ----------
+    n:
+        Number of colour stops to sample (default 16).
+
+    Returns
+    -------
+    list[list[float | str]]
+        Plotly-compatible colorscale, e.g. ``[[0.0, "#011959"], ...]``.
+    """
+    import matplotlib as mpl
+
+    try:
+        import cmcrameri.cm as cmc
+
+        cmap = cmc.batlow
+    except ImportError:
+        cmap = mpl.colormaps["cividis"]
+    stops: list[list[float | str]] = []
+    for i in range(n):
+        frac = i / (n - 1)
+        stops.append([frac, mpl.colors.to_hex(cmap(frac))])
+    return stops
+
+
+# ---------------------------------------------------------------------------
+# Public factory functions
+# ---------------------------------------------------------------------------
+
+
+def interactive_combined_posterior(
+    h_values: npt.NDArray[np.float64],
+    posterior: npt.NDArray[np.float64],
+    true_h: float,
+    *,
+    label: str | None = None,
+    show_credible: bool = True,
+    show_references: bool = True,
+    posterior_with_mass: npt.NDArray[np.float64] | None = None,
+    bootstrap_draws: list[npt.NDArray[np.float64]] | None = None,
+) -> go.Figure:
+    """Interactive combined H0 posterior figure (Observatory + Atlas design).
+
+    Parameters
+    ----------
+    h_values:
+        Grid of h = H0/100 values.
+    posterior:
+        Combined posterior density evaluated on *h_values* (the "Without M_z"
+        / dark-siren variant; drawn solid blue).
+    true_h:
+        True (injected) h value; shown as a vertical line.
+    label:
+        Optional trace name override for the primary posterior.
+    show_credible:
+        If True, add nested 50/68/95% HDI interval shading.
+    show_references:
+        If True, add Planck (pink) and SH0ES (cyan) shaded reference bands.
+    posterior_with_mass:
+        Optional "With M_z" variant posterior. Drawn as the SAME blue hue
+        differing only by dashed linestyle (LVK sensitivity convention).
+    bootstrap_draws:
+        Optional list of bootstrap posterior draws on *h_values*. When given
+        (and non-empty), an animated "HOPs" Play button cycles the draws via
+        Plotly frames; gated off gracefully otherwise.
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure.
+    """
+    trace_name = label or "Without M\u2082 (dark siren)"
+    fig = go.Figure()
+
+    _fill_color = _hex_to_rgba(METHOD["dark"], 0.15)
+
+    # --- Flat prior overlay (grey dashed horizontal) ---------------------
+    # The flat H0 prior is uniform over the grid; we draw it at the mean
+    # posterior height so the prior->posterior update is visible.
+    prior_level = float(np.mean(posterior))
+    fig.add_trace(
+        go.Scatter(
+            x=[float(h_values[0]), float(h_values[-1])],
+            y=[prior_level, prior_level],
+            mode="lines",
+            name="Flat prior",
+            line={"color": PRIOR, "width": 1.5, "dash": "dash"},
+            hovertemplate="Flat prior<extra></extra>",
+        )
+    )
+
+    # --- Nested 50/68/95% HDI shading ------------------------------------
+    if show_credible:
+        for level, opacity in ((0.95, 0.12), (0.68, 0.20), (0.50, 0.30)):
+            lo, hi = _credible_interval_bounds(h_values, posterior, level)
+            mask = (h_values >= lo) & (h_values <= hi)
+            fig.add_trace(
+                go.Scatter(
+                    x=h_values[mask].tolist(),
+                    y=posterior[mask].tolist(),
+                    mode="lines",
+                    line={"color": "rgba(0,0,0,0)"},
+                    fill="tozeroy",
+                    fillcolor=_hex_to_rgba(METHOD["dark"], opacity),
+                    name=f"{int(level * 100)}% HDI",
+                    legendgroup="hdi",
+                    hoverinfo="skip",
+                )
+            )
+
+    # --- Main posterior trace (Without M_z = solid blue) -----------------
+    fig.add_trace(
+        go.Scatter(
+            x=h_values.tolist(),
+            y=posterior.tolist(),
+            mode="lines",
+            name=trace_name,
+            line={"color": METHOD["dark"], "width": 2},
+            fillcolor=_fill_color,
+            hovertemplate="h = %{x:.4f}<br>Density = %{y:.4f}<extra></extra>",
+        )
+    )
+
+    # --- With M_z variant: SAME blue, dashed -----------------------------
+    if posterior_with_mass is not None:
+        fig.add_trace(
+            go.Scatter(
+                x=h_values.tolist(),
+                y=np.asarray(posterior_with_mass, dtype=np.float64).tolist(),
+                mode="lines",
+                name="With M\u2082 (dark siren)",
+                line={"color": METHOD["dark"], "width": 2, "dash": "dash"},
+                hovertemplate="h = %{x:.4f}<br>Density = %{y:.4f}<extra>With M_z</extra>",
+            )
+        )
+
+    # --- Reference bands: Planck (pink) + SH0ES (cyan) -------------------
+    if show_references:
+        for (rlo, rhi), rname, rcolor in (
+            (_PLANCK_H_RANGE, "Planck 2018", PLANCK_BAND),
+            (_SHOES_H_RANGE, "SH0ES", SHOES_BAND),
+        ):
+            fig.add_vrect(
+                x0=rlo,
+                x1=rhi,
+                fillcolor=rcolor,
+                opacity=0.22,
+                line_color=rcolor,
+                line_width=1,
+                name=rname,
+                legendgroup=rname,
+                showlegend=True,
+            )
+
+    # --- Truth line (combined/headline black) ----------------------------
+    fig.add_vline(
+        x=true_h,
+        line_color=METHOD["combined"],
+        line_dash="dot",
+        line_width=2,
+        annotation_text="Truth",
+        annotation_position="top right",
+    )
+
+    # --- Optional HOPs (hypothetical outcome plots) Play button ----------
+    if bootstrap_draws:
+        frames: list[go.Frame] = []
+        n_main = len(fig.data)  # index of the bootstrap overlay trace to add
+        for d_idx, draw in enumerate(bootstrap_draws):
+            frames.append(
+                go.Frame(
+                    name=f"draw{d_idx}",
+                    data=[
+                        go.Scatter(
+                            x=h_values.tolist(),
+                            y=np.asarray(draw, dtype=np.float64).tolist(),
+                        )
+                    ],
+                    traces=[n_main],
+                )
+            )
+        # Seed the animated overlay trace with the first draw.
+        first = np.asarray(bootstrap_draws[0], dtype=np.float64)
+        fig.add_trace(
+            go.Scatter(
+                x=h_values.tolist(),
+                y=first.tolist(),
+                mode="lines",
+                name="Bootstrap draw",
+                line={"color": METHOD["spectral"], "width": 1.5},
+                opacity=0.85,
+                hovertemplate="bootstrap h = %{x:.4f}<extra></extra>",
+            )
+        )
+        fig.frames = frames
+        fig.update_layout(
+            updatemenus=[
+                {
+                    "type": "buttons",
+                    "showactive": False,
+                    "x": 0.0,
+                    "xanchor": "left",
+                    "y": 1.12,
+                    "yanchor": "top",
+                    "buttons": [
+                        {
+                            "label": "\u25b6 Play (HOPs)",
+                            "method": "animate",
+                            "args": [
+                                None,
+                                {
+                                    "frame": {"duration": 400, "redraw": True},
+                                    "fromcurrent": True,
+                                    "transition": {"duration": 0},
+                                },
+                            ],
+                        },
+                        {
+                            "label": "\u25a0 Stop",
+                            "method": "animate",
+                            "args": [
+                                [None],
+                                {
+                                    "frame": {"duration": 0, "redraw": False},
+                                    "mode": "immediate",
+                                    "transition": {"duration": 0},
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        )
+
+    fig.update_layout(
+        title="Combined H\u2080 Posterior",
+        xaxis_title=_strip_latex(LABELS["h"]),
+        yaxis_title="Posterior density",
+        legend={"orientation": "v"},
+        hovermode="x unified",
+    )
+    return fig
+
+
+def interactive_h0_tension_explorer(
+    h_values: npt.NDArray[np.float64],
+    event_posteriors: list[npt.NDArray[np.float64]],
+    true_h: float,
+    *,
+    subset_sizes: list[int] | None = None,
+    seed: int = 42,
+) -> go.Figure:
+    """Self-contained Plotly H0-in-context tension explorer (NF-8).
+
+    Shows the combined H0 posterior against the Planck-pink and SH0ES-cyan
+    tension bands, with a native Plotly slider that scrubs the number of
+    stacked events ``N``. As ``N`` grows the posterior sharpens, letting the
+    viewer watch the measurement move into (or between) the tension anchors.
+
+    Parameters
+    ----------
+    h_values:
+        Grid of h = H0/100 values shared across all event posteriors.
+    event_posteriors:
+        Per-event posterior arrays evaluated on *h_values*.
+    true_h:
+        True (injected) h value; drawn as a vertical reference line.
+    subset_sizes:
+        Stacked-event counts to expose on the slider. Defaults to a log-ish
+        ladder capped at the available number of events.
+    seed:
+        RNG seed for reproducible (cumulative) event ordering.
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure with a native event-count slider and tension bands.
+    """
+    n_events = len(event_posteriors)
+    if subset_sizes is None:
+        sizes = [s for s in _DEFAULT_SUBSETS if s <= n_events]
+        if not sizes or sizes[-1] != n_events:
+            sizes = [*sizes, n_events]
+        sizes = sorted(set(sizes))
+    else:
+        sizes = sorted({min(s, n_events) for s in subset_sizes})
+
+    # A single fixed random ordering so larger N nests the smaller subsets.
+    rng = np.random.default_rng(seed)
+    order = rng.permutation(n_events)
+
+    def _combined(n: int) -> npt.NDArray[np.float64]:
+        idx = order[:n]
+        log_post = [np.log(np.maximum(event_posteriors[int(i)], 1e-300)) for i in idx]
+        log_c = np.sum(log_post, axis=0)
+        log_c -= log_c.max()
+        c: npt.NDArray[np.float64] = np.exp(log_c).astype(np.float64)
+        norm = float(np.trapezoid(c, h_values))
+        if norm > 0:
+            c = c / norm
+        return c
+
+    init_n = sizes[-1]
+    init_c = _combined(init_n)
+
+    fig = go.Figure()
+
+    # Tension bands (full height).
+    for (rlo, rhi), rname, rcolor in (
+        (_PLANCK_H_RANGE, "Planck 2018", PLANCK_BAND),
+        (_SHOES_H_RANGE, "SH0ES", SHOES_BAND),
+    ):
+        fig.add_vrect(
+            x0=rlo,
+            x1=rhi,
+            fillcolor=rcolor,
+            opacity=0.22,
+            line_color=rcolor,
+            line_width=1,
+            name=rname,
+            legendgroup=rname,
+            showlegend=True,
+        )
+
+    fig.add_vline(
+        x=true_h,
+        line_color=METHOD["combined"],
+        line_dash="dot",
+        line_width=2,
+        annotation_text="Truth",
+        annotation_position="top right",
+    )
+
+    # Animated combined-posterior trace (seeded with the largest N).
+    fig.add_trace(
+        go.Scatter(
+            x=h_values.tolist(),
+            y=init_c.tolist(),
+            mode="lines",
+            name="Combined posterior",
+            line={"color": METHOD["dark"], "width": 2.5},
+            fill="tozeroy",
+            fillcolor=_hex_to_rgba(METHOD["dark"], 0.15),
+            hovertemplate="h = %{x:.4f}<br>Density = %{y:.4f}<extra></extra>",
+        )
+    )
+
+    frames: list[go.Frame] = [
+        go.Frame(
+            name=str(n),
+            data=[go.Scatter(x=h_values.tolist(), y=_combined(n).tolist())],
+            traces=[len(fig.data) - 1],
+        )
+        for n in sizes
+    ]
+    fig.frames = frames
+
+    slider_steps = [
+        {
+            "method": "animate",
+            "label": str(n),
+            "args": [
+                [str(n)],
+                {
+                    "mode": "immediate",
+                    "frame": {"duration": 0, "redraw": True},
+                    "transition": {"duration": 0},
+                },
+            ],
+        }
+        for n in sizes
+    ]
+
+    fig.update_layout(
+        title="H₀ in context — stack events and watch the tension",
+        xaxis_title=_strip_latex(LABELS["h"]),
+        yaxis_title="Posterior density",
+        xaxis_range=[0.55, 0.88],  # cover the full 0.60-0.86 production h-grid (review PLT-05)
+        hovermode="x unified",
+        sliders=[
+            {
+                "active": len(sizes) - 1,
+                "currentvalue": {"prefix": "Stacked events N = ", "font": {"size": 14}},
+                "pad": {"t": 50, "b": 10},
+                "steps": slider_steps,
+            }
+        ],
+        updatemenus=[
+            {
+                "type": "buttons",
+                "showactive": False,
+                "x": 0.0,
+                "xanchor": "left",
+                "y": 1.12,
+                "yanchor": "top",
+                "buttons": [
+                    {
+                        "label": "▶ Play",
+                        "method": "animate",
+                        "args": [
+                            None,
+                            {
+                                "frame": {"duration": 600, "redraw": True},
+                                "fromcurrent": True,
+                                "transition": {"duration": 0},
+                            },
+                        ],
+                    }
+                ],
+            }
+        ],
+    )
+    return fig
+
+
+def interactive_sky_map(
+    theta_s: npt.NDArray[np.float64],
+    phi_s: npt.NDArray[np.float64],
+    snr: npt.NDArray[np.float64],
+    *,
+    redshifts: npt.NDArray[np.float64] | None = None,
+    distances: npt.NDArray[np.float64] | None = None,
+) -> go.Figure:
+    """Interactive sky localization map.
+
+    Parameters
+    ----------
+    theta_s:
+        Source colatitude in radians, shape (N,), range [0, pi].
+    phi_s:
+        Source longitude in radians, shape (N,), range [0, 2*pi].
+    snr:
+        Signal-to-noise ratio per event, shape (N,).
+    redshifts:
+        Optional redshifts per event, shape (N,).
+    distances:
+        Optional luminosity distances in Mpc, shape (N,).
+
+    Returns
+    -------
+    go.Figure
+        Plotly Scattergeo figure with Mollweide projection.
+    """
+    # Convert: colatitude [0, pi] -> latitude [-90, 90]
+    lat = np.degrees(np.pi / 2.0 - theta_s)
+    # Convert: phi [0, 2pi] -> longitude [-180, 180]
+    lon = np.degrees(phi_s)
+    lon = np.where(lon > 180.0, lon - 360.0, lon)
+
+    n_events = len(snr)
+    event_indices = list(range(n_events))
+
+    # Build hover text
+    hover_parts = ["Event %{customdata[0]}", "SNR = %{customdata[1]:.2f}"]
+    custom_data: list[list[float | int]] = [
+        [event_indices[i], float(snr[i])] for i in range(n_events)
+    ]
+    if redshifts is not None:
+        hover_parts.append("z = %{customdata[2]:.4f}")
+        custom_data = [cd + [float(redshifts[i])] for i, cd in enumerate(custom_data)]
+    if distances is not None:
+        col_idx = 3 if redshifts is not None else 2
+        hover_parts.append(f"d_L = %{{customdata[{col_idx}]:.1f}} Mpc")
+        custom_data = [cd + [float(distances[i])] for i, cd in enumerate(custom_data)]
+    hover_template = "<br>".join(hover_parts) + "<extra></extra>"
+
+    fig = go.Figure(
+        go.Scattergeo(
+            lat=lat.tolist(),
+            lon=lon.tolist(),
+            mode="markers",
+            marker={
+                "color": snr.tolist(),
+                "colorscale": _batlow_colorscale(),
+                "showscale": True,
+                "colorbar": {"title": "SNR"},
+                "size": 8,
+                "opacity": 0.8,
+                "line": {"width": 0.5, "color": EDGE},
+            },
+            customdata=custom_data,
+            hovertemplate=hover_template,
+            name="EMRI events",
+        )
+    )
+
+    fig.update_geos(
+        projection_type="mollweide",
+        showland=False,
+        showcoastlines=False,
+        showframe=True,
+        bgcolor="#f8f8f8",
+        lataxis_showgrid=True,
+        lonaxis_showgrid=True,
+        lataxis_gridwidth=0.5,
+        lonaxis_gridwidth=0.5,
+    )
+    fig.update_layout(
+        title="EMRI Sky Localization Map",
+        margin={"l": 0, "r": 0, "t": 40, "b": 0},
+    )
+    return fig
+
+
+def interactive_fisher_ellipses(
+    events: list[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    pairs: list[tuple[str, str]] | None = None,
+    *,
+    sigma_levels: tuple[float, ...] = (1.0, 2.0),
+) -> go.Figure:
+    """Interactive Fisher matrix error ellipses.
+
+    Parameters
+    ----------
+    events:
+        List of ``(covariance_14x14, param_values_14)`` tuples.
+    pairs:
+        Parameter pairs to show. Defaults to
+        ``[("M", "mu"), ("luminosity_distance", "qS"), ("qS", "phiS")]``.
+    sigma_levels:
+        Sigma levels for ellipse boundaries (number of sigma).
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure with one subplot column per parameter pair.
+    """
+
+    if pairs is None:
+        pairs = _DEFAULT_PAIRS
+
+    n_pairs = len(pairs)
+    subplot_titles = [f"{p[0]} vs {p[1]}" for p in pairs]
+
+    fig = make_subplots(
+        rows=1,
+        cols=n_pairs,
+        subplot_titles=subplot_titles,
+        shared_xaxes=False,
+    )
+
+    n_theta = 100
+    theta = np.linspace(0.0, 2.0 * np.pi, n_theta)
+
+    for pair_idx, (name_x, name_y) in enumerate(pairs):
+        idx_x = PARAMETER_NAMES.index(name_x)
+        idx_y = PARAMETER_NAMES.index(name_y)
+        col = pair_idx + 1
+
+        for ev_idx, (cov, vals) in enumerate(events):
+            color = CYCLE[ev_idx % len(CYCLE)]
+            cx = float(vals[idx_x])
+            cy = float(vals[idx_y])
+            indices = [idx_x, idx_y]
+            cov_2x2: npt.NDArray[np.float64] = cov[np.ix_(indices, indices)]
+            eigenvalues, eigenvectors = np.linalg.eigh(cov_2x2)
+            eigenvalues = np.maximum(eigenvalues, 0.0)
+
+            for level_idx, level in enumerate(sorted(sigma_levels, reverse=True)):
+                # Parametric ellipse in principal-axis frame, then rotate
+                a_ax = level * float(np.sqrt(eigenvalues[1]))
+                b_ax = level * float(np.sqrt(eigenvalues[0]))
+                x_local = a_ax * np.cos(theta)
+                y_local = b_ax * np.sin(theta)
+                # Rotate by eigenvectors
+                x_rot = eigenvectors[0, 1] * x_local + eigenvectors[0, 0] * y_local
+                y_rot = eigenvectors[1, 1] * x_local + eigenvectors[1, 0] * y_local
+                x_ellipse = (cx + x_rot).tolist()
+                y_ellipse = (cy + y_rot).tolist()
+
+                # Consistent 1\u03c3/2\u03c3 legend: one entry per sigma level (shown
+                # only on the first event + first pair), grouped by level.
+                show_legend = ev_idx == 0 and pair_idx == 0
+                alpha = 0.35 / level
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=x_ellipse,
+                        y=y_ellipse,
+                        mode="lines",
+                        fill="toself",
+                        fillcolor=color,
+                        opacity=alpha,
+                        line={"color": color, "width": 1, "shape": "linear"},
+                        name=f"{level:.0f}\u03c3",
+                        legendgroup=f"sigma_{level:.0f}",
+                        showlegend=show_legend,
+                        hovertemplate=(
+                            f"Event {ev_idx}, {level:.0f}\u03c3<br>"
+                            f"{name_x} = %{{x:.4g}}<br>{name_y} = %{{y:.4g}}"
+                            "<extra></extra>"
+                        ),
+                    ),
+                    row=1,
+                    col=col,
+                )
+
+        # Axis labels
+        x_label_key = name_x if name_x in LABELS else name_x
+        y_label_key = name_y if name_y in LABELS else name_y
+        x_label = _strip_latex(LABELS.get(x_label_key, x_label_key))
+        y_label = _strip_latex(LABELS.get(y_label_key, y_label_key))
+        fig.update_xaxes(title_text=x_label, row=1, col=col)
+        fig.update_yaxes(title_text=y_label, row=1, col=col)
+
+    fig.update_layout(title="Fisher Matrix Error Ellipses")
+    return fig
+
+
+def interactive_h0_convergence(
+    h_values: npt.NDArray[np.float64],
+    event_posteriors: list[npt.NDArray[np.float64]],
+    *,
+    true_h: float | None = None,
+    subset_sizes: list[int] | None = None,
+    seed: int = 42,
+    level: float = 0.68,
+) -> go.Figure:
+    """Interactive H0 convergence two-panel figure.
+
+    Parameters
+    ----------
+    h_values:
+        Grid of h values shared across posteriors.
+    event_posteriors:
+        Per-event posterior arrays on *h_values*.
+    true_h:
+        Optional truth value; shown as vertical line on left panel.
+    subset_sizes:
+        List of event subset sizes to show.
+    seed:
+        RNG seed for reproducible subset selection.
+    level:
+        Credible interval probability mass (default 68%).
+
+    Returns
+    -------
+    go.Figure
+        Two-panel Plotly figure (posteriors left, CI width right).
+    """
+    n_events = len(event_posteriors)
+
+    if subset_sizes is None:
+        sizes = [s for s in _DEFAULT_SUBSETS if s <= n_events]
+        if not sizes:
+            sizes = [n_events]
+    else:
+        sizes = [min(s, n_events) for s in subset_sizes]
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=["Combined Posterior vs N", "CI Width vs N"],
+    )
+
+    rng = np.random.default_rng(seed)
+    ci_widths: list[float] = []
+    sizes_used: list[int] = []
+
+    for idx, n in enumerate(sizes):
+        indices = rng.choice(n_events, size=n, replace=False)
+        log_posteriors = [np.log(np.maximum(event_posteriors[int(i)], 1e-300)) for i in indices]
+        log_combined = np.sum(log_posteriors, axis=0)
+        log_combined -= log_combined.max()
+        combined = np.exp(log_combined)
+        norm = np.trapezoid(combined, h_values)
+        if norm > 0:
+            combined /= norm
+
+        color = CYCLE[idx % len(CYCLE)]
+        fig.add_trace(
+            go.Scatter(
+                x=h_values.tolist(),
+                y=combined.tolist(),
+                mode="lines",
+                name=f"N={n}",
+                line={"color": color, "width": 2},
+                legendgroup=f"N{n}",
+                hovertemplate=f"N={n}<br>h = %{{x:.4f}}<br>Density = %{{y:.4f}}<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
+
+        width = _credible_interval_width(h_values, combined, level=level)
+        ci_widths.append(width)
+        sizes_used.append(n)
+
+    # Truth line on left panel
+    if true_h is not None:
+        fig.add_vline(
+            x=true_h,
+            line_color=TRUTH,
+            line_dash="dash",
+            line_width=2,
+            row=1,
+            col=1,
+            annotation_text="Truth",
+        )
+
+    # Right panel: CI width vs N
+    sizes_arr = np.asarray(sizes_used, dtype=np.float64)
+    fig.add_trace(
+        go.Scatter(
+            x=sizes_arr.tolist(),
+            y=ci_widths,
+            mode="lines+markers",
+            name=f"{int(level * 100)}% CI width",
+            line={"color": CYCLE[0]},
+            marker={"size": 8},
+            hovertemplate="N = %{x}<br>CI width = %{y:.4f}<extra></extra>",
+        ),
+        row=1,
+        col=2,
+    )
+
+    # 1/sqrt(N) reference curve
+    if len(sizes_used) > 1 and ci_widths[0] > 0:
+        ref = ci_widths[0] * float(np.sqrt(sizes_arr[0])) / np.sqrt(sizes_arr)
+        fig.add_trace(
+            go.Scatter(
+                x=sizes_arr.tolist(),
+                y=ref.tolist(),
+                mode="lines",
+                name="1/sqrt(N) ref",
+                line={"color": CYCLE[1], "dash": "dash"},
+                opacity=0.6,
+                hovertemplate="N = %{x}<br>1/sqrt(N) ref = %{y:.4f}<extra></extra>",
+            ),
+            row=1,
+            col=2,
+        )
+
+    # Planck / SH0ES target-precision reference bands (horizontal), matching
+    # the static fig08 convergence figure so the curve can be read against
+    # "how many events to reach Planck/SH0ES-level precision".
+    _bw = 0.0008  # visual half-thickness of the horizontal swatch
+    for target, band_color, band_name in (
+        (_PLANCK_TARGET_WIDTH, PLANCK_BAND, "Planck precision"),
+        (_SHOES_TARGET_WIDTH, SHOES_BAND, "SH0ES precision"),
+    ):
+        fig.add_hrect(
+            y0=target - _bw,
+            y1=target + _bw,
+            fillcolor=band_color,
+            opacity=0.30,
+            line_width=0,
+            name=band_name,
+            legendgroup=band_name,
+            showlegend=True,
+            row=1,
+            col=2,
+        )
+
+    h_label = _strip_latex(LABELS["h"])
+    fig.update_xaxes(title_text=h_label, row=1, col=1)
+    fig.update_yaxes(title_text="Posterior density", row=1, col=1)
+    fig.update_xaxes(title_text="Number of events", row=1, col=2)
+    fig.update_yaxes(title_text=f"{int(level * 100)}% CI width", row=1, col=2)
+    fig.update_layout(title="H\u2080 Posterior Convergence")
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# M_z improvement explorer
+# ---------------------------------------------------------------------------
+
+
+# Lazy import target — keeps the heavy bank module out of the import
+# graph for users that only want a basic interactive plot.
+_BANK_IMPORT = "darksiren_emri.plotting.convergence_analysis"
+
+
+def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
+
+
+def interactive_m_z_improvement(
+    bank: Any,  # ImprovementBank — typed loosely to avoid an eager import
+) -> go.Figure:
+    """Interactive three-panel M_z improvement explorer.
+
+    Built directly from an :class:`ImprovementBank` (computed by
+    :func:`darksiren_emri.plotting.convergence_analysis.compute_m_z_improvement_bank`).
+
+    The figure has three panels and one slider:
+
+    * Top-left  — selectable metric vs. number of events
+                  (HDI68 width / fractional improvement / effective
+                  event gain / KL information gain), with bootstrap
+                  16/84 percentile bands.
+    * Top-right — combined posteriors at the slider-selected N for both
+                  variants, with the injected truth line.
+    * Bottom    — text annotation that updates with the slider showing
+                  the headline numbers at the chosen N (HDI widths,
+                  improvement, K factor, JSD).
+
+    Parameters
+    ----------
+    bank:
+        Result of :func:`compute_m_z_improvement_bank`.  Passed in as
+        ``Any`` to avoid pulling the analysis module into this file's
+        import graph.
+
+    Returns
+    -------
+    go.Figure
+    """
+    sizes = list(bank.sizes)
+    sizes_arr = np.asarray(sizes, dtype=np.float64)
+    h_grid = np.asarray(bank.h_grid, dtype=np.float64)
+    h_true = float(bank.h_true)
+
+    # ----- Panel A: metric series + 16/84 bands -----
+
+    # Each metric has three traces: lower band, upper band (transparent
+    # fill between), and the median line.  We pre-build all of them and
+    # toggle visibility via an updatemenu.
+    # Locked palette: both variants share ONE blue hue (METHOD["dark"]) and
+    # differ only by linestyle (solid = Without M_z, dashed = With M_z). The
+    # bootstrap 16-84 bands reuse the same hue at two alpha levels.
+    variant_no = METHOD["dark"]
+    variant_with = METHOD["dark"]
+    fill_no = _hex_to_rgba(variant_no, 0.18)
+    fill_with = _hex_to_rgba(variant_with, 0.28)
+
+    def _series(
+        name: str, source: dict[str, list[float]]
+    ) -> tuple[list[float], list[float], list[float]]:
+        return (
+            list(source["median"]),
+            list(source["p16"]),
+            list(source["p84"]),
+        )
+
+    metric_options: list[dict[str, Any]] = [
+        {
+            "key": "hdi68_width",
+            "label": "68% HDI width",
+            "yaxis_title": "68% HDI width of h",
+            "no": _series("hdi68_width", bank.metrics_no_mass["hdi68_width"]),
+            "with": _series("hdi68_width", bank.metrics_with_mass["hdi68_width"]),
+            "scale_y": "log",
+        },
+        {
+            "key": "rel_precision",
+            "label": "Relative precision (HDI/MAP)",
+            "yaxis_title": "HDI width / MAP h",
+            "no": _series("rel_precision", bank.metrics_no_mass["rel_precision"]),
+            "with": _series("rel_precision", bank.metrics_with_mass["rel_precision"]),
+            "scale_y": "log",
+        },
+        {
+            "key": "kl_from_uniform",
+            "label": "KL info gain (nats)",
+            "yaxis_title": "KL(posterior || flat) [nats]",
+            "no": _series("kl_from_uniform", bank.metrics_no_mass["kl_from_uniform"]),
+            "with": _series("kl_from_uniform", bank.metrics_with_mass["kl_from_uniform"]),
+            "scale_y": "linear",
+        },
+        {
+            "key": "bias_pct",
+            "label": "MAP bias [%]",
+            "yaxis_title": "(MAP h - h_true) / h_true [%]",
+            "no": _series("bias_pct", bank.metrics_no_mass["bias_pct"]),
+            "with": _series("bias_pct", bank.metrics_with_mass["bias_pct"]),
+            "scale_y": "linear",
+        },
+    ]
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        specs=[
+            [{"type": "xy"}, {"type": "xy"}],
+            [{"type": "xy", "colspan": 2}, None],
+        ],
+        row_heights=[0.60, 0.40],
+        horizontal_spacing=0.13,
+        vertical_spacing=0.22,
+    )
+
+    # Per-metric trace blocks (each block = 5 traces: no-band-low,
+    # no-band-high (with fill), no-median, with-band-low,
+    # with-band-high (with fill), with-median).  We use Plotly's
+    # "tonexty" fill convention: low trace first, high trace second
+    # with fill="tonexty".  That's 6 traces per metric.
+    n_traces_per_metric = 6
+    metric_trace_offset: dict[str, int] = {}
+
+    for m_idx, opt in enumerate(metric_options):
+        med_no, p16_no, p84_no = opt["no"]
+        med_w, p16_w, p84_w = opt["with"]
+
+        visible = m_idx == 0
+        metric_trace_offset[opt["key"]] = m_idx * n_traces_per_metric
+
+        # without — band low, band high (fill), median
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=p16_no,
+                mode="lines",
+                line={"color": "rgba(0,0,0,0)"},
+                showlegend=False,
+                hoverinfo="skip",
+                visible=visible,
+            ),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=p84_no,
+                mode="lines",
+                line={"color": "rgba(0,0,0,0)"},
+                fill="tonexty",
+                fillcolor=fill_no,
+                name="Without M_z (16-84)",
+                legendgroup="no_band",
+                showlegend=False,
+                hoverinfo="skip",
+                visible=visible,
+            ),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=med_no,
+                mode="lines+markers",
+                name="Without M_z",
+                legendgroup="no",
+                line={"color": variant_no, "width": 2},
+                marker={"size": 7, "symbol": "circle"},
+                hovertemplate="N = %{x}<br>median = %{y:.4f}<extra>Without M_z</extra>",
+                visible=visible,
+                showlegend=True,
+            ),
+            row=1,
+            col=1,
+        )
+
+        # with — band low, band high (fill), median
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=p16_w,
+                mode="lines",
+                line={"color": "rgba(0,0,0,0)"},
+                showlegend=False,
+                hoverinfo="skip",
+                visible=visible,
+            ),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=p84_w,
+                mode="lines",
+                line={"color": "rgba(0,0,0,0)"},
+                fill="tonexty",
+                fillcolor=fill_with,
+                name="With M_z (16-84)",
+                legendgroup="with_band",
+                showlegend=False,
+                hoverinfo="skip",
+                visible=visible,
+            ),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=med_w,
+                mode="lines+markers",
+                name="With M_z",
+                legendgroup="with",
+                line={"color": variant_with, "width": 2, "dash": "dash"},
+                marker={"size": 7, "symbol": "square"},
+                hovertemplate="N = %{x}<br>median = %{y:.4f}<extra>With M_z</extra>",
+                visible=visible,
+                showlegend=True,
+            ),
+            row=1,
+            col=1,
+        )
+
+    # 1/sqrt(N) reference (anchored to the without-M_z largest-N median
+    # of the FIRST metric — only sensible for the width metric, hidden
+    # otherwise via the dropdown).
+    first_med_no = metric_options[0]["no"][0]
+    if len(sizes) > 1 and not np.isnan(first_med_no[-1]) and first_med_no[-1] > 0:
+        n_ref = sizes_arr[-1]
+        y_ref = first_med_no[-1]
+        ref_y = (y_ref * np.sqrt(n_ref / sizes_arr)).tolist()
+    else:
+        ref_y = [None] * len(sizes)
+    fig.add_trace(
+        go.Scatter(
+            x=sizes,
+            y=ref_y,
+            mode="lines",
+            name="1/sqrt(N) ref",
+            line={"color": REFERENCE, "dash": "dot"},
+            opacity=0.7,
+            hovertemplate="N = %{x}<br>1/sqrt(N) = %{y:.4f}<extra></extra>",
+            visible=True,
+        ),
+        row=1,
+        col=1,
+    )
+    ref_trace_index = len(metric_options) * n_traces_per_metric
+
+    # ----- Panel B: representative posteriors at slider N (frames) -----
+    # Initial N = last (largest) size
+    init_idx = len(sizes) - 1
+    init_no = bank.representative_posteriors_no_mass[init_idx]
+    init_with = bank.representative_posteriors_with_mass[init_idx]
+
+    fig.add_trace(
+        go.Scatter(
+            x=h_grid.tolist(),
+            y=np.asarray(init_no, dtype=np.float64).tolist(),
+            mode="lines",
+            name="Without M_z (posterior)",
+            legendgroup="no",
+            line={"color": variant_no, "width": 2},
+            hovertemplate="h = %{x:.4f}<br>density = %{y:.3f}<extra>Without M_z</extra>",
+            showlegend=False,
+        ),
+        row=1,
+        col=2,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=h_grid.tolist(),
+            y=np.asarray(init_with, dtype=np.float64).tolist(),
+            mode="lines",
+            name="With M_z (posterior)",
+            legendgroup="with",
+            line={"color": variant_with, "width": 2, "dash": "dash"},
+            hovertemplate="h = %{x:.4f}<br>density = %{y:.3f}<extra>With M_z</extra>",
+            showlegend=False,
+        ),
+        row=1,
+        col=2,
+    )
+    panel_b_no_idx = ref_trace_index + 1
+    panel_b_with_idx = ref_trace_index + 2
+
+    # ----- Panel C: text annotation (subplot 2,1) -----
+    # We use a hidden scatter so the subplot has axes; the actual text
+    # is overlaid via fig.add_annotation tied to that subplot's domain.
+    fig.add_trace(
+        go.Scatter(
+            x=[0],
+            y=[0],
+            mode="markers",
+            marker={"color": "rgba(0,0,0,0)"},
+            showlegend=False,
+            hoverinfo="skip",
+        ),
+        row=2,
+        col=1,
+    )
+    fig.update_xaxes(visible=False, row=2, col=1)
+    fig.update_yaxes(visible=False, row=2, col=1)
+
+    # Build the per-N text strings used by the slider frames.
+    def _summary_text(idx: int) -> str:
+        n = sizes[idx]
+        w_no = bank.metrics_no_mass["hdi68_width"]["median"][idx]
+        w_w = bank.metrics_with_mass["hdi68_width"]["median"][idx]
+        frac = bank.fractional_improvement["median"][idx] * 100.0
+        frac_lo = bank.fractional_improvement["p16"][idx] * 100.0
+        frac_hi = bank.fractional_improvement["p84"][idx] * 100.0
+        K = bank.effective_event_gain["median"][idx]
+        K_lo = bank.effective_event_gain["p16"][idx]
+        K_hi = bank.effective_event_gain["p84"][idx]
+        jsd_med = bank.jsd_bits["median"][idx]
+        agree = "agree" if (not np.isnan(jsd_med) and jsd_med < 0.05) else "differ"
+        K_str = f"{K:.2f} ({K_lo:.2f}-{K_hi:.2f})" if not np.isnan(K) else "n/a"
+        return (
+            f"<b>N = {n} detections</b><br>"
+            f"HDI<sub>without</sub> = {w_no:.4f} &nbsp;&nbsp; "
+            f"HDI<sub>with</sub> = {w_w:.4f}<br>"
+            f"Fractional improvement &Delta;(N) = {frac:+.1f}% "
+            f"(68% bootstrap: {frac_lo:+.1f}% to {frac_hi:+.1f}%)<br>"
+            f"Effective event gain K(N) = {K_str}<br>"
+            f"JSD(with, without) = {jsd_med * 1000:.0f} mbits "
+            f"&rArr; distributions {agree}"
+        )
+
+    # Subplot titles must be added BEFORE the frame loop so that
+    # fig.layout.annotations[:3] captures them in each frame (the frames
+    # slice exactly the first 3 annotations to preserve titles while
+    # replacing the summary-text annotation at index 3).
+    for _ann_text, _ann_x, _ann_y in [
+        ("Metric vs N", 0.20, 1.01),
+        ("Representative combined posterior", 0.77, 1.01),
+        ("Improvement summary at selected N", 0.20, 0.405),
+    ]:
+        fig.add_annotation(
+            text=f"<b>{_ann_text}</b>",
+            xref="paper",
+            yref="paper",
+            x=_ann_x,
+            y=_ann_y,
+            xanchor="center",
+            yanchor="bottom",
+            showarrow=False,
+            font={"size": 13},
+        )
+
+    annotation_text_init = _summary_text(init_idx)
+    fig.add_annotation(
+        text=annotation_text_init,
+        xref="x3 domain",
+        yref="y3 domain",
+        x=0.02,
+        y=0.95,
+        xanchor="left",
+        yanchor="top",
+        showarrow=False,
+        align="left",
+        font={"size": 12, "family": "monospace"},
+    )
+
+    # ----- Slider over N -----
+    # Each frame updates: panel B y-data (2 traces) + the annotation.
+    frames: list[go.Frame] = []
+    for idx, n in enumerate(sizes):
+        post_no = np.asarray(bank.representative_posteriors_no_mass[idx], dtype=np.float64).tolist()
+        post_w = np.asarray(
+            bank.representative_posteriors_with_mass[idx], dtype=np.float64
+        ).tolist()
+        frames.append(
+            go.Frame(
+                name=str(n),
+                data=[
+                    go.Scatter(y=post_no),
+                    go.Scatter(y=post_w),
+                ],
+                traces=[panel_b_no_idx, panel_b_with_idx],
+                layout=go.Layout(
+                    annotations=[
+                        {
+                            "text": _summary_text(idx),
+                            "xref": "x3 domain",
+                            "yref": "y3 domain",
+                            "x": 0.02,
+                            "y": 0.95,
+                            "xanchor": "left",
+                            "yanchor": "top",
+                            "showarrow": False,
+                            "align": "left",
+                            "font": {"size": 12, "family": "monospace"},
+                        },
+                        # Preserve subplot titles in each frame
+                        *list(fig.layout.annotations[:3]),
+                    ]
+                ),
+            )
+        )
+    fig.frames = frames
+
+    slider_steps = [
+        {
+            "method": "animate",
+            "label": str(n),
+            "args": [
+                [str(n)],
+                {
+                    "mode": "immediate",
+                    "frame": {"duration": 0, "redraw": True},
+                    "transition": {"duration": 0},
+                },
+            ],
+        }
+        for n in sizes
+    ]
+
+    # ----- Dropdown for the metric in panel A -----
+    n_metrics = len(metric_options)
+    n_metric_traces = n_metrics * n_traces_per_metric
+    dropdown_buttons: list[dict[str, Any]] = []
+    for m_idx, opt in enumerate(metric_options):
+        # Visibility vector covers ALL traces in the figure.
+        visible_vec: list[bool] = []
+        # Metric trace blocks
+        for j in range(n_metrics):
+            for _k in range(n_traces_per_metric):
+                visible_vec.append(j == m_idx)
+        # 1/sqrt(N) reference: only meaningful for hdi68_width
+        visible_vec.append(opt["key"] == "hdi68_width")
+        # Panel B traces (always visible)
+        visible_vec.append(True)
+        visible_vec.append(True)
+        # Panel C dummy
+        visible_vec.append(True)
+
+        dropdown_buttons.append(
+            {
+                "method": "update",
+                "label": opt["label"],
+                "args": [
+                    {"visible": visible_vec},
+                    {
+                        "yaxis": {
+                            "title": {"text": opt["yaxis_title"]},
+                            "type": opt["scale_y"],
+                        }
+                    },
+                ],
+            }
+        )
+
+    # ----- Truth line on panel B -----
+    fig.add_vline(
+        x=h_true,
+        line_color=TRUTH,
+        line_dash="dot",
+        line_width=2,
+        annotation_text="Injected",
+        annotation_position="top right",
+        row=1,
+        col=2,
+    )
+
+    # ----- Layout -----
+    fig.update_xaxes(title_text="Number of events N", type="log", row=1, col=1)
+    fig.update_yaxes(
+        title_text=metric_options[0]["yaxis_title"],
+        type=metric_options[0]["scale_y"],
+        row=1,
+        col=1,
+    )
+    fig.update_xaxes(title_text="h", row=1, col=2)
+    fig.update_yaxes(title_text="Posterior (peak-norm.)", row=1, col=2)
+
+    fig.update_layout(
+        title={
+            "text": "M<sub>z</sub> improvement explorer — does adding the BH-mass channel tighten H<sub>0</sub>?",
+            "x": 0.5,
+            "xanchor": "center",
+            "font": {"size": 15},
+        },
+        height=950,
+        sliders=[
+            {
+                "active": init_idx,
+                "currentvalue": {"prefix": "N = ", "font": {"size": 14}},
+                "pad": {"t": 60, "b": 20},
+                "x": 0.0,
+                "xanchor": "left",
+                "y": 0.0,
+                "yanchor": "top",
+                "len": 1.0,
+                "steps": slider_steps,
+            }
+        ],
+        updatemenus=[
+            {
+                "type": "dropdown",
+                "buttons": dropdown_buttons,
+                "x": 0.12,
+                "xanchor": "left",
+                "y": 1.06,
+                "yanchor": "bottom",
+                "showactive": True,
+                "direction": "down",
+            }
+        ],
+        margin={"t": 120, "b": 150, "l": 80, "r": 20},
+    )
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Convenience entry point
+# ---------------------------------------------------------------------------
+
+
+def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
+    """Load data from *data_dir* and write all 4 interactive HTML figures to *output_dir*.
+
+    Gracefully skips figures when required data is missing -- logs a warning and
+    continues to the next figure.
+
+    Parameters
+    ----------
+    output_dir:
+        Directory where HTML files are written.
+    data_dir:
+        Working directory containing CRB CSVs and posterior JSON subdirectories.
+
+    Returns
+    -------
+    list[str]
+        Paths to all HTML files that were written successfully.
+    """
+    import glob
+    from pathlib import Path
+
+    import pandas as pd
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    written: list[str] = []
+
+    # ------------------------------------------------------------------
+    # Data loading helpers
+    # ------------------------------------------------------------------
+
+    # Search both data_dir/ and data_dir/simulations/ for data files
+    _search_dirs = [Path(data_dir)]
+    _sim_dir = Path(data_dir) / "simulations"
+    if _sim_dir.is_dir():
+        _search_dirs.insert(0, _sim_dir)
+
+    def _load_crb_data() -> pd.DataFrame | None:
+        for search in _search_dirs:
+            csv_files = sorted(glob.glob(str(search / "*cramer_rao_bounds*.csv")))
+            if csv_files:
+                frames = [pd.read_csv(f) for f in csv_files]
+                return pd.concat(frames, ignore_index=True)
+        return None
+
+    def _load_posteriors(
+        subdir: str,
+    ) -> tuple[npt.NDArray[np.float64], list[npt.NDArray[np.float64]]] | None:
+        from darksiren_emri.bayesian_inference.posterior_combination import (
+            load_posterior_jsons,
+        )
+
+        posteriors_dir: Path | None = None
+        for search in _search_dirs:
+            candidate = search / subdir
+            if candidate.is_dir():
+                posteriors_dir = candidate
+                break
+        if posteriors_dir is None:
+            return None
+        if not posteriors_dir.is_dir():
+            return None
+        try:
+            h_values_list, event_likelihoods = load_posterior_jsons(posteriors_dir)
+            h_values: npt.NDArray[np.float64] = np.array(h_values_list, dtype=np.float64)
+            event_posteriors: list[npt.NDArray[np.float64]] = []
+            for event_idx in sorted(event_likelihoods.keys()):
+                lh = event_likelihoods[event_idx]
+                event_posteriors.append(
+                    np.array([lh.get(h, 0.0) for h in h_values_list], dtype=np.float64)
+                )
+            return h_values, event_posteriors
+        except (FileNotFoundError, ValueError):
+            return None
+
+    # Try both posterior subdirectory variants
+    post_data = _load_posteriors("posteriors") or _load_posteriors("posteriors_with_bh_mass")
+    crb_df = _load_crb_data()
+
+    # ------------------------------------------------------------------
+    # Figure 1: Combined H0 posterior (canonical raw Σ log L_i; Phase A)
+    # ------------------------------------------------------------------
+    if post_data is not None:
+        try:
+            from darksiren_emri.constants import H as TRUE_H
+            from darksiren_emri.plotting._helpers import (
+                load_canonical_combined_posterior,
+            )
+
+            posterior_base: Path | None = None
+            for search in _search_dirs:
+                if (search / "posteriors").is_dir():
+                    posterior_base = search
+                    break
+            if posterior_base is None:
+                raise FileNotFoundError("no posteriors/ subdirectory")
+            h_values, combined, _meta = load_canonical_combined_posterior(
+                posterior_base, "posteriors"
+            )
+            norm = float(np.trapezoid(combined, h_values))
+            if norm > 0:
+                combined = combined / norm
+
+            # Optional "With M_z" variant (same blue, dashed) when available.
+            combined_wm: npt.NDArray[np.float64] | None = None
+            if (posterior_base / "posteriors_with_bh_mass").is_dir():
+                try:
+                    _hv_wm, comb_wm, _m_wm = load_canonical_combined_posterior(
+                        posterior_base, "posteriors_with_bh_mass"
+                    )
+                    nwm = float(np.trapezoid(comb_wm, _hv_wm))
+                    if nwm > 0 and np.array_equal(_hv_wm, h_values):
+                        combined_wm = comb_wm / nwm
+                except (FileNotFoundError, ValueError, KeyError):
+                    combined_wm = None
+
+            # Optional HOPs bootstrap draws over the per-event posteriors.
+            boot_draws: list[npt.NDArray[np.float64]] | None = None
+            if post_data is not None:
+                _hv_ev, ev_posts = post_data
+                if np.array_equal(_hv_ev, h_values) and len(ev_posts) >= 2:
+                    rng_b = np.random.default_rng(0)
+                    n_ev = len(ev_posts)
+                    draws: list[npt.NDArray[np.float64]] = []
+                    for _b in range(12):
+                        sel = rng_b.integers(0, n_ev, size=n_ev)
+                        log_c = np.sum(
+                            [np.log(np.maximum(ev_posts[int(i)], 1e-300)) for i in sel],
+                            axis=0,
+                        )
+                        log_c -= log_c.max()
+                        c = np.exp(log_c)
+                        nb = float(np.trapezoid(c, h_values))
+                        if nb > 0:
+                            c = c / nb
+                        draws.append(c)
+                    boot_draws = draws
+
+            fig1 = interactive_combined_posterior(
+                h_values,
+                combined,
+                TRUE_H,
+                posterior_with_mass=combined_wm,
+                bootstrap_draws=boot_draws,
+            )
+            path1 = os.path.join(output_dir, "combined_posterior.html")
+            fig1.write_html(path1, include_plotlyjs="cdn")
+            written.append(path1)
+            _LOGGER.info("Written: %s", path1)
+        except Exception as exc:
+            _LOGGER.warning("Skipping combined_posterior.html: %s", exc)
+    else:
+        _LOGGER.warning(
+            "No posterior data found in %s -- skipping combined_posterior.html", data_dir
+        )
+
+    # ------------------------------------------------------------------
+    # Figure 2: Sky map
+    # ------------------------------------------------------------------
+    if crb_df is not None and "qS" in crb_df.columns and "phiS" in crb_df.columns:
+        try:
+            theta_s: npt.NDArray[np.float64] = crb_df["qS"].to_numpy(dtype=np.float64)
+            phi_s: npt.NDArray[np.float64] = crb_df["phiS"].to_numpy(dtype=np.float64)
+            snr_col = "SNR" if "SNR" in crb_df.columns else None
+            snr_vals: npt.NDArray[np.float64] = (
+                crb_df[snr_col].to_numpy(dtype=np.float64)
+                if snr_col is not None
+                else np.ones(len(theta_s), dtype=np.float64)
+            )
+            redshift_vals: npt.NDArray[np.float64] | None = (
+                crb_df["z"].to_numpy(dtype=np.float64) if "z" in crb_df.columns else None
+            )
+            dist_vals: npt.NDArray[np.float64] | None = (
+                crb_df["luminosity_distance"].to_numpy(dtype=np.float64)
+                if "luminosity_distance" in crb_df.columns
+                else None
+            )
+            fig2 = interactive_sky_map(
+                theta_s, phi_s, snr_vals, redshifts=redshift_vals, distances=dist_vals
+            )
+            path2 = os.path.join(output_dir, "sky_map.html")
+            fig2.write_html(path2, include_plotlyjs="cdn")
+            written.append(path2)
+            _LOGGER.info("Written: %s", path2)
+        except Exception as exc:
+            _LOGGER.warning("Skipping sky_map.html: %s", exc)
+    else:
+        _LOGGER.warning("No CRB data with sky position columns -- skipping sky_map.html")
+
+    # ------------------------------------------------------------------
+    # Figure 3: Fisher ellipses
+    # ------------------------------------------------------------------
+    if crb_df is not None:
+        try:
+            from darksiren_emri.plotting._data import reconstruct_covariance
+
+            events_list: list[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = []
+            param_cols = [c for c in PARAMETER_NAMES if c in crb_df.columns]
+            # Limit to first 10 events to keep the figure tractable
+            for _, row in crb_df.head(10).iterrows():
+                try:
+                    cov = reconstruct_covariance(row)
+                    param_vals: npt.NDArray[np.float64] = np.array(
+                        [
+                            float(row[name]) if name in row.index else 0.0
+                            for name in PARAMETER_NAMES
+                        ],
+                        dtype=np.float64,
+                    )
+                    events_list.append((cov, param_vals))
+                except (KeyError, ValueError):
+                    continue
+
+            if events_list:
+                fig3 = interactive_fisher_ellipses(events_list)
+                path3 = os.path.join(output_dir, "fisher_ellipses.html")
+                fig3.write_html(path3, include_plotlyjs="cdn")
+                written.append(path3)
+                _LOGGER.info("Written: %s", path3)
+            else:
+                _LOGGER.warning("No valid CRB rows for Fisher ellipses -- skipping")
+        except Exception as exc:
+            _LOGGER.warning("Skipping fisher_ellipses.html: %s", exc)
+    else:
+        _LOGGER.warning("No CRB data -- skipping fisher_ellipses.html")
+
+    # ------------------------------------------------------------------
+    # Figure 4: H0 convergence
+    # ------------------------------------------------------------------
+    if post_data is not None:
+        h_values, event_posteriors = post_data
+        if len(event_posteriors) >= 1:
+            try:
+                from darksiren_emri.constants import H as TRUE_H
+
+                fig4 = interactive_h0_convergence(h_values, event_posteriors, true_h=TRUE_H)
+                path4 = os.path.join(output_dir, "h0_convergence.html")
+                fig4.write_html(path4, include_plotlyjs="cdn")
+                written.append(path4)
+                _LOGGER.info("Written: %s", path4)
+            except Exception as exc:
+                _LOGGER.warning("Skipping h0_convergence.html: %s", exc)
+        else:
+            _LOGGER.warning("Not enough posterior data for convergence -- skipping")
+    else:
+        _LOGGER.warning("No posterior data -- skipping h0_convergence.html")
+
+    # ------------------------------------------------------------------
+    # Figure 4b: H0 tension explorer (NF-8)
+    # ------------------------------------------------------------------
+    if post_data is not None:
+        h_values, event_posteriors = post_data
+        if len(event_posteriors) >= 2:
+            try:
+                from darksiren_emri.constants import H as TRUE_H
+
+                fig_te = interactive_h0_tension_explorer(h_values, event_posteriors, TRUE_H)
+                path_te = os.path.join(output_dir, "h0_tension_explorer.html")
+                fig_te.write_html(path_te, include_plotlyjs="cdn")
+                written.append(path_te)
+                _LOGGER.info("Written: %s", path_te)
+            except Exception as exc:
+                _LOGGER.warning("Skipping h0_tension_explorer.html: %s", exc)
+        else:
+            _LOGGER.warning("Not enough posterior data for tension explorer -- skipping")
+    else:
+        _LOGGER.warning("No posterior data -- skipping h0_tension_explorer.html")
+
+    # ------------------------------------------------------------------
+    # Figure 5: M_z improvement explorer
+    # ------------------------------------------------------------------
+    try:
+        from darksiren_emri.constants import H as TRUE_H
+        from darksiren_emri.plotting.convergence_analysis import (
+            compute_m_z_improvement_bank,
+        )
+
+        bank_dir = _search_dirs[0]
+        bank = compute_m_z_improvement_bank(Path(bank_dir), h_true=float(TRUE_H))
+        if bank is not None:
+            fig5 = interactive_m_z_improvement(bank)
+            path5 = os.path.join(output_dir, "m_z_improvement.html")
+            fig5.write_html(path5, include_plotlyjs="cdn")
+            written.append(path5)
+            _LOGGER.info("Written: %s", path5)
+        else:
+            _LOGGER.warning("Skipping m_z_improvement.html: improvement bank could not be computed")
+    except Exception as exc:
+        _LOGGER.warning("Skipping m_z_improvement.html: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Figure 6: Single-event detail (Phase G)
+    # ------------------------------------------------------------------
+    try:
+        # Pick a data dir that has unstripped galaxy_likelihoods. First check
+        # the data_dir search list; only fall back to the project's
+        # `simulations/` tree if data_dir is itself inside that tree (avoids
+        # surprise discovery in test/tmp paths).
+        single_event_data_dir: Path | None = None
+        candidates = list(_search_dirs)
+        sim_root_seed = Path(__file__).resolve().parents[2] / "simulations"
+        try:
+            Path(data_dir).resolve().relative_to(sim_root_seed)
+            candidates.append(sim_root_seed)
+        except ValueError:
+            pass
+        for cand in candidates:
+            wmd = cand / "posteriors_with_bh_mass"
+            if not wmd.is_dir():
+                continue
+            sample = sorted(wmd.glob("h_*.json"))
+            if not sample:
+                continue
+            with open(sample[0]) as fh:
+                first = json.load(fh)
+            if "galaxy_likelihoods" in first and first["galaxy_likelihoods"]:
+                single_event_data_dir = cand
+                break
+        if single_event_data_dir is not None:
+            from darksiren_emri.plotting.single_event_detail import (
+                select_representative_event_id,
+            )
+
+            event_ids = [
+                select_representative_event_id(single_event_data_dir, percentile=p)
+                for p in (0.25, 0.50, 0.75)
+            ]
+            event_ids = sorted(set(event_ids))
+            fig6 = interactive_single_event_detail(single_event_data_dir, event_ids)
+            path6 = os.path.join(output_dir, "single_event_detail.html")
+            fig6.write_html(path6, include_plotlyjs="cdn")
+            written.append(path6)
+            _LOGGER.info("Written: %s", path6)
+        else:
+            _LOGGER.info(
+                "Skipping single_event_detail.html: no unstripped galaxy_likelihoods data found"
+            )
+    except Exception as exc:
+        _LOGGER.warning("Skipping single_event_detail.html: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Figure 7: Closure-test overlay (Phase G)
+    # Only attempts discovery when the working data_dir is inside the
+    # project's `simulations/` tree (sibling closure runs there). Empty
+    # tmp paths in test fixtures are skipped.
+    # ------------------------------------------------------------------
+    try:
+        h_runs: dict[float, Path] = {}
+        sim_root = Path(__file__).resolve().parents[2] / "simulations"
+        # Guard: only proceed if data_dir is under the real simulations tree.
+        resolved_data = Path(data_dir).resolve()
+        try:
+            resolved_data.relative_to(sim_root)
+            in_sim_tree = True
+        except ValueError:
+            in_sim_tree = False
+        if not in_sim_tree:
+            raise FileNotFoundError("data_dir outside simulations/ — skipping closure overlay")
+        for closure_dir in sorted(sim_root.glob("closure_h*")):
+            if not (closure_dir / "posteriors").is_dir():
+                continue
+            try:
+                tag = closure_dir.name.split("_h", 1)[1].split("_", 1)[0]
+                h_runs[float(tag.replace("p", "."))] = closure_dir
+            except (IndexError, ValueError):
+                continue
+        # Add the production h=0.73 run.
+        for search in _search_dirs:
+            if (search / "posteriors").is_dir() and 0.73 not in h_runs:
+                h_runs[0.73] = search
+                break
+        if len(h_runs) >= 2:
+            fig7 = interactive_closure_test_overlay(h_runs)
+            path7 = os.path.join(output_dir, "closure_test.html")
+            fig7.write_html(path7, include_plotlyjs="cdn")
+            written.append(path7)
+            _LOGGER.info("Written: %s", path7)
+        else:
+            _LOGGER.info("Skipping closure_test.html: need ≥2 closure runs (have %d)", len(h_runs))
+    except Exception as exc:
+        _LOGGER.warning("Skipping closure_test.html: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Figure 8: Catalog completeness + coverage (Phase G)
+    # ------------------------------------------------------------------
+    try:
+        host_csv: Path | None = None
+        for search in _search_dirs:
+            cand = search / "diagnostics" / "host_counts.csv"
+            if cand.is_file():
+                host_csv = cand
+                break
+        if host_csv is not None:
+            host_counts = pd.read_csv(host_csv)
+            d_l_per_event: npt.NDArray[np.float64] | None = None
+            if crb_df is not None and "luminosity_distance" in crb_df.columns:
+                dl_arr = crb_df["luminosity_distance"].to_numpy(dtype=np.float64)
+                if len(dl_arr) >= len(host_counts):
+                    d_l_per_event = dl_arr[: len(host_counts)]
+            fig8 = interactive_catalog_completeness(host_counts, d_l_per_event=d_l_per_event)
+            path8 = os.path.join(output_dir, "catalog_completeness.html")
+            fig8.write_html(path8, include_plotlyjs="cdn")
+            written.append(path8)
+            _LOGGER.info("Written: %s", path8)
+        else:
+            _LOGGER.info("Skipping catalog_completeness.html: no host_counts.csv in diagnostics")
+    except Exception as exc:
+        _LOGGER.warning("Skipping catalog_completeness.html: %s", exc)
+
+    return written
+
+
+# ---------------------------------------------------------------------------
+# New interactive figures (Phase G)
+# ---------------------------------------------------------------------------
+
+
+def interactive_single_event_detail(
+    data_dir: Path,
+    event_ids: list[int],
+) -> "go.Figure":
+    """Plotly multi-event explorer with per-host weight tooltips.
+
+    For each event in *event_ids*, builds a 2×3 subplot layout (per-host
+    weights without/with BH mass + scatter, and L(h) panels), and adds an
+    event-picker dropdown that switches the visible trace set.
+
+    Parameters
+    ----------
+    data_dir:
+        Directory holding ``posteriors/`` and ``posteriors_with_bh_mass/``
+        with unstripped galaxy_likelihoods.
+    event_ids:
+        Integer event IDs to expose in the dropdown.
+    """
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    from darksiren_emri.plotting.single_event_detail import (
+        _load_event_likelihood_curve,
+        extract_galaxy_weights,
+    )
+
+    if not event_ids:
+        raise ValueError("event_ids cannot be empty")
+
+    fig = make_subplots(
+        rows=2,
+        cols=3,
+        subplot_titles=(
+            "Weights w/o M_z",
+            "Weights w/ M_z",
+            "Per-host scatter",
+            "L(h) w/o M_z",
+            "L(h) w/ M_z",
+            "L(h) overlay",
+        ),
+        horizontal_spacing=0.08,
+        vertical_spacing=0.14,
+    )
+
+    n_events = len(event_ids)
+    # 6 traces per event (2 bars + 1 scatter + 3 line plots). Track visibility
+    # by event for the dropdown.
+    traces_per_event = 6
+    for ev_idx, eid in enumerate(event_ids):
+        try:
+            df = extract_galaxy_weights(data_dir / "posteriors_with_bh_mass", eid)
+        except (FileNotFoundError, KeyError):
+            continue
+        df_no = df.sort_values("w_no", ascending=False).head(20).reset_index(drop=True)
+        df_w = df.sort_values("w_with", ascending=False).head(20).reset_index(drop=True)
+        visible = ev_idx == 0
+        # (1,1) bar without
+        fig.add_trace(
+            go.Bar(
+                x=list(range(len(df_no))),
+                y=df_no["w_no"].tolist(),
+                name=f"event {eid} (no M_z)",
+                marker_color=VARIANT_NO_MASS,
+                visible=visible,
+                hovertext=[
+                    f"galaxy {int(gid)}<br>w_no={w:.3f}<br>L_no={lv:.2e}"
+                    for gid, w, lv in zip(
+                        df_no["galaxy_id"], df_no["w_no"], df_no["L_no"], strict=False
+                    )
+                ],
+                hoverinfo="text",
+            ),
+            row=1,
+            col=1,
+        )
+        # (1,2) bar with
+        fig.add_trace(
+            go.Bar(
+                x=list(range(len(df_w))),
+                y=df_w["w_with"].tolist(),
+                name=f"event {eid} (with M_z)",
+                marker_color=VARIANT_WITH_MASS,
+                visible=visible,
+                hovertext=[
+                    f"galaxy {int(gid)}<br>w_with={w:.3f}<br>L_with={lv:.2e}"
+                    for gid, w, lv in zip(
+                        df_w["galaxy_id"], df_w["w_with"], df_w["L_with"], strict=False
+                    )
+                ],
+                hoverinfo="text",
+            ),
+            row=1,
+            col=2,
+        )
+        # (1,3) scatter
+        mask = (df["w_no"] > 0) | (df["w_with"] > 0)
+        ds = df[mask]
+        fig.add_trace(
+            go.Scatter(
+                x=ds["w_no"],
+                y=ds["w_with"],
+                mode="markers",
+                marker={"size": 6, "color": EDGE, "opacity": 0.65},
+                name=f"event {eid} (scatter)",
+                visible=visible,
+                hovertext=[f"galaxy {int(gid)}" for gid in ds["galaxy_id"]],
+                hoverinfo="text",
+            ),
+            row=1,
+            col=3,
+        )
+        # (2,1) L(h) without
+        curve_no = _load_event_likelihood_curve(data_dir / "posteriors", eid)
+        if curve_no is not None:
+            h_n, L_n = curve_no
+            fig.add_trace(
+                go.Scatter(
+                    x=h_n,
+                    y=L_n / max(L_n.max(), 1e-300),
+                    mode="lines",
+                    line={"color": VARIANT_NO_MASS, "width": 2},
+                    name=f"event {eid} L(h) no M_z",
+                    visible=visible,
+                ),
+                row=2,
+                col=1,
+            )
+        else:
+            fig.add_trace(go.Scatter(x=[], y=[], visible=visible), row=2, col=1)
+        # (2,2) L(h) with
+        curve_w = _load_event_likelihood_curve(data_dir / "posteriors_with_bh_mass", eid)
+        if curve_w is not None:
+            h_w, L_w = curve_w
+            fig.add_trace(
+                go.Scatter(
+                    x=h_w,
+                    y=L_w / max(L_w.max(), 1e-300),
+                    mode="lines",
+                    line={"color": VARIANT_WITH_MASS, "width": 2, "dash": "dash"},
+                    name=f"event {eid} L(h) with M_z",
+                    visible=visible,
+                ),
+                row=2,
+                col=2,
+            )
+        else:
+            fig.add_trace(go.Scatter(x=[], y=[], visible=visible), row=2, col=2)
+        # (2,3) overlay (compress both onto one panel)
+        if curve_no is not None and curve_w is not None:
+            h_n, L_n = curve_no
+            h_w, L_w = curve_w
+            fig.add_trace(
+                go.Scatter(
+                    x=h_n,
+                    y=L_n / max(L_n.max(), 1e-300),
+                    mode="lines",
+                    line={"color": VARIANT_NO_MASS},
+                    name=f"event {eid} overlay",
+                    visible=visible,
+                ),
+                row=2,
+                col=3,
+            )
+        else:
+            fig.add_trace(go.Scatter(x=[], y=[], visible=visible), row=2, col=3)
+
+    # Build dropdown buttons.
+    buttons = []
+    for i in range(n_events):
+        vis = [False] * (n_events * traces_per_event)
+        for k in range(traces_per_event):
+            vis[i * traces_per_event + k] = True
+        buttons.append(
+            {
+                "method": "update",
+                "label": f"event {event_ids[i]}",
+                "args": [
+                    {"visible": vis},
+                    {"title": f"Single-event detail — event {event_ids[i]}"},
+                ],
+            }
+        )
+    fig.update_layout(
+        title=f"Single-event detail — event {event_ids[0]}",
+        height=620,
+        updatemenus=[
+            {
+                "buttons": buttons,
+                "direction": "down",
+                "showactive": True,
+                "x": 0.0,
+                "xanchor": "left",
+                "y": 1.13,
+                "yanchor": "top",
+            }
+        ],
+        showlegend=False,
+    )
+    return fig
+
+
+def interactive_closure_test_overlay(
+    h_runs: dict[float, Path],
+) -> "go.Figure":
+    """Plotly version of fig18 — overlay posteriors from multiple injection truths."""
+    import plotly.graph_objects as go
+
+    from darksiren_emri.plotting._helpers import load_canonical_combined_posterior
+
+    fig = go.Figure()
+    truths: list[float] = []
+    maps: list[float] = []
+    for h_true in sorted(h_runs):
+        try:
+            h_grid, posterior, meta = load_canonical_combined_posterior(
+                h_runs[h_true], "posteriors"
+            )
+        except FileNotFoundError:
+            continue
+        norm = posterior / posterior.max() if posterior.max() > 0 else posterior
+        map_h = float(meta["continuous_map"])
+        truths.append(float(h_true))
+        maps.append(map_h)
+        fig.add_trace(
+            go.Scatter(
+                x=h_grid,
+                y=norm,
+                mode="lines",
+                line={"color": METHOD["dark"], "width": 2},
+                name=f"h_true={h_true:.2f} (MAP {map_h:.3f})",
+            )
+        )
+        fig.add_vline(x=h_true, line_dash="dot", line_width=1, line_color=METHOD["combined"])
+
+    # --- MAP-vs-truth diagonal inset (coverage teaser) -------------------
+    # Gated on having at least two closure runs with a recovered MAP.
+    if len(truths) >= 2:
+        lo = min(min(truths), min(maps))
+        hi = max(max(truths), max(maps))
+        pad = 0.02 * (hi - lo) if hi > lo else 0.01
+        diag = [lo - pad, hi + pad]
+        fig.add_trace(
+            go.Scatter(
+                x=diag,
+                y=diag,
+                mode="lines",
+                line={"color": PRIOR, "dash": "dash", "width": 1},
+                name="MAP = truth",
+                xaxis="x2",
+                yaxis="y2",
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=truths,
+                y=maps,
+                mode="markers",
+                marker={
+                    "color": METHOD["spectral"],
+                    "size": 8,
+                    "line": {"color": EDGE, "width": 1},
+                },
+                name="recovered MAP",
+                xaxis="x2",
+                yaxis="y2",
+                showlegend=False,
+                hovertemplate="h_true=%{x:.3f}<br>MAP=%{y:.3f}<extra></extra>",
+            )
+        )
+        fig.update_layout(
+            xaxis2={
+                "domain": [0.66, 0.98],
+                "anchor": "y2",
+                "range": diag,
+                "title": {"text": "h_true", "font": {"size": 10}},
+                "showgrid": True,
+            },
+            yaxis2={
+                "domain": [0.58, 0.97],
+                "anchor": "x2",
+                "range": diag,
+                "title": {"text": "MAP h", "font": {"size": 10}},
+                "showgrid": True,
+            },
+        )
+
+    fig.update_layout(
+        title="Closure test: pipeline recovers each injection truth",
+        xaxis_title="h",
+        yaxis_title="Posterior (peak-normalised)",
+        xaxis_range=[0.55, 0.88],  # cover the full 0.60-0.86 production h-grid (review PLT-05)
+        yaxis_range=[-0.05, 1.15],
+    )
+    return fig
+
+
+def interactive_catalog_completeness(
+    host_counts: "pd.DataFrame",
+    *,
+    d_l_per_event: npt.NDArray[np.float64] | None = None,
+    n_bins: int = 12,
+) -> "go.Figure":
+    """Plotly counterpart to fig16: catalog coverage + host counts vs d_L."""
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=("Host-candidate counts per event", "Catalog coverage"),
+        horizontal_spacing=0.12,
+    )
+
+    n_events = len(host_counts)
+    if d_l_per_event is not None and len(d_l_per_event) == n_events:
+        x_values = np.asarray(d_l_per_event, dtype=np.float64)
+        x_label = "d_L [Gpc]"
+    else:
+        x_values = host_counts["event_idx"].to_numpy(dtype=np.float64)
+        x_label = "Event index"
+
+    bin_edges = np.linspace(x_values.min(), x_values.max(), n_bins + 1)
+    centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    no_med = np.zeros(n_bins)
+    wm_med = np.zeros(n_bins)
+    coverage = np.zeros(n_bins)
+    for i in range(n_bins):
+        lo, hi = bin_edges[i], bin_edges[i + 1]
+        mask = (x_values >= lo) & (x_values < hi if i < n_bins - 1 else x_values <= hi)
+        if not mask.any():
+            continue
+        no_med[i] = float(np.median(host_counts["n_without_mass"].to_numpy()[mask]))
+        wm_med[i] = float(np.median(host_counts["n_with_mass"].to_numpy()[mask]))
+        coverage[i] = float((host_counts["n_without_mass"].to_numpy()[mask] > 0).mean())
+
+    fig.add_trace(
+        go.Scatter(
+            x=centers,
+            y=no_med,
+            mode="lines+markers",
+            name="median hosts (no M_z cut)",
+            line={"color": VARIANT_NO_MASS},
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=centers,
+            y=wm_med,
+            mode="lines+markers",
+            name="median hosts (with M_z cut)",
+            line={"color": VARIANT_WITH_MASS, "dash": "dash"},
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_trace(
+        go.Bar(
+            x=centers,
+            y=coverage,
+            name="catalog coverage",
+            marker_color=REFERENCE,
+        ),
+        row=1,
+        col=2,
+    )
+    fig.update_xaxes(title_text=x_label, row=1, col=1)
+    fig.update_xaxes(title_text=x_label, row=1, col=2)
+    fig.update_yaxes(title_text="N hosts (median)", type="log", row=1, col=1)
+    fig.update_yaxes(title_text="Coverage fraction", range=[0, 1.05], row=1, col=2)
+    med_red = float(host_counts["reduction_frac"].median())
+    fig.update_layout(
+        title=(
+            f"Catalog coverage and host-count reduction "
+            f"(N={n_events}, median reduction = {med_red:.0%})"
+        ),
+        height=400,
+    )
+    return fig

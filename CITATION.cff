@@ -13,8 +13,8 @@ authors:
     given-names: Jasper
 version: 0.1.0
 date-released: 2026-04-05
-url: "https://github.com/JasperSeehofer/MasterThesisCode"
-repository-code: "https://github.com/JasperSeehofer/MasterThesisCode"
+url: "https://github.com/JasperSeehofer/darksiren-emri"
+repository-code: "https://github.com/JasperSeehofer/darksiren-emri"
 license: MIT
 keywords:
   - gravitational waves

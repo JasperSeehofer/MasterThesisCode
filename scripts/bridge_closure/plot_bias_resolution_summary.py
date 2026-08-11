@@ -45,7 +45,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 # --------------------------------------------------------------------------- #
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _OUTPUTS = _REPO_ROOT / "scripts" / "bridge_closure" / "outputs"
-_STYLE = _REPO_ROOT / "master_thesis_code" / "plotting" / "emri_thesis.mplstyle"
+_STYLE = _REPO_ROOT / "darksiren_emri" / "plotting" / "emri_thesis.mplstyle"
 _FIG_PATH = _REPO_ROOT / "docs" / "figures" / "bias_resolution_summary.png"
 
 # --------------------------------------------------------------------------- #
@@ -155,18 +155,39 @@ def _panel_candidates(ax: plt.Axes, candidates: list[dict[str, object]]) -> None
         # de-rail scatter span (only D_sm): horizontal error bar over the full rail
         if span is not None:
             lo, hi = span
-            ax.plot([lo, hi], [y - 0.16, y - 0.16], color=color, lw=2.5,
-                    solid_capstyle="butt", alpha=0.45, zorder=2)
-            ax.text(0.5 * (lo + hi), y - 0.40, "multi-seed scatter",
-                    ha="center", va="top", fontsize=5.5, color=color)
+            ax.plot(
+                [lo, hi],
+                [y - 0.16, y - 0.16],
+                color=color,
+                lw=2.5,
+                solid_capstyle="butt",
+                alpha=0.45,
+                zorder=2,
+            )
+            ax.text(
+                0.5 * (lo + hi),
+                y - 0.40,
+                "multi-seed scatter",
+                ha="center",
+                va="top",
+                fontsize=5.5,
+                color=color,
+            )
 
         # gate marker (open) and de-rail marker (filled)
-        ax.scatter([gate], [y], s=42, facecolors="white", edgecolors=color,
-                   linewidths=1.4, zorder=4)
-        ax.scatter([derail], [y], s=46, facecolors=color, edgecolors="k",
-                   linewidths=0.5, zorder=5)
-        ax.text(derail, y + 0.22, str(cand["outcome"]), ha="center", va="bottom",
-                fontsize=5.8, color=color)
+        ax.scatter(
+            [gate], [y], s=42, facecolors="white", edgecolors=color, linewidths=1.4, zorder=4
+        )
+        ax.scatter([derail], [y], s=46, facecolors=color, edgecolors="k", linewidths=0.5, zorder=5)
+        ax.text(
+            derail,
+            y + 0.22,
+            str(cand["outcome"]),
+            ha="center",
+            va="bottom",
+            fontsize=5.8,
+            color=color,
+        )
 
     ax.set_yticks(y_positions)
     ax.set_yticklabels([str(c["label"]) for c in candidates], fontsize=6.5)
@@ -175,18 +196,31 @@ def _panel_candidates(ax: plt.Axes, candidates: list[dict[str, object]]) -> None
     ax.set_xlabel(r"recovered $H_0/100$ (MAP)")
     ax.set_title("(a) Candidate normalisations: gate vs de-rail", fontsize=8)
 
-    ax.text(RAIL_LOW, n + 0.7, "lower\nrail", ha="center", va="top",
-            fontsize=6, color="0.4")
-    ax.text(RAIL_HIGH, n + 0.7, "upper\nrail", ha="center", va="top",
-            fontsize=6, color="0.4")
-    ax.text(TRUTH, 0.45, "truth 0.73", ha="center", va="bottom", fontsize=6.5,
-            rotation=90, color="k")
+    ax.text(RAIL_LOW, n + 0.7, "lower\nrail", ha="center", va="top", fontsize=6, color="0.4")
+    ax.text(RAIL_HIGH, n + 0.7, "upper\nrail", ha="center", va="top", fontsize=6, color="0.4")
+    ax.text(
+        TRUTH, 0.45, "truth 0.73", ha="center", va="bottom", fontsize=6.5, rotation=90, color="k"
+    )
 
     # legend proxies
-    ax.scatter([], [], s=42, facecolors="white", edgecolors="0.3",
-               linewidths=1.4, label=r"gate $\sigma_z=0.002$")
-    ax.scatter([], [], s=46, facecolors="0.3", edgecolors="k",
-               linewidths=0.5, label=r"de-rail $\sigma_z=0.035$")
+    ax.scatter(
+        [],
+        [],
+        s=42,
+        facecolors="white",
+        edgecolors="0.3",
+        linewidths=1.4,
+        label=r"gate $\sigma_z=0.002$",
+    )
+    ax.scatter(
+        [],
+        [],
+        s=46,
+        facecolors="0.3",
+        edgecolors="k",
+        linewidths=0.5,
+        label=r"de-rail $\sigma_z=0.035$",
+    )
     ax.legend(loc="lower right", fontsize=6, handletextpad=0.3)
 
 
@@ -204,23 +238,58 @@ def _panel_dsm_scatter(ax: plt.Axes) -> None:
 
     # per-seed peaks (jittered x)
     xs = [1, 2, 3, 4]
-    ax.scatter(xs, per_seed_peaks, s=70, facecolors=C_GREEN, edgecolors="k",
-               linewidths=0.6, zorder=5, label="per-seed MAP ($n_{ev}=2000$)")
+    ax.scatter(
+        xs,
+        per_seed_peaks,
+        s=70,
+        facecolors=C_GREEN,
+        edgecolors="k",
+        linewidths=0.6,
+        zorder=5,
+        label="per-seed MAP ($n_{ev}=2000$)",
+    )
     for x, peak in zip(xs, per_seed_peaks):
-        ax.annotate(f"{peak:.2f}", (x, peak), textcoords="offset points",
-                    xytext=(7, 0), fontsize=6, va="center")
+        ax.annotate(
+            f"{peak:.2f}",
+            (x, peak),
+            textcoords="offset points",
+            xytext=(7, 0),
+            fontsize=6,
+            va="center",
+        )
 
     # the favourable single-seed draw
-    ax.scatter([0.2], [fav_single], s=55, marker="D", facecolors=C_BLUE,
-               edgecolors="k", linewidths=0.5, zorder=5)
-    ax.annotate("0.693\n(favourable\nsingle seed)", (0.2, fav_single),
-                textcoords="offset points", xytext=(2, -28), fontsize=5.5,
-                ha="left", color=C_DARKBLUE)
+    ax.scatter(
+        [0.2],
+        [fav_single],
+        s=55,
+        marker="D",
+        facecolors=C_BLUE,
+        edgecolors="k",
+        linewidths=0.5,
+        zorder=5,
+    )
+    ax.annotate(
+        "0.693\n(favourable\nsingle seed)",
+        (0.2, fav_single),
+        textcoords="offset points",
+        xytext=(2, -28),
+        fontsize=5.5,
+        ha="left",
+        color=C_DARKBLUE,
+    )
 
     # ensemble mean (artefact) line
     ax.axhline(0.735, color=C_VERMILLION, ls="-.", lw=1.0, zorder=2)
-    ax.text(4.6, 0.735, r"$E[h]\approx0.735$" + "\n(grid-midpoint\nartefact)",
-            ha="right", va="center", fontsize=5.8, color=C_VERMILLION)
+    ax.text(
+        4.6,
+        0.735,
+        r"$E[h]\approx0.735$" + "\n(grid-midpoint\nartefact)",
+        ha="right",
+        va="center",
+        fontsize=5.8,
+        color=C_VERMILLION,
+    )
 
     ax.set_xlim(-0.6, 5.0)
     ax.set_ylim(0.585, 0.885)
@@ -228,10 +297,16 @@ def _panel_dsm_scatter(ax: plt.Axes) -> None:
     ax.set_xticklabels([f"seed {i}" for i in range(1, 5)], fontsize=6.5)
     ax.set_ylabel(r"posterior peak $H_0/100$")
     ax.set_title(r"(b) Global $D_{sm}$: multi-seed, no peak at truth", fontsize=8)
-    ax.text(2.2, 0.605,
-            r"std $\approx0.10$, does NOT shrink with $n_{ev}$;"
-            "\nposteriors flat / multimodal",
-            ha="center", va="bottom", fontsize=5.8, color="0.3")
+    ax.text(
+        2.2,
+        0.605,
+        r"std $\approx0.10$, does NOT shrink with $n_{ev}$;"
+        "\nposteriors flat / multimodal",
+        ha="center",
+        va="bottom",
+        fontsize=5.8,
+        color="0.3",
+    )
     ax.legend(loc="upper left", fontsize=6, handletextpad=0.3)
 
 

@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
+from darksiren_emri.plotting._helpers import load_canonical_combined_posterior
 
 
 def main() -> None:

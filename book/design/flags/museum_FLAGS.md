@@ -51,7 +51,7 @@ n = 50 is accurate to **1.7–2.3%**, not to 100%.
 
 ### The mechanism of the disagreement (measured, not inferred)
 
-`master_thesis_code/physical_relations.py:132 dist()` is **scalar-only**: given an array it
+`darksiren_emri/physical_relations.py:132 dist()` is **scalar-only**: given an array it
 returns a 0-dimensional array holding the value at the array's *first* element.
 `scipy.integrate.fixed_quad` passes the whole node array in one call, so inside the
 diagnostic the GW factor becomes a **constant** — the likelihood at the window's lower
@@ -67,7 +67,7 @@ That hypothesis is quantitative and it reproduces the diagnostic's **entire** ta
   to the printed 4 dp — the published GW-window column, digit for digit
   (`museum_quadrature.json.gates`, all `match_4dp: true`).
 
-`master_thesis_code/bayesian_inference/bayesian_statistics.py:3806`
+`darksiren_emri/bayesian_inference/bayesian_statistics.py:3806`
 (`numerator_integrant_without_bh_mass`) and `:3826` (`denominator_integrant_without_bh_mass`)
 both use `dist_vectorized`, so **the production path does not have this issue**, and the
 diagnostic's zeros were never production numbers.

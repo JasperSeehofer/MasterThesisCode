@@ -158,7 +158,7 @@ for H_VALUE in "${TASK_H_VALUES[@]}"; do
         continue
     fi
     echo "--- Bayesian Inference at h=$H_VALUE ---"
-    python -m master_thesis_code "$RUN_DIR" \
+    python -m darksiren_emri "$RUN_DIR" \
         --evaluate \
         --h_value "$H_VALUE" \
         --pdet_dl_bins 60 \

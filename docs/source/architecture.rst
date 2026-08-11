@@ -25,7 +25,7 @@ Bayesian Inference Pipeline
 
 * Loads saved Cramér-Rao bounds from CSV into per-event ``Detection`` objects.
 * Constructs a simulation-based
-  :class:`~master_thesis_code.bayesian_inference.simulation_detection_probability.SimulationDetectionProbability`
+  :class:`~darksiren_emri.bayesian_inference.simulation_detection_probability.SimulationDetectionProbability`
   built from the real GLADE galaxy catalog.
 * Builds multivariate-normal GW likelihoods from the full Fisher-matrix covariance
   and evaluates per-detection posteriors over an H₀ grid using a multiprocessing pool.

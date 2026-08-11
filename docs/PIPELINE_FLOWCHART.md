@@ -11,7 +11,7 @@ covariance — writing one CSV row per detected event. **Pipeline 2** (CPU, mult
 reads those CRBs back, builds a per-event H₀ likelihood by marginalising over candidate host
 galaxies with a galaxy-catalogue completeness correction (Gray et al. 2020) and a selection
 denominator D(h), then combines the per-event posteriors into the final H₀ posterior. Both are
-driven from a single CLI entry point, `master_thesis_code/main.py`, dispatched by the
+driven from a single CLI entry point, `darksiren_emri/main.py`, dispatched by the
 `--simulation_steps`, `--injection_campaign`, `--evaluate`, and `--combine` flags parsed in
 `arguments.py`.
 
@@ -31,7 +31,7 @@ driven from a single CLI entry point, `master_thesis_code/main.py`, dispatched b
 
 ```mermaid
 flowchart TD
-    CLI["python -m master_thesis_code &lt;dir&gt;<br/>__main__.py"] --> ARGS["Arguments.create() / validate()<br/>arguments.py"]
+    CLI["python -m darksiren_emri &lt;dir&gt;<br/>__main__.py"] --> ARGS["Arguments.create() / validate()<br/>arguments.py"]
     ARGS --> MAIN["main()<br/>main.py:main"]
     MAIN --> MODEL["Model1CrossCheck(rng)<br/>cosmological_model.py"]
     MAIN --> CAT["GalaxyCatalogueHandler(M_min, M_max, z_max)<br/>galaxy_catalogue/handler.py"]

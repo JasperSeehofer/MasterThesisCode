@@ -15,11 +15,11 @@ from pathlib import Path
 
 import numpy as np
 
-from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-    SimulationDetectionProbability as F4,
+from darksiren_emri.bayesian_inference.simulation_detection_probability import (
+    SimulationDetectionProbability as F4,  # noqa: N814
 )
-from master_thesis_code.constants import OMEGA_DE, OMEGA_M, SNR_THRESHOLD  # noqa: F401
-from master_thesis_code.physical_relations import (
+from darksiren_emri.constants import OMEGA_DE, OMEGA_M, SNR_THRESHOLD  # noqa: F401
+from darksiren_emri.physical_relations import (
     comoving_volume_element,
     dist_to_redshift,
     dist_vectorized,
@@ -30,9 +30,14 @@ INJ = "simulations/injections"
 
 def load_old() -> type:
     src = subprocess.run(
-        ["git", "show", "d1087f1^:master_thesis_code/bayesian_inference/"
-         "simulation_detection_probability.py"],
-        capture_output=True, text=True, check=True,
+        [
+            "git",
+            "show",
+            "d1087f1^:darksiren_emri/bayesian_inference/simulation_detection_probability.py",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout
     p = Path(tempfile.mkdtemp()) / "old.py"
     p.write_text(src)
@@ -65,8 +70,10 @@ def main() -> None:
         print(f"\n================= h = {h} =================")
         dlm_o, dlm_f = old.get_dl_max(h), f4.get_dl_max(h)
         zmo, zmf = dist_to_redshift(dlm_o, h=h), dist_to_redshift(dlm_f, h=h)
-        print(f"(a) dl_max:  old={dlm_o:.4f} Gpc (z_max={zmo:.4f})   "
-              f"F4={dlm_f:.4f} Gpc (z_max={zmf:.4f})")
+        print(
+            f"(a) dl_max:  old={dlm_o:.4f} Gpc (z_max={zmo:.4f})   "
+            f"F4={dlm_f:.4f} Gpc (z_max={zmf:.4f})"
+        )
 
         # (b) p_det(d_L) shape on a common grid up to the smaller dl_max
         dlm = min(dlm_o, dlm_f)
@@ -86,9 +93,13 @@ def main() -> None:
         d_lo_f = np.trapezoid(integrand(f4, zlo, h), zlo)
         d_hi_o = np.trapezoid(integrand(old, zhi, h), zhi)
         d_hi_f = np.trapezoid(integrand(f4, zhi, h), zhi)
-        print(f"(c) D(h) by band (trapz):")
-        print(f"      d_L<0.10 Gpc:  old={d_lo_o:.4e}  F4={d_lo_f:.4e}  ΔF4-old={d_lo_f - d_lo_o:+.4e}")
-        print(f"      d_L>0.10 Gpc:  old={d_hi_o:.4e}  F4={d_hi_f:.4e}  ΔF4-old={d_hi_f - d_hi_o:+.4e}")
+        print("(c) D(h) by band (trapz):")
+        print(
+            f"      d_L<0.10 Gpc:  old={d_lo_o:.4e}  F4={d_lo_f:.4e}  ΔF4-old={d_lo_f - d_lo_o:+.4e}"
+        )
+        print(
+            f"      d_L>0.10 Gpc:  old={d_hi_o:.4e}  F4={d_hi_f:.4e}  ΔF4-old={d_hi_f - d_hi_o:+.4e}"
+        )
 
     print("\nReading: compare ΔF4-old in the low band vs high band at each h, and")
     print("how those Δ's change from h=0.73 to h=0.76 — that reveals which d_L region")

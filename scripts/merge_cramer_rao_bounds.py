@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from master_thesis_code.constants import (
+from darksiren_emri.constants import (
     CRAMER_RAO_BOUNDS_OUTPUT_PATH,
     CRAMER_RAO_BOUNDS_PATH,
 )

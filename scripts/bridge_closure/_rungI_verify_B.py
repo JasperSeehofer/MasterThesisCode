@@ -22,23 +22,35 @@ logging.disable(logging.WARNING)
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
-import _bridge_lib as B  # noqa: E402
-from master_thesis_code.emri_rate import R_eff_per_mbh  # noqa: E402
-from master_thesis_code.physical_relations import (  # noqa: E402
+import _bridge_lib as B  # noqa: E402,N812
+
+from darksiren_emri.emri_rate import R_eff_per_mbh  # noqa: E402
+from darksiren_emri.physical_relations import (  # noqa: E402
     dist,
     dist_to_redshift,
     dist_vectorized,
 )
 
 
-def run_closure_photoz(h_true, sigma_z, *, n_gal=12000, n_events=250,
-                       sigma_dL_frac=0.05, seed=0, consistent_denom=False,
-                       regularised_kernel=False, global_voldecount=False,
-                       hierarchical_shared_latent=False):
+def run_closure_photoz(
+    h_true,
+    sigma_z,
+    *,
+    n_gal=12000,
+    n_events=250,
+    sigma_dL_frac=0.05,
+    seed=0,
+    consistent_denom=False,
+    regularised_kernel=False,
+    global_voldecount=False,
+    hierarchical_shared_latent=False,
+):
     # The candidate flags are mutually exclusive: each defines a distinct
     # numerator/denominator pairing and they must not be combined.
-    if sum([consistent_denom, regularised_kernel, global_voldecount,
-            hierarchical_shared_latent]) > 1:
+    if (
+        sum([consistent_denom, regularised_kernel, global_voldecount, hierarchical_shared_latent])
+        > 1
+    ):
         raise ValueError("candidate flags are mutually exclusive")
     rng = np.random.default_rng(seed)
     hs = [float(h) for h in np.round(np.arange(0.60, 0.8701, 0.01), 4)]
@@ -107,18 +119,18 @@ def run_closure_photoz(h_true, sigma_z, *, n_gal=12000, n_events=250,
         Ksm = np.exp(-0.5 * ((z_grid[None, :] - zc[:, None]) / sig) ** 2) / (
             np.sqrt(2 * np.pi) * sig
         )
-        KP = Ksm * pbg_sm[None, :]            # K * p_bg                (n_gal, n_zgrid)
+        KP = Ksm * pbg_sm[None, :]  # K * p_bg                (n_gal, n_zgrid)
         Z_sm = (KP @ np.ones(n_zgrid)) * dz_sm  # Z_g = INTEGRAL K p_bg dz   (n_gal,)
         in_grid = (zc < (z_top + 5.0 * sig)) & (Z_sm > 1e-30)  # full kernel captured
-        coef = np.zeros_like(wc)               # w_g / Z_g (0 for off-grid galaxies)
+        coef = np.zeros_like(wc)  # w_g / Z_g (0 for off-grid galaxies)
         coef[in_grid] = wc[in_grid] / Z_sm[in_grid]
         D_sm = {}
         D_sm_g = {}
         D_point_g = {}
         for h in hs:
             pdet_h = B._p_det_of_dl(np.asarray(dist_vectorized(z_grid, h=h), float))
-            inner = (KP @ pdet_h) * dz_sm      # INTEGRAL K p_bg p_det dz  (n_gal,)
-            contrib = coef * inner             # w_g INTEGRAL p_red p_det dz
+            inner = (KP @ pdet_h) * dz_sm  # INTEGRAL K p_bg p_det dz  (n_gal,)
+            contrib = coef * inner  # w_g INTEGRAL p_red p_det dz
             D_sm[h] = float(contrib.sum())
             D_sm_g[h] = contrib
             # per-galaxy POINT selection (same kernel collapsed to z_cat_g)
@@ -135,8 +147,10 @@ def run_closure_photoz(h_true, sigma_z, *, n_gal=12000, n_events=250,
         for j_ev, (d_meas, sdL) in enumerate(events):
             zlo = max(dist_to_redshift(max(d_meas - 5 * sdL, 1e-4), h=0.60) - 4 * sigma_z, 1e-5)
             zhi = dist_to_redshift(d_meas + 5 * sdL, h=0.87) + 4 * sigma_z
-            i0 = int(np.searchsorted(zc, zlo)); i1 = int(np.searchsorted(zc, zhi))
-            zg = zc[i0:i1]; wg = wc[i0:i1]
+            i0 = int(np.searchsorted(zc, zlo))
+            i1 = int(np.searchsorted(zc, zhi))
+            zg = zc[i0:i1]
+            wg = wc[i0:i1]
             if zg.size == 0:
                 total += -1e30
                 continue
@@ -182,13 +196,13 @@ def _hierarchical_diagnostics(hs, gdenom, D_sm, D_sm_g, D_point_g, zc, num_i_h):
     the edge-galaxy (z_cat>0.12) fractional contribution. The absolute (D_sm-D)/D
     cancels in the normalised posterior, so it is NOT used as a gate."""
     hs_arr = np.asarray(hs, float)
-    D_arr = np.asarray([gdenom[h] for h in hs], float)            # POINT D(h) = gdenom
+    D_arr = np.asarray([gdenom[h] for h in hs], float)  # POINT D(h) = gdenom
     Dsm_arr = np.asarray([D_sm[h] for h in hs], float)
     Dpt_mine = np.asarray([float(D_point_g[h].sum()) for h in hs], float)  # cross-check of D
     ratio = Dsm_arr / np.where(D_arr > 0, D_arr, np.nan)
     # (1) h-gradient of log(D_sm/D) vs a typical numerator gradient d/dh log Ñ_i
     grad_logratio = np.gradient(np.log(ratio), hs_arr)
-    log_num = np.log(np.where(num_i_h > 0, num_i_h, np.nan))      # (n_events, n_h)
+    log_num = np.log(np.where(num_i_h > 0, num_i_h, np.nan))  # (n_events, n_h)
     grad_lognum_per_event = np.gradient(log_num, hs_arr, axis=1)  # (n_events, n_h)
     grad_lognum_typical = np.nanmedian(grad_lognum_per_event, axis=0)  # median event
     # (2) edge-galaxy (z_cat>0.12) fractional contribution to D_sm and to (D_sm-D)
@@ -220,11 +234,20 @@ def main():
     print("=== STANDARD (bare kernel, global denom) ===", flush=True)
     for sz in [0.002, 0.035]:
         r = run_closure_photoz(h_true, sz, seed=1)
-        print(f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} railed={r['railed']}", flush=True)
-    print("=== REG-KERNEL A/C (per-galaxy posterior, global denom) [disqualified control] ===", flush=True)
+        print(
+            f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} railed={r['railed']}",
+            flush=True,
+        )
+    print(
+        "=== REG-KERNEL A/C (per-galaxy posterior, global denom) [disqualified control] ===",
+        flush=True,
+    )
     for sz in [0.002, 0.035]:
         r = run_closure_photoz(h_true, sz, seed=1, regularised_kernel=True)
-        print(f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} railed={r['railed']}", flush=True)
+        print(
+            f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} railed={r['railed']}",
+            flush=True,
+        )
     print("=== ANGLE B: GLOBAL de-counting g(z)=p_bg/(S p_bg), global denom ===", flush=True)
     for sz in [0.002, 0.035]:
         r = run_closure_photoz(h_true, sz, seed=1, global_voldecount=True)
@@ -232,11 +255,16 @@ def main():
         post = np.exp(np.array(r["logpost"]) - np.max(r["logpost"]))
         argmax = int(np.argmax(post))
         edge = "EDGE" if argmax in (0, len(post) - 1) else "interior"
-        print(f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} "
-              f"railed={r['railed']} peak@{edge}", flush=True)
+        print(
+            f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} "
+            f"railed={r['railed']} peak@{edge}",
+            flush=True,
+        )
 
-    print("=== CANDIDATE (★★): regularised p_red numerator, GLOBAL photo-z-SMEARED "
-          "denom D_sm(h) ===", flush=True)
+    print(
+        "=== CANDIDATE (★★): regularised p_red numerator, GLOBAL photo-z-SMEARED denom D_sm(h) ===",
+        flush=True,
+    )
     results = {}
     for sz in [0.002, 0.035]:
         r = run_closure_photoz(h_true, sz, seed=1, hierarchical_shared_latent=True)
@@ -245,49 +273,77 @@ def main():
         argmax = int(np.argmax(post))
         peak = "EDGE" if argmax in (0, len(post) - 1) else "interior"
         tag = "GATE" if sz == 0.002 else "DE-RAIL"
-        print(f"  [{tag}] sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} "
-              f"railed={r['railed']} peak@{peak}", flush=True)
+        print(
+            f"  [{tag}] sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} "
+            f"railed={r['railed']} peak@{peak}",
+            flush=True,
+        )
 
     # Gate verdict (sigma_z=0.002 must match standard ~0.7438 within ~0.01)
     g = results[0.002]
     gate_pass = (not g["railed"]) and abs(g["h_refined"] - 0.7438) <= 0.012
-    print(f"\n  GATE (sigma_z=0.002): MAP={g['h_refined']:.4f} vs standard 0.7438 -> "
-          f"{'PASS' if gate_pass else 'FAIL'}", flush=True)
+    print(
+        f"\n  GATE (sigma_z=0.002): MAP={g['h_refined']:.4f} vs standard 0.7438 -> "
+        f"{'PASS' if gate_pass else 'FAIL'}",
+        flush=True,
+    )
 
     # CORRECTED diagnostics for the de-rail run (sigma_z=0.035)
     d = results[0.035]
     hs = d["hs"]
     print("\n  --- CORRECTED DIAGNOSTICS (sigma_z=0.035) ---", flush=True)
     print("  (1) D_sm(h), D(h)=gdenom, ratio, and h-gradients across the grid:", flush=True)
-    print(f"      {'h':>6} {'D_sm':>11} {'D_point':>11} {'Dsm/D':>8} "
-          f"{'dlog(Dsm/D)/dh':>15} {'dlogN~/dh':>11}", flush=True)
+    print(
+        f"      {'h':>6} {'D_sm':>11} {'D_point':>11} {'Dsm/D':>8} "
+        f"{'dlog(Dsm/D)/dh':>15} {'dlogN~/dh':>11}",
+        flush=True,
+    )
     for k, h in enumerate(hs):
         if k % 3 == 0 or h in (0.60, 0.73, 0.87):
-            print(f"      {h:6.2f} {d['D_sm'][k]:11.4e} {d['D_point'][k]:11.4e} "
-                  f"{d['ratio_Dsm_D'][k]:8.4f} {d['grad_log_ratio'][k]:15.3f} "
-                  f"{d['grad_log_num_typical'][k]:11.3f}", flush=True)
+            print(
+                f"      {h:6.2f} {d['D_sm'][k]:11.4e} {d['D_point'][k]:11.4e} "
+                f"{d['ratio_Dsm_D'][k]:8.4f} {d['grad_log_ratio'][k]:15.3f} "
+                f"{d['grad_log_num_typical'][k]:11.3f}",
+                flush=True,
+            )
     # summary of the gradient battle near the truth
     i73 = hs.index(0.73)
-    print(f"\n      @h=0.73: d/dh log(D_sm/D) = {d['grad_log_ratio'][i73]:+.3f} ; "
-          f"typical d/dh log N~_i = {d['grad_log_num_typical'][i73]:+.3f}", flush=True)
-    print(f"      grid-mean |d/dh log(D_sm/D)| = {np.nanmean(np.abs(d['grad_log_ratio'])):.3f} ; "
-          f"grid-mean |d/dh log N~| = {np.nanmean(np.abs(d['grad_log_num_typical'])):.3f}", flush=True)
-    print(f"      D_point cross-check (mine vs gdenom) @h=0.73: "
-          f"{d['D_point_mine'][i73]:.4e} vs {d['D_point'][i73]:.4e}", flush=True)
+    print(
+        f"\n      @h=0.73: d/dh log(D_sm/D) = {d['grad_log_ratio'][i73]:+.3f} ; "
+        f"typical d/dh log N~_i = {d['grad_log_num_typical'][i73]:+.3f}",
+        flush=True,
+    )
+    print(
+        f"      grid-mean |d/dh log(D_sm/D)| = {np.nanmean(np.abs(d['grad_log_ratio'])):.3f} ; "
+        f"grid-mean |d/dh log N~| = {np.nanmean(np.abs(d['grad_log_num_typical'])):.3f}",
+        flush=True,
+    )
+    print(
+        f"      D_point cross-check (mine vs gdenom) @h=0.73: "
+        f"{d['D_point_mine'][i73]:.4e} vs {d['D_point'][i73]:.4e}",
+        flush=True,
+    )
 
-    print(f"\n  (2) edge-galaxy (z_cat>0.12) fractional contribution "
-          f"[{d['edge_galaxy_count']}/{d['n_catalogue']} galaxies]:", flush=True)
+    print(
+        f"\n  (2) edge-galaxy (z_cat>0.12) fractional contribution "
+        f"[{d['edge_galaxy_count']}/{d['n_catalogue']} galaxies]:",
+        flush=True,
+    )
     print(f"      {'h':>6} {'edge-frac D_sm':>15} {'edge-frac (D_sm-D)':>20}", flush=True)
     for h in (0.60, 0.73, 0.87):
-        print(f"      {h:6.2f} {d['edge_frac_Dsm'][h]:15.4f} {d['edge_frac_delta'][h]:20.4f}",
-              flush=True)
+        print(
+            f"      {h:6.2f} {d['edge_frac_Dsm'][h]:15.4f} {d['edge_frac_delta'][h]:20.4f}",
+            flush=True,
+        )
 
     print("\n  (3) MAP / peak location:", flush=True)
     post = np.exp(np.array(d["logpost"]) - np.max(d["logpost"]))
     argmax = int(np.argmax(post))
     peak = "EDGE-RAIL" if argmax in (0, len(post) - 1) else "INTERIOR"
-    print(f"      MAP={d['h_refined']:.4f} (grid {hs[argmax]:.2f}) bias={d['bias']:+.4f} "
-          f"peak@{peak}", flush=True)
+    print(
+        f"      MAP={d['h_refined']:.4f} (grid {hs[argmax]:.2f}) bias={d['bias']:+.4f} peak@{peak}",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

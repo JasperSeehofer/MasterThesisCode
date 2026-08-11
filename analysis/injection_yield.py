@@ -300,7 +300,7 @@ def plot_waste_breakdown(
 ) -> None:
     """Create stacked bar chart of waste breakdown + detection fraction inset."""
     try:
-        from master_thesis_code.plotting._style import apply_style
+        from darksiren_emri.plotting._style import apply_style
 
         apply_style()
     except ImportError:

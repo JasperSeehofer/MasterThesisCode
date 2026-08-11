@@ -15,7 +15,7 @@ body:
       label: Steps to reproduce
       description: Minimal command or code to trigger the bug
       placeholder: |
-        uv run python -m master_thesis_code <working_dir> --simulation_steps 1
+        uv run python -m darksiren_emri <working_dir> --simulation_steps 1
     validations:
       required: true
   - type: textarea

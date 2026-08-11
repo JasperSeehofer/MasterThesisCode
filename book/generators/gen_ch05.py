@@ -89,13 +89,13 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from master_thesis_code.constants import H as H_TRUE  # noqa: E402
-from master_thesis_code.galaxy_catalogue.pixel_completeness import (  # noqa: E402
+from darksiren_emri.constants import H as H_TRUE  # noqa: E402
+from darksiren_emri.galaxy_catalogue.pixel_completeness import (  # noqa: E402
     M_TH_CACHE_PATH,
     NSIDE,
     PixelCompleteness,
 )
-from master_thesis_code.physical_relations import dist_to_redshift  # noqa: E402
+from darksiren_emri.physical_relations import dist_to_redshift  # noqa: E402
 
 OUT_DIR = REPO_ROOT / "book" / "site" / "data"
 RUN_REL = Path("results/campaign51_20260728/realistic_20260729/seed61000")
@@ -198,9 +198,7 @@ def read_selection_logs() -> dict[str, Any]:
     ):
         d_h[float(m.group(1))] = float(m.group(2))
         z_max[float(m.group(1))] = float(m.group(3))
-    for m in re.finditer(
-        r"beta_Gbar\(h=([\d.]+)\) = ([\d.eE+-]+)\s+\[z_max=([\d.]+)\]", txt
-    ):
+    for m in re.finditer(r"beta_Gbar\(h=([\d.]+)\) = ([\d.eE+-]+)\s+\[z_max=([\d.]+)\]", txt):
         b_gbar[float(m.group(1))] = float(m.group(2))
     dl_max = sorted(
         {
@@ -323,7 +321,9 @@ def build_mixture() -> dict[str, Any]:
         grp_with = mixed[has_cat_leg & alive]
         grp_no = mixed[(~has_cat_leg) & alive]
         map_by_kappa_with_leg.append(
-            float(h_grid[int(np.argmax(np.log(grp_with).sum(axis=0)))]) if grp_with.shape[0] else None
+            float(h_grid[int(np.argmax(np.log(grp_with).sum(axis=0)))])
+            if grp_with.shape[0]
+            else None
         )
         map_by_kappa_no_leg.append(
             float(h_grid[int(np.argmax(np.log(grp_no).sum(axis=0)))]) if grp_no.shape[0] else None
@@ -337,9 +337,7 @@ def build_mixture() -> dict[str, Any]:
 
     # --- C10's prefactor budget, recomputed ------------------------------
     i81 = int(np.where(np.isclose(h_grid, 0.81))[0][0])
-    nats_prefactor = float(
-        n_events * (np.log(1.0 - w_g[i81]) - np.log(1.0 - w_g[i73]))
-    )
+    nats_prefactor = float(n_events * (np.log(1.0 - w_g[i81]) - np.log(1.0 - w_g[i73])))
 
     # --- C10's OTHER half: what L_comp itself does over the same window ---
     # REVISION_WORKLIST.md section C-ch05 [expA-M1].  The page previously
@@ -359,9 +357,7 @@ def build_mixture() -> dict[str, Any]:
         "sum_dln_Lcomp_incat": float(dln_comp[in_catalog].sum()),
         "sum_dln_prefactor_Lcomp_dark": float(dln_prefcomp[~in_catalog].sum()),
         "frac_dark_positive_Lcomp": float((dln_comp[~in_catalog] > 0.0).mean()),
-        "frac_dark_positive_prefactor_Lcomp": float(
-            (dln_prefcomp[~in_catalog] > 0.0).mean()
-        ),
+        "frac_dark_positive_prefactor_Lcomp": float((dln_prefcomp[~in_catalog] > 0.0).mean()),
         "dln_prefactor_per_event": dln_prefactor,
     }
 
@@ -470,9 +466,7 @@ def build_completeness(h_grid: list[float]) -> dict[str, Any]:
     # modulus's h).  Measure it rather than assert it.
     f_bar_dev = 0.0
     for h in (float(h_grid[0]), float(h_grid[-1])):
-        f_bar_dev = max(
-            f_bar_dev, float(np.max(np.abs(completeness.f_bar(z_grid, h) - f_bar)))
-        )
+        f_bar_dev = max(f_bar_dev, float(np.max(np.abs(completeness.f_bar(z_grid, h) - f_bar))))
 
     m_valid = m_th[valid]
     pct = {p: float(np.percentile(m_valid, p)) for p in (10, 50, 90)}
@@ -562,70 +556,104 @@ def main() -> None:
     print("\n  --- gates -------------------------------------------------")
     print(f"  events                     : {m['n_events']}  ({m['n_rows']} rows)")
     print(f"  in-catalogue / dark        : {m['n_incat']} / {m['n_dark']}")
-    print(f"  no catalogue leg at any h  : {m['n_no_cat_leg']} "
-          f"(of which in_catalog=True: {m['n_no_cat_leg_but_incat']})")
+    print(
+        f"  no catalogue leg at any h  : {m['n_no_cat_leg']} "
+        f"(of which in_catalog=True: {m['n_no_cat_leg_but_incat']})"
+    )
     print(f"  partial (zero at some h)   : {m['n_partial_cat_leg']}")
     print(f"  mixture identity max relerr: {m['identity_max_rel_err']:.3e}")
-    print(f"  w_G(0.60) / (0.73) / (0.86): {m['w_G'][0]:.7f} / "
-          f"{m['w_G'][m['h_grid'].index(0.73)]:.7f} / {m['w_G'][-1]:.7f}")
+    print(
+        f"  w_G(0.60) / (0.73) / (0.86): {m['w_G'][0]:.7f} / "
+        f"{m['w_G'][m['h_grid'].index(0.73)]:.7f} / {m['w_G'][-1]:.7f}"
+    )
     print(f"  |w_G(csv) - w_G(logs)|max  : {m['w_G_log_max_abs_diff']:.3e}")
     print(f"  N dln(1-w_G), 0.73->0.81   : {m['nats_prefactor_073_to_081']:+.5f} nats")
     q = m["c10_Lcomp_scoping"]
     print(f"  C10 scoping, window {q['window'][0]}->{q['window'][1]}:")
-    print(f"    sum dln L_comp  all/dark/in-cat : {q['sum_dln_Lcomp_all']:+.2f} / "
-          f"{q['sum_dln_Lcomp_dark']:+.2f} / {q['sum_dln_Lcomp_incat']:+.2f} nats")
-    print(f"    dark positive on L_comp alone   : "
-          f"{100 * q['frac_dark_positive_Lcomp']:.2f}%")
-    print(f"    dark positive with (1-w_G)      : "
-          f"{100 * q['frac_dark_positive_prefactor_Lcomp']:.2f}%")
-    print(f"    sum dln[(1-w_G) L_comp], dark   : "
-          f"{q['sum_dln_prefactor_Lcomp_dark']:+.2f} nats")
-    print("  I5.1 dial regimes (kappa: MAP total | 1095 with leg | 493 without "
-          "| N dln(1-w) over the grid):")
+    print(
+        f"    sum dln L_comp  all/dark/in-cat : {q['sum_dln_Lcomp_all']:+.2f} / "
+        f"{q['sum_dln_Lcomp_dark']:+.2f} / {q['sum_dln_Lcomp_incat']:+.2f} nats"
+    )
+    print(f"    dark positive on L_comp alone   : {100 * q['frac_dark_positive_Lcomp']:.2f}%")
+    print(
+        f"    dark positive with (1-w_G)      : "
+        f"{100 * q['frac_dark_positive_prefactor_Lcomp']:.2f}%"
+    )
+    print(f"    sum dln[(1-w_G) L_comp], dark   : {q['sum_dln_prefactor_Lcomp_dark']:+.2f} nats")
+    print(
+        "  I5.1 dial regimes (kappa: MAP total | 1095 with leg | 493 without "
+        "| N dln(1-w) over the grid):"
+    )
     for kk, ss, mw, mn, pt in zip(
-        m["kappa_grid"], m["summary_by_kappa"], m["map_by_kappa_with_leg"],
-        m["map_by_kappa_no_leg"], m["prefactor_tilt_by_kappa"],
+        m["kappa_grid"],
+        m["summary_by_kappa"],
+        m["map_by_kappa_with_leg"],
+        m["map_by_kappa_no_leg"],
+        m["prefactor_tilt_by_kappa"],
     ):
-        print(f"    {'inf' if kk is None else kk:>7} : {ss['map']:<6} | "
-              f"{'--' if mw is None else mw:<6} | {'--' if mn is None else mn:<6} | "
-              f"{'--' if pt is None else f'{pt:+.1f}'}")
-    print(f"  MAP all / in-cat / dark    : {m['summary_all']['map']} / "
-          f"{m['summary_incat']['map']} / {m['summary_dark']['map']}")
-    print(f"  mean all / in-cat / dark   : {m['summary_all']['mean']:.4f} / "
-          f"{m['summary_incat']['mean']:.4f} / {m['summary_dark']['mean']:.4f}")
-    print(f"  catalogue leg alone  MAP   : {m['summary_leg_cat_only']['map']} "
-          f"(mean {m['summary_leg_cat_only']['mean']:.4f})")
-    print(f"  completion leg alone MAP   : {m['summary_leg_comp_only']['map']} "
-          f"(mean {m['summary_leg_comp_only']['mean']:.4f})")
+        print(
+            f"    {'inf' if kk is None else kk:>7} : {ss['map']:<6} | "
+            f"{'--' if mw is None else mw:<6} | {'--' if mn is None else mn:<6} | "
+            f"{'--' if pt is None else f'{pt:+.1f}'}"
+        )
+    print(
+        f"  MAP all / in-cat / dark    : {m['summary_all']['map']} / "
+        f"{m['summary_incat']['map']} / {m['summary_dark']['map']}"
+    )
+    print(
+        f"  mean all / in-cat / dark   : {m['summary_all']['mean']:.4f} / "
+        f"{m['summary_incat']['mean']:.4f} / {m['summary_dark']['mean']:.4f}"
+    )
+    print(
+        f"  catalogue leg alone  MAP   : {m['summary_leg_cat_only']['map']} "
+        f"(mean {m['summary_leg_cat_only']['mean']:.4f})"
+    )
+    print(
+        f"  completion leg alone MAP   : {m['summary_leg_comp_only']['map']} "
+        f"(mean {m['summary_leg_comp_only']['mean']:.4f})"
+    )
     print(f"  kappa=0 (empty cat)   MAP  : {m['summary_by_kappa'][0]['map']}")
-    print(f"  kappa=inf (complete)  MAP  : {m['summary_by_kappa'][-1]['map']} "
-          f"({m['n_zero_by_kappa'][-1]} events silenced)")
+    print(
+        f"  kappa=inf (complete)  MAP  : {m['summary_by_kappa'][-1]['map']} "
+        f"({m['n_zero_by_kappa'][-1]} events silenced)"
+    )
     print(f"  flat w_G = {m['w_flat']:.7f}  MAP  : {m['summary_flat_w']['map']}")
     c = completeness
-    print(f"  f_bar(0.0205) / (0.1) / (0.3): {c['f_bar_at']['0.0205']:.4f} / "
-          f"{c['f_bar_at']['0.1']:.4f} / {c['f_bar_at']['0.3']:.4f}")
+    print(
+        f"  f_bar(0.0205) / (0.1) / (0.3): {c['f_bar_at']['0.0205']:.4f} / "
+        f"{c['f_bar_at']['0.1']:.4f} / {c['f_bar_at']['0.3']:.4f}"
+    )
     print(f"  f_bar h-invariance max dev  : {c['f_bar_h_max_abs_dev']:.3e}")
-    print(f"  z where f_bar = 0.5 / 0.1   : {c['z_at_f_half']:.4f} / "
-          f"{c['z_at_f_tenth']:.4f}")
-    print(f"  889: SNR {m['events']['e889']['snr']:.1f}, "
-          f"d_L {m['events']['e889']['d_L_Mpc']:.1f} Mpc, "
-          f"z(h=0.73) {m['events']['e889']['z_at_h_true']:.5f}, "
-          f"f_bar {m['events']['e889']['f_bar_at_z']:.4f}, "
-          f"in_cat {m['events']['e889']['in_catalog']}")
-    print(f"  606: SNR {m['events']['e606']['snr']:.1f}, "
-          f"d_L {m['events']['e606']['d_L_Gpc']:.4f} Gpc, "
-          f"z(h=0.73) {m['events']['e606']['z_at_h_true']:.5f}, "
-          f"f_bar {m['events']['e606']['f_bar_at_z']:.4f}, "
-          f"in_cat {m['events']['e606']['in_catalog']}")
-    print(f"  889 L_cat 0.60/0.73/0.86  : {m['events']['e889']['L_cat'][0]:.4g} / "
-          f"{m['events']['e889']['L_cat'][m['h_grid'].index(0.73)]:.4g} / "
-          f"{m['events']['e889']['L_cat'][-1]:.4g}")
-    print(f"  606 L_comp 0.60/0.73/0.86 : {m['events']['e606']['L_comp'][0]:.4g} / "
-          f"{m['events']['e606']['L_comp'][m['h_grid'].index(0.73)]:.4g} / "
-          f"{m['events']['e606']['L_comp'][-1]:.4g}")
-    print(f"  606 L_cat 0.60/0.73/0.86  : {m['events']['e606']['L_cat'][0]:.4g} / "
-          f"{m['events']['e606']['L_cat'][m['h_grid'].index(0.73)]:.4g} / "
-          f"{m['events']['e606']['L_cat'][-1]:.4g}")
+    print(f"  z where f_bar = 0.5 / 0.1   : {c['z_at_f_half']:.4f} / {c['z_at_f_tenth']:.4f}")
+    print(
+        f"  889: SNR {m['events']['e889']['snr']:.1f}, "
+        f"d_L {m['events']['e889']['d_L_Mpc']:.1f} Mpc, "
+        f"z(h=0.73) {m['events']['e889']['z_at_h_true']:.5f}, "
+        f"f_bar {m['events']['e889']['f_bar_at_z']:.4f}, "
+        f"in_cat {m['events']['e889']['in_catalog']}"
+    )
+    print(
+        f"  606: SNR {m['events']['e606']['snr']:.1f}, "
+        f"d_L {m['events']['e606']['d_L_Gpc']:.4f} Gpc, "
+        f"z(h=0.73) {m['events']['e606']['z_at_h_true']:.5f}, "
+        f"f_bar {m['events']['e606']['f_bar_at_z']:.4f}, "
+        f"in_cat {m['events']['e606']['in_catalog']}"
+    )
+    print(
+        f"  889 L_cat 0.60/0.73/0.86  : {m['events']['e889']['L_cat'][0]:.4g} / "
+        f"{m['events']['e889']['L_cat'][m['h_grid'].index(0.73)]:.4g} / "
+        f"{m['events']['e889']['L_cat'][-1]:.4g}"
+    )
+    print(
+        f"  606 L_comp 0.60/0.73/0.86 : {m['events']['e606']['L_comp'][0]:.4g} / "
+        f"{m['events']['e606']['L_comp'][m['h_grid'].index(0.73)]:.4g} / "
+        f"{m['events']['e606']['L_comp'][-1]:.4g}"
+    )
+    print(
+        f"  606 L_cat 0.60/0.73/0.86  : {m['events']['e606']['L_cat'][0]:.4g} / "
+        f"{m['events']['e606']['L_cat'][m['h_grid'].index(0.73)]:.4g} / "
+        f"{m['events']['e606']['L_cat'][-1]:.4g}"
+    )
 
 
 if __name__ == "__main__":

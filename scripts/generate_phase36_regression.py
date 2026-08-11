@@ -33,9 +33,9 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from master_thesis_code.bayesian_inference.evaluation_report import _get_git_commit_safe
-from master_thesis_code.datamodels.detection import Detection
-from master_thesis_code.galaxy_catalogue.handler import (
+from darksiren_emri.bayesian_inference.evaluation_report import _get_git_commit_safe
+from darksiren_emri.datamodels.detection import Detection
+from darksiren_emri.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     M_max,
     M_min,

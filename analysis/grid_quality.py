@@ -460,7 +460,7 @@ def plot_ci_heatmap(
         (fig, ax) tuple.
     """
     try:
-        from master_thesis_code.plotting._style import apply_style
+        from darksiren_emri.plotting._style import apply_style
 
         apply_style()
     except ImportError:
@@ -565,7 +565,7 @@ def plot_grid_comparison(
         (fig, axes) tuple.
     """
     try:
-        from master_thesis_code.plotting._style import apply_style
+        from darksiren_emri.plotting._style import apply_style
 
         apply_style()
     except ImportError:

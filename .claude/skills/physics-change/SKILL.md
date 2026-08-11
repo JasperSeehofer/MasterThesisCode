@@ -14,13 +14,13 @@ argument-hint: <description of the proposed change>
 You are about to modify physics/math code. This protocol is NON-NEGOTIABLE.
 
 ### Trigger files (any formula/constant change in these files requires this protocol):
-- `master_thesis_code/physical_relations.py`
-- `master_thesis_code/constants.py`
-- `master_thesis_code/LISA_configuration.py`
-- `master_thesis_code/parameter_estimation/parameter_estimation.py`
-- `master_thesis_code/datamodels/galaxy.py`
-- `master_thesis_code/bayesian_inference/bayesian_inference.py`
-- `master_thesis_code/cosmological_model.py`
+- `darksiren_emri/physical_relations.py`
+- `darksiren_emri/constants.py`
+- `darksiren_emri/LISA_configuration.py`
+- `darksiren_emri/parameter_estimation/parameter_estimation.py`
+- `darksiren_emri/datamodels/galaxy.py`
+- `darksiren_emri/bayesian_inference/bayesian_inference.py`
+- `darksiren_emri/cosmological_model.py`
 
 Refactoring, type annotations, import cleanup, and comment-only changes do NOT trigger
 this protocol — only changes that alter a computed numerical value.

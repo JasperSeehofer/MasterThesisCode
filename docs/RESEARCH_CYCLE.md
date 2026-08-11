@@ -279,8 +279,8 @@ mechanism hunt beyond D1, and it is the explicit gatekeeper for "trusted run".
 
 1. **SBC / P–P coverage** of the FULL two-channel estimator on truth-known
    synthetic universes at the production venue.
-   Asset: `master_thesis_code/validation/pp_coverage.py` (`PPCoverageConfig`,
-   `run_coverage`, CLI `uv run python -m master_thesis_code.validation.pp_coverage
+   Asset: `darksiren_emri/validation/pp_coverage.py` (`PPCoverageConfig`,
+   `run_coverage`, CLI `uv run python -m darksiren_emri.validation.pp_coverage
    --kernel volume --mixture-mode ... --output pp_coverage_results.json`).
    Written from scratch by the 2026-07-01 commission and deliberately *not*
    importing production inference code — that independence is its scientific

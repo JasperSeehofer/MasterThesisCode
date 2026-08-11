@@ -502,7 +502,7 @@
       And every one of them is computed on a <em>simulated</em> universe whose answer is known in
       advance: <strong id="ch00-htrue">h = 0.73</strong>, the value the mock population was
       generated with
-      <span class="prov-chip" id="ch00-htrue-chip">master_thesis_code/constants.py:25</span>.
+      <span class="prov-chip" id="ch00-htrue-chip">darksiren_emri/constants.py:25</span>.
       That is the most important design decision here. On real data you can only compare your
       answer to somebody else&rsquo;s; against a known truth <em>bias is measurable</em> and an
       estimator can be caught being wrong, not merely different.
@@ -673,7 +673,7 @@
         <li>Recorded — <code>Birrer et al. (2020), arXiv:2007.02941</code>: $74.5^{+5.6}_{-6.1}$ (same technique, that assumption relaxed)</li>
         <li>Recorded — <code>Abbott et al. (2017), arXiv:1710.05835</code>: $70.0^{+12.0}_{-8.0}$ (one bright standard siren)</li>
         <li>Recorded — <code>Abbott et al. (2023), arXiv:2111.03604</code>: $68.0^{+8.0}_{-6.0}$ (GWTC-3 galaxy-catalogue dark sirens with the GW170817 counterpart) — this book&rsquo;s genre; its ratio to the ceiling is computed by the generator, not typed</li>
-        <li>Code site — <code>master_thesis_code/constants.py:25</code> (<code>H: float = 0.73</code>): the $h = H_0/100$ convention and the mock universe&rsquo;s injected truth, read live by the generator</li>
+        <li>Code site — <code>darksiren_emri/constants.py:25</code> (<code>H: float = 0.73</code>): the $h = H_0/100$ convention and the mock universe&rsquo;s injected truth, read live by the generator</li>
         <li>Forward references — phenomena only, numbers left to the chapters that measure them (D4): <code>ledger #9</code> (an estimator walking off the bottom of its prior <span class="ch00-fwd">⏭ Ch 4</span>), <code>ledger #49a</code> (an estimator carrying no information about the parameter it reports <span class="ch00-fwd">⏭ Ch 10</span>), <code>README_C8.md</code> (the reparametrization walk <span class="ch00-fwd">⏭ Ch 8</span>), <code title="current lines: :54-60">IDEALIZED_BASELINE_READOUT.md:42-47</code> (76 of 1588 events <span class="ch00-fwd">⏭ Ch 2</span>)</li>
         <li><span class="prov-chip toy">toy: analytic</span> Everything in I0.1 except the two anchors — quadrature budget, $T_A$, the per-event scale $\sigma_1 = 10$, the 3&sigma;/2&sigma; thresholds, both branches of the ceiling. Defined in <code>book/generators/gen_ch00.py</code>, recomputed in-browser, cross-checked against the generator on five points at load (numbers view).</li>
         <li>No pipeline result is claimed here; the bias rail is deliberately empty. Chapter notes and presentation decisions: <code>book/design/flags/ch00_FLAGS.md</code></li>

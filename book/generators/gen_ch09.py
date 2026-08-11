@@ -89,13 +89,13 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from master_thesis_code.constants import H as H_TRUE  # noqa: E402
-from master_thesis_code.constants import (  # noqa: E402
+from darksiren_emri.constants import (  # noqa: E402
     LISA_MISSION_DURATION_YEARS,
     OMEGA_M,
     SNR_THRESHOLD,
 )
-from master_thesis_code.physical_relations import dist  # noqa: E402
+from darksiren_emri.constants import H as H_TRUE  # noqa: E402
+from darksiren_emri.physical_relations import dist  # noqa: E402
 
 # --- repo-relative artifact paths (§4.2 rule 7; never absolute) ------------
 CAMPAIGN_REL = Path("results/campaign51_20260728/realistic_20260729")
@@ -303,12 +303,8 @@ def build_cellb() -> dict[str, Any]:
         "jobs_prereg": CELLB_JOBS_PREREG,
         "jobs_result": CELLB_JOBS_RESULT,
         "maps": SPEC_CELLB_MAPS,
-        "estimator_2d": _r(
-            SPEC_CELLB_MAPS["B"]["map_2d"] - SPEC_CELLB_MAPS["A"]["map_2d"], 4
-        ),
-        "total_2d_r1": _r(
-            SPEC_CELLB_MAPS["C"]["map_2d"] - SPEC_CELLB_MAPS["A"]["map_2d"], 4
-        ),
+        "estimator_2d": _r(SPEC_CELLB_MAPS["B"]["map_2d"] - SPEC_CELLB_MAPS["A"]["map_2d"], 4),
+        "total_2d_r1": _r(SPEC_CELLB_MAPS["C"]["map_2d"] - SPEC_CELLB_MAPS["A"]["map_2d"], 4),
         "wg_recorded": {f"{h:.2f}": v for h, v in SPEC_CELLB_WG.items()},
     }
     payload["estimator_share_2d_pct"] = _r(
@@ -334,7 +330,9 @@ def build_cellb() -> dict[str, Any]:
             "the pre-registered w_G equality FAILED — cell B differs from #53 r1 "
             f"(max|Δ| = {max_dev!r}); per the pre-registration that is itself a finding"
         )
-    print(f"    gate OK  cell-B w_G ≡ #53 r1 element-wise over {len(hs)} grid points (max|Δ| = 0.0)")
+    print(
+        f"    gate OK  cell-B w_G ≡ #53 r1 element-wise over {len(hs)} grid points (max|Δ| = 0.0)"
+    )
 
     for h, spec in SPEC_CELLB_WG.items():
         got = round(float(cb.loc[round(h, 4)]), 7)
@@ -353,7 +351,9 @@ def build_cellb() -> dict[str, Any]:
                 for h, legs_D, legs_B in _r1_leg_rows()
             )
         )
-        wg_log = np.array([(cb_legs["D"][h] - cb_legs["beta_Gbar"][h]) / cb_legs["D"][h] for h in hs])
+        wg_log = np.array(
+            [(cb_legs["D"][h] - cb_legs["beta_Gbar"][h]) / cb_legs["D"][h] for h in hs]
+        )
         log_route_dev = float(np.max(np.abs(wg_log - a)))
 
     payload.update(
@@ -398,7 +398,9 @@ def build_bench() -> dict[str, Any]:
     counts = realized_counts()
     n, k = counts["pooled"]
     if (k, n) != (SPEC_K_POOLED, SPEC_N_POOLED):
-        _fail(f"realized in-catalogue counts: measured {k}/{n} vs spec {SPEC_K_POOLED}/{SPEC_N_POOLED}")
+        _fail(
+            f"realized in-catalogue counts: measured {k}/{n} vs spec {SPEC_K_POOLED}/{SPEC_N_POOLED}"
+        )
     print(f"    gate OK  realized in-catalogue rate: {k}/{n} = {k / n:.6f}")
 
     z_blind = binomial_z(k, n, float(wG[i73]))
@@ -418,7 +420,9 @@ def build_bench() -> dict[str, Any]:
     for key, (map_spec, mean_spec) in SPEC_CF.items():
         got_map, got_mean = res[f"combined_{key}"]
         if abs(got_map - map_spec) > 1e-9 or abs(got_mean - mean_spec) > 5e-5:
-            _fail(f"counterfactual {key}: measured {got_map}/{got_mean} vs spec {map_spec}/{mean_spec}")
+            _fail(
+                f"counterfactual {key}: measured {got_map}/{got_mean} vs spec {map_spec}/{mean_spec}"
+            )
     print("    gate OK  the four C9 counterfactual MAP/mean pairs")
 
     # generator_marginal w_G — the OPEN dispute (sources map §7 item 7).
@@ -503,7 +507,12 @@ def build_bench() -> dict[str, Any]:
             "p": _r(dark["ks_pvalue"], 4),
             "n_dark": dark["n_dark_total"],
             "quantiles": [
-                {"q": q["q_pct"], "observed": _r(q["observed_z"], 5), "model": _r(q["beta_Gbar_integrand_z"], 5), "diff": _r(q["diff"], 4)}
+                {
+                    "q": q["q_pct"],
+                    "observed": _r(q["observed_z"], 5),
+                    "model": _r(q["beta_Gbar_integrand_z"], 5),
+                    "diff": _r(q["diff"], 4),
+                }
                 for q in dark["quantile_table"]
             ],
             "fingerprint_dl_max_Gpc": _r(dark["fingerprint"]["dl_max_computed_Gpc"], 8),
@@ -649,8 +658,10 @@ def build_identity() -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 def _pool_dir() -> Path | None:
     candidate = _resolve(POOL_REL)
-    if candidate is not None and candidate.is_dir() and any(
-        candidate.glob("injection_h_*_task_*.csv")
+    if (
+        candidate is not None
+        and candidate.is_dir()
+        and any(candidate.glob("injection_h_*_task_*.csv"))
     ):
         return candidate
     return None
@@ -678,7 +689,9 @@ def omega_panel() -> dict[str, Any]:
         b = 100.0 * (h_prime(z, OMEGA_PRE_G11, OMEGA_TRUE_PLANCK) / H_TRUE - 1.0)
         pub_a, pub_b = G7_OMEGA_TABLE[z]
         if abs(a - pub_a) > 0.005 or abs(b - pub_b) > 0.005:
-            _fail(f"Omega_m row z={z}: recomputed ({a:.3f}, {b:.3f}) vs published ({pub_a}, {pub_b})")
+            _fail(
+                f"Omega_m row z={z}: recomputed ({a:.3f}, {b:.3f}) vs published ({pub_a}, {pub_b})"
+            )
         rows.append({"z": z, "pct_m1": _r(a, 4), "pct_preG11": _r(b, 4)})
     print("    gate OK  all 12 published Omega_m mis-specification cells")
 

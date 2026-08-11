@@ -61,7 +61,7 @@ TRACE_PID=$!
 trap 'kill -TERM "$TRACE_PID" 2>/dev/null || true; wait "$TRACE_PID" 2>/dev/null || true' EXIT
 
 cd "$PROJECT_ROOT"
-python -m master_thesis_code "$RUN_DIR" \
+python -m darksiren_emri "$RUN_DIR" \
     --injection_campaign \
     --h_value "$H_VALUE" \
     --simulation_steps 1 \

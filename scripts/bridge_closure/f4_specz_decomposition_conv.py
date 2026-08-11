@@ -56,18 +56,18 @@ logging.disable(logging.WARNING)
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
-import _bridge_lib as B  # noqa: E402
-import _bridge_sky as S  # noqa: E402
+import _bridge_lib as B  # noqa: E402,N812
+import _bridge_sky as S  # noqa: E402,N812
 
-from master_thesis_code.bayesian_inference.bayesian_statistics import (  # noqa: E402
+from darksiren_emri.bayesian_inference.bayesian_statistics import (  # noqa: E402
     precompute_completion_denominator,
     precompute_global_catalog_selection,
     precompute_missing_completion_denominator,
 )
-from master_thesis_code.galaxy_catalogue.handler import (  # noqa: E402
-    InternalCatalogColumns as IC,
+from darksiren_emri.galaxy_catalogue.handler import (  # noqa: E402
+    InternalCatalogColumns as IC,  # noqa: N814
 )
-from master_thesis_code.physical_relations import dist_vectorized  # noqa: E402
+from darksiren_emri.physical_relations import dist_vectorized  # noqa: E402
 
 H_GRID: list[float] = [float(h) for h in np.round(np.arange(0.60, 0.8701, 0.01), 4)]
 _OMEGA_M = B._OMEGA_M
@@ -95,8 +95,12 @@ def _build_flag_sky_catalog() -> S.SkyCatalog:
     zerr = rc[IC.REDSHIFT_ERROR].to_numpy(dtype=np.float64)
     flag = rc[IC.REDSHIFT_FLAG].to_numpy()
     good = (
-        np.isfinite(z) & np.isfinite(M) & np.isfinite(phi) & np.isfinite(theta)
-        & np.isfinite(zerr) & (z > 0)
+        np.isfinite(z)
+        & np.isfinite(M)
+        & np.isfinite(phi)
+        & np.isfinite(theta)
+        & np.isfinite(zerr)
+        & (z > 0)
     )
     flag_aligned = flag[good].astype(np.int64)
     assert flag_aligned.shape[0] == cat.z.shape[0], "flag/catalog length mismatch"
@@ -122,8 +126,11 @@ def _classify(ev: dict[str, Any], cat: S.SkyCatalog, h_true: float) -> dict[str,
     n_cone = int(cand.size)
     if n_cone == 0:
         return {
-            "n_cone": 0, "n_specz_cone": 0, "n_photoz_cone": 0,
-            "specz_weight_frac": 0.0, "class": "photoz_dominated",
+            "n_cone": 0,
+            "n_specz_cone": 0,
+            "n_photoz_cone": 0,
+            "specz_weight_frac": 0.0,
+            "class": "photoz_dominated",
             "specz_present": False,
         }
     d_meas = float(ev["d_meas"])
@@ -167,8 +174,16 @@ def _posterior(
     out = np.empty(len(H_GRID), dtype=np.float64)
     for i, h in enumerate(H_GRID):
         out[i] = S.event_loglik_sky(
-            ev, cat, h, D_tab[h], D_tab[h] - bGbar_tab[h], gdenom_tab[h],
-            mode=mode, sigma_mult=SIGMA_MULT, completeness=completeness, include_bnum=True,
+            ev,
+            cat,
+            h,
+            D_tab[h],
+            D_tab[h] - bGbar_tab[h],
+            gdenom_tab[h],
+            mode=mode,
+            sigma_mult=SIGMA_MULT,
+            completeness=completeness,
+            include_bnum=True,
         )
     return out
 
@@ -193,9 +208,13 @@ def main(max_events: int | None = None) -> dict[str, Any]:
     real_pdet = S.make_real_pdet()
     real_comp = S.make_real_completeness()
     tprec = time.time()
-    D_tab = precompute_completion_denominator(H_GRID, real_pdet, Omega_m=_OMEGA_M, Omega_DE=_OMEGA_DE)
+    D_tab = precompute_completion_denominator(
+        H_GRID, real_pdet, Omega_m=_OMEGA_M, Omega_DE=_OMEGA_DE
+    )
     bGbar_tab = precompute_missing_completion_denominator(H_GRID, real_pdet, completeness=real_comp)
-    gdenom_tab = precompute_global_catalog_selection(H_GRID, cat.handler, real_pdet, with_bh_mass=False)
+    gdenom_tab = precompute_global_catalog_selection(
+        H_GRID, cat.handler, real_pdet, with_bh_mass=False
+    )
     print(f"[f4-conv] precomputes done ({time.time() - tprec:.1f}s)", flush=True)
 
     out_events: list[dict[str, Any]] = []
@@ -236,9 +255,7 @@ def main(max_events: int | None = None) -> dict[str, Any]:
     def _stack(indices: list[int], key: str) -> dict[str, Any] | None:
         if not indices:
             return None
-        total = np.sum(
-            np.array([out_events[i][key] for i in indices], dtype=np.float64), axis=0
-        )
+        total = np.sum(np.array([out_events[i][key] for i in indices], dtype=np.float64), axis=0)
         return B.extract_map(H_GRID, total, B.TRUE_H)
 
     idx_all = list(range(n_ev))
@@ -323,7 +340,11 @@ def main(max_events: int | None = None) -> dict[str, Any]:
     )
 
     def _fmt(s: dict[str, Any] | None) -> str:
-        return "n/a" if s is None else f"MAP={s['h_refined']:.4f} (grid {s['h_map']:.2f}, railed={s['railed']})"
+        return (
+            "n/a"
+            if s is None
+            else f"MAP={s['h_refined']:.4f} (grid {s['h_map']:.2f}, railed={s['railed']})"
+        )
 
     print("--- stacked posteriors [conv / sigma_z-aware] ---")
     print(f"  ALL     : {_fmt(stacked['conv']['all'])}")

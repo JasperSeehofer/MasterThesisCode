@@ -3,7 +3,7 @@
 Produces the two data files behind the chapter's interactives.
 
 ``book/site/data/ch10_pp.json``  (I10.1 "The P-P Slot Machine")
-    The independent P-P / coverage harness (``master_thesis_code/validation/
+    The independent P-P / coverage harness (``darksiren_emri/validation/
     pp_coverage.py`` — pure numpy/scipy, deliberately importing NONE of the
     production inference code) re-run over the archived
     ``results/pp_coverage_*`` configurations, at full fidelity:
@@ -82,8 +82,8 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from master_thesis_code.constants import H as H_TRUE  # noqa: E402
-from master_thesis_code.validation import pp_coverage as pc  # noqa: E402
+from darksiren_emri.constants import H as H_TRUE  # noqa: E402
+from darksiren_emri.validation import pp_coverage as pc  # noqa: E402
 
 OUT_DIR = Path(__file__).resolve().parent.parent / "site" / "data"
 OUT_PP = OUT_DIR / "ch10_pp.json"
@@ -215,9 +215,7 @@ def _config_from_archive(cfg: dict[str, Any]) -> pc.PPCoverageConfig:
     return pc.PPCoverageConfig(**{k: v for k, v in cfg.items() if k in names})
 
 
-def _credible_level_of_truth(
-    h_grid: np.ndarray, post: np.ndarray, h_true: float
-) -> float:
+def _credible_level_of_truth(h_grid: np.ndarray, post: np.ndarray, h_true: float) -> float:
     """Smallest HPD credible level whose region contains ``h_true``.
 
     ``L = int_{p >= p(h_true)} p dh``; truth is inside HPD_q iff ``L <= q``.
@@ -505,7 +503,7 @@ def build_pp_payload() -> dict[str, Any]:
         "n_scaling": _archive_rows(N_SCALING, ("variant", "n_events_cell")),
         "kernel_scan": _archive_rows(KERNEL_SCAN, ("kernel_label", "sigma_z_cell")),
         "source": {
-            "harness": "master_thesis_code/validation/pp_coverage.py",
+            "harness": "darksiren_emri/validation/pp_coverage.py",
             "independence": (
                 "pure numpy/scipy; imports NO production inference code "
                 "(module docstring, 'Scientific independence')"

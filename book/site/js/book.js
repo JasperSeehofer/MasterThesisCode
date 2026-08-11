@@ -554,7 +554,7 @@
    * Combine per-event log-likelihood rows (array of arrays, each length
    * n_h) into an UN-normalized posterior on the h-grid: Sigma_i log L_i,
    * max-subtracted, exponentiated. Mirrors combine_log_space() in
-   * master_thesis_code/bayesian_inference/posterior_combination.py —
+   * darksiren_emri/bayesian_inference/posterior_combination.py —
    * cite it, do not re-derive.
    */
   Book.combineLogRows = function (rows) {

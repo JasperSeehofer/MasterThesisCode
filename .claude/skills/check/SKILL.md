@@ -5,13 +5,13 @@ description: >
   pytest (CPU-only, no slow tests). Use before committing or after significant
   code changes. Reports results in priority order.
 disable-model-invocation: true
-argument-hint: [file_or_directory] (defaults to master_thesis_code/)
+argument-hint: [file_or_directory] (defaults to darksiren_emri/)
 allowed-tools: Bash(uv run *), Bash(git diff *), Bash(git status *), Bash(grep *)
 ---
 
 ## Quality Gate
 
-Run all checks on the target (default: master_thesis_code/):
+Run all checks on the target (default: darksiren_emri/):
 
 ### Step 1: Ruff lint (auto-fix)
 ```bash

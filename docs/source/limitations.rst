@@ -47,7 +47,7 @@ or **pending fix** (acknowledged issue not yet addressed).
 Limitation 1 — Comoving volume formula ``[FIXED]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**File:** ``master_thesis_code/physical_relations.py``
+**File:** ``darksiren_emri/physical_relations.py``
 
 The function computes the comoving volume *element* :math:`dV_c/dz`, not total volume :math:`V_c`.
 The exponent 2 and :math:`4\pi` prefactor were correct for the element, but the formula was
@@ -60,7 +60,7 @@ missing the :math:`1/E(z)` factor. Fix applied: :math:`cv\_grid = 4\pi \cdot (c/
 Limitation 2 — Fisher matrix derivative accuracy ``[FIXED]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**File:** ``master_thesis_code/parameter_estimation/parameter_estimation.py``
+**File:** ``darksiren_emri/parameter_estimation/parameter_estimation.py``
 
 The Fisher matrix previously used an :math:`O(\varepsilon)` forward difference via
 ``finite_difference_derivative()``. This was replaced with the :math:`O(\varepsilon^4)`
@@ -74,7 +74,7 @@ References: [Vallisneri2008]_; [CF1994]_.
 Limitation 3 — Galactic confusion noise ``[FIXED]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**File:** ``master_thesis_code/LISA_configuration.py``
+**File:** ``darksiren_emri/LISA_configuration.py``
 
 Galactic confusion noise is now included in the LISA PSD via ``_confusion_noise()`` in
 ``LisaTdiConfiguration``, implementing [Babak2023]_ Eq. (17) with
@@ -85,7 +85,7 @@ parameter (default ``True``). The constants from ``constants.py:77–83`` are no
 Limitation 4 — wCDM parameters silently ignored ``[bug · MEDIUM]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**File:** ``master_thesis_code/physical_relations.py:72``
+**File:** ``darksiren_emri/physical_relations.py:72``
 
 ``dist()`` accepts ``w_0`` and ``w_a`` but passes them only to ``lambda_cdm_analytic_distance()``,
 which ignores them — the hypergeometric formula is exact only for flat ΛCDM (:math:`w_0=-1`,
@@ -99,7 +99,7 @@ Reference: [Hogg1999]_, Eq. (14–16).
 Limitation 7 — Outdated fiducial cosmological parameters ``[design choice · LOW]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**File:** ``master_thesis_code/constants.py:29–30``
+**File:** ``darksiren_emri/constants.py:29–30``
 
 .. list-table::
    :header-rows: 1
@@ -127,7 +127,7 @@ Reference: [Planck2018]_, Table 2.
 Limitation 8 — Galaxy redshift uncertainty has non-standard scaling ``[RESOLVED — file removed]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The offending scaling lived in the dead ``master_thesis_code/datamodels/galaxy.py`` module
+The offending scaling lived in the dead ``darksiren_emri/datamodels/galaxy.py`` module
 (``redshift_uncertainty = min(0.013 * (1 + redshift) ** 3, 0.015)``), which was imported only by
 a benchmark test and never by the production pipeline. The 2026-07-04 code review removed the
 module outright (GitHub #7), so the non-standard :math:`(1+z)^3` form no longer appears in the

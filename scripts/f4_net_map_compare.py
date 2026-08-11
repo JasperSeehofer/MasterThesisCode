@@ -19,7 +19,7 @@ from pathlib import Path
 
 import numpy as np
 
-from master_thesis_code.bayesian_inference.posterior_combination import (
+from darksiren_emri.bayesian_inference.posterior_combination import (
     load_per_h_likelihoods,
 )
 
@@ -51,12 +51,20 @@ def main() -> int:
     ]:
         nw_map, nw_n, nw_h = _map_for(nw_dir, variant)
         ll_map, ll_n, ll_h = _map_for(ll_dir, variant)
-        print(f"{label:24s} {nw_map:>18.4f} {ll_map:>18.4f}   (n_ev~{nw_n}/{ll_n}, n_h={nw_h}/{ll_h})")
+        print(
+            f"{label:24s} {nw_map:>18.4f} {ll_map:>18.4f}   (n_ev~{nw_n}/{ll_n}, n_h={nw_h}/{ll_h})"
+        )
 
     print("\nReading (truth h=0.73):")
-    print("  If NW MAP ~0.76 and LL MAP ~0.73  -> F4 boundary bias WAS the H0-bias driver; v2 fixes it.")
-    print("  If NW MAP ~0.76 and LL MAP ~0.76+ -> v2 fixes accuracy but NOT the H0 bias; cause is elsewhere.")
-    print("  If NW MAP ~0.73 already           -> the old CRB never showed the bias; premise breaks (re-investigate).")
+    print(
+        "  If NW MAP ~0.76 and LL MAP ~0.73  -> F4 boundary bias WAS the H0-bias driver; v2 fixes it."
+    )
+    print(
+        "  If NW MAP ~0.76 and LL MAP ~0.76+ -> v2 fixes accuracy but NOT the H0 bias; cause is elsewhere."
+    )
+    print(
+        "  If NW MAP ~0.73 already           -> the old CRB never showed the bias; premise breaks (re-investigate)."
+    )
     return 0
 
 

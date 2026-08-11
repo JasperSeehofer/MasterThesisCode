@@ -846,7 +846,7 @@ self-review against §3.4.
 1. **Never write outside your owned files** (§2). Never edit frozen files — shared-widget
    needs go to `WIDGET_REQUESTS.md` (append-only) with a page-local workaround.
 2. **Never write to `/home/jasper/Repositories/MasterThesisCode`** (the main worktree) —
-   generators read it; nothing writes it. Never edit `master_thesis_code/` in either tree.
+   generators read it; nothing writes it. Never edit `darksiren_emri/` in either tree.
 3. **No re-derivation.** If a step seems to need one, the chapter is over-reaching — cite
    the packet or cut the step.
 4. **No invented, adjusted, or "rounded-up" numbers.** Every number comes from

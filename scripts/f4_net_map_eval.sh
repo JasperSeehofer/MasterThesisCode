@@ -8,7 +8,7 @@
 # Prerequisites (see .planning/HANDOFF-F4V2-NET-MAP-EVAL.md):
 #   * repo at the F4-v2 commit (git pull); `uv sync --extra cpu --extra dev`
 #   * GLADE reduced catalog at
-#       master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv
+#       darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv
 #   * SRC_CRB_DIR below contains simulations/{cramer_rao_bounds.csv,
 #       prepared_cramer_rao_bounds.csv}
 #   * INJ_DIR below contains injection_h_*.csv
@@ -32,7 +32,7 @@ for f in cramer_rao_bounds.csv prepared_cramer_rao_bounds.csv; do
     [[ -f "$SRC_CRB_DIR/simulations/$f" ]] || { echo "MISSING: $SRC_CRB_DIR/simulations/$f" >&2; exit 1; }
 done
 compgen -G "$INJ_DIR/injection_h_*.csv" > /dev/null || { echo "MISSING: $INJ_DIR/injection_h_*.csv" >&2; exit 1; }
-[[ -f "$PROJECT_ROOT/master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv" ]] \
+[[ -f "$PROJECT_ROOT/darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv" ]] \
     || { echo "MISSING: reduced_galaxy_catalogue.csv (GLADE catalog)" >&2; exit 1; }
 
 for EST in nadaraya_watson local_linear; do
@@ -46,7 +46,7 @@ for EST in nadaraya_watson local_linear; do
         echo "--- $EST h=$H ---"
         ( cd "$PROJECT_ROOT" \
           && ln -sfn "$RUN_DIR/simulations" "$PROJECT_ROOT/simulations" \
-          && uv run python -m master_thesis_code "$RUN_DIR" --evaluate --h_value "$H" \
+          && uv run python -m darksiren_emri "$RUN_DIR" --evaluate --h_value "$H" \
                --pdet_estimator "$EST" --pdet_dl_bins 60 --pdet_mass_bins 40 \
                --log_level INFO )
     done

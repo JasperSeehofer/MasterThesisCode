@@ -37,13 +37,13 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from master_thesis_code.bayesian_inference.bayesian_statistics import (  # noqa: E402
+from darksiren_emri.bayesian_inference.bayesian_statistics import (  # noqa: E402
     precompute_completion_denominator,
 )
-from master_thesis_code.bayesian_inference.simulation_detection_probability import (  # noqa: E402
+from darksiren_emri.bayesian_inference.simulation_detection_probability import (  # noqa: E402
     SimulationDetectionProbability,
 )
-from master_thesis_code.constants import OMEGA_M  # noqa: E402
+from darksiren_emri.constants import OMEGA_M  # noqa: E402
 
 CLOSURE_DIR = PROJECT_ROOT / "simulations" / "cluster_run_closure_h065_20260503_finegrid"
 POSTERIORS_DIR = CLOSURE_DIR / "posteriors"

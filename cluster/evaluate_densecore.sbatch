@@ -110,14 +110,14 @@ echo "  Max z:      ${MAX_REDSHIFT:-<default>} (issue #30 depth-truncation study
 echo ""
 
 # Evaluation code reads simulations/prepared_cramer_rao_bounds.csv relative to
-# CWD, and the galaxy catalogue via ./master_thesis_code/galaxy_catalogue/
+# CWD, and the galaxy catalogue via ./darksiren_emri/galaxy_catalogue/
 # (handler.py:24). Use a PRIVATE per-run CWD (TC-03) instead of re-pointing the
 # shared $PROJECT_ROOT/simulations symlink, so concurrent runs with different
 # RUN_DIRs cannot cross-contaminate.
 JOB_CWD="$RUN_DIR/cwd"
 mkdir -p "$JOB_CWD"
 ln -sfn "$RUN_DIR/simulations" "$JOB_CWD/simulations"
-ln -sfn "$PROJECT_ROOT/master_thesis_code" "$JOB_CWD/master_thesis_code"
+ln -sfn "$PROJECT_ROOT/darksiren_emri" "$JOB_CWD/darksiren_emri"
 cd "$JOB_CWD"
 
 # Optional --max_redshift pass-through (issue #30 depth-truncation study):
@@ -151,7 +151,7 @@ fi
 # Seeding (TC-05): per-task seed = EVAL_SEED + task id (EVAL_SEED exported by
 # submit_pipeline.sh from the campaign seed; standalone fallback 777000).
 # --simulation_index gives each task its own run_metadata_<task>.json.
-python -m master_thesis_code "$RUN_DIR" \
+python -m darksiren_emri "$RUN_DIR" \
     --evaluate \
     --h_value "$H_VALUE" \
     --seed "$((${EVAL_SEED:-777000} + SLURM_ARRAY_TASK_ID))" \

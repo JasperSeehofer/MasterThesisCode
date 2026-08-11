@@ -143,7 +143,7 @@ uv run python scripts/bridge_closure/rung_G_photoz.py 1200    # photo-z sigma_z 
 ```
 Outputs (JSON + paper PDFs) in `scripts/bridge_closure/outputs/`. All randomness
 seeded; real CRBs/catalogue from `/tmp/seed600_local/` and
-`master_thesis_code/galaxy_catalogue/`.
+`darksiren_emri/galaxy_catalogue/`.
 
 ### Figures
 - `P0_event_characterization.pdf` — measurement is unbiased; nearby/in-catalogue.

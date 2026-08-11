@@ -81,12 +81,12 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from master_thesis_code.bayesian_inference.posterior_combination import (  # noqa: E402
+from darksiren_emri.bayesian_inference.posterior_combination import (  # noqa: E402
     build_likelihood_array,
     load_posterior_jsons,
 )
-from master_thesis_code.constants import H as H_TRUE  # noqa: E402
-from master_thesis_code.constants import SNR_THRESHOLD  # noqa: E402
+from darksiren_emri.constants import SNR_THRESHOLD  # noqa: E402
+from darksiren_emri.constants import H as H_TRUE  # noqa: E402
 
 # --- repo-relative artifact paths (§4.2 rule 7; never absolute) ------------
 CAMPAIGN_REL = Path("results/campaign51_20260728/realistic_20260729")
@@ -315,14 +315,14 @@ def build_denominator_payload() -> dict[str, Any]:
 # Step 2 — I4.2 (needs the untracked injection pool)
 # ---------------------------------------------------------------------------
 def build_horizon_payload(pool_dir: Path) -> dict[str, Any]:
-    from master_thesis_code.bayesian_inference.bayesian_statistics import (
+    from darksiren_emri.bayesian_inference.bayesian_statistics import (
         precompute_completion_denominator,
     )
-    from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+    from darksiren_emri.bayesian_inference.simulation_detection_probability import (
         SimulationDetectionProbability,
     )
-    from master_thesis_code.constants import OMEGA_DE, OMEGA_M
-    from master_thesis_code.physical_relations import comoving_volume_element, dist_vectorized
+    from darksiren_emri.constants import OMEGA_DE, OMEGA_M
+    from darksiren_emri.physical_relations import comoving_volume_element, dist_vectorized
 
     files = sorted(glob.glob(str(pool_dir / "injection_h_*_task_*.csv")))
     inj = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
@@ -462,7 +462,7 @@ def build_horizon_payload(pool_dir: Path) -> dict[str, Any]:
             "p_det_at_own_distance": _r(p_det_889, 4),
         },
         "source": {
-            "estimator": "master_thesis_code/bayesian_inference/simulation_detection_probability.py",
+            "estimator": "darksiren_emri/bayesian_inference/simulation_detection_probability.py",
             "run_log": str(RUN_LOG_REL),
         },
     }
