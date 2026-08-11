@@ -1,0 +1,124 @@
+{
+  "seed_plan": {
+    "pass": true,
+    "n_registered_seeds": 1400,
+    "disjoint_within_v3": true,
+    "disjoint_from_v1_v2": true,
+    "inside_v3_envelope": true
+  },
+  "v_t3": {
+    "pass": true,
+    "crb_csv_md5": {
+      "value": "9a1f2a14384a9281c97ca3be312ddaab",
+      "pin": "9a1f2a14384a9281c97ca3be312ddaab",
+      "match": true
+    },
+    "frozeng_emit_md5": {
+      "value": "34c50e91028b6a6458a2b145db545705",
+      "pin": "34c50e91028b6a6458a2b145db545705",
+      "match": true
+    },
+    "k_census": {
+      "value": {
+        "n_events_evaluated": 1588,
+        "zeros": 606,
+        "ones": 74,
+        "median": 6.0,
+        "mean": 751.7021410579345,
+        "p99": 11325.26,
+        "max": 245364,
+        "sum_K": 1193703,
+        "nonempty_n": 982,
+        "nonempty_median": 84.0,
+        "nonempty_mean": 1215.5835030549897
+      },
+      "pins": {
+        "n_events_evaluated": 1588,
+        "zeros": 606,
+        "ones": 74,
+        "median": 6.0,
+        "mean": 751.7021410579345,
+        "p99": 11325.26,
+        "max": 245364,
+        "sum_K": 1193703,
+        "nonempty_n": 982,
+        "nonempty_median": 84.0,
+        "nonempty_mean": 1215.5835030549897
+      },
+      "match": {
+        "n_events_evaluated": true,
+        "zeros": true,
+        "ones": true,
+        "median": true,
+        "mean": true,
+        "p99": true,
+        "max": true,
+        "sum_K": true,
+        "nonempty_n": true,
+        "nonempty_median": true,
+        "nonempty_mean": true
+      }
+    },
+    "sigma_stats": {
+      "value": {
+        "n": 20834171,
+        "median": 0.0393412950539589,
+        "min": 0.0005317263419419,
+        "n_lt_5e-3": 231098,
+        "n_lt_1e-2": 235731
+      },
+      "pins": {
+        "n": 20834171,
+        "median": 0.0393412950539589,
+        "min": 0.0005317263419419,
+        "n_lt_5e-3": 231098,
+        "n_lt_1e-2": 235731
+      },
+      "match": {
+        "n": true,
+        "median": true,
+        "min": true,
+        "n_lt_5e-3": true,
+        "n_lt_1e-2": true
+      }
+    }
+  },
+  "v_t2": {
+    "pass": true,
+    "seed": 20303808,
+    "n_events_cap": 40
+  },
+  "v_t5": {
+    "pass": true,
+    "committed_json": "results/calibration_gate_v2_20260810/B2_h0p730_results.json",
+    "seeds": [
+      20286808,
+      20286809,
+      20286810
+    ],
+    "per_seed": [
+      {
+        "seed": 20286808,
+        "n_shared_fields": 41,
+        "mismatched_fields": [],
+        "pass": true
+      },
+      {
+        "seed": 20286809,
+        "n_shared_fields": 41,
+        "mismatched_fields": [],
+        "pass": true
+      },
+      {
+        "seed": 20286810,
+        "n_shared_fields": 41,
+        "mismatched_fields": [],
+        "pass": true
+      }
+    ],
+    "note": "V-T5 no-drift anchor: vector-sigma core in v2-compat mode must bit-reproduce the committed gate records (shared fields); failure => STOP (prereg \u00a710)"
+  },
+  "v_t4": {
+    "note": "clean rule enforced by the imported gate functions (_enforce_clean_import_path / _classify_porcelain, V-T4 verbatim); unit-tested in master_thesis_code_test/validation/test_venue_transfer.py"
+  }
+}

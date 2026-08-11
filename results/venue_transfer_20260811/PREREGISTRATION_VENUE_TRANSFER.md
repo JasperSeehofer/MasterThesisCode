@@ -653,3 +653,14 @@ readout entry.
 **PENDING AUTHOR RATIFICATION 2026-08-12** (per the active overnight
 mandate; this note is operational bookkeeping, not a readout — no band,
 statistic, or seed changes anywhere above).
+
+
+**§11 addendum (2026-08-12): full validity run logged.** `validate_results_full.json` (this directory,
+dev box, instrument commit 2ece8801): seed_plan PASS, V-T2 determinism PASS, V-T3 pin integrity PASS,
+**V-T5 no-drift PASS** (bit-reproduction of committed v2 `B2_h0p730` per-seed records on v2 seeds,
+exact gate-shape mode). V-T4 (clean rule) is evaluated per registered run on the cluster
+(`import_path_clean=true` embedded in every registered output). Honest sequencing note: the prereg
+required this §11 evidence *before* the campaign; the launch-phase validate skipped V-T5
+(`validate_results_novt5.json`) and the full run completed only after the (partially timed-out) first
+array — a compliance-order deviation with no statistical content, bundled with the 2026-08-12
+operational-deviation note for author ratification.
