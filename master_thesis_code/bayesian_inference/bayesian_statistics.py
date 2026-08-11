@@ -1701,6 +1701,17 @@ _S_PHI_Z_CHUNK = 250
 # Gauss-Hermite order of the g_i mass-kernel contraction (N8).
 _G_I_HERMITE_NODES = 64
 
+# [PHYSICS] Route 1 (2026-08-12), PENDING AUTHOR RATIFICATION (direction approved):
+# adaptive Gauss-Hermite order for the g_i contraction. Fast order n=8 is exact
+# to degree 15; for the piecewise power-law integrand (max |exponent| 1.43) the
+# GH truncation bound stays << 1e-12 whenever the relative half-width
+# sqrt(2)*sigma_cond*t/mu <= _G_I_ADAPT_MAX_RELWIDTH and the +-t-sigma window
+# crosses no breakpoint. Study: results/venue_transfer_20260811/perf/route1_study/
+# (41.0M harvested production z-nodes: zero straddling, max rel err 1.3e-15 at n=8).
+_G_I_HERMITE_NODES_FAST = 8
+_G_I_ADAPT_T = 6.0
+_G_I_ADAPT_MAX_RELWIDTH = 0.02
+
 # [PHYSICS] D1 remedy (ii), monitoring half (author decision 2026-08-04):
 # the campaign-#51 detections were selected by SNR >= 20 AND p0 in
 # [10.002, 15.998] (the stale snapshot-era `ParameterSpace.p0` bound guard in
@@ -2006,6 +2017,7 @@ def completion_mass_factor_g(
     sigma_cond_M: float,
     *,
     n_hermite: int = _G_I_HERMITE_NODES,
+    adaptive: bool = True,
 ) -> npt.NDArray[np.float64]:
     r"""The 2D completion leg's mass density ``g_i(z;h)`` at quadrature nodes.
 
@@ -2040,6 +2052,39 @@ def completion_mass_factor_g(
         proj_d_L_to_M: ``cov_4d[3,2]/cov_4d[2,2]`` (the 2x2 block projection).
         sigma_cond_M: ``sqrt(cov_4d[3,3] - cov_4d[3,2]^2/cov_4d[2,2])``.
         n_hermite: Gauss-Hermite order (default 64, the measured convention).
+        adaptive: Route 1 (2026-08-12, PENDING AUTHOR RATIFICATION). When
+            ``True`` and ``n_hermite == _G_I_HERMITE_NODES`` (the default,
+            unmodified order), each row is contracted at the fast order
+            ``_G_I_HERMITE_NODES_FAST`` (n=8) unless it triggers one of two
+            fallback conditions, in which case it is contracted at the
+            pinned ``n_hermite`` (n=64) instead:
+
+            1. **Relative half-width criterion** — the +-``_G_I_ADAPT_T``
+               sigma Gauss-Hermite window is not narrow relative to
+               ``mu_cond``: ``w = sqrt(2) sigma_cond_M _G_I_ADAPT_T >
+               _G_I_ADAPT_MAX_RELWIDTH * mu_cond`` (or ``mu_cond <= 0``,
+               treated as fallback for safety).
+            2. **Breakpoint-straddle criterion** — the mass window
+               ``[(mu_cond - w) * scale, (mu_cond + w) * scale]`` contains
+               any of the ``phi`` breakpoints ``M_SOURCE_FRAME_MIN``,
+               ``1.0e5`` (``emri_rate.kappa_cap`` ``M_turn``, Eq. 30
+               surrogate), ``M_SOURCE_FRAME_MAX``.
+
+            Off the fallback set, ``phi`` restricted to the +-6 sigma window
+            is a single power-law branch (see
+            :func:`_phi_ln_dark_mass_affine_coeffs`), so Gauss-Hermite of
+            order n integrates a polynomial-times-Gaussian exactly to degree
+            ``2n - 1``; the truncation error of the Taylor remainder beyond
+            that degree (Abramowitz & Stegun 25.4.46) is bounded by the
+            relative half-width to the ``2n`` power, which for n=8 and
+            ``relwidth <= _G_I_ADAPT_MAX_RELWIDTH = 0.02`` stays << 1e-12 for
+            the piecewise power-law exponents in play (max |exponent| 1.43;
+            see ``results/venue_transfer_20260811/perf/ROUTE1_GATE_PACKAGE.md``
+            and the harvested-node study cited there). Passing ``adaptive=False``
+            restores the pinned n=64 single-group convention byte-for-byte,
+            regardless of the mask; an all-fallback ``adaptive=True`` call is
+            likewise byte-for-byte identical to ``adaptive=False`` because both
+            take the identical single-group n=64 contraction path.
 
     Returns:
         ``g_i`` at the nodes, shape ``(k,)``, in units of ``1/x_M``.
@@ -2049,16 +2094,51 @@ def completion_mass_factor_g(
         Turski et al. (2023), arXiv:2302.12037, Eq. (8).
         Gray et al. (2020), arXiv:1908.06050, Eq. (A.19).
         Babak et al. (2017), arXiv:1703.09722 — ``phi``.
+        Abramowitz & Stegun (1964), Eq. 25.4.46 — Gauss-Hermite truncation
+        error term (Route 1 adaptive-order bound).
     """
-    x_nodes, x_weights = roots_hermite(n_hermite)
+
+    def _contract_group(
+        order: int,
+        mu_cond_group: npt.NDArray[np.float64],
+        scale_group: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
+        x_nodes, x_weights = roots_hermite(order)
+        # Gauss-Hermite for E_{x~N(mu,sigma)}[phi_x]: nodes mu + sqrt(2) sigma t_j.
+        x_M = mu_cond_group[:, None] + math.sqrt(2.0) * sigma_cond_M * x_nodes[None, :]  # (k, n_h)
+        M_source = x_M * scale_group[:, None]
+        phi_x = dark_mass_density_per_mass(M_source) * scale_group[:, None]
+        return np.asarray((phi_x @ x_weights) / math.sqrt(math.pi), dtype=np.float64)
+
     # dM/dx_M at each z: the mass scale the dimensionless coordinate rides on.
     scale = det_M_z / (1.0 + np.asarray(z_nodes, dtype=np.float64))  # (k,)
     mu_cond = 1.0 + proj_d_L_to_M * (np.asarray(d_L_fraction, dtype=np.float64) - 1.0)  # (k,)
-    # Gauss-Hermite for E_{x~N(mu,sigma)}[phi_x]: nodes mu + sqrt(2) sigma t_j.
-    x_M = mu_cond[:, None] + math.sqrt(2.0) * sigma_cond_M * x_nodes[None, :]  # (k, n_h)
-    M_source = x_M * scale[:, None]
-    phi_x = dark_mass_density_per_mass(M_source) * scale[:, None]
-    return np.asarray((phi_x @ x_weights) / math.sqrt(math.pi), dtype=np.float64)
+
+    if not adaptive or n_hermite != _G_I_HERMITE_NODES:
+        return _contract_group(n_hermite, mu_cond, scale)
+
+    w = math.sqrt(2.0) * sigma_cond_M * _G_I_ADAPT_T  # scalar half-width
+    lo_bound = (mu_cond - w) * scale  # (k,) — scale > 0 always
+    hi_bound = (mu_cond + w) * scale  # (k,)
+    breakpoints = (
+        M_SOURCE_FRAME_MIN,
+        1.0e5,  # emri_rate.kappa_cap M_turn (Eq. 30 surrogate)
+        M_SOURCE_FRAME_MAX,
+    )
+    straddles = np.zeros_like(mu_cond, dtype=np.bool_)
+    for b in breakpoints:
+        straddles |= (lo_bound < b) & (b < hi_bound)
+    fallback = (w > _G_I_ADAPT_MAX_RELWIDTH * mu_cond) | (mu_cond <= 0.0) | straddles
+
+    if bool(np.all(fallback)):
+        return _contract_group(_G_I_HERMITE_NODES, mu_cond, scale)
+    if bool(np.all(~fallback)):
+        return _contract_group(_G_I_HERMITE_NODES_FAST, mu_cond, scale)
+
+    out = np.empty_like(mu_cond)
+    out[fallback] = _contract_group(_G_I_HERMITE_NODES, mu_cond[fallback], scale[fallback])
+    out[~fallback] = _contract_group(_G_I_HERMITE_NODES_FAST, mu_cond[~fallback], scale[~fallback])
+    return out
 
 
 def path_a_mixture_objects(
