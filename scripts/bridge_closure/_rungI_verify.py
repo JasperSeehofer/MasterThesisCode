@@ -19,18 +19,27 @@ logging.disable(logging.WARNING)
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
-import _bridge_lib as B  # noqa: E402
-from master_thesis_code.emri_rate import R_eff_per_mbh  # noqa: E402
-from master_thesis_code.physical_relations import (  # noqa: E402
+import _bridge_lib as B  # noqa: E402,N812
+
+from darksiren_emri.emri_rate import R_eff_per_mbh  # noqa: E402
+from darksiren_emri.physical_relations import (  # noqa: E402
     dist,
     dist_to_redshift,
     dist_vectorized,
 )
 
 
-def run_closure_photoz(h_true, sigma_z, *, n_gal=12000, n_events=250,
-                       sigma_dL_frac=0.05, seed=0, consistent_denom=False,
-                       regularised_kernel=False):
+def run_closure_photoz(
+    h_true,
+    sigma_z,
+    *,
+    n_gal=12000,
+    n_events=250,
+    sigma_dL_frac=0.05,
+    seed=0,
+    consistent_denom=False,
+    regularised_kernel=False,
+):
     rng = np.random.default_rng(seed)
     hs = [float(h) for h in np.round(np.arange(0.60, 0.8701, 0.01), 4)]
     z_true_g, M = B.sample_population(rng, n_gal, h_true)
@@ -66,8 +75,10 @@ def run_closure_photoz(h_true, sigma_z, *, n_gal=12000, n_events=250,
         for d_meas, sdL in events:
             zlo = max(dist_to_redshift(max(d_meas - 5 * sdL, 1e-4), h=0.60) - 4 * sigma_z, 1e-5)
             zhi = dist_to_redshift(d_meas + 5 * sdL, h=0.87) + 4 * sigma_z
-            i0 = int(np.searchsorted(zc, zlo)); i1 = int(np.searchsorted(zc, zhi))
-            zg = zc[i0:i1]; wg = wc[i0:i1]
+            i0 = int(np.searchsorted(zc, zlo))
+            i1 = int(np.searchsorted(zc, zhi))
+            zg = zc[i0:i1]
+            wg = wc[i0:i1]
             if zg.size == 0:
                 total += -1e30
                 continue
@@ -104,15 +115,24 @@ def main():
     print("=== STANDARD (bare kernel, global denom) ===", flush=True)
     for sz in [0.002, 0.035]:
         r = run_closure_photoz(h_true, sz, seed=1)
-        print(f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} railed={r['railed']}", flush=True)
+        print(
+            f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} railed={r['railed']}",
+            flush=True,
+        )
     print("=== CONTROL: consistent-denom (disqualified) ===", flush=True)
     for sz in [0.001, 0.035]:
         r = run_closure_photoz(h_true, sz, seed=1, consistent_denom=True)
-        print(f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} railed={r['railed']}", flush=True)
+        print(
+            f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} railed={r['railed']}",
+            flush=True,
+        )
     print("=== CANDIDATE: regularised numerator kernel (global denom kept) ===", flush=True)
     for sz in [0.002, 0.035]:
         r = run_closure_photoz(h_true, sz, seed=1, regularised_kernel=True)
-        print(f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} railed={r['railed']}", flush=True)
+        print(
+            f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} railed={r['railed']}",
+            flush=True,
+        )
 
 
 if __name__ == "__main__":

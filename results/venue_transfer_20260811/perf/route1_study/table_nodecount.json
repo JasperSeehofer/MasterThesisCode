@@ -1,0 +1,74 @@
+[
+  {
+    "avg_nodes_per_z_node": 8.0,
+    "fallback_fraction": 0.0,
+    "n_low": 8,
+    "t_tol": 4
+  },
+  {
+    "avg_nodes_per_z_node": 12.0,
+    "fallback_fraction": 0.0,
+    "n_low": 12,
+    "t_tol": 4
+  },
+  {
+    "avg_nodes_per_z_node": 16.0,
+    "fallback_fraction": 0.0,
+    "n_low": 16,
+    "t_tol": 4
+  },
+  {
+    "avg_nodes_per_z_node": 24.0,
+    "fallback_fraction": 0.0,
+    "n_low": 24,
+    "t_tol": 4
+  },
+  {
+    "avg_nodes_per_z_node": 8.0,
+    "fallback_fraction": 0.0,
+    "n_low": 8,
+    "t_tol": 5
+  },
+  {
+    "avg_nodes_per_z_node": 12.0,
+    "fallback_fraction": 0.0,
+    "n_low": 12,
+    "t_tol": 5
+  },
+  {
+    "avg_nodes_per_z_node": 16.0,
+    "fallback_fraction": 0.0,
+    "n_low": 16,
+    "t_tol": 5
+  },
+  {
+    "avg_nodes_per_z_node": 24.0,
+    "fallback_fraction": 0.0,
+    "n_low": 24,
+    "t_tol": 5
+  },
+  {
+    "avg_nodes_per_z_node": 8.0,
+    "fallback_fraction": 0.0,
+    "n_low": 8,
+    "t_tol": 6
+  },
+  {
+    "avg_nodes_per_z_node": 12.0,
+    "fallback_fraction": 0.0,
+    "n_low": 12,
+    "t_tol": 6
+  },
+  {
+    "avg_nodes_per_z_node": 16.0,
+    "fallback_fraction": 0.0,
+    "n_low": 16,
+    "t_tol": 6
+  },
+  {
+    "avg_nodes_per_z_node": 24.0,
+    "fallback_fraction": 0.0,
+    "n_low": 24,
+    "t_tol": 6
+  }
+]

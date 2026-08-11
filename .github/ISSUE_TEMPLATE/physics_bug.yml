@@ -7,7 +7,7 @@ body:
     attributes:
       label: File and line
       description: Where is the incorrect formula?
-      placeholder: "master_thesis_code/physical_relations.py:72"
+      placeholder: "darksiren_emri/physical_relations.py:72"
     validations:
       required: true
   - type: textarea

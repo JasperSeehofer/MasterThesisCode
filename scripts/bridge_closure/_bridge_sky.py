@@ -29,9 +29,10 @@ from scipy.spatial import cKDTree
 
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
-import _bridge_lib as B  # noqa: E402
-from master_thesis_code.emri_rate import R_eff_per_mbh  # noqa: E402
-from master_thesis_code.physical_relations import comoving_volume_element, dist_vectorized  # noqa: E402
+import _bridge_lib as B  # noqa: E402,N812
+
+from darksiren_emri.emri_rate import R_eff_per_mbh  # noqa: E402
+from darksiren_emri.physical_relations import comoving_volume_element, dist_vectorized  # noqa: E402
 
 # CRB covariance column names (lower-triangle Fisher inverse)
 _C = {
@@ -74,7 +75,9 @@ def load_real_events_with_sky(apply_cuts: bool = True) -> list[dict]:
     return events
 
 
-def _cov3d(ev: dict) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], float, npt.NDArray[np.float64]]:
+def _cov3d(
+    ev: dict,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], float, npt.NDArray[np.float64]]:
     """Build the normalised (phi, theta, d_L/d_meas) covariance exactly as
     bayesian_statistics.py:799-817; return (mean, cov_inv, log_norm, cov)."""
     d = ev["d_meas"]
@@ -88,7 +91,9 @@ def _cov3d(ev: dict) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], 
     return _finish_cov(ev, cov)
 
 
-def _cov3d_diag(ev: dict) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], float, npt.NDArray[np.float64]]:
+def _cov3d_diag(
+    ev: dict,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], float, npt.NDArray[np.float64]]:
     """Diagonal version (drop all d_L-sky / sky-sky correlations)."""
     d = ev["d_meas"]
     cov = np.diag([ev["phi2"], ev["the2"], ev["sigma_dL"] ** 2 / d**2])
@@ -103,7 +108,9 @@ def _finish_cov(ev: dict, cov: npt.NDArray[np.float64]):
     return mean, cov_inv, float(log_norm), cov
 
 
-def _polar_to_cart(phi: npt.NDArray[np.float64], theta: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+def _polar_to_cart(
+    phi: npt.NDArray[np.float64], theta: npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
     return np.column_stack(
         [np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)]
     )
@@ -112,9 +119,11 @@ def _polar_to_cart(phi: npt.NDArray[np.float64], theta: npt.NDArray[np.float64])
 class SkyCatalog:
     """Real GLADE catalogue with sky, indexed by a unit-sphere KDTree."""
 
-    def __init__(self, shuffle_sky: bool = False, seed: int = 0, max_zerr: float | None = None) -> None:
-        from master_thesis_code.cosmological_model import Model1CrossCheck
-        from master_thesis_code.galaxy_catalogue.handler import (
+    def __init__(
+        self, shuffle_sky: bool = False, seed: int = 0, max_zerr: float | None = None
+    ) -> None:
+        from darksiren_emri.cosmological_model import Model1CrossCheck
+        from darksiren_emri.galaxy_catalogue.handler import (
             GalaxyCatalogueHandler,
             InternalCatalogColumns,
         )
@@ -132,8 +141,12 @@ class SkyCatalog:
         theta = cat[InternalCatalogColumns.THETA_S].to_numpy(float)
         zerr = cat[InternalCatalogColumns.REDSHIFT_ERROR].to_numpy(float)
         good = (
-            np.isfinite(z) & np.isfinite(M) & np.isfinite(phi) & np.isfinite(theta)
-            & np.isfinite(zerr) & (z > 0)
+            np.isfinite(z)
+            & np.isfinite(M)
+            & np.isfinite(phi)
+            & np.isfinite(theta)
+            & np.isfinite(zerr)
+            & (z > 0)
         )
         z, M, phi, theta, zerr = z[good], M[good], phi[good], theta[good], zerr[good]
         if max_zerr is not None:
@@ -163,9 +176,10 @@ def _b_num(ev: dict, h: float, completeness, cov_inv, log_norm) -> float:
     completion_numerator_integrand (bayesian_statistics.py:1446) collapsed to the
     event direction. f_k is evaluated at the event's HEALPix pixel.
     """
-    from master_thesis_code.bayesian_inference.bayesian_statistics import dist_to_redshift
-    from master_thesis_code.physical_relations import comoving_volume_element
     from scipy.integrate import fixed_quad
+
+    from darksiren_emri.bayesian_inference.bayesian_statistics import dist_to_redshift
+    from darksiren_emri.physical_relations import comoving_volume_element
 
     d = ev["d_meas"]
     sdL = ev["sigma_dL"]
@@ -182,7 +196,9 @@ def _b_num(ev: dict, h: float, completeness, cov_inv, log_norm) -> float:
         try:
             f_z = np.clip(np.asarray(completeness.f_k(z, pixel, h), float), 0.0, 1.0)
         except TypeError:
-            f_z = np.clip(np.asarray(completeness.get_completeness_at_redshift(z, h), float), 0.0, 1.0)
+            f_z = np.clip(
+                np.asarray(completeness.get_completeness_at_redshift(z, h), float), 0.0, 1.0
+            )
         return (1.0 - f_z) * p_gw * dVc / (1.0 + z)
 
     return float(fixed_quad(integ, z_lo, z_hi, n=50)[0])
@@ -219,23 +235,28 @@ def event_loglik_sky(
     if cand.size and mode == "conv":
         # host-z convolution: N_g = sky_weight * INTEGRAL gw(d_L(z,h)) norm(z;z_g,sigma_z) dz
         # (the real single_host_likelihood convolves each candidate with its photo-z PDF).
-        from master_thesis_code.bayesian_inference.bayesian_statistics import dist_to_redshift
+        from darksiren_emri.bayesian_inference.bayesian_statistics import dist_to_redshift
 
         zg = cat.z[cand]
         szg = np.maximum(cat.zerr[cand] * zerr_scale, 1e-5)
         # generous, H0-INDEPENDENT z-window widened by the photo-z scale
-        zlo = max(dist_to_redshift(max(d - 5 * sdL, 1e-4), h=0.60) - 4 * float(np.median(szg)), 1e-5)
+        zlo = max(
+            dist_to_redshift(max(d - 5 * sdL, 1e-4), h=0.60) - 4 * float(np.median(szg)), 1e-5
+        )
         zhi = dist_to_redshift(d + 5 * sdL, h=0.87) + 4 * float(np.median(szg))
         keep = (zg > zlo) & (zg < zhi)
         if np.any(keep):
             ci = cand[keep]
-            zg = cat.z[ci]; szg = np.maximum(cat.zerr[ci] * zerr_scale, 1e-5); wc = cat.w[ci]
+            zg = cat.z[ci]
+            szg = np.maximum(cat.zerr[ci] * zerr_scale, 1e-5)
+            wc = cat.w[ci]
             # FULL 3-D MVN convolved over the host photo-z PDF (so conv -> mvn exactly
             # as sigma_z -> 0). Only the d_L axis depends on z; write the quadratic form
             #   dx(z) = (dphi, dthe, u(z)-1),  u(z) = d_L(z,h)/d_meas
             #   quad(z) = Q0 + 2 (u-1) Q1 + (u-1)^2 Q2,
             # with Q0 = dx_sky^T Cinv dx_sky, Q1 = dx_sky^T Cinv e_dL, Q2 = Cinv[2,2].
-            dphi = cat.phi[ci] - mean[0]; dthe = cat.theta[ci] - mean[1]
+            dphi = cat.phi[ci] - mean[0]
+            dthe = cat.theta[ci] - mean[1]
             Ci = cov_inv
             Q0 = Ci[0, 0] * dphi**2 + 2 * Ci[0, 1] * dphi * dthe + Ci[1, 1] * dthe**2
             Q1 = Ci[0, 2] * dphi + Ci[1, 2] * dthe
@@ -293,10 +314,10 @@ def event_loglik_sky(
 
 def make_real_pdet():
     """Build the REAL survival-function p_det from the injection campaign."""
-    from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+    from darksiren_emri.bayesian_inference.simulation_detection_probability import (
         SimulationDetectionProbability,
     )
-    from master_thesis_code.constants import INJECTION_DATA_DIR, SNR_THRESHOLD
+    from darksiren_emri.constants import INJECTION_DATA_DIR, SNR_THRESHOLD
 
     return SimulationDetectionProbability(
         injection_data_dir=INJECTION_DATA_DIR, snr_threshold=SNR_THRESHOLD
@@ -305,7 +326,7 @@ def make_real_pdet():
 
 def make_real_completeness():
     """Load the REAL frozen pixelated completeness (m_th map)."""
-    from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+    from darksiren_emri.galaxy_catalogue.pixel_completeness import from_cache_or_build
 
     return from_cache_or_build()
 
@@ -333,11 +354,15 @@ def run_sky_rung(
     """
     if h_grid is None:
         h_grid = [float(x) for x in np.round(np.arange(0.60, 0.8701, 0.01), 4)]
-    comp = completeness_obj if completeness_obj is not None else B._make_completeness(
-        B.BridgeConfig(name=name, completeness=completeness)
+    comp = (
+        completeness_obj
+        if completeness_obj is not None
+        else B._make_completeness(B.BridgeConfig(name=name, completeness=completeness))
     )
     pdet = pdet_obj if pdet_obj is not None else B.MockPdet()
-    D_tab = B.precompute_completion_denominator(h_grid, pdet, Omega_m=B._OMEGA_M, Omega_DE=B._OMEGA_DE)
+    D_tab = B.precompute_completion_denominator(
+        h_grid, pdet, Omega_m=B._OMEGA_M, Omega_DE=B._OMEGA_DE
+    )
     bGbar = B.precompute_missing_completion_denominator(h_grid, pdet, completeness=comp)
     # global selection denominator over the SkyCatalog's actual galaxies (so it stays
     # consistent when the catalogue is filtered, e.g. spectroscopic-only).
@@ -352,14 +377,33 @@ def run_sky_rung(
         tot = 0.0
         for ev in events:
             tot += event_loglik_sky(
-                ev, cat, h, D_h, bG, gd, mode=mode,
-                completeness=comp, include_bnum=include_bnum, sigma_mult=sigma_mult,
-                zerr_scale=zerr_scale, regularise_photoz=regularise_photoz,
+                ev,
+                cat,
+                h,
+                D_h,
+                bG,
+                gd,
+                mode=mode,
+                completeness=comp,
+                include_bnum=include_bnum,
+                sigma_mult=sigma_mult,
+                zerr_scale=zerr_scale,
+                regularise_photoz=regularise_photoz,
             )
         logpost[i] = tot
     res = B.extract_map(h_grid, logpost, B.TRUE_H)
-    res.update({"name": name, "mode": mode, "n_events": len(events),
-                "include_bnum": include_bnum, "elapsed_s": round(time.time() - t0, 1)})
-    print(f"[{name}] mode={mode} bnum={include_bnum} n={len(events)} MAP={res['h_refined']:.4f} "
-          f"bias={res['bias']:+.4f} railed={res['railed']} ({res['elapsed_s']}s)", flush=True)
+    res.update(
+        {
+            "name": name,
+            "mode": mode,
+            "n_events": len(events),
+            "include_bnum": include_bnum,
+            "elapsed_s": round(time.time() - t0, 1),
+        }
+    )
+    print(
+        f"[{name}] mode={mode} bnum={include_bnum} n={len(events)} MAP={res['h_refined']:.4f} "
+        f"bias={res['bias']:+.4f} railed={res['railed']} ({res['elapsed_s']}s)",
+        flush=True,
+    )
     return res

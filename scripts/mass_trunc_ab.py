@@ -74,9 +74,9 @@ def prepare_scratch(crb_dir: Path, injections_dir: Path, scratch: Path) -> None:
         raise FileNotFoundError(f"real injection pool missing: {injections_dir}")
     if not (inj_dst.is_symlink() or inj_dst.exists()):
         inj_dst.symlink_to(injections_dir.resolve())
-    pkg_link = scratch / "master_thesis_code"
+    pkg_link = scratch / "darksiren_emri"
     if not (pkg_link.is_symlink() or pkg_link.exists()):
-        pkg_link.symlink_to(REPO_ROOT / "master_thesis_code")
+        pkg_link.symlink_to(REPO_ROOT / "darksiren_emri")
 
 
 def main() -> None:
@@ -102,10 +102,10 @@ def main() -> None:
     prepare_scratch(crb_dir, injections_dir, scratch)
     os.chdir(scratch)
 
-    from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
-    from master_thesis_code.bayesian_inference.posterior_combination import combine_posteriors
-    from master_thesis_code.cosmological_model import Model1CrossCheck
-    from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
+    from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
+    from darksiren_emri.bayesian_inference.posterior_combination import combine_posteriors
+    from darksiren_emri.cosmological_model import Model1CrossCheck
+    from darksiren_emri.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
     t0 = time.time()
     rng = np.random.default_rng(0)

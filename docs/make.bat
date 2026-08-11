@@ -31,7 +31,7 @@ if "%1" == "clean" (
 	if exist %GENERATEDDIR% rmdir /Q /S %GENERATEDDIR%
 ) else (
 	set SPHINX_APIDOC_OPTIONS=members,show-inheritance
-	sphinx-apidoc --force --private --module-first --no-toc --implicit-namespaces --output %GENERATEDDIR% ../master_thesis_code
+	sphinx-apidoc --force --private --module-first --no-toc --implicit-namespaces --output %GENERATEDDIR% ../darksiren_emri
 )
 
 %SPHINXBUILD% -M %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%

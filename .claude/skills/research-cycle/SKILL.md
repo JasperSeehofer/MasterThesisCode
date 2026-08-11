@@ -37,7 +37,7 @@ for future campaigns only.
 | 1 | Information forecast | what would a perfect analysis of this data say? | `docs/SIGMA_Z_SIGMA_M_FORECAST.md`, `scripts/bridge_closure/sigma_z_sigma_M_forecast.py` |
 | 2 | Pre-registration | hypotheses, decisive reads, branches, bands — BEFORE running | `results/campaign51_20260728/realistic_20260729/PREREGISTRATION_2x2_cellB.md` |
 | 3 | Measure / refute | Gates A→B→C, in order, no skipping forward | `results/campaign51_20260728/RUNBOOK_NEXT_SESSION_6.md` §1–§5; `/commission --research` |
-| 4 | Calibration gate | is the estimator calibrated at the production venue? | three legs: `master_thesis_code/validation/pp_coverage.py` + the (ii-d) absolute detected-count audit + forecast-consistent width |
+| 4 | Calibration gate | is the estimator calibrated at the production venue? | three legs: `darksiren_emri/validation/pp_coverage.py` + the (ii-d) absolute detected-count audit + forecast-consistent width |
 | 5 | Decision | measure / report bound / fix / one more measurement | `/physics-change`, `docs/gates/PHYSICS-GATE-LEDGER.md`, author gate |
 | 6 | Chronicle | ledger rows, claim writebacks, next runbook | `docs/gates/PHYSICS-GATE-LEDGER.md`, `results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md`, `results/campaign51_20260728/RUNBOOK_NEXT_SESSION_<N>.md` lineage |
 

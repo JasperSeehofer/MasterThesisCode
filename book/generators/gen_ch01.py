@@ -76,15 +76,15 @@ from scipy.optimize import brentq
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from master_thesis_code.constants import H as H_TRUE  # noqa: E402
-from master_thesis_code.constants import (  # noqa: E402
+from darksiren_emri.constants import (  # noqa: E402
     LISA_MISSION_DURATION_YEARS,
     OMEGA_DE,
     OMEGA_M,
     SNR_THRESHOLD,
     SPEED_OF_LIGHT_KM_S,
 )
-from master_thesis_code.physical_relations import dist, dist_to_redshift  # noqa: E402
+from darksiren_emri.constants import H as H_TRUE  # noqa: E402
+from darksiren_emri.physical_relations import dist, dist_to_redshift  # noqa: E402
 
 # --- repo-relative artifact paths (BOOK_DESIGN.md §4.2 rule 7) --------------
 CAMPAIGN_REL = Path("results/campaign51_20260728/realistic_20260729")
@@ -155,8 +155,24 @@ OMEGA_M_PLANCK = 0.3153  # Planck 2018 (quoted in G7 row 6, not adopted)
 H_LATTICE = [0.55, 0.60, 0.65, 0.6732, 0.70, 0.73, 0.80, 0.86, 0.90]
 OM_LATTICE = [0.15, 0.2, 0.2726, 0.3, 0.3153, 0.35, 0.45]
 Z_LATTICE = [
-    0.005, 0.01, 0.021284, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5,
-    0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.5, 2.0,
+    0.005,
+    0.01,
+    0.021284,
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    1.0,
+    1.2,
+    1.5,
+    2.0,
 ]
 # Static-fallback curve family (three h at the fiducial Omega_m).
 H_STATIC = [0.60, 0.73, 0.86]
@@ -204,14 +220,20 @@ def build_event() -> dict[str, Any]:
     if twin.exists():
         twin_row = pd.read_csv(twin).iloc[EVENT_889]
         for col in (
-            "M", "mu", "luminosity_distance", "SNR", "host_galaxy_index",
+            "M",
+            "mu",
+            "luminosity_distance",
+            "SNR",
+            "host_galaxy_index",
             "delta_luminosity_distance_delta_luminosity_distance",
         ):
             if float(twin_row[col]) != float(row[col]):
                 _fail(f"{CRB_REL} and {CRB_SPEC_REL} disagree on row 889 column {col}")
         twin_checked = True
-    print(f"  seed-level CRB == real_r1 CRB on row 889: "
-          f"{'verified' if twin_checked else 'not present in this checkout'}")
+    print(
+        f"  seed-level CRB == real_r1 CRB on row 889: "
+        f"{'verified' if twin_checked else 'not present in this checkout'}"
+    )
 
     d_l = float(row["luminosity_distance"])  # Gpc
     sigma_dl = float(np.sqrt(row["delta_luminosity_distance_delta_luminosity_distance"]))
@@ -414,7 +436,7 @@ def build_dlz(d_l_889: float) -> dict[str, Any]:
 
     return {
         "_provenance": {
-            "function": "master_thesis_code.physical_relations.dist "
+            "function": "darksiren_emri.physical_relations.dist "
             "(physical_relations.py:132) / dist_to_redshift (:447)",
             "gate": "docs/gates/G7_systematics_budget.md — 'Numbers behind row #6'",
             "generator": "book/generators/gen_ch01.py",

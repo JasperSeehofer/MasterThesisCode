@@ -42,20 +42,20 @@ logging.disable(logging.WARNING)
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
-import _bridge_lib as B  # noqa: E402
+import _bridge_lib as B  # noqa: E402,N812
 from scipy.integrate import fixed_quad  # noqa: E402
 from scipy.stats import norm  # noqa: E402
 
-from master_thesis_code.bayesian_inference.bayesian_statistics import (  # noqa: E402
+from darksiren_emri.bayesian_inference.bayesian_statistics import (  # noqa: E402
     precompute_completion_denominator,
     precompute_global_catalog_selection,
     precompute_missing_completion_denominator,
 )
-from master_thesis_code.emri_rate import R_eff_per_mbh  # noqa: E402
-from master_thesis_code.galaxy_catalogue.handler import (  # noqa: E402
-    InternalCatalogColumns as IC,
+from darksiren_emri.emri_rate import R_eff_per_mbh  # noqa: E402
+from darksiren_emri.galaxy_catalogue.handler import (  # noqa: E402
+    InternalCatalogColumns as IC,  # noqa: N814
 )
-from master_thesis_code.physical_relations import (  # noqa: E402
+from darksiren_emri.physical_relations import (  # noqa: E402
     comoving_volume_element,
     dist_to_redshift,
     dist_vectorized,
@@ -110,12 +110,10 @@ class _TabulatedFbarCompleteness:
         return self._lookup(z, h)
 
 
-def _load_completeness(
-    hs: list[float], z_grid: npt.NDArray[np.float64]
-) -> tuple[Any, str]:
+def _load_completeness(hs: list[float], z_grid: npt.NDArray[np.float64]) -> tuple[Any, str]:
     """Return (completeness_obj, description). Real pixel f_bar if available."""
     try:
-        from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+        from darksiren_emri.galaxy_catalogue.pixel_completeness import from_cache_or_build
 
         pix = from_cache_or_build()
         return _TabulatedFbarCompleteness(pix, hs, z_grid), "pixel_completeness.f_bar (tabulated)"
@@ -247,22 +245,39 @@ def _selfcheck(
         i0 = int(np.searchsorted(z_s, z_lo, side="left"))
         i1 = int(np.searchsorted(z_s, z_hi, side="right"))
         fast = _event_logpost_fast(
-            d_meas, sigma_dL, d_ref_all[i0:i1], wc_all[i0:i1],
-            completeness, H_GRID, D_tab, bGbar_tab, gdenom_tab,
+            d_meas,
+            sigma_dL,
+            d_ref_all[i0:i1],
+            wc_all[i0:i1],
+            completeness,
+            H_GRID,
+            D_tab,
+            bGbar_tab,
+            gdenom_tab,
         )
         ev = {"d_meas": d_meas, "sigma_dL": sigma_dL}
         ref = np.array(
             [
                 B.event_log_likelihood(
-                    ev, z_s, M_s, completeness, h, D_tab[h], D_tab[h] - bGbar_tab[h],
-                    gdenom_tab[h], sorted_z=True,
+                    ev,
+                    z_s,
+                    M_s,
+                    completeness,
+                    h,
+                    D_tab[h],
+                    D_tab[h] - bGbar_tab[h],
+                    gdenom_tab[h],
+                    sorted_z=True,
                 )
                 for h in H_GRID
             ],
             dtype=np.float64,
         )
         max_abs = max(max_abs, float(np.max(np.abs(fast - ref))))
-    print(f"[f4] self-check vs event_log_likelihood: max|delta logpost|={max_abs:.2e} (n={n})", flush=True)
+    print(
+        f"[f4] self-check vs event_log_likelihood: max|delta logpost|={max_abs:.2e} (n={n})",
+        flush=True,
+    )
     # L_cat is bit-identical; only the B_num window bounds use the interpolated
     # inverse (z error < 1e-9), so the tolerance is set at a physically negligible 1e-6.
     assert max_abs < 1e-6, f"fast path diverged from event_log_likelihood ({max_abs})"
@@ -342,8 +357,15 @@ def main(max_events: int | None = None) -> dict[str, Any]:
 
         # single-event log-posterior over the H0 grid (raw, for exact stacking)
         logpost = _event_logpost_fast(
-            d_meas, sigma_dL, d_ref_all[i0:i1], wc_all[i0:i1],
-            completeness, H_GRID, D_tab, bGbar_tab, gdenom_tab,
+            d_meas,
+            sigma_dL,
+            d_ref_all[i0:i1],
+            wc_all[i0:i1],
+            completeness,
+            H_GRID,
+            D_tab,
+            bGbar_tab,
+            gdenom_tab,
         )
         info = B.extract_map(H_GRID, logpost, B.TRUE_H)
         finite = logpost[np.isfinite(logpost) & (logpost > -1e29)]
@@ -384,9 +406,7 @@ def main(max_events: int | None = None) -> dict[str, Any]:
     def _stack(indices: list[int]) -> dict[str, Any] | None:
         if not indices:
             return None
-        total = np.sum(
-            np.array([events[i]["logpost"] for i in indices], dtype=np.float64), axis=0
-        )
+        total = np.sum(np.array([events[i]["logpost"] for i in indices], dtype=np.float64), axis=0)
         return B.extract_map(H_GRID, total, B.TRUE_H)
 
     idx_all = list(range(n_ev))
@@ -413,11 +433,19 @@ def main(max_events: int | None = None) -> dict[str, Any]:
         "peaked_fraction_specz": _peaked_frac(idx_specz),
         "peaked_fraction_photoz": _peaked_frac(idx_photoz),
         "map_all": None if stacked["all"] is None else stacked["all"]["h_refined"],
-        "map_specz": None if stacked["specz_hosted"] is None else stacked["specz_hosted"]["h_refined"],
-        "map_photoz": None if stacked["photoz_only"] is None else stacked["photoz_only"]["h_refined"],
+        "map_specz": None
+        if stacked["specz_hosted"] is None
+        else stacked["specz_hosted"]["h_refined"],
+        "map_photoz": None
+        if stacked["photoz_only"] is None
+        else stacked["photoz_only"]["h_refined"],
         "railed_all": None if stacked["all"] is None else stacked["all"]["railed"],
-        "railed_specz": None if stacked["specz_hosted"] is None else stacked["specz_hosted"]["railed"],
-        "railed_photoz": None if stacked["photoz_only"] is None else stacked["photoz_only"]["railed"],
+        "railed_specz": None
+        if stacked["specz_hosted"] is None
+        else stacked["specz_hosted"]["railed"],
+        "railed_photoz": None
+        if stacked["photoz_only"] is None
+        else stacked["photoz_only"]["railed"],
     }
 
     payload = {

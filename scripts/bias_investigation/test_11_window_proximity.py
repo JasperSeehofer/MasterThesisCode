@@ -47,7 +47,7 @@ def main() -> None:
     crb = pd.read_csv(CRB_PATH)
     print(f"Loaded {len(crb)} rows from {CRB_PATH.name} (LOCAL proxy)")
 
-    # 2. Filter to SNR>=20 (production threshold, see master_thesis_code.constants.SNR_THRESHOLD).
+    # 2. Filter to SNR>=20 (production threshold, see darksiren_emri.constants.SNR_THRESHOLD).
     sub = (
         crb[crb["SNR"] >= 20.0].copy().reset_index(drop=False).rename(columns={"index": "event_id"})
     )

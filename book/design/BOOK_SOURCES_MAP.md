@@ -451,7 +451,7 @@ evidence) · book hook**.
 ### Tier 8 — the calibration instruments
 
 **V1 — The P–P coverage harness**
-- Source/code: `master_thesis_code/validation/pp_coverage.py` (module docstring §"Scientific independence").
+- Source/code: `darksiren_emri/validation/pp_coverage.py` (module docstring §"Scientific independence").
 - **The methodological jewel:** it is pure numpy/scipy and **deliberately does not import the production inference code** — "a calibration failure here cannot be explained away as a shared implementation bug." Written from scratch by the 2026-07-01 verification commission (investigator d2).
 - Switchable kernels (`bare` / `volume`), mixture modes (`two_branch` / `gray` / `conditioned` / `exact` / `absolute`), `z_support` truncation, `membership_on_observed`.
 - **Enhancement:** this is what converts "the MAP is at truth" into "the estimator is calibrated". **Defect it exposed:** bare kernel coverage ≈0–3% at σ_z ≈ 0.035.
@@ -618,7 +618,7 @@ Ordered by pedagogical value, not chronology. Each is a *cautionary interlude*: 
 | Coverage harness outputs | `results/pp_coverage_*/SUMMARY.md` + JSON | P–P plots, bias-vs-σ_z ladders |
 | Ablation cube / G1 | `docs/gates/G3_ablation_cube.json`, `G1_beta_g_check.json` | De-rail matrix, Option-A residual |
 
-**Run Python as:** `/home/jasper/Repositories/MasterThesisCode/.venv/bin/python` from the source repo root (the venv resolves `master_thesis_code` imports). **Read-only** on the package.
+**Run Python as:** `/home/jasper/Repositories/MasterThesisCode/.venv/bin/python` from the source repo root (the venv resolves `darksiren_emri` imports). **Read-only** on the package.
 
 ---
 

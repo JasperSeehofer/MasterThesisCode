@@ -80,10 +80,10 @@ def prepare_scratch(data_dir: Path, scratch: Path) -> None:
             continue
         dst.symlink_to(src.resolve())
     # REDUCED_CATALOGUE_FILE_PATH (handler.py:24) is cwd-relative
-    # ("./master_thesis_code/...") — link the repo package dir into the scratch cwd.
-    pkg_link = scratch / "master_thesis_code"
+    # ("./darksiren_emri/...") — link the repo package dir into the scratch cwd.
+    pkg_link = scratch / "darksiren_emri"
     if not (pkg_link.is_symlink() or pkg_link.exists()):
-        pkg_link.symlink_to(REPO_ROOT / "master_thesis_code")
+        pkg_link.symlink_to(REPO_ROOT / "darksiren_emri")
 
 
 def main() -> None:
@@ -108,10 +108,10 @@ def main() -> None:
     # Imports AFTER chdir intentionally NOT needed for path resolution (the
     # package resolves via the venv), but worker re-imports must find the same
     # cwd-relative simulations/ inputs, hence evaluate() runs from the scratch dir.
-    from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
-    from master_thesis_code.bayesian_inference.posterior_combination import combine_posteriors
-    from master_thesis_code.cosmological_model import Model1CrossCheck
-    from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
+    from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
+    from darksiren_emri.bayesian_inference.posterior_combination import combine_posteriors
+    from darksiren_emri.cosmological_model import Model1CrossCheck
+    from darksiren_emri.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
     t0 = time.time()
     print("loading catalogue + building BallTrees ...", flush=True)

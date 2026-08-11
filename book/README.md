@@ -35,13 +35,13 @@ book/
 ## Regenerating the data
 
 ```bash
-# from the repo root, using a venv with master_thesis_code installed
+# from the repo root, using a venv with darksiren_emri installed
 /home/jasper/Repositories/MasterThesisCode/.venv/bin/python book/generators/make_all.py
 # or, once this worktree has its own `.venv` (uv sync --extra cpu --extra dev):
 uv run python book/generators/make_all.py
 ```
 
-Generators are deterministic (fixed seeds) and read-only against `master_thesis_code/` and
+Generators are deterministic (fixed seeds) and read-only against `darksiren_emri/` and
 `results/` — never edit the package from here. `make_all.py` runs each generator in its own
 subprocess and then executes the `qa_gates.py` content gates against the built site; a gate
 hit fails the build loudly.

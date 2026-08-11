@@ -29,14 +29,22 @@ logging.disable(logging.WARNING)
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
-import _bridge_lib as B  # noqa: E402
-import _bridge_sky as S  # noqa: E402
+import _bridge_lib as B  # noqa: E402,N812
+import _bridge_sky as S  # noqa: E402,N812
 from _plot_style import OK_COLOR, RAIL_COLOR, TRUTH_COLOR, plt  # noqa: E402
-from master_thesis_code.physical_relations import dist  # noqa: E402
+
+from darksiren_emri.physical_relations import dist  # noqa: E402
 
 
-def synth_events(cat: S.SkyCatalog, n: int, *, scatter_photoz: bool, seed: int = 0,
-                 sigma_dL_frac: float = 0.037, sigma_sky: float = 0.01) -> list[dict]:
+def synth_events(
+    cat: S.SkyCatalog,
+    n: int,
+    *,
+    scatter_photoz: bool,
+    seed: int = 0,
+    sigma_dL_frac: float = 0.037,
+    sigma_sky: float = 0.01,
+) -> list[dict]:
     """Draw n hosts from the real catalogue and build sky-aware events.
 
     scatter_photoz=True  -> true_z = z_g + N(0, sigma_z_g)  (CONSISTENT with the
@@ -48,7 +56,8 @@ def synth_events(cat: S.SkyCatalog, n: int, *, scatter_photoz: bool, seed: int =
     idx = rng.choice(len(cat.z), size=n, p=p)
     events = []
     for g in idx:
-        z_g = float(cat.z[g]); sz = float(max(cat.zerr[g], 1e-4))
+        z_g = float(cat.z[g])
+        sz = float(max(cat.zerr[g], 1e-4))
         true_z = z_g + (rng.normal(0.0, sz) if scatter_photoz else 0.0)
         true_z = max(true_z, 1e-3)
         d_true = float(dist(true_z, h=B.TRUE_H))
@@ -58,23 +67,35 @@ def synth_events(cat: S.SkyCatalog, n: int, *, scatter_photoz: bool, seed: int =
             continue
         phi_m = float(cat.phi[g] + rng.normal(0.0, sigma_sky))
         the_m = float(cat.theta[g] + rng.normal(0.0, sigma_sky))
-        events.append({
-            "phi": phi_m, "theta": the_m, "d_meas": d_meas, "sigma_dL": s_dL,
-            "phi2": sigma_sky**2, "the2": sigma_sky**2, "phi_the": 0.0,
-            "phi_dL": 0.0, "the_dL": 0.0, "in_catalog": True,
-        })
+        events.append(
+            {
+                "phi": phi_m,
+                "theta": the_m,
+                "d_meas": d_meas,
+                "sigma_dL": s_dL,
+                "phi2": sigma_sky**2,
+                "the2": sigma_sky**2,
+                "phi_the": 0.0,
+                "phi_dL": 0.0,
+                "the_dL": 0.0,
+                "in_catalog": True,
+            }
+        )
     return events
 
 
 def main(n_events: int = 1000) -> None:
     cat = S.SkyCatalog(shuffle_sky=False)
-    rp = S.make_real_pdet(); rc = S.make_real_completeness()
+    rp = S.make_real_pdet()
+    rc = S.make_real_completeness()
     common = dict(pdet_obj=rp, completeness_obj=rc, include_bnum=True, sigma_mult=1.5, mode="conv")
     print(f"catalogue {len(cat.z)} gals, median sigma_z={np.median(cat.zerr):.4f}", flush=True)
 
     results = []
-    for label, scatter in [("INCONSISTENT (true_z=z_g)", False),
-                           ("CONSISTENT (true_z=z_g+N(0,sigma_z))", True)]:
+    for label, scatter in [
+        ("INCONSISTENT (true_z=z_g)", False),
+        ("CONSISTENT (true_z=z_g+N(0,sigma_z))", True),
+    ]:
         ev = synth_events(cat, n_events, scatter_photoz=scatter)
         print(f"{label}: {len(ev)} events", flush=True)
         r = S.run_sky_rung(label, cat, ev, **common)
@@ -83,21 +104,38 @@ def main(n_events: int = 1000) -> None:
 
     fig, ax = plt.subplots(figsize=(7.5, 4.6))
     for r in results:
-        hs = np.array(r["hs"]); post = np.exp(np.array(r["logpost"]))
+        hs = np.array(r["hs"])
+        post = np.exp(np.array(r["logpost"]))
         color = RAIL_COLOR if abs(r["bias"]) > 0.03 else OK_COLOR
         ax.plot(hs, post / post.max(), color=color, label=f"{r['name']} → {r['h_refined']:.3f}")
     ax.axvline(B.TRUE_H, color=TRUTH_COLOR, ls="--", lw=1.2, label="truth 0.73")
-    ax.set(xlabel=r"$h=H_0/100$", ylabel="normalised posterior",
-           title="EXP-2: sim↔inference photo-z consistency")
+    ax.set(
+        xlabel=r"$h=H_0/100$",
+        ylabel="normalised posterior",
+        title="EXP-2: sim↔inference photo-z consistency",
+    )
     ax.legend(fontsize=8)
     fig.tight_layout()
     out = B.OUTPUTS / "rungH_exp2.pdf"
-    fig.savefig(out); plt.close(fig); print(f"  wrote {out}", flush=True)
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"  wrote {out}", flush=True)
 
-    (B.OUTPUTS / "rungH_results.json").write_text(json.dumps(
-        {"results": [{k: r[k] for k in ("name", "scatter", "h_refined", "bias", "railed")}
-                     for r in results]}, indent=2))
-    print(f"\n>>> VERDICT: {[(r['name'][:12], round(r['h_refined'],4)) for r in results]}", flush=True)
+    (B.OUTPUTS / "rungH_results.json").write_text(
+        json.dumps(
+            {
+                "results": [
+                    {k: r[k] for k in ("name", "scatter", "h_refined", "bias", "railed")}
+                    for r in results
+                ]
+            },
+            indent=2,
+        )
+    )
+    print(
+        f"\n>>> VERDICT: {[(r['name'][:12], round(r['h_refined'], 4)) for r in results]}",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

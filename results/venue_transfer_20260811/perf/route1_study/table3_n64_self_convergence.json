@@ -1,0 +1,20 @@
+[
+  {
+    "n_rows": 0,
+    "t_tol": 4,
+    "vs_n256": null,
+    "vs_split_gl": null
+  },
+  {
+    "n_rows": 0,
+    "t_tol": 5,
+    "vs_n256": null,
+    "vs_split_gl": null
+  },
+  {
+    "n_rows": 0,
+    "t_tol": 6,
+    "vs_n256": null,
+    "vs_split_gl": null
+  }
+]

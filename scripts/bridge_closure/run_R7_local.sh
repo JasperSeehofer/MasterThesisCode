@@ -6,7 +6,7 @@ cd "$(dirname "$0")/../.."
 source .venv/bin/activate 2>/dev/null || true
 for h in 0.70 0.73 0.80 0.86; do
   echo "=== R7 eval h=$h ==="
-  PYTHONUNBUFFERED=1 python -m master_thesis_code . --evaluate --h_value "$h" --num_workers 14 \
+  PYTHONUNBUFFERED=1 python -m darksiren_emri . --evaluate --h_value "$h" --num_workers 14 \
     2>&1 | tail -3 || echo "h=$h FAILED"
 done
 echo "=== R7 done; posteriors: ==="

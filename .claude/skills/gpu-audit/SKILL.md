@@ -5,7 +5,7 @@ description: >
   files that touch array computation, waveforms, PSD, Fisher matrix, or
   any code that runs on the GPU cluster. Checks: guarded cupy imports,
   xp namespace pattern, no hot-path GPU-CPU transfers, vectorized operations.
-argument-hint: [file_or_directory] (defaults to master_thesis_code/)
+argument-hint: [file_or_directory] (defaults to darksiren_emri/)
 allowed-tools: Read, Grep, Glob, Bash(uv run mypy *)
 context: fork
 agent: Explore

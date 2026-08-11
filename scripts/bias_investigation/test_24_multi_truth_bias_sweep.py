@@ -60,7 +60,7 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from master_thesis_code.bayesian_inference.simulation_detection_probability import (  # noqa: E402
+from darksiren_emri.bayesian_inference.simulation_detection_probability import (  # noqa: E402
     SimulationDetectionProbability,
 )
 
@@ -98,15 +98,15 @@ def truth_to_dirname(h: float) -> str:
 
 
 # Re-export the canonical implementations now lifted to
-# `master_thesis_code.bayesian_inference.posterior_combination`. Other bias-
+# `darksiren_emri.bayesian_inference.posterior_combination`. Other bias-
 # investigation scripts (and test_28) import these from this module for
 # back-compat; the lifted versions are byte-equivalent (same algorithm, same
 # numerics) and now also feed the plotting pipeline.
-from master_thesis_code.bayesian_inference.posterior_combination import (
+from darksiren_emri.bayesian_inference.posterior_combination import (
     _h_from_filename,  # noqa: F401
     load_per_h_likelihoods,
 )
-from master_thesis_code.bayesian_inference.posterior_combination import (
+from darksiren_emri.bayesian_inference.posterior_combination import (
     parabolic_refine_map as parabolic_refine,
 )
 

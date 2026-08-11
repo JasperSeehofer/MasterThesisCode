@@ -57,10 +57,10 @@ logging.disable(logging.WARNING)
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
-import _bridge_lib as B  # noqa: E402
+import _bridge_lib as B  # noqa: E402,N812
 
-from master_thesis_code.emri_rate import R_eff_per_mbh  # noqa: E402
-from master_thesis_code.physical_relations import (  # noqa: E402
+from darksiren_emri.emri_rate import R_eff_per_mbh  # noqa: E402
+from darksiren_emri.physical_relations import (  # noqa: E402
     dist,
     dist_to_redshift,
     dist_vectorized,
@@ -127,8 +127,12 @@ def _posterior_metrics(
     Z = float(P.sum())
     if not np.isfinite(Z) or Z <= 0:
         return {
-            "E_h": float("nan"), "width": float("nan"), "rmse_truth": float("nan"),
-            "h_map": float("nan"), "bias": float("nan"), "railed": True,
+            "E_h": float("nan"),
+            "width": float("nan"),
+            "rmse_truth": float("nan"),
+            "h_map": float("nan"),
+            "bias": float("nan"),
+            "railed": True,
             "edge_mass": 1.0,
         }
     P = P / Z
@@ -141,8 +145,12 @@ def _posterior_metrics(
     # fraction of posterior mass within 1 step of either grid edge (flat/rail flag)
     edge_mass = float(P[0] + P[1] + P[-1] + P[-2])
     return {
-        "E_h": E_h, "width": width, "rmse_truth": rmse_truth,
-        "h_map": float(h_map), "bias": float(E_h - h_true), "railed": railed,
+        "E_h": E_h,
+        "width": width,
+        "rmse_truth": rmse_truth,
+        "h_map": float(h_map),
+        "bias": float(E_h - h_true),
+        "railed": railed,
         "edge_mass": edge_mass,
     }
 
@@ -199,9 +207,22 @@ def _precompute_event(
     ngrid = int(np.clip((z_hi - z_lo) / (0.4 * max(sig_z, 2e-3)), 120, 500))
     z_grid = np.linspace(z_lo, z_hi, ngrid)
     g_grid = np.asarray(dist_vectorized(z_grid, h=1.0), dtype=np.float64)  # d_L(z,h)=g/h
-    nm = np.exp(-0.5 * ((z_grid[None, :] - zg[:, None]) / sig_z) ** 2) / (np.sqrt(2 * np.pi) * sig_z)
-    return _EventPre(d_meas, sdL, ev["M_z_meas"], ev["sigma_Mz_abs"], g_grid, z_grid,
-                     float(z_grid[1] - z_grid[0]), i0, i1, nm, wg)
+    nm = np.exp(-0.5 * ((z_grid[None, :] - zg[:, None]) / sig_z) ** 2) / (
+        np.sqrt(2 * np.pi) * sig_z
+    )
+    return _EventPre(
+        d_meas,
+        sdL,
+        ev["M_z_meas"],
+        ev["sigma_Mz_abs"],
+        g_grid,
+        z_grid,
+        float(z_grid[1] - z_grid[0]),
+        i0,
+        i1,
+        nm,
+        wg,
+    )
 
 
 def _accumulate(
@@ -263,8 +284,13 @@ def run_cell(
         sMz = sigma_Mz_frac * M_z_true
         M_z_meas = M_z_true + sMz * rng.standard_normal()
         events.append(
-            {"d_meas": d_meas, "sigma_dL": sdL, "M_z_meas": M_z_meas, "sigma_Mz_abs": sMz,
-             "g_true": g}
+            {
+                "d_meas": d_meas,
+                "sigma_dL": sdL,
+                "M_z_meas": M_z_meas,
+                "sigma_Mz_abs": sMz,
+                "g_true": g,
+            }
         )
 
     # --- sorted catalogue arrays (searchsorted candidate slice) -------------
@@ -303,9 +329,9 @@ def run_cell(
         # 2-D: add the host-mass factor m_g(z) = N(M_z_meas; M_g*(1+z), sMz^2+(sM*M_g*(1+z))^2)
         one_pz = 1.0 + pre.z_grid[None, :]
         for sM in sigma_M_grid:
-            Mg = Mcat_by_sM[sM][pre.i0:pre.i1]
+            Mg = Mcat_by_sM[sM][pre.i0 : pre.i1]
             mu = Mg[:, None] * one_pz  # observer-frame host mass at trial z (n_cand, nz)
-            sig2 = pre.sigma_Mz_abs ** 2 + (sM * mu) ** 2
+            sig2 = pre.sigma_Mz_abs**2 + (sM * mu) ** 2
             mm = np.exp(-0.5 * (pre.M_z_meas - mu) ** 2 / sig2) / np.sqrt(2 * np.pi * sig2)
             v2 = (pre.wg[:, None] * pre.nm * mm).sum(axis=0)
             _accumulate(lp_2d[sM], pre, v2, gw, gdenom_arr)
@@ -314,8 +340,11 @@ def run_cell(
     twod = {f"{sM:.4g}": _posterior_metrics(hs, lp_2d[sM], h_true) for sM in sigma_M_grid}
 
     return {
-        "sigma_z": sigma_z, "seed": seed, "n_events": len(events),
-        "oned": m1, "twod": twod,
+        "sigma_z": sigma_z,
+        "seed": seed,
+        "n_events": len(events),
+        "oned": m1,
+        "twod": twod,
     }
 
 
@@ -357,14 +386,19 @@ def _aggregate(cells: list[dict], cfg: ForecastConfig) -> dict:
             W[i, j] = med([c["twod"][mk]["width"] for c in by_sz[k]])
             R[i, j] = med([c["twod"][mk]["rmse_truth"] for c in by_sz[k]])
             Bz[i, j] = med([c["twod"][mk]["bias"] for c in by_sz[k]])
-            Rf[i, j] = float(np.mean([c["twod"][mk]["railed"] for c in by_sz[k]])) if by_sz[k] else np.nan
+            Rf[i, j] = (
+                float(np.mean([c["twod"][mk]["railed"] for c in by_sz[k]])) if by_sz[k] else np.nan
+            )
     return {
         "config": asdict(cfg),
-        "sigma_z_grid": sz, "sigma_M_grid": sM,
+        "sigma_z_grid": sz,
+        "sigma_M_grid": sM,
         "oned": oned,
         "twod": {
-            "width": W.tolist(), "rmse_truth": R.tolist(),
-            "bias": Bz.tolist(), "rail_frac": Rf.tolist(),
+            "width": W.tolist(),
+            "rmse_truth": R.tolist(),
+            "bias": Bz.tolist(),
+            "rail_frac": Rf.tolist(),
         },
         "n_seeds": len(cfg.seeds),
     }
@@ -373,29 +407,42 @@ def _aggregate(cells: list[dict], cfg: ForecastConfig) -> dict:
 def sweep(cfg: ForecastConfig, *, workers: int = 12, out: Path = _RESULTS_JSON) -> dict:
     hs = _h_grid(cfg)
     jobs = [(sz, seed) for sz in cfg.sigma_z_grid for seed in cfg.seeds]
-    print(f"[sweep] {len(jobs)} (sigma_z x seed) cells x {len(cfg.sigma_M_grid)} sigma_M "
-          f"| pop={cfg.population} n_events={cfg.n_events} n_gal={cfg.n_gal} | {len(hs)}-pt "
-          f"h-grid [{hs[0]},{hs[-1]}] | workers={workers}", flush=True)
+    print(
+        f"[sweep] {len(jobs)} (sigma_z x seed) cells x {len(cfg.sigma_M_grid)} sigma_M "
+        f"| pop={cfg.population} n_events={cfg.n_events} n_gal={cfg.n_gal} | {len(hs)}-pt "
+        f"h-grid [{hs[0]},{hs[-1]}] | workers={workers}",
+        flush=True,
+    )
     if cfg.population == "real_nz":  # load real catalogue ONCE so forked workers inherit the cache
         t = time.time()
         z, _M, _h = B.load_real_catalog()
-        print(f"[sweep] real GLADE n(z) loaded: {len(z)} galaxies ({time.time()-t:.0f}s)", flush=True)
+        print(
+            f"[sweep] real GLADE n(z) loaded: {len(z)} galaxies ({time.time() - t:.0f}s)",
+            flush=True,
+        )
     t0 = time.time()
     cells: list[dict] = []
     with ProcessPoolExecutor(max_workers=workers) as ex:
         futs = [
             ex.submit(
-                run_cell, sz, cfg.sigma_M_grid,
-                h_true=cfg.h_true, n_gal=cfg.n_gal, n_events=cfg.n_events,
-                sigma_dL_frac=cfg.sigma_dL_frac, sigma_Mz_frac=cfg.sigma_Mz_frac,
-                seed=seed, hs=hs, population=cfg.population,
+                run_cell,
+                sz,
+                cfg.sigma_M_grid,
+                h_true=cfg.h_true,
+                n_gal=cfg.n_gal,
+                n_events=cfg.n_events,
+                sigma_dL_frac=cfg.sigma_dL_frac,
+                sigma_Mz_frac=cfg.sigma_Mz_frac,
+                seed=seed,
+                hs=hs,
+                population=cfg.population,
             )
             for (sz, seed) in jobs
         ]
         for n, fut in enumerate(futs, 1):
             cells.append(fut.result())
             if n % max(1, len(futs) // 20) == 0 or n == len(futs):
-                print(f"  {n}/{len(futs)} cells ({time.time()-t0:.0f}s)", flush=True)
+                print(f"  {n}/{len(futs)} cells ({time.time() - t0:.0f}s)", flush=True)
     agg = _aggregate(cells, cfg)
     agg["raw_cells"] = cells
     agg["elapsed_s"] = time.time() - t0
@@ -413,19 +460,32 @@ def smoke() -> None:
     sM_grid = [0.02, 0.1, 0.4]
     for sz in [1e-3, 1e-2, 3.5e-2]:
         r = run_cell(
-            sz, sM_grid, h_true=B.TRUE_H, n_gal=12000, n_events=400,
-            sigma_dL_frac=0.05, sigma_Mz_frac=1e-3, seed=0, hs=hs,
+            sz,
+            sM_grid,
+            h_true=B.TRUE_H,
+            n_gal=12000,
+            n_events=400,
+            sigma_dL_frac=0.05,
+            sigma_Mz_frac=1e-3,
+            seed=0,
+            hs=hs,
         )
         o = r["oned"]
         print(f"\nsigma_z={sz:.4f}  (n_events={r['n_events']})", flush=True)
-        print(f"  1-D : width={o['width']:.4f}  rmse_truth={o['rmse_truth']:.4f}  "
-              f"E[h]={o['E_h']:.4f} bias={o['bias']:+.4f} railed={o['railed']} "
-              f"edge_mass={o['edge_mass']:.2f}", flush=True)
+        print(
+            f"  1-D : width={o['width']:.4f}  rmse_truth={o['rmse_truth']:.4f}  "
+            f"E[h]={o['E_h']:.4f} bias={o['bias']:+.4f} railed={o['railed']} "
+            f"edge_mass={o['edge_mass']:.2f}",
+            flush=True,
+        )
         for sM in sM_grid:
             t = r["twod"][f"{sM:.4g}"]
-            print(f"  2-D sigma_M={sM:.2f}: width={t['width']:.4f}  rmse_truth={t['rmse_truth']:.4f}  "
-                  f"E[h]={t['E_h']:.4f} bias={t['bias']:+.4f} railed={t['railed']} "
-                  f"edge_mass={t['edge_mass']:.2f}", flush=True)
+            print(
+                f"  2-D sigma_M={sM:.2f}: width={t['width']:.4f}  rmse_truth={t['rmse_truth']:.4f}  "
+                f"E[h]={t['E_h']:.4f} bias={t['bias']:+.4f} railed={t['railed']} "
+                f"edge_mass={t['edge_mass']:.2f}",
+                flush=True,
+            )
 
 
 def main() -> None:
@@ -442,11 +502,13 @@ def main() -> None:
     if args.smoke:
         smoke()
     if args.sweep:
-        cfg = ForecastConfig(n_events=args.n_events, seeds=list(range(args.seeds)),
-                             population=args.population)
+        cfg = ForecastConfig(
+            n_events=args.n_events, seeds=list(range(args.seeds)), population=args.population
+        )
         sweep(cfg, workers=args.workers, out=Path(args.out))
     if args.plot:
         from _forecast_plot import plot_heatmap  # noqa: PLC0415
+
         plot_heatmap(json.loads(Path(args.out).read_text()))
     if not (args.smoke or args.sweep or args.plot):
         ap.print_help()

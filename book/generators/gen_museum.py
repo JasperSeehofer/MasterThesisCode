@@ -70,9 +70,7 @@ from scipy.stats import norm
 BOOK_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = BOOK_ROOT / "book" / "site" / "data"
 
-LEDGER_REL = (
-    "results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md"
-)
+LEDGER_REL = "results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md"
 CLAIM_REL = "results/campaign51_20260728/realistic_20260729/CLAIM_2D_BIAS_20260730.md"
 GATE_RESULT_REL = "results/volume_trunc_ab_20260712/gate_result.json"
 INJECTION_SCAN_REL = "results/commission_20260701/injection_scan.py"
@@ -256,8 +254,8 @@ def _split_row(line: str) -> list[str]:
     cells = [c.replace("\x00", "|") for c in tmp.split("|")]
     surplus = len(cells) - LEDGER_CELL_COUNT
     if surplus > 0:
-        merged = "|".join(cells[VERDICT_IDX: VERDICT_IDX + surplus + 1])
-        cells = cells[:VERDICT_IDX] + [merged] + cells[VERDICT_IDX + surplus + 1:]
+        merged = "|".join(cells[VERDICT_IDX : VERDICT_IDX + surplus + 1])
+        cells = cells[:VERDICT_IDX] + [merged] + cells[VERDICT_IDX + surplus + 1 :]
     return cells
 
 
@@ -371,9 +369,7 @@ def build_ledger() -> dict[str, Any]:
     known = {row["id"] for row in rows}
     orphan = [rid for rid in dnr_rows if rid not in known]
     if orphan:
-        raise AssertionError(
-            f"gen_museum: §2 back-references rows absent from the table: {orphan}"
-        )
+        raise AssertionError(f"gen_museum: §2 back-references rows absent from the table: {orphan}")
     for row in rows:
         row["do_not_retry"] = row["id"] in dnr_rows
 
@@ -382,9 +378,7 @@ def build_ledger() -> dict[str, Any]:
     claim = claim_path.read_text()
     block = claim.split("## Exonerated — do NOT re-open without new evidence")[1]
     block = block.split("**[2026-07-30 adjudication")[0]
-    claim_exonerated = [
-        _strip_md(x) for x in block.strip().split("·") if _strip_md(x)
-    ]
+    claim_exonerated = [_strip_md(x) for x in block.strip().split("·") if _strip_md(x)]
 
     census: dict[str, int] = {}
     for row in rows:
@@ -430,7 +424,7 @@ RECORDED_FINDING = {
 
 
 def build_quadrature() -> dict[str, Any]:
-    from master_thesis_code.physical_relations import (  # noqa: PLC0415
+    from darksiren_emri.physical_relations import (  # noqa: PLC0415
         comoving_volume_element,
         dist,
         dist_to_redshift,
@@ -496,8 +490,11 @@ def build_quadrature() -> dict[str, Any]:
         def f_sca(z: np.ndarray, hh: float = h, zn: float = z_norm) -> np.ndarray:
             return gw_scalar(z, hh) * prior_unnorm(z, hh) / zn
 
-        ex = float(quad(lambda z, hh=h, zn=z_norm: float(f_vec(np.array([z]), hh, zn)[0]),
-                        lo, hi, limit=400)[0])
+        ex = float(
+            quad(
+                lambda z, hh=h, zn=z_norm: float(f_vec(np.array([z]), hh, zn)[0]), lo, hi, limit=400
+            )[0]
+        )
         exact.append(r(ex, 6))
         zp = float(dist_to_redshift(d_L_det, h=h))
         z_peak.append(r(zp, 6))
@@ -510,9 +507,7 @@ def build_quadrature() -> dict[str, Any]:
         n_lo = float(dist_to_redshift(d_L_det - 4 * dl_unc, h=h))
         n_hi = float(dist_to_redshift(d_L_det + 4 * dl_unc, h=h))
         gw_window.append([r(n_lo, 6), r(n_hi, 6)])
-        predicted_gw_window_scalar.append(
-            r(float(fixed_quad(f_sca, n_lo, n_hi, n=50)[0]), 6)
-        )
+        predicted_gw_window_scalar.append(r(float(fixed_quad(f_sca, n_lo, n_hi, n=50)[0]), 6))
 
         # display integrand: coarse over the whole window + dense over the peak
         z_coarse = np.linspace(lo, hi, 250)
@@ -593,7 +588,7 @@ ARCHAEOLOGY = [
         "map_h": 0.735,
         "venue": "stored posterior, n = 417 events",
         "what": "A raw per-event distance-redshift product: no Gray D(h), no zero-fill p_det, "
-                "no completeness. Interior, recovers the injected 0.73; edge mass ~1e-36.",
+        "no completeness. Interior, recovers the injected 0.73; edge mass ~1e-36.",
         "commit": None,
         "artifact": "WF1_DIGEST.md:9-15 / ledger #49b",
         "state": "interior",
@@ -604,7 +599,7 @@ ARCHAEOLOGY = [
         "map_h": 0.86,
         "venue": "stored posterior, same era",
         "what": "The Gray selection/completeness machinery is switched on (zero-fill p_det "
-                "a70d1a2 + Gray D(h) 2853c32). The posterior rails to the upper grid edge.",
+        "a70d1a2 + Gray D(h) 2853c32). The posterior rails to the upper grid edge.",
         "commit": "a70d1a2 + 2853c32",
         "artifact": "WF1_DIGEST.md:9-15 / ledger #49b",
         "state": "railed",
@@ -627,7 +622,7 @@ ARCHAEOLOGY = [
         "map_note": "+1.5–4% high, seed-dependent; the h-grid is narrowed to [0.70, 0.80]",
         "venue": "several seeds",
         "what": "Two months of interior-but-high posteriors. The narrowed grid is itself part "
-                "of the archaeology: a grid that cannot show a rail will not show you one.",
+        "of the archaeology: a grid that cannot show a rail will not show you one.",
         "commit": None,
         "artifact": "WF1_DIGEST.md:9-15",
         "state": "interior",
@@ -638,8 +633,7 @@ ARCHAEOLOGY = [
         "map_h": None,
         "map_note": "structural change, no MAP recorded at this commit",
         "venue": "code",
-        "what": "The per-event likelihood becomes one quotient, "
-                "p_i = (β_G·L_cat + B_num)/D(h).",
+        "what": "The per-event likelihood becomes one quotient, p_i = (β_G·L_cat + B_num)/D(h).",
         "commit": "f1232de",
         "artifact": "WF1_DIGEST.md:9-15",
         "state": "structural",
@@ -650,7 +644,7 @@ ARCHAEOLOGY = [
         "map_h": 0.86,
         "venue": "seed600, HEAD code (auditor's out-of-band check)",
         "what": "The auditor's own re-run: posterior argmax 0.86 while D(h)'s own argmax is "
-                "0.60 — the rail is back, and it is normalization-shaped.",
+        "0.60 — the rail is back, and it is normalization-shaped.",
         "commit": None,
         "artifact": "WF1_DIGEST.md:9-15",
         "state": "railed",
@@ -671,7 +665,7 @@ ARCHAEOLOGY = [
         "map_h": 0.60,
         "venue": "real data, 494 events",
         "what": "Fixing the completion term's 4π sky marginal flips the rail from the top of "
-                "the grid to the bottom — necessary, not sufficient.",
+        "the grid to the bottom — necessary, not sufficient.",
         "commit": "cb16142 + 4a259b7",
         "artifact": "ledger #49 / #46",
         "state": "railed",
@@ -682,7 +676,7 @@ ARCHAEOLOGY = [
         "map_h": 0.73,
         "venue": "real data, 494 events",
         "what": "A locally-normalized ratio of sums puts 98% of the posterior mass on an "
-                "interior peak at truth.",
+        "interior peak at truth.",
         "commit": None,
         "artifact": "ledger #49",
         "state": "interior",
@@ -704,7 +698,7 @@ ARCHAEOLOGY = [
         "map_label": "1D 0.72990 (−0.24σ) · 2D 0.7300 (−0.36σ)",
         "venue": "seed61000, point kernel + generator_marginal, unscattered catalogue",
         "what": "1D 0.72990 (−0.24σ), 2D 0.7300 (−0.36σ) on a 1e-4 zoom grid. 100% of the "
-                "information comes from 76 in-catalogue events; 3 golden events carry 46%.",
+        "information comes from 76 in-catalogue events; 3 golden events carry 46%.",
         "commit": None,
         "artifact": "ledger #93 / IDEALIZED_BASELINE_READOUT.md:25-47",
         "state": "interior",
@@ -716,7 +710,7 @@ ARCHAEOLOGY = [
         "map_label": "1D pooled 0.7205 (per-run range 0.700–0.740); 2D 0.780–0.820, mean bias +0.077",
         "venue": "seed61000/62000, absolute_marginal + volume_deconv, scattered catalogue, 10 runs",
         "what": "1D 0.700–0.740 (pooled 0.7205); 2D 0.780–0.820, mean bias +0.077, 10/10 runs "
-                "pull > 2σ. The 2D pairing is a designated CANDIDATE, not ratified ground.",
+        "pull > 2σ. The 2D pairing is a designated CANDIDATE, not ratified ground.",
         "commit": None,
         "artifact": "ledger #94 / REALISTIC_READOUT.md:19-32",
         "state": "current",
@@ -742,7 +736,7 @@ def build_archaeology() -> dict[str, Any]:
 # ======================================================================
 RECORDED_49A = {
     "verdict": "production MAP = 0.86 for EVERY injected truth 0.63→0.77, while catalog_only "
-               "tracks truth exactly (0.63→0.63 … 0.77→0.77)",
+    "tracks truth exactly (0.63→0.63 … 0.77→0.77)",
     "source": "ledger #49a; synthesis/DRAFT_REPORT.md:24-27; WF2_DIGEST.md:26-30",
 }
 

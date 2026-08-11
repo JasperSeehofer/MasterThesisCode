@@ -41,7 +41,7 @@ TASK_SEED=$(( ${BASE_SEED:-0} + ${SLURM_ARRAY_TASK_ID:-0} ))
 H_VALUE="${H_VALUE:-0.73}"                   # injected truth (sim/inject) or eval point
 
 # THE CWD GOTCHA: the pipeline reads/writes RELATIVE paths from CWD
-#   • reads the catalog at ./master_thesis_code/galaxy_catalogue/
+#   • reads the catalog at ./darksiren_emri/galaxy_catalogue/
 #   • reads/writes ./simulations/...
 # So: run from PROJECT_ROOT, and point ./simulations at this run's output dir.
 cd "$PROJECT_ROOT"
@@ -53,12 +53,12 @@ ln -sfn "$RUN_DIR/simulations" "$PROJECT_ROOT/simulations"
 #   [[ -f "$OUT" ]] && { echo "SKIP: $OUT exists"; exit 0; }
 
 # ---- 4. TODO: the actual work ------------------------------------------------
-# Invoke the package via `python -m master_thesis_code <working_dir> <flags>`.
+# Invoke the package via `python -m darksiren_emri <working_dir> <flags>`.
 # working_dir is $RUN_DIR for sim/inject/evaluate, or $RUN_DIR/simulations for
 # --combine / --generate_figures (they operate on the simulations subdir).
 echo "=== $SLURM_JOB_NAME  task=${SLURM_ARRAY_TASK_ID:-NA}  seed=$TASK_SEED  h=$H_VALUE  node=$(hostname) ==="
 
-python -m master_thesis_code "$RUN_DIR" \
+python -m darksiren_emri "$RUN_DIR" \
     --simulation_steps "${SIM_STEPS:?}" \
     --simulation_index "${SLURM_ARRAY_TASK_ID:-0}" \
     --seed "$TASK_SEED" \

@@ -36,25 +36,25 @@ from pathlib import Path
 
 import numpy as np
 
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
+from darksiren_emri.bayesian_inference.bayesian_statistics import (
     precompute_completion_denominator,
     precompute_global_catalog_selection,
     precompute_missing_completion_denominator,
 )
-from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+from darksiren_emri.bayesian_inference.simulation_detection_probability import (
     SimulationDetectionProbability,
 )
-from master_thesis_code.constants import SNR_THRESHOLD
-from master_thesis_code.cosmological_model import Model1CrossCheck
-from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
-from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+from darksiren_emri.constants import SNR_THRESHOLD
+from darksiren_emri.cosmological_model import Model1CrossCheck
+from darksiren_emri.galaxy_catalogue.handler import GalaxyCatalogueHandler
+from darksiren_emri.galaxy_catalogue.pixel_completeness import from_cache_or_build
 
 _LOGGER = logging.getLogger(__name__)
 
 # Fiducial cosmology of the inference (constants.py) — the check is at fixed
 # Omega_m; the ratio shape is insensitive to the exact value.
-from master_thesis_code.constants import OMEGA_DE as _OMEGA_DE  # noqa: E402
-from master_thesis_code.constants import OMEGA_M as _OMEGA_M  # noqa: E402
+from darksiren_emri.constants import OMEGA_DE as _OMEGA_DE  # noqa: E402
+from darksiren_emri.constants import OMEGA_M as _OMEGA_M  # noqa: E402
 
 _H_FIDUCIAL = 0.73
 

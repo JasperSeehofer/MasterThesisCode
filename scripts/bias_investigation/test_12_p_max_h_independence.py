@@ -57,7 +57,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from analysis.grid_quality import load_injection_data
-from master_thesis_code.constants import SNR_THRESHOLD
+from darksiren_emri.constants import SNR_THRESHOLD
 
 # ---------------------------------------------------------------------------
 # Configuration constants

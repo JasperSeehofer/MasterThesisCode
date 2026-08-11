@@ -1,17 +1,43 @@
-# EMRI Bayesian H₀ Inference
+# darksiren-emri
 
-[![CI](https://github.com/JasperSeehofer/MasterThesisCode/actions/workflows/ci.yml/badge.svg)](https://github.com/JasperSeehofer/MasterThesisCode/actions/workflows/ci.yml)
+[![CI](https://github.com/JasperSeehofer/darksiren-emri/actions/workflows/ci.yml/badge.svg)](https://github.com/JasperSeehofer/darksiren-emri/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://jasperseehofer.github.io/MasterThesisCode/)
 [![Interactive Figures](https://img.shields.io/badge/figures-interactive-56B4E9)](https://jasperseehofer.github.io/MasterThesisCode/interactive/)
 
-Dark siren inference of the Hubble constant H₀ from Extreme Mass Ratio Inspiral (EMRI)
-gravitational wave events detected by the LISA space detector, using Bayesian analysis
-with the GLADE+ galaxy catalog.
+**End-to-end EMRI dark-siren H₀ inference — with the book that teaches it.**
+
+darksiren-emri measures the Hubble constant H₀ from Extreme Mass Ratio Inspiral (EMRI)
+gravitational-wave events detected by the LISA space observatory, using Bayesian analysis with
+the GLADE+ galaxy catalogue and a completeness correction (Gray et al. 2020). It ships as
+working, GPU-capable research code — and as
+*[A Dark Siren Discovery Book](https://jasperseehofer.github.io/MasterThesisCode/book/)*, an
+interactive, build-and-break narrative that walks a reader from "why does H₀ disagree with
+itself" to a working estimator, including the wrong turns the project itself took along the way.
+If you're new to dark sirens, start with the book. If you know the field, the pipeline below is
+production code with a pre-registration discipline and a public validation record.
 
 > **Development note.** This code is AI-*assisted* and human-*verified*. The author owns all
 > scientific decisions; every change to physics is gated by a documented verification protocol
 > (dimensional analysis, limiting-case checks, literature references, regression tests). See the
 > `physics-change` protocol in [`CLAUDE.md`](CLAUDE.md).
+
+## How this relates to other codes
+
+The dark-siren / GW-population-inference community has excellent public tools already — this
+project builds on their published methods and, in `docs/gates/`, on a line-by-line comparison
+against their source. It doesn't replace them; it covers different ground.
+
+| Code | What it's great at | Where darksiren-emri sits alongside it |
+|---|---|---|
+| [gwcosmo](https://git.ligo.org/lscsoft/gwcosmo) | The LVK production dark-siren pipeline for ground-based compact binaries — the reference implementation of the Gray et al. galaxy-catalogue method | darksiren-emri follows the same completeness-correction formalism, applied to LISA EMRIs instead of ground-based CBCs |
+| [CHIMERA](https://github.com/CosmoStatGW/CHIMERA) | The most actively developed, best-documented, JAX/GPU-accelerated bright/dark/spectral-siren code, with the fullest reference docs in the field | darksiren-emri adds an EMRI waveform → Fisher-matrix layer upstream of the H₀ inference, and a narrative teaching book alongside the reference material |
+| [icarogw](https://github.com/simone-mastrogiovanni/icarogw), [GWPopulation](https://github.com/ColmTalbot/gwpopulation) | General-purpose hierarchical population-inference toolkits — the right choice if you need flexible population models beyond a single H₀ estimator | darksiren-emri is narrower and more opinionated: one estimator, EMRI-specific, run to a published validation standard |
+| [DarkSirensStat](https://github.com/CosmoStatGW/DarkSirensStat), [MGCosmoPop](https://github.com/CosmoStatGW/MGCosmoPop) | The methodological lineage CHIMERA grew from — modified-propagation and population-model extensions | Same formalism family; darksiren-emri's contribution is the LISA/EMRI branch, not a competing ground-based method |
+| [StableEMRIFisher](https://github.com/perturber/StableEMRIFisher) | Focused, well-validated EMRI Fisher-matrix computation | darksiren-emri computes EMRI Fisher/CRB too, then carries the result all the way to a galaxy-catalogue H₀ posterior |
+
+If your project needs ground-based dark sirens today, gwcosmo or CHIMERA are the mature choice.
+If you're learning the field or working on LISA/EMRI dark sirens specifically, that's what
+darksiren-emri is for.
 
 ## Installation
 
@@ -51,25 +77,25 @@ uv sync --extra gpu
 **EMRI simulation** — generates SNR and Cramér-Rao bounds:
 
 ```bash
-uv run python -m master_thesis_code <working_dir> --simulation_steps N [--simulation_index I] [--log_level DEBUG]
+uv run python -m darksiren_emri <working_dir> --simulation_steps N [--simulation_index I] [--log_level DEBUG]
 ```
 
 **Bayesian inference** — evaluate Hubble constant posterior:
 
 ```bash
-uv run python -m master_thesis_code <working_dir> --evaluate [--h_value 0.73]
+uv run python -m darksiren_emri <working_dir> --evaluate [--h_value 0.73]
 ```
 
 **SNR analysis only**:
 
 ```bash
-uv run python -m master_thesis_code <working_dir> --snr_analysis
+uv run python -m darksiren_emri <working_dir> --snr_analysis
 ```
 
 **Injection campaign** — generate detection probability grid data:
 
 ```bash
-uv run python -m master_thesis_code <working_dir> --injection_campaign --simulation_steps N [--seed 42]
+uv run python -m darksiren_emri <working_dir> --injection_campaign --simulation_steps N [--seed 42]
 ```
 
 **Reproducibility:** Pass `--seed <int>` to fix the NumPy random state. When omitted,
@@ -115,25 +141,25 @@ xdg-open docs/build/html/index.html  # Linux
 
 | Module | Description |
 |--------|-------------|
-| `master_thesis_code/parameter_estimation/` | Waveform generation, Fisher matrix, SNR, Cramér-Rao bounds |
-| `master_thesis_code/LISA_configuration.py` | LISA antenna patterns, PSD, frame transformations |
-| `master_thesis_code/datamodels/` | `ParameterSpace`, `Galaxy`, `GalaxyCatalog`, `EMRIDetection`, `Detection` |
-| `master_thesis_code/bayesian_inference/bayesian_inference.py` | Pipeline A (dev cross-check): scalar Gaussian likelihood, synthetic catalog |
-| `master_thesis_code/bayesian_inference/bayesian_statistics.py` | Pipeline B (production): Fisher covariance, GLADE catalog, completeness correction |
-| `master_thesis_code/bayesian_inference/detection_probability.py` | Detection probability: `SimulationDetectionProbability` (IS estimator from injection campaigns) |
-| `master_thesis_code/physical_relations.py` | Cosmological distance functions |
-| `master_thesis_code/constants.py` | Physical constants and simulation configuration |
-| `master_thesis_code/cosmological_model.py` | EMRI event rate model, H₀ evaluation orchestration |
-| `master_thesis_code/galaxy_catalogue/` | GLADE galaxy catalog interface (BallTree lookups) |
-| `master_thesis_code/galaxy_catalogue/glade_completeness.py` | GLADE+ catalog completeness estimation $f(z, H_0)$ |
-| `master_thesis_code/plotting/` | All visualization code (factory functions, style, helpers) |
+| `darksiren_emri/parameter_estimation/` | Waveform generation, Fisher matrix, SNR, Cramér-Rao bounds |
+| `darksiren_emri/LISA_configuration.py` | LISA antenna patterns, PSD, frame transformations |
+| `darksiren_emri/datamodels/` | `ParameterSpace`, `Galaxy`, `GalaxyCatalog`, `EMRIDetection`, `Detection` |
+| `darksiren_emri/bayesian_inference/bayesian_inference.py` | Pipeline A (dev cross-check): scalar Gaussian likelihood, synthetic catalog |
+| `darksiren_emri/bayesian_inference/bayesian_statistics.py` | Pipeline B (production): Fisher covariance, GLADE catalog, completeness correction |
+| `darksiren_emri/bayesian_inference/detection_probability.py` | Detection probability: `SimulationDetectionProbability` (IS estimator from injection campaigns) |
+| `darksiren_emri/physical_relations.py` | Cosmological distance functions |
+| `darksiren_emri/constants.py` | Physical constants and simulation configuration |
+| `darksiren_emri/cosmological_model.py` | EMRI event rate model, H₀ evaluation orchestration |
+| `darksiren_emri/galaxy_catalogue/` | GLADE galaxy catalog interface (BallTree lookups) |
+| `darksiren_emri/galaxy_catalogue/glade_completeness.py` | GLADE+ catalog completeness estimation $f(z, H_0)$ |
+| `darksiren_emri/plotting/` | All visualization code (factory functions, style, helpers) |
 | `analysis/` | Post-hoc analysis: grid quality, importance sampling, injection yield, validation |
 | `scripts/` | Utility scripts for post-processing simulation output |
 | `scripts/bias_investigation/` | H₀ posterior bias diagnostic scripts and findings |
 | `derivations/` | Physics derivation notes (dark siren likelihood) |
 | `interactive/` | Interactive Plotly HTML figures (posteriors, Fisher ellipses, sky map, M_z improvement explorer) |
 | `paper/` | LaTeX paper source (REVTeX4-2 PRD format) |
-| `master_thesis_code_test/` | Test suite (mirrors source layout) |
+| `darksiren_emri_test/` | Test suite (mirrors source layout) |
 
 ---
 

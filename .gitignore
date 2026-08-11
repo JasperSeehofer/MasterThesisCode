@@ -8,7 +8,7 @@ docs/source/_generated/
 **/__pycache__/
 env/
 evaluation/
-!master_thesis_code_test/fixtures/evaluation/
+!darksiren_emri_test/fixtures/evaluation/
 test-artifacts/
 
 # Data files (regenerable, live on $WORKSPACE on cluster)

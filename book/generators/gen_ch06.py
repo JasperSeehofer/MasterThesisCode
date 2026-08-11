@@ -113,27 +113,27 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from master_thesis_code.constants import (  # noqa: E402
+from darksiren_emri.constants import (  # noqa: E402
     HOST_DRAW_Z_MAX,
     M_SOURCE_FRAME_MAX,
     M_SOURCE_FRAME_MIN,
     SNR_THRESHOLD,
 )
-from master_thesis_code.constants import (  # noqa: E402
+from darksiren_emri.constants import (  # noqa: E402
     H as H_TRUE,
 )
-from master_thesis_code.galaxy_catalogue.handler import (  # noqa: E402
+from darksiren_emri.galaxy_catalogue.handler import (  # noqa: E402
     _empiric_stellar_mass_to_BH_mass_relation,
     _polar_to_cartesian,
     _reduced_catalog_column_names,
 )
-from master_thesis_code.physical_relations import (  # noqa: E402
+from darksiren_emri.physical_relations import (  # noqa: E402
     dist,
     get_redshift_outer_bounds,
 )
 
 try:  # newer package revisions expose the prune predicate as a helper
-    from master_thesis_code.galaxy_catalogue.handler import (  # noqa: E402
+    from darksiren_emri.galaxy_catalogue.handler import (  # noqa: E402
         _mass_redshift_prune_mask,
     )
 except ImportError:  # pragma: no cover - depends on the checked-out package revision
@@ -156,12 +156,13 @@ except ImportError:  # pragma: no cover - depends on the checked-out package rev
             & (redshift - redshift_error <= z_max)
         )
 
+
 # --- repo-relative artifact paths (BOOK_DESIGN section 4.2 rule 7) ---------
 CAMPAIGN_REL = Path("results/campaign51_20260728/realistic_20260729")
 SEED_REL = CAMPAIGN_REL / "seed61000"
 CRB_REL = SEED_REL / "prepared_cramer_rao_bounds.csv"
 POOL_REL = CAMPAIGN_REL / "gate_b_20260730" / "injection_pool_mix200k_20260728"
-CATALOGUE_REL = Path("master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv")
+CATALOGUE_REL = Path("darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv")
 
 OUT_DIR = Path(__file__).resolve().parent.parent / "site" / "data"
 OUT_FISHER = OUT_DIR / "ch06_fisher.json"
@@ -195,18 +196,66 @@ PATCH_RADIUS_DEG = 4.5
 PATCH_SCATTER_N = 2000
 # SNR grid the slider indexes (log-spaced, endpoints pinned).
 SNR_GRID = [
-    20.0, 22.0, 24.5, 27.0, 30.0, 33.5, 37.0, 41.5, 46.0, 51.5, 57.0, 64.0,
-    71.0, 79.5, 88.0, 99.0, 110.0, 123.0, 137.0, 153.0, 171.0, 191.0, 214.0,
-    239.0, 267.0, 299.0, 334.0, 373.0, 417.0, 466.0, 521.0, 582.0, 651.0,
-    728.0, 813.0, 909.0, 1016.0, 1136.0, 1270.0, 1424.7236072062765,
+    20.0,
+    22.0,
+    24.5,
+    27.0,
+    30.0,
+    33.5,
+    37.0,
+    41.5,
+    46.0,
+    51.5,
+    57.0,
+    64.0,
+    71.0,
+    79.5,
+    88.0,
+    99.0,
+    110.0,
+    123.0,
+    137.0,
+    153.0,
+    171.0,
+    191.0,
+    214.0,
+    239.0,
+    267.0,
+    299.0,
+    334.0,
+    373.0,
+    417.0,
+    466.0,
+    521.0,
+    582.0,
+    651.0,
+    728.0,
+    813.0,
+    909.0,
+    1016.0,
+    1136.0,
+    1270.0,
+    1424.7236072062765,
 ]
 
 # The 14 waveform parameters, in the CRB table's own column order.  The
 # stored lower triangle is named ``delta_<later>_delta_<earlier>``, so this
 # order is what reassembles the full 14x14 covariance.
 CRB_PARAMS_14 = [
-    "M", "mu", "a", "p0", "e0", "x0", "luminosity_distance",
-    "qS", "phiS", "qK", "phiK", "Phi_phi0", "Phi_theta0", "Phi_r0",
+    "M",
+    "mu",
+    "a",
+    "p0",
+    "e0",
+    "x0",
+    "luminosity_distance",
+    "qS",
+    "phiS",
+    "qK",
+    "phiK",
+    "Phi_phi0",
+    "Phi_theta0",
+    "Phi_r0",
 ]
 
 # Babak et al. (2017), arXiv:1703.09722 -- this project's own EMRI population
@@ -496,8 +545,11 @@ def build_fisher(crb: pd.DataFrame, catalogue: Path | None) -> dict[str, Any]:
     s_u = np.sqrt(crb["delta_luminosity_distance_delta_luminosity_distance"].to_numpy()) / d_L
     s_mz = np.sqrt(crb["delta_M_delta_M"].to_numpy()) / crb["M"].to_numpy()
     c_tp = crb["delta_phiS_delta_qS"].to_numpy()
-    d_omega = 2 * math.pi * np.abs(np.sin(crb["qS"].to_numpy())) * np.sqrt(
-        np.clip(s_phi**2 * s_th**2 - c_tp**2, 0.0, None)
+    d_omega = (
+        2
+        * math.pi
+        * np.abs(np.sin(crb["qS"].to_numpy()))
+        * np.sqrt(np.clip(s_phi**2 * s_th**2 - c_tp**2, 0.0, None))
     )
     r_tp = c_tp / (s_phi * s_th)
     r_pu = (crb["delta_phiS_delta_luminosity_distance"].to_numpy() / d_L) / (s_phi * s_u)
@@ -565,8 +617,7 @@ def build_fisher(crb: pd.DataFrame, catalogue: Path | None) -> dict[str, Any]:
                 "measured_sigma_Mz_frac_x_snr_median": _r(float(np.median(s_mz * snr)), 4),
                 "implied_at_snr_20": _r(float(np.median(s_mz * snr)) / 20.0, 4),
                 "event_889": _r(
-                    math.sqrt(float(crb.loc[889, "delta_M_delta_M"]))
-                    / float(crb.loc[889, "M"]),
+                    math.sqrt(float(crb.loc[889, "delta_M_delta_M"])) / float(crb.loc[889, "M"]),
                     4,
                 ),
                 "literature": BABAK_2017_MASS_PRECISION,
@@ -592,9 +643,7 @@ def build_fisher(crb: pd.DataFrame, catalogue: Path | None) -> dict[str, Any]:
         "dl_table": {
             "h": float(H_TRUE),
             "z": [_r(float(z), 5) for z in np.linspace(0.0, 1.6, 161)],
-            "d_L_Gpc": [
-                _r(float(dist(float(z), H_TRUE)), 7) for z in np.linspace(0.0, 1.6, 161)
-            ],
+            "d_L_Gpc": [_r(float(dist(float(z), H_TRUE)), 7) for z in np.linspace(0.0, 1.6, 161)],
         },
         "events": {},
     }
@@ -621,9 +670,7 @@ def build_fisher(crb: pd.DataFrame, catalogue: Path | None) -> dict[str, Any]:
     else:
         patches = [None] * len(EVENT_IDS)  # type: ignore[list-item]
 
-    cond14_by_event = {
-        eid: float(np.linalg.cond(_cov14(crb.loc[[eid]])[0])) for eid in EVENT_IDS
-    }
+    cond14_by_event = {eid: float(np.linalg.cond(_cov14(crb.loc[[eid]])[0])) for eid in EVENT_IDS}
 
     for k, eid in enumerate(EVENT_IDS):
         row = crb.loc[eid]
@@ -669,9 +716,10 @@ def build_fisher(crb: pd.DataFrame, catalogue: Path | None) -> dict[str, Any]:
             "sigma_cond": _r(math.sqrt(max(sigma2_cond, 0.0)), 6),
             "proj": [_r(v, 6) for v in proj],
             "d_omega_sr": _r(
-                2 * math.pi * abs(math.sin(theta)) * math.sqrt(
-                    max(sd[0] ** 2 * sd[1] ** 2 - cov3[0, 1] ** 2, 0.0)
-                ),
+                2
+                * math.pi
+                * abs(math.sin(theta))
+                * math.sqrt(max(sd[0] ** 2 * sd[1] ** 2 - cov3[0, 1] ** 2, 0.0)),
                 6,
             ),
             "radius_full_rad": _r(_sky_search_radius(row, drop_corr=False), 6),
@@ -686,9 +734,7 @@ def build_fisher(crb: pd.DataFrame, catalogue: Path | None) -> dict[str, Any]:
         # Index of the grid point nearest this event's OWN measured SNR — the
         # widget's default position, so the reader starts on real data and
         # every other position is an explicit counterfactual.
-        block["own_snr_index"] = int(
-            np.argmin(np.abs(np.asarray(SNR_GRID) - snr_e))
-        )
+        block["own_snr_index"] = int(np.argmin(np.abs(np.asarray(SNR_GRID) - snr_e)))
 
         patch = patches[k]
         if patch is not None:
@@ -712,13 +758,16 @@ def _patch_block(row: pd.Series, patch: pd.DataFrame, snr_ref: float) -> dict[st
     z_err = patch["REDSHIFT_MEASUREMENT_ERROR"].to_numpy()
 
     counts: dict[str, list[int]] = {
-        "full": [], "full_zwin": [], "nocorr": [], "nocorr_zwin": [],
+        "full": [],
+        "full_zwin": [],
+        "nocorr": [],
+        "nocorr_zwin": [],
     }
     radius_deg: list[float] = []
     zwin_lo: list[float] = []
     zwin_hi: list[float] = []
-    tv_move: list[float | None] = []       # total-variation weight displacement
-    ess_full: list[float | None] = []      # 1 / sum p^2  (effective #candidates)
+    tv_move: list[float | None] = []  # total-variation weight displacement
+    ess_full: list[float | None] = []  # 1 / sum p^2  (effective #candidates)
     ess_diag: list[float | None] = []
     top_changed: list[bool | None] = []
     radius_ok = True
@@ -764,9 +813,7 @@ def _patch_block(row: pd.Series, patch: pd.DataFrame, snr_ref: float) -> dict[st
             continue
         cov_s = cov3 * scale**2
         u_g = np.array([dist(float(z), H_TRUE) for z in z_g[sel]]) / dl
-        x = np.column_stack(
-            [patch["PHI_S"].to_numpy()[sel], patch["THETA_S"].to_numpy()[sel], u_g]
-        )
+        x = np.column_stack([patch["PHI_S"].to_numpy()[sel], patch["THETA_S"].to_numpy()[sel], u_g])
         mean = np.array([phi0, theta0, 1.0])
         lp_full = _mvn_logpdf(x, mean, cov_s)
         lp_diag = _mvn_logpdf(x, mean, np.diag(np.diag(cov_s)))

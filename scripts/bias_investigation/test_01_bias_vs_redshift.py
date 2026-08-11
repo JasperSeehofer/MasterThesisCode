@@ -20,7 +20,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from master_thesis_code.physical_relations import dist_to_redshift
+from darksiren_emri.physical_relations import dist_to_redshift
 
 RESULTS_DIR = PROJECT_ROOT / "results" / "h_sweep_20260401"
 POSTERIORS_DIR = RESULTS_DIR / "posteriors"

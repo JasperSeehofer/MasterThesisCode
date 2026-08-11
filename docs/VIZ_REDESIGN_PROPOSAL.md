@@ -13,7 +13,7 @@
 ### What the suite is today
 
 The project ships **two figure families** driven from one entry point
-(`main.generate_figures` in `master_thesis_code/main.py`, a list-of-tuples
+(`main.generate_figures` in `darksiren_emri/main.py`, a list-of-tuples
 manifest of `(name, generator)` callables):
 
 - **Static figures** — 15 rendered today (`fig01`–`fig15`), 20 defined

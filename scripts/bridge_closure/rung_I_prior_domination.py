@@ -35,19 +35,27 @@ logging.disable(logging.WARNING)
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
-import _bridge_lib as B  # noqa: E402
+import _bridge_lib as B  # noqa: E402,N812
 from _plot_style import OK_COLOR, RAIL_COLOR, TRUTH_COLOR, plt  # noqa: E402
-from master_thesis_code.emri_rate import R_eff_per_mbh  # noqa: E402
-from master_thesis_code.physical_relations import (  # noqa: E402
+
+from darksiren_emri.emri_rate import R_eff_per_mbh  # noqa: E402
+from darksiren_emri.physical_relations import (  # noqa: E402
     dist,
     dist_to_redshift,
     dist_vectorized,
 )
 
 
-def run_closure_photoz(h_true: float, sigma_z: float, *, n_gal: int = 30000,
-                       n_events: int = 800, sigma_dL_frac: float = 0.05, seed: int = 0,
-                       consistent_denom: bool = False) -> dict:
+def run_closure_photoz(
+    h_true: float,
+    sigma_z: float,
+    *,
+    n_gal: int = 30000,
+    n_events: int = 800,
+    sigma_dL_frac: float = 0.05,
+    seed: int = 0,
+    consistent_denom: bool = False,
+) -> dict:
     rng = np.random.default_rng(seed)
     hs = [float(h) for h in np.round(np.arange(0.60, 0.8701, 0.01), 4)]
     # true galaxy population ~ dVc/(1+z)
@@ -87,8 +95,10 @@ def run_closure_photoz(h_true: float, sigma_z: float, *, n_gal: int = 30000,
         for d_meas, sdL in events:
             zlo = max(dist_to_redshift(max(d_meas - 5 * sdL, 1e-4), h=0.60) - 4 * sigma_z, 1e-5)
             zhi = dist_to_redshift(d_meas + 5 * sdL, h=0.87) + 4 * sigma_z
-            i0 = int(np.searchsorted(zc, zlo)); i1 = int(np.searchsorted(zc, zhi))
-            zg = zc[i0:i1]; wg = wc[i0:i1]
+            i0 = int(np.searchsorted(zc, zlo))
+            i1 = int(np.searchsorted(zc, zhi))
+            zg = zc[i0:i1]
+            wg = wc[i0:i1]
             if zg.size == 0:
                 total += -1e30
                 continue
@@ -125,24 +135,36 @@ def main() -> None:
     for sz in [0.002, 0.035]:
         r = run_closure_photoz(h_true, sz, seed=1)
         std.append(r)
-        print(f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} "
-              f"railed={r['railed']} n_ev={r['n_events']}", flush=True)
+        print(
+            f"  sigma_z={sz:.3f}: MAP={r['h_refined']:.4f} bias={r['bias']:+.4f} "
+            f"railed={r['railed']} n_ev={r['n_events']}",
+            flush=True,
+        )
     print("=== candidate fix: photo-z-CONSISTENT selection denominator ===", flush=True)
     fix = []
     for sz in [0.001, 0.035]:
         r = run_closure_photoz(h_true, sz, seed=1, consistent_denom=True)
         fix.append(r)
-        print(f"  sigma_z={sz:.3f} [consistent denom]: MAP={r['h_refined']:.4f} "
-              f"bias={r['bias']:+.4f} railed={r['railed']}", flush=True)
+        print(
+            f"  sigma_z={sz:.3f} [consistent denom]: MAP={r['h_refined']:.4f} "
+            f"bias={r['bias']:+.4f} railed={r['railed']}",
+            flush=True,
+        )
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 4.6))
     for r in std:
-        hs = np.array(r["hs"]); post = np.exp(np.array(r["logpost"]))
+        hs = np.array(r["hs"])
+        post = np.exp(np.array(r["logpost"]))
         c = RAIL_COLOR if abs(r["bias"]) > 0.02 else OK_COLOR
-        ax[0].plot(hs, post / post.max(), color=c, label=f"σz={r['sigma_z']} → {r['h_refined']:.3f}")
+        ax[0].plot(
+            hs, post / post.max(), color=c, label=f"σz={r['sigma_z']} → {r['h_refined']:.3f}"
+        )
     ax[0].axvline(h_true, color=TRUTH_COLOR, ls="--", lw=1.2, label="truth 0.73")
-    ax[0].set(xlabel=r"$h=H_0/100$", ylabel="normalised posterior",
-              title="(a) self-consistent closure: does large σz rail?")
+    ax[0].set(
+        xlabel=r"$h=H_0/100$",
+        ylabel="normalised posterior",
+        title="(a) self-consistent closure: does large σz rail?",
+    )
     ax[0].legend(fontsize=8)
     allr = std + fix
     labels = [f"{'fix ' if r['consistent_denom'] else ''}σz={r['sigma_z']}" for r in allr]
@@ -150,18 +172,33 @@ def main() -> None:
     cols = [RAIL_COLOR if abs(b) > 0.02 else OK_COLOR for b in biases]
     ax[1].axhline(0, color=TRUTH_COLOR, ls="--", lw=1)
     ax[1].bar(range(len(biases)), biases, color=cols)
-    ax[1].set_xticks(range(len(labels))); ax[1].set_xticklabels(labels, rotation=30, ha="right")
+    ax[1].set_xticks(range(len(labels)))
+    ax[1].set_xticklabels(labels, rotation=30, ha="right")
     ax[1].set(ylabel=r"MAP bias $\hat h-0.73$", title="(b) standard vs consistent-denominator")
     fig.tight_layout()
     out = B.OUTPUTS / "rungI_prior_domination.pdf"
-    fig.savefig(out); plt.close(fig); print(f"  wrote {out}", flush=True)
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"  wrote {out}", flush=True)
 
-    (B.OUTPUTS / "rungI_results.json").write_text(json.dumps(
-        {"standard": [{k: r[k] for k in ("sigma_z", "h_refined", "bias", "railed")} for r in std],
-         "consistent_denom": [{k: r[k] for k in ("sigma_z", "h_refined", "bias", "railed")} for r in fix]},
-        indent=2))
-    print(f"\n>>> STANDARD: {[(r['sigma_z'], round(r['h_refined'],3)) for r in std]}", flush=True)
-    print(f">>> CONSISTENT-DENOM FIX: {[(r['sigma_z'], round(r['h_refined'],3)) for r in fix]}", flush=True)
+    (B.OUTPUTS / "rungI_results.json").write_text(
+        json.dumps(
+            {
+                "standard": [
+                    {k: r[k] for k in ("sigma_z", "h_refined", "bias", "railed")} for r in std
+                ],
+                "consistent_denom": [
+                    {k: r[k] for k in ("sigma_z", "h_refined", "bias", "railed")} for r in fix
+                ],
+            },
+            indent=2,
+        )
+    )
+    print(f"\n>>> STANDARD: {[(r['sigma_z'], round(r['h_refined'], 3)) for r in std]}", flush=True)
+    print(
+        f">>> CONSISTENT-DENOM FIX: {[(r['sigma_z'], round(r['h_refined'], 3)) for r in fix]}",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

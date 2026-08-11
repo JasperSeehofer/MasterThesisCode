@@ -60,11 +60,11 @@ import numpy.typing as npt
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from master_thesis_code.bayesian_inference.simulation_detection_probability import (  # noqa: E402
+from darksiren_emri.bayesian_inference.simulation_detection_probability import (  # noqa: E402
     _DL_PADDING_FACTOR,
     SimulationDetectionProbability,
 )
-from master_thesis_code.constants import INJECTION_DATA_DIR, SNR_THRESHOLD  # noqa: E402
+from darksiren_emri.constants import INJECTION_DATA_DIR, SNR_THRESHOLD  # noqa: E402
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 

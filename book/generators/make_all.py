@@ -51,7 +51,7 @@ def main() -> None:
 
     Isolation is deliberate (integrator fix, 2026-07-31): generators resolve
     their own source checkout (this worktree vs a sibling ``MasterThesisCode``)
-    and import ``master_thesis_code`` from it.  In a single shared process the
+    and import ``darksiren_emri`` from it.  In a single shared process the
     first import wins for every later generator via ``sys.modules``, which
     broke ``gen_ch03`` (it needs the sibling checkout's newer package).  A
     subprocess per generator restores the documented contract that each one is

@@ -23,7 +23,7 @@ WS_NAME="${CLUSTER_WORKSPACE_NAME:-emri}"
 EXPECT_COLS="${EMRI_EXPECTED_CATALOG_COLS:-8}"
 WARN_DAYS="${EMRI_WORKSPACE_WARN_DAYS:-14}"
 TAG="${EMRI_COMMISSION_TAG:-commission-base}"
-CATALOG="$REPO/master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv"
+CATALOG="$REPO/darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv"
 
 PROBLEMS=()
 note_problem() { PROBLEMS+=("$1"); }
@@ -63,7 +63,7 @@ if [ -x "$REPO/.venv/bin/python" ]; then
     . "$REPO/cluster/modules.sh" >/dev/null 2>&1
     IMP=$("$REPO/.venv/bin/python" - <<'PY' 2>&1
 try:
-    import master_thesis_code, numpy, scipy, pandas
+    import darksiren_emri, numpy, scipy, pandas
     tail = ""
     try:
         import few  # GPU waveform pkg (present only in the --extra gpu venv)
@@ -107,9 +107,9 @@ else
     echo "        (auto-rebuilds from GLADE+.txt if present; else stage from dev box via rsync)"
     note_problem "reduced catalog absent"
 fi
-NPY="$REPO/master_thesis_code/galaxy_catalogue/m_th_map_nside32.npy"
+NPY="$REPO/darksiren_emri/galaxy_catalogue/m_th_map_nside32.npy"
 [ -f "$NPY" ] && echo "        m_th_map_nside32.npy: present (git-tracked)" || { echo "        m_th_map_nside32.npy: ABSENT"; note_problem "nside32 map absent"; }
-GLADE=$(find "$REPO/master_thesis_code/galaxy_catalogue" -maxdepth 1 -name 'GLADE+.txt' 2>/dev/null | head -1)
+GLADE=$(find "$REPO/darksiren_emri/galaxy_catalogue" -maxdepth 1 -name 'GLADE+.txt' 2>/dev/null | head -1)
 [ -n "$GLADE" ] && echo "        GLADE+.txt: present ($(du -h "$GLADE" | cut -f1))" || echo "        GLADE+.txt: absent (fine — only needed to regenerate the reduced csv)"
 
 # --- [WORKSPACE] ---------------------------------------------------------------

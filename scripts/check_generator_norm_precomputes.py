@@ -33,13 +33,13 @@ _REL_TOL = 1e-6
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
-    from master_thesis_code.bayesian_inference.bayesian_statistics import (
+    from darksiren_emri.bayesian_inference.bayesian_statistics import (
         compute_catalog_draw_weight_total,
         precompute_completeness_population_volume,
     )
-    from master_thesis_code.cosmological_model import Model1CrossCheck
-    from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
-    from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+    from darksiren_emri.cosmological_model import Model1CrossCheck
+    from darksiren_emri.galaxy_catalogue.handler import GalaxyCatalogueHandler
+    from darksiren_emri.galaxy_catalogue.pixel_completeness import from_cache_or_build
 
     with open(_ARTIFACT_DIR / "generator_norm_Wcat.json") as f:
         wcat_ref = json.load(f)

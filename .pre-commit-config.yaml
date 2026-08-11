@@ -13,5 +13,5 @@ repos:
         entry: uv run mypy
         language: system
         types: [python]
-        args: [master_thesis_code/, master_thesis_code_test/]
+        args: [darksiren_emri/, darksiren_emri_test/]
         pass_filenames: false

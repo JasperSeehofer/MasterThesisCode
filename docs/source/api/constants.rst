@@ -1,7 +1,7 @@
 Constants
 =========
 
-.. automodule:: master_thesis_code.constants
+.. automodule:: darksiren_emri.constants
    :members:
    :undoc-members:
    :show-inheritance:

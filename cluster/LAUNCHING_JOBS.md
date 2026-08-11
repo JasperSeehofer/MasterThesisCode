@@ -16,13 +16,13 @@ There are **two distinct directories**, and confusing them causes most failures:
 | **RUN_DIR** | this run's **output** (logs, CSVs, posteriors) | `$WORKSPACE/run_YYYYMMDD_seedS/` |
 
 The package uses **relative paths from the current working directory**:
-- it reads the catalog from `./master_thesis_code/galaxy_catalogue/` (handler.py:24),
+- it reads the catalog from `./darksiren_emri/galaxy_catalogue/` (handler.py:24),
 - it reads/writes `./simulations/…`.
 
 So every batch job runs from a **private per-run CWD** (TC-03): it `cd`s into
 `$RUN_DIR/cwd/`, which holds two symlinks —
 `simulations → $RUN_DIR/simulations` and
-`master_thesis_code → $PROJECT_ROOT/master_thesis_code`. Code and catalog come
+`darksiren_emri → $PROJECT_ROOT/darksiren_emri`. Code and catalog come
 from the one repo; output lands in `$RUN_DIR/simulations/`. Because each run
 owns its CWD, **concurrent runs with different RUN_DIRs are safe** — there is
 no shared `$PROJECT_ROOT/simulations` symlink to fight over anymore.
@@ -49,6 +49,25 @@ job `source cluster/modules.sh` (which also exports `$WORKSPACE`, `$PROJECT_ROOT
 
 Seed convention everywhere: **per-task seed = `BASE_SEED + SLURM_ARRAY_TASK_ID`**
 (reproducible; resubmits reproduce). Recorded in `run_metadata_<task>.json`.
+
+### 2a. Node topology & packing — size the sbatch before you submit
+
+Full detail + evidence in `cluster/SKILL.md` gotchas 5-9 (node-topology findings from
+the venue-transfer perf pass, `results/venue_transfer_20260811/perf/PERF_ROADMAP.md` §4).
+Summary for anyone writing or resizing a new sbatch:
+- `cpu_il` nodes are **128-core**; plain `cpu` nodes are **192-core** — don't assume one
+  when sizing against the other. `dev_cpu_il` QOS is MaxSubmit 4 / MaxRunning 1 / 30-min.
+- **Match `--cpus-per-task` to the actual worker count** (pool size vs. seed count in the
+  task's range) — an oversized reservation idles cores for the whole run; either shrink
+  the reservation or use a finer grain (e.g. `--grain h`) to fill them.
+- **Packing >2 tasks/node measurably slows each task** (~1.7× per-seed, memory-bandwidth
+  contention) — size `--time` against the *contended* anchor whenever packing is tight,
+  not the uncontended one.
+- **`sbatch --test-only` is not a walltime prediction tool** for short wide jobs (ignores
+  backfill, off by orders of magnitude, EXP-61) — log probe-vs-actual instead of trusting it.
+- **A walltime kill on a JSON-at-end instrument loses the whole task's work**, and
+  `scontrol` walltime extensions are denied to regular users — size with margin or plan
+  to resubmit, not extend.
 
 ---
 
@@ -98,7 +117,11 @@ sbatch --dependency=afterok:<EVAL_JOB> \
   --export=ALL,RUN_DIR="$RUN" cluster/combine.sbatch
 ```
 Needs `$RUN/simulations/prepared_cramer_rao_bounds.csv` + an injection pool
-symlinked/present. Outputs `posteriors/` + `posteriors_with_bh_mass/` + `combined_posterior.json`.
+symlinked/present. **A standalone run-dir also needs the raw
+`$RUN/simulations/cramer_rao_bounds.csv` present alongside the `prepared_*.csv`**
+— it's not just the prepared file; `evaluate.sbatch` reads both, and a run-dir
+assembled by hand (rather than produced by the full 3a pipeline) is easy to
+leave missing the raw CSV. Outputs `posteriors/` + `posteriors_with_bh_mass/` + `combined_posterior.json`.
 
 ---
 
@@ -122,9 +145,9 @@ The pipeline is a normal importable package (`import few`, NOT `fastemriwaveform
 After `source cluster/modules.sh`, call functions straight from the venv python:
 ```bash
 .venv/bin/python - <<'PY'
-from master_thesis_code.physical_relations import dist_vectorized, comoving_volume_element
-from master_thesis_code.emri_rate import R_eff_per_mbh, mbh_mass_function
-from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
+from darksiren_emri.physical_relations import dist_vectorized, comoving_volume_element
+from darksiren_emri.emri_rate import R_eff_per_mbh, mbh_mass_function
+from darksiren_emri.galaxy_catalogue.handler import GalaxyCatalogueHandler
 # e.g. sanity-check a relation at a known limit:
 print("dist(z=0) =", dist_vectorized([0.0], h=0.73))   # must be ~0
 PY
@@ -134,7 +157,7 @@ Console entry points (defined in `pyproject.toml [project.scripts]`):
 `emri-merge-injections`. Run under `uv run` or the activated venv.
 
 Test conventions (mirror these when adding tests): files
-`master_thesis_code_test/test_<module>.py`; `@pytest.mark.gpu` for CUDA-needing
+`darksiren_emri_test/test_<module>.py`; `@pytest.mark.gpu` for CUDA-needing
 tests; the `xp` fixture parametrizes numpy/cupy — thread `use_gpu=(xp.__name__=="cupy")`.
 Physical-correctness tests must NOT require a GPU (`dist(0)==0`, `psd>0`, `p_det∈[0,1]`).
 
@@ -144,14 +167,14 @@ For a quick interactive GPU/CPU shell instead of a batch script:
 salloc --partition=dev_gpu_h100 --gres=gpu:1 --time=00:20:00
 # then, on the allocated node:
 cd ~/MasterThesisCode && source cluster/modules.sh && source .venv/bin/activate
-python -m master_thesis_code /tmp/testrun --simulation_steps 2 --seed 1 --use_gpu
+python -m darksiren_emri /tmp/testrun --simulation_steps 2 --seed 1 --use_gpu
 ```
 For a batch one-off, copy `cluster/JOB_TEMPLATE.sbatch` and submit with a small
 inline wrapper that makes `RUN_DIR` and passes `--export`.
 
 ---
 
-## 5. CLI flag reference (`python -m master_thesis_code <working_dir> <flags>`)
+## 5. CLI flag reference (`python -m darksiren_emri <working_dir> <flags>`)
 
 | Flag | Purpose |
 |---|---|

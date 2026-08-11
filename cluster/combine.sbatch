@@ -44,7 +44,7 @@ fi
 # ---------------------------------------------------------------------------
 # Private per-run CWD (TC-03) so relative paths resolve correctly.
 # Combine code reads simulations/... relative to CWD, and other pipeline code
-# reads the catalogue via ./master_thesis_code/galaxy_catalogue/ (handler.py:24).
+# reads the catalogue via ./darksiren_emri/galaxy_catalogue/ (handler.py:24).
 # A private CWD replaces the shared $PROJECT_ROOT/simulations symlink, so
 # concurrent runs with different RUN_DIRs cannot cross-contaminate.
 # ---------------------------------------------------------------------------
@@ -52,7 +52,7 @@ fi
 JOB_CWD="$RUN_DIR/cwd"
 mkdir -p "$JOB_CWD"
 ln -sfn "$RUN_DIR/simulations" "$JOB_CWD/simulations"
-ln -sfn "$PROJECT_ROOT/master_thesis_code" "$JOB_CWD/master_thesis_code"
+ln -sfn "$PROJECT_ROOT/darksiren_emri" "$JOB_CWD/darksiren_emri"
 cd "$JOB_CWD"
 
 # ---------------------------------------------------------------------------
@@ -74,7 +74,7 @@ if [[ "${ALLOW_LOW_PDET_COVERAGE:-}" == "yes" ]]; then
     EXTRA_ARGS+=(--allow_low_pdet_coverage)
 fi
 
-python -m master_thesis_code "$RUN_DIR/simulations" \
+python -m darksiren_emri "$RUN_DIR/simulations" \
     --combine \
     --strategy physics-floor \
     --log_level INFO \
@@ -93,7 +93,7 @@ ls -la "$RUN_DIR/simulations/posteriors_with_bh_mass/combined_posterior.json" 2>
 
 echo ""
 echo "=== Saving Baseline & Comparison ==="
-python -m master_thesis_code "$RUN_DIR/simulations" \
+python -m darksiren_emri "$RUN_DIR/simulations" \
     --save_baseline \
     --compare_baseline "$PROJECT_ROOT/.planning/debug/baseline.json" \
     --log_level INFO
@@ -154,7 +154,7 @@ fi
 
 echo ""
 echo "=== Generating Figures ==="
-python -m master_thesis_code "$RUN_DIR/simulations" \
+python -m darksiren_emri "$RUN_DIR/simulations" \
     --generate_figures "$RUN_DIR/simulations" \
     --log_level INFO
 

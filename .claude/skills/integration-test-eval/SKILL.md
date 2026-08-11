@@ -12,7 +12,7 @@ allowed-tools: Bash(uv run *), Read, Glob
 
 ### Run
 ```bash
-uv run pytest master_thesis_code_test/integration/test_evaluation_pipeline.py -v -m slow --tb=long -s
+uv run pytest darksiren_emri_test/integration/test_evaluation_pipeline.py -v -m slow --tb=long -s
 ```
 
 ### After completion

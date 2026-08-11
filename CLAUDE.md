@@ -13,9 +13,24 @@ dimensional analysis, limiting-case check, literature reference, and a regressio
 interpretation, and the "why does this result appear" analysis are the author's; the tooling
 documented below encodes the guard-rails that keep the AI-assisted parts verifiable and honest.
 
-## Environment Setup
+## Orchestration: model & effort tiering (author mandate, 2026-08-07)
 
-This project uses [uv](https://docs.astral.sh/uv/) for Python dependency management.
+**A session running on Fable (top-tier model) is ALWAYS an orchestration session.** Fable holds
+the scientific farsight and structure and uses it to orchestrate the research steps; it delegates
+everything not on the high-orchestration / scientifically-complex end to subagents (use them
+heavily) and workflows. Applies to single `Agent` spawns exactly as to `Workflow` launches —
+do **not** let every agent inherit the top-tier session model by default. Before every launch,
+assign per agent from this routing table:
+
+- **Model** — mechanical/formulaic stages (record appending, file generation, commits, schema
+  recon, running existing scripts on new inputs) → `sonnet` (or `haiku` for pure lookups);
+  derivation, adversarial verification, pre-registration authoring, physics interpretation →
+  inherit (top tier). When unsure between two tiers for a mechanical task, pick the cheaper one.
+- **Effort** — `low/medium` for mechanical stages, `high` for standard analysis, `xhigh` ONLY for
+  adversarial verifiers, novel derivations, and band/prereg authoring. Uniform-xhigh workflows are
+  a drift smell: justify each xhigh in the launch summary or lower it.
+
+State the chosen tiering (one line) when proposing a workflow so the author can veto overkill.
 
 ### Install uv
 
@@ -48,7 +63,7 @@ The lock file is committed to git, so every machine gets the same versions.
 
 ```bash
 # Run the package
-uv run python -m master_thesis_code <working_dir> --simulation_steps N
+uv run python -m darksiren_emri <working_dir> --simulation_steps N
 
 # Run tests (dev machine) — also prints coverage summary
 uv run pytest -m "not gpu and not slow"
@@ -57,7 +72,7 @@ uv run pytest -m "not gpu and not slow"
 uv run pytest -m "slow" --benchmark-only
 
 # Run mypy
-uv run mypy master_thesis_code/ master_thesis_code_test/
+uv run mypy darksiren_emri/ darksiren_emri_test/
 ```
 
 Note: `fastemriwaveforms` installs as the `few` Python package — `import few`, not `import fastemriwaveforms`.
@@ -71,9 +86,9 @@ Pass `--seed <int>` to fix the random state; when omitted, a random seed is chos
 ### Linting and formatting (run manually or triggered automatically on commit)
 
 ```bash
-uv run ruff check --fix master_thesis_code/   # lint and auto-fix
-uv run ruff format master_thesis_code/        # format
-uv run mypy master_thesis_code/               # type check
+uv run ruff check --fix darksiren_emri/   # lint and auto-fix
+uv run ruff format darksiren_emri/        # format
+uv run mypy darksiren_emri/               # type check
 ```
 
 Pre-commit hooks run ruff, ruff-format, and mypy automatically on every `git commit` (whole-tree;
@@ -87,7 +102,7 @@ Alternatively, activate the virtual environment once for a session:
 
 ```bash
 source .venv/bin/activate
-python -m master_thesis_code ...  # works without uv run prefix
+python -m darksiren_emri ...  # works without uv run prefix
 ```
 
 ### Adding a new dependency
@@ -105,14 +120,16 @@ Never manually edit the dependencies list in `pyproject.toml`.
 
 ```bash
 # EMRI simulation (generates SNR + Cramer-Rao bounds)
-python -m master_thesis_code <working_dir> --simulation_steps N [--simulation_index I] [--log_level DEBUG]
+python -m darksiren_emri <working_dir> --simulation_steps N [--simulation_index I] [--log_level DEBUG]
 
 # Bayesian inference (evaluate Hubble constant posterior)
-python -m master_thesis_code <working_dir> --evaluate [--h_value 0.73]
+python -m darksiren_emri <working_dir> --evaluate [--h_value 0.73]
 
 # SNR analysis only
-python -m master_thesis_code <working_dir> --snr_analysis
+python -m darksiren_emri <working_dir> --snr_analysis
 ```
+
+Every `--evaluate` run emits a per-event both-channel diagnostics CSV — check the run dir before building provenance caveats.
 
 ## Cluster Deployment
 
@@ -162,7 +179,7 @@ The codebase has two distinct pipelines:
 6. **`physical_relations.py` wCDM params w0, wa silently ignored** [MEDIUM] — GitHub #4: `dist()` accepts them but passes to a hardcoded-ΛCDM hypergeometric function. The review PR (2026-07-04) adds a `NotImplementedError` guard so non-default `w_0`/`w_a` raise instead of silently returning ΛCDM.
 ~~7. **`bayesian_inference/bayesian_inference.py` hardcoded 10% distance error**~~ [MOOT — Pipeline A removed in `c1571a2`]. Production Pipeline B uses per-source Cramér-Rao bounds from the CSV. GitHub #5 closed.
 ~~8. **`constants.py` WMAP-era cosmology**~~ [RESOLVED as design choice — G11]: fiducial `OMEGA_M=0.2726`, H0=70.4 km/s/Mpc deliberately match the Barausse (2012) M1 EMRI-population cosmology (arXiv:1201.5888) for a self-consistent mock universe; the Planck-2018 mismatch is a tracked systematic in `docs/gates/G7_systematics_budget.md` (row 6), not a bug. GitHub #6 closed.
-9. **`datamodels/galaxy.py:66` galaxy redshift uncertainty non-standard scaling** [LOW] — GitHub #7: `0.013 * (1+z)^3` has no reference; **this file is dead** (imported only by `test_benchmarks.py`; production uses `galaxy_catalogue/handler.py`). Slated for deletion in the review PR.
+~~9. **`datamodels/galaxy.py:66` galaxy redshift uncertainty non-standard scaling**~~ [MOOT — file deleted]: `datamodels/galaxy.py` (Pipeline-A synthetic catalog, GitHub #7) was removed in commit `90bd40ee` (2026-07-04) as dead code; production uses `galaxy_catalogue/handler.py`.
 
 ---
 
@@ -194,43 +211,24 @@ Any edit to these files that modifies a computed value (not just refactoring/typ
 - `constants.py`
 - `LISA_configuration.py`
 - `parameter_estimation/parameter_estimation.py`
-- `datamodels/galaxy.py`
 - `bayesian_inference/bayesian_statistics.py`
 - `bayesian_inference/simulation_detection_probability.py`
 - `cosmological_model.py`
 
 ---
 
-## Dataclass Conventions
+## Python Conventions
 
-Never use a mutable object as a bare default in a `@dataclass`. Python 3.13 raises `ValueError` at class-definition time. Always wrap with `field(default_factory=...)`:
+Dataclass mutable-default handling (`field(default_factory=...)`) and mandatory type annotations (modern `list[...]`/`X | None` syntax, `npt.NDArray[np.float64]`, `Callable` typing, mypy config) — live in **`.claude/rules/python-conventions.md`**, auto-loaded when editing `darksiren_emri/**/*.py`.
 
-```python
-# Wrong: bar: MyMutableClass = MyMutableClass()  — crashes Python 3.13
-# Correct:
-bar: MyMutableClass = field(default_factory=MyMutableClass)
-```
+## Proposing decisions
 
----
-
-## Typing Conventions
-
-All public and private functions/methods must have complete type annotations on every parameter and on the return type. The only exception is `__init__` where the return type may be omitted.
-
-- Use `list[float]` not `List[float]`, `dict[str, int]` not `Dict[str, int]`, `X | None` not `Optional[X]`. Do **not** add `from __future__ import annotations`.
-- Use `npt.NDArray[np.float64]` for typed arrays. Never use bare `np.ndarray` without a dtype parameter.
-- CuPy has no mypy stubs. Annotate GPU-capable functions with `npt.NDArray[np.float64]` and add a comment that cupy arrays are also accepted at runtime. Never use `cp.ndarray` as a type annotation.
-- Use `Callable` from `typing`, never lowercase `callable`. For signature-preserving decorators, use a `TypeVar` bound to `Callable[..., Any]` with `@functools.wraps`.
-
-**mypy:** Config in `pyproject.toml`. Key flags: `disallow_untyped_defs = true`, `disallow_incomplete_defs = true`. CuPy, `few`, `fastlisaresponse`, and `GPUtil` are under `ignore_missing_imports`.
-
----
-
-## HPC / GPU Best Practices
-
-Mandatory GPU-cluster + CPU-testability patterns — the array-namespace `xp` pattern, guarded `cupy` imports, hot-path vectorization, GPU memory management, the `USE_GPU`-from-CLI rule, and the bwUniCluster entry point — live in **`.claude/rules/hpc-gpu.md`**, auto-loaded when editing `master_thesis_code/**/*.py`. See [[scientific-computing-validation]] for the promoted cross-project form.
-
----
+Decision-gating proposals go in a **reviewable artifact** — a book chapter, a docs page, or a
+standalone explainer — with the decision table inline, not in a chat summary. The approval happens
+against something that persists and can be re-read; a summary in the transcript cannot be revisited,
+diffed, or cited later. Applies to research-cycle proposals, pre-registered measurements, and
+standing-decision changes. (Codified 2026-08-11 from two consistent author signals, 2026-08-05 and
+2026-08-07.)
 
 ## Testing Strategy
 
@@ -317,45 +315,11 @@ Use these entry points:
 - `/gsd:debug` for investigation and bug fixing
 - `/gsd:execute-phase` for planned phase work
 
-Do not make direct repo edits outside a GSD or GPD workflow unless the user explicitly asks to bypass it.
-
-### GSD -> GPD Routing
-
-GSD is the primary command surface. When a GSD workflow encounters **physics work**, it must delegate to the corresponding GPD command instead of handling it with GSD agents. This applies whether the user invokes GSD explicitly or the system routes automatically.
-
-**A task is physics work if it:**
-- Modifies a formula, physical constant, PSD coefficient, waveform parameter, or frequency limit (same trigger as `/physics-change`)
-- Involves a derivation, dimensional analysis, limiting-case check, or convergence study
-- Requires literature lookup for a physics method or known result
-- Is described in physics terms (e.g., "fix the Fisher matrix stencil", "add confusion noise to PSD")
-
-**Routing table (GSD command -> GPD equivalent):**
-
-| GSD command | When physics-flagged, delegate to | Notes |
-|---|---|---|
-| `/gsd:plan-phase N` | `/gpd:plan-phase N` | GPD planner adds verification criteria, limiting cases |
-| `/gsd:execute-phase N` | `/gpd:execute-phase N` | GPD executor applies physics protocols (dimensional analysis, sign checks) |
-| `/gsd:quick` | `/gpd:quick` | GPD quick mode with physics guarantees |
-| `/gsd:debug` | `/gpd:debug` | GPD debugger uses scientific method, checks dimensions/limits |
-| `/gsd:verify-work` | `/gpd:verify-work` | GPD verifier checks physics correctness, not just task completion |
-| `/gsd:research-phase N` | `/gpd:research-phase N` | GPD researcher surveys physics literature |
-| `/gsd:discuss-phase N` | `/gpd:discuss-phase N` | Either system works; GPD if physics-heavy |
-
-**What stays in GSD (never routed):**
-- Code refactoring, test infrastructure, CI/CD, cluster scripts, documentation
-- Dependency management, import cleanup, type annotation work
-- Plotting code changes (unless the plot formula itself is physics)
-- `/gsd:ship`, `/gsd:pr-branch`, `/gsd:profile-user`, `/gsd:settings`
-
-**Mixed phases:** If a GSD phase contains both software and physics tasks, keep the phase in GSD but invoke GPD for the physics subtasks. The GSD phase tracks overall progress; GPD handles the physics execution with its protocols.
-
-**State tracking:** GSD tracks progress in `.planning/`, GPD in `.gpd/`. Both systems commit atomically. They are independent ledgers for independent concerns, with one exception:
-
-**Sync rule:** When GPD completes a milestone that overlaps with GSD's active milestone, update GSD state to reflect completion and any scope changes. Run `/gsd-progress` after GPD milestone completion to detect drift. If GSD's active milestone was fully executed by GPD, mark it shipped in `.planning/MILESTONES.md` and `.planning/ROADMAP.md`, then update `.planning/STATE.md` to point at the next milestone.
+Do not make direct repo edits outside the `/research-cycle` protocol unless the user explicitly asks to bypass it.
 
 ### GitHub Integration
 
-GitHub issues, labels, and milestones are the **external-facing** record of project state. GSD/GPD workflows must keep them in sync as work progresses. This is not optional — stale issues erode trust in the tracker.
+GitHub issues, labels, and milestones are the **external-facing** record of project state. Workflows must keep them in sync as work progresses. This is not optional — stale issues erode trust in the tracker.
 
 **When to update GitHub (mandatory):**
 
@@ -366,7 +330,7 @@ GitHub issues, labels, and milestones are the **external-facing** record of proj
 | A phase or milestone is **planned** that maps to open issues | Assign those issues to the relevant GitHub milestone | `gh issue edit N --milestone "..."` |
 | A phase **completes** and resolves multiple issues | Close all resolved issues in one pass with per-issue comments | Batch `gh issue close` |
 | Work priority changes (e.g., issue becomes paper-blocking) | Update labels accordingly | `gh issue edit N --add-label "paper-blocker"` |
-| A new milestone cycle starts (`/gsd:new-milestone` or `/gpd:new-milestone`) | Create a GitHub milestone if one doesn't exist for it | `gh api repos/.../milestones --method POST` |
+| A new milestone cycle starts | Create a GitHub milestone if one doesn't exist for it | `gh api repos/.../milestones --method POST` |
 
 **Labels to use:**
 - `bug` — something is broken
@@ -379,7 +343,7 @@ GitHub issues, labels, and milestones are the **external-facing** record of proj
 **Milestone:** The "Paper Submission" milestone tracks all issues that must be resolved before the paper is submitted. All open physics/design issues should be assigned to it.
 
 **What NOT to do:**
-- Do not create GitHub issues for internal GSD/GPD tracking (phase plans, verification checklists) — those belong in `.planning/` and `.gpd/`
+- Do not create GitHub issues for internal planning (phase plans, verification checklists) — those belong in `.planning/` and `.gpd/`
 - Do not duplicate TODO.md items as issues unless they represent distinct, actionable bugs or features
 - Do not update issues for purely internal refactoring that has no user-facing effect
 <!-- GSD:workflow-end -->

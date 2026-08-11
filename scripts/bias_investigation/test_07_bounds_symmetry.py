@@ -24,7 +24,7 @@ from scipy.stats import multivariate_normal, norm
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from master_thesis_code.physical_relations import dist, dist_to_redshift, dist_vectorized
+from darksiren_emri.physical_relations import dist, dist_to_redshift, dist_vectorized
 
 OUTPUT_DIR = PROJECT_ROOT / "scripts" / "bias_investigation" / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)

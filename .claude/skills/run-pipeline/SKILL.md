@@ -15,7 +15,7 @@ Based on the first argument, run the appropriate pipeline:
 
 ### `sim` — EMRI Simulation
 ```bash
-uv run python -m master_thesis_code <working_dir> --simulation_steps <N> [additional flags]
+uv run python -m darksiren_emri <working_dir> --simulation_steps <N> [additional flags]
 ```
 After completion:
 1. Check exit code
@@ -25,7 +25,7 @@ After completion:
 
 ### `eval` — Bayesian Inference
 ```bash
-uv run python -m master_thesis_code <working_dir> --evaluate [--h_value <V>]
+uv run python -m darksiren_emri <working_dir> --evaluate [--h_value <V>]
 ```
 After completion:
 1. Check for posterior JSON output in working_dir
@@ -33,7 +33,7 @@ After completion:
 
 ### `snr` — SNR Analysis Only
 ```bash
-uv run python -m master_thesis_code <working_dir> --snr_analysis
+uv run python -m darksiren_emri <working_dir> --snr_analysis
 ```
 
 ### Always:

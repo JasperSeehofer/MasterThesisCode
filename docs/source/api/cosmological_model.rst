@@ -1,7 +1,7 @@
 Cosmological Model
 ==================
 
-.. automodule:: master_thesis_code.cosmological_model
+.. automodule:: darksiren_emri.cosmological_model
    :members:
    :undoc-members:
    :show-inheritance:

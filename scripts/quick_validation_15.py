@@ -22,7 +22,7 @@ mock_det_prob.detection_probability_without_bh_mass_interpolated.return_value = 
 mock_det_prob.detection_probability_with_bh_mass_interpolated.return_value = 1.0
 
 # Patch the module so BayesianStatistics can import it
-import master_thesis_code.bayesian_inference.simulation_detection_probability as sdp_mod
+import darksiren_emri.bayesian_inference.simulation_detection_probability as sdp_mod
 
 _OrigClass = sdp_mod.SimulationDetectionProbability
 
@@ -51,9 +51,9 @@ class MockSimulationDetectionProbability:
 sdp_mod.SimulationDetectionProbability = MockSimulationDetectionProbability  # type: ignore[misc]
 
 # Now import the rest
-from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
-from master_thesis_code.cosmological_model import Model1CrossCheck
-from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
+from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
+from darksiren_emri.cosmological_model import Model1CrossCheck
+from darksiren_emri.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 _LOGGER = logging.getLogger(__name__)

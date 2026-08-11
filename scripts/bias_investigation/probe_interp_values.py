@@ -28,7 +28,7 @@ import argparse
 import json
 from pathlib import Path
 
-from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+from darksiren_emri.bayesian_inference.simulation_detection_probability import (
     SimulationDetectionProbability,
 )
 

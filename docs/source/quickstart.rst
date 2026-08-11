@@ -33,15 +33,15 @@ Usage
 
 EMRI simulation (generates SNR + Cramér-Rao bounds)::
 
-    uv run python -m master_thesis_code <working_dir> --simulation_steps N [--simulation_index I] [--log_level DEBUG]
+    uv run python -m darksiren_emri <working_dir> --simulation_steps N [--simulation_index I] [--log_level DEBUG]
 
 Bayesian inference (evaluate Hubble constant posterior)::
 
-    uv run python -m master_thesis_code <working_dir> --evaluate [--h_value 0.73]
+    uv run python -m darksiren_emri <working_dir> --evaluate [--h_value 0.73]
 
 SNR analysis only::
 
-    uv run python -m master_thesis_code <working_dir> --snr_analysis
+    uv run python -m darksiren_emri <working_dir> --snr_analysis
 
 Running Tests
 -------------
@@ -71,9 +71,9 @@ Development Workflow
 
 Linting and formatting::
 
-    uv run ruff check --fix master_thesis_code/   # lint and auto-fix
-    uv run ruff format master_thesis_code/        # format
-    uv run mypy master_thesis_code/               # type check
+    uv run ruff check --fix darksiren_emri/   # lint and auto-fix
+    uv run ruff format darksiren_emri/        # format
+    uv run mypy darksiren_emri/               # type check
 
 Pre-commit hooks run ruff and mypy automatically on every ``git commit``.
 To run all hooks manually::

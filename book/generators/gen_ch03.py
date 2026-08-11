@@ -88,11 +88,11 @@ def _resolve_source_root() -> Path:
     """
     here = Path(__file__).resolve().parents[2]
     for root in (here.parent / "MasterThesisCode", here):
-        handler = root / "master_thesis_code" / "galaxy_catalogue" / "handler.py"
+        handler = root / "darksiren_emri" / "galaxy_catalogue" / "handler.py"
         if handler.is_file() and "_mass_redshift_prune_mask" in handler.read_text():
             return root
     raise RuntimeError(
-        "gen_ch03: no checkout with a current master_thesis_code found "
+        "gen_ch03: no checkout with a current darksiren_emri found "
         "(need galaxy_catalogue/handler.py:_mass_redshift_prune_mask)"
     )
 
@@ -104,20 +104,20 @@ import astropy.units as u  # noqa: E402
 from astropy.coordinates import BarycentricTrueEcliptic, SkyCoord  # noqa: E402
 from scipy.spatial import cKDTree  # noqa: E402
 
-import master_thesis_code.bayesian_inference.bayesian_statistics as bs  # noqa: E402
-from master_thesis_code.constants import (  # noqa: E402
-    H as H_TRUE,
-)
-from master_thesis_code.constants import (  # noqa: E402
+import darksiren_emri.bayesian_inference.bayesian_statistics as bs  # noqa: E402
+from darksiren_emri.constants import (  # noqa: E402
     HOST_DRAW_Z_MAX,
     M_SOURCE_FRAME_MAX,
     M_SOURCE_FRAME_MIN,
     OMEGA_M,
     SNR_THRESHOLD,
 )
-from master_thesis_code.datamodels.detection import Detection  # noqa: E402
-from master_thesis_code.emri_rate import R_eff_per_mbh  # noqa: E402
-from master_thesis_code.galaxy_catalogue.handler import (  # noqa: E402
+from darksiren_emri.constants import (  # noqa: E402
+    H as H_TRUE,
+)
+from darksiren_emri.datamodels.detection import Detection  # noqa: E402
+from darksiren_emri.emri_rate import R_eff_per_mbh  # noqa: E402
+from darksiren_emri.galaxy_catalogue.handler import (  # noqa: E402
     HostGalaxy,
     InternalCatalogColumns,
     _empiric_stellar_mass_to_BH_mass_relation,
@@ -125,13 +125,13 @@ from master_thesis_code.galaxy_catalogue.handler import (  # noqa: E402
     _polar_to_cartesian,
     _reduced_catalog_column_names,
 )
-from master_thesis_code.physical_relations import (  # noqa: E402
+from darksiren_emri.physical_relations import (  # noqa: E402
     dist_to_redshift,
     dist_vectorized,
 )
 
 # --- repo-relative artifact paths (BOOK_DESIGN §4.2 rule 7; never absolute) ---
-CATALOGUE_REL = Path("master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv")
+CATALOGUE_REL = Path("darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv")
 CAMPAIGN_REL = Path("results/campaign51_20260728/realistic_20260729")
 SEED_REL = CAMPAIGN_REL / "seed61000"
 CRB_REL = SEED_REL / "prepared_cramer_rao_bounds.csv"
@@ -400,7 +400,7 @@ def build_census(
     census: dict[str, Any] = {
         "meta": {
             "what": "candidate galaxies per detected event, measured",
-            "catalogue": "master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv "
+            "catalogue": "darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv "
             "(baseline reduced GLADE+, production prune)",
             "crb": "results/.../realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv",
             "n_catalogue_rows_pruned": int(len(cat["z"])),
@@ -433,7 +433,10 @@ def build_census(
             "in_catalog": [bool(v) for v in crb["in_catalog"].to_numpy()],
         },
         "featured": {
-            str(EVENT_GOLDEN): {"n_ball": int(n_ball[EVENT_GOLDEN]), "n_cand": int(n_cand[EVENT_GOLDEN])},
+            str(EVENT_GOLDEN): {
+                "n_ball": int(n_ball[EVENT_GOLDEN]),
+                "n_cand": int(n_cand[EVENT_GOLDEN]),
+            },
             str(EVENT_CROWDED): {
                 "n_ball": int(n_ball[EVENT_CROWDED]),
                 "n_cand": int(n_cand[EVENT_CROWDED]),
@@ -493,9 +496,7 @@ def concentration_census(
         "n_events_with_candidates": int(ts.size),
         "frac_top_share_above_half": _r(float(np.mean(ts > 0.5)), 4),
         "frac_top_share_above_90pct": _r(float(np.mean(ts > 0.9)), 4),
-        "top_share_percentiles": {
-            str(p): _r(np.percentile(ts, p), 4) for p in (5, 25, 50, 75, 95)
-        },
+        "top_share_percentiles": {str(p): _r(np.percentile(ts, p), 4) for p in (5, 25, 50, 75, 95)},
         "n_eff_percentiles": {str(p): _r(np.percentile(ne, p), 5) for p in (5, 25, 50, 75, 95)},
         "n_eff_median": _r(np.median(ne), 5),
         "note": "Gray (A.9) point-kernel numerator on the truth catalogue, evaluated at the "
@@ -623,11 +624,7 @@ def build_event_block(
         top_share.append(float(wn.max() / s))
         d_l = dist_vectorized(z_g, h=float(h))
         n_in_window.append(
-            int(
-                np.sum(
-                    np.abs(d_l - det.d_L) <= NUMERATOR_SIGMA_MULTIPLIER * det.d_L_uncertainty
-                )
-            )
+            int(np.sum(np.abs(d_l - det.d_L) <= NUMERATOR_SIGMA_MULTIPLIER * det.d_L_uncertainty))
         )
         z_shell.append(float(dist_to_redshift(det.d_L, float(h))))
 
@@ -818,8 +815,7 @@ def build_ratio_block(
         # Emit the difference itself, at full working precision, and let the
         # page read it from here instead of subtracting two rounded arrays.
         "log_form_difference": {
-            k: _rl(np.asarray(lam_ros[k]) - np.asarray(lam_mor[k]), 6)
-            for k in lam_ros
+            k: _rl(np.asarray(lam_ros[k]) - np.asarray(lam_mor[k]), 6) for k in lam_ros
         },
         "lambda_identity_residual": _r(
             np.max(np.abs(np.asarray(lam_ros["0"]) - np.asarray(lam_mor["0"]))), 3
@@ -1086,9 +1082,7 @@ def main() -> None:
     rng = np.random.default_rng(DISPLAY_SEED)
     z_tab = np.linspace(0.0, DL_TABLE_ZMAX, DL_TABLE_N)
     dense_h = np.round(
-        np.arange(
-            DENSE_H_MIN, DENSE_H_MAX + 0.5 * DENSE_H_STEP, DENSE_H_STEP
-        ),
+        np.arange(DENSE_H_MIN, DENSE_H_MAX + 0.5 * DENSE_H_STEP, DENSE_H_STEP),
         6,
     )
     skyball: dict[str, Any] = {
@@ -1145,7 +1139,7 @@ def main() -> None:
         )
         ratio["meta"]["degraded"] = "no injection pool: D_g legs omitted"
     else:
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+        from darksiren_emri.bayesian_inference.simulation_detection_probability import (
             SimulationDetectionProbability,
         )
 
@@ -1161,9 +1155,7 @@ def main() -> None:
         top = rank[:5]
         print(
             f"  D_g-spread ranking (h=0.60, >={D_SPREAD_MIN_CAND} candidates): "
-            + " | ".join(
-                f"{ev}: {lo:.3f}->{hi:.3f} (n={n})" for ev, _, lo, hi, n in top
-            )
+            + " | ".join(f"{ev}: {lo:.3f}->{hi:.3f} (n={n})" for ev, _, lo, hi, n in top)
             + f"  ({time.monotonic() - t0:.1f}s)",
             flush=True,
         )
@@ -1180,8 +1172,13 @@ def main() -> None:
             f">= {D_SPREAD_MIN_CAND} candidates, at the production ball radius",
             "n_events_scanned": len(rank),
             "top5": [
-                {"event": ev, "spread": _r(sp, 4), "p_det_min": _r(lo, 4),
-                 "p_det_max": _r(hi, 4), "n_cand": n}
+                {
+                    "event": ev,
+                    "spread": _r(sp, 4),
+                    "p_det_min": _r(lo, 4),
+                    "p_det_max": _r(hi, 4),
+                    "n_cand": n,
+                }
                 for ev, sp, lo, hi, n in top
             ],
         }

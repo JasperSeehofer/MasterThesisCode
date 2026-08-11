@@ -28,7 +28,7 @@ Four jobs, in dependency order:
    mkdir -p _site/interactive
    cp interactive/*.html _site/interactive/
    if [ -d cluster_results ]; then
-     uv run python -m master_thesis_code cluster_results --generate_interactive _site/interactive/ || true
+     uv run python -m darksiren_emri cluster_results --generate_interactive _site/interactive/ || true
    fi
    ```
    (`continue-on-error: true` — never blocks the deploy), then
@@ -42,7 +42,7 @@ directory doesn't exist in CI).
 
 ### 1.2 `interactive/` — the existing Plotly export convention
 
-`master_thesis_code/plotting/interactive.py` provides 5 factory functions
+`darksiren_emri/plotting/interactive.py` provides 5 factory functions
 (`interactive_combined_posterior`, `interactive_h0_tension_explorer`, `interactive_sky_map`,
 `interactive_fisher_ellipses`, `interactive_h0_convergence`, `interactive_m_z_improvement`) that
 each return a `go.Figure`. The docstring's stated convention is
@@ -60,13 +60,13 @@ require network access to `cdn.plot.ly` to render. The book's requirement ("must
 convention and must vendor Plotly itself (see §2.1).
 
 Palette/typography sources inspected for consistency:
-- `master_thesis_code/plotting/_colors.py` — Okabe-Ito 7-color cycle (Wong 2011) plus an
+- `darksiren_emri/plotting/_colors.py` — Okabe-Ito 7-color cycle (Wong 2011) plus an
   "Observatory + Atlas" `METHOD` token dict (`dark`, `combined`, `spectral`, `bright`),
   `PLANCK_BAND`/`SHOES_BAND`/`PRIOR` tokens, and `SEQUENTIAL_CMAP`/`DIVERGING_CMAP` (batlow/vik
   via optional `cmcrameri`, falling back to `cividis`/`RdBu`).
-- `master_thesis_code/plotting/emri_thesis.mplstyle` — 8pt base font (REVTeX-column-sized),
+- `darksiren_emri/plotting/emri_thesis.mplstyle` — 8pt base font (REVTeX-column-sized),
   frameless legends, inward ticks, no top/right spines, `pdf.fonttype/ps.fonttype = 42`.
-- `master_thesis_code/plotting/_style.py` — `apply_style()` sets Agg backend + loads the
+- `darksiren_emri/plotting/_style.py` — `apply_style()` sets Agg backend + loads the
   mplstyle sheet; irrelevant to the book (no matplotlib in the browser) but the color/typography
   *tokens* are the thing to mirror for a "one system" feel.
 
@@ -129,7 +129,7 @@ build). No other runtime dependency.
 
 `book/generators/*.py` are plain Python modules with a `main() -> None` entry point, run with
 the **main repo's synced venv** (`/home/jasper/Repositories/MasterThesisCode/.venv/bin/python`,
-or this worktree's own `.venv` once `uv sync` is run here) so `import master_thesis_code` and
+or this worktree's own `.venv` once `uv sync` is run here) so `import darksiren_emri` and
 heavy deps (`numpy`, `few`, ...) resolve. `book/generators/make_all.py` is the single driver —
 imports and runs every registered generator in order; **idempotent and re-runnable** (verified:
 running `gen_ch00_demo.py` twice produces byte-identical JSON, since the RNG seed and source
@@ -181,7 +181,7 @@ existing "Generate interactive figures" step and before "Upload Pages artifact":
            mkdir -p _site/interactive
            cp interactive/*.html _site/interactive/
            if [ -d cluster_results ]; then
-             uv run python -m master_thesis_code cluster_results --generate_interactive _site/interactive/ || true
+             uv run python -m darksiren_emri cluster_results --generate_interactive _site/interactive/ || true
            fi
          continue-on-error: true
 
@@ -196,7 +196,7 @@ existing "Generate interactive figures" step and before "Upload Pages artifact":
 ```
 
 No new job, no new dependency-install step needed (the `pages` job already runs
-`uv sync --extra cpu --extra dev`, which is sufficient since `master_thesis_code` and its heavy
+`uv sync --extra cpu --extra dev`, which is sufficient since `darksiren_emri` and its heavy
 deps are exactly what `book/generators/*.py` import). `continue-on-error: true` matches the
 existing interactive-figures step's philosophy: a book-generator bug must never block the
 Sphinx-docs deploy. The book lands at `https://jasperseehofer.github.io/MasterThesisCode/book/`.

@@ -42,7 +42,7 @@ autodoc_preserve_defaults = True  # read default values from source AST, not rep
 # Mock heavy/GPU/side-effect modules so Sphinx can import the package without executing them.
 # DetectionFraction.__init__ calls matplotlib at import time (side effect).
 autodoc_mock_imports = [
-    "master_thesis_code.M1_model_extracted_data",
+    "darksiren_emri.M1_model_extracted_data",
     "cupy",
     "cupyx",
     "few",

@@ -8,7 +8,7 @@ Nothing here blocks the chapter. Every item is presented on the page in **both**
 wherever the reader can see it.
 
 Everything below is produced by `book/generators/gen_ch03.py` from
-`master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv` (baseline reduced
+`darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv` (baseline reduced
 GLADE+, 20,834,171 rows after the production prune) and
 `results/campaign51_20260728/realistic_20260729/seed61000/`.
 

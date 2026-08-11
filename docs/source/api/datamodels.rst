@@ -4,7 +4,7 @@ Data Models
 Parameter Space
 ---------------
 
-.. automodule:: master_thesis_code.datamodels.parameter_space
+.. automodule:: darksiren_emri.datamodels.parameter_space
    :members:
    :undoc-members:
    :show-inheritance:
@@ -12,7 +12,7 @@ Parameter Space
 Detection (Cramér-Rao)
 -----------------------
 
-.. automodule:: master_thesis_code.datamodels.detection
+.. automodule:: darksiren_emri.datamodels.detection
    :members:
    :undoc-members:
    :show-inheritance:

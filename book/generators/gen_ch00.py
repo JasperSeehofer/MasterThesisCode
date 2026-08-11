@@ -27,13 +27,13 @@ Produces one small data file:
        hypothetical third method); the anchors it is judged against are real.
 
     4. **The h convention** (``h_convention``) — read live out of
-       ``master_thesis_code/constants.py`` so the book's ``h = H0/100`` and the
+       ``darksiren_emri/constants.py`` so the book's ``h = H0/100`` and the
        mock universe's injected truth ``h_true = 0.73`` are traceable to the
        code rather than typed by hand.  This is the prologue's only contact
        with the pipeline; no pipeline *claim* is made in Chapter 0.
 
 Determinism: no RNG, no I/O outside ``book/`` for writes; the only read of the
-main checkout is ``master_thesis_code/constants.py`` (parsed, not executed, so
+main checkout is ``darksiren_emri/constants.py`` (parsed, not executed, so
 the generator has no import-time dependency on the simulation stack).
 
 Run as::
@@ -54,14 +54,14 @@ from typing import Any
 # Paths.  parents[2] is the book worktree root; the main checkout is either the
 # same tree (this repo is a worktree of it) or a sibling directory.
 # ---------------------------------------------------------------------------
-BOOK_ROOT = Path(__file__).resolve().parents[1]          # .../book
-REPO_ROOT = Path(__file__).resolve().parents[2]          # .../MasterThesisCode-book
+BOOK_ROOT = Path(__file__).resolve().parents[1]  # .../book
+REPO_ROOT = Path(__file__).resolve().parents[2]  # .../MasterThesisCode-book
 OUT_DIR = BOOK_ROOT / "site" / "data"
 OUT_FILE = OUT_DIR / "ch00_tension.json"
 
 CONSTANTS_CANDIDATES = [
-    REPO_ROOT / "master_thesis_code" / "constants.py",
-    REPO_ROOT.parent / "MasterThesisCode" / "master_thesis_code" / "constants.py",
+    REPO_ROOT / "darksiren_emri" / "constants.py",
+    REPO_ROOT.parent / "MasterThesisCode" / "darksiren_emri" / "constants.py",
 ]
 
 # ---------------------------------------------------------------------------
@@ -133,9 +133,7 @@ MEASUREMENTS: list[dict[str, Any]] = [
         "sigma": 1.75,
         "sigma_stat": None,
         "sigma_sys": None,
-        "note": (
-            "Quoted at 2.4% — under an assumed family of lens mass profiles."
-        ),
+        "note": ("Quoted at 2.4% — under an assumed family of lens mass profiles."),
         "cite": "Wong et al. (2020), arXiv:1907.04869",
         "anchor": False,
         "asym": {"hi": 1.7, "lo": 1.8},
@@ -293,9 +291,7 @@ def main() -> None:
                 "sigma_total": sig,
                 "sigma_total_frac": sig / planck["H0"],
                 "t_far_best_case": t_far,
-                "verdict": (
-                    "arbitrates" if t_far >= T_EXCLUDE else "arbitrates nothing"
-                ),
+                "verdict": ("arbitrates" if t_far >= T_EXCLUDE else "arbitrates nothing"),
                 "tag": tag,
             }
         )
@@ -304,8 +300,7 @@ def main() -> None:
     n_grid = [1, 10, 100, 1000, 10000]
     sys_grid = [0.0, 0.5, 1.0, 1.5, 2.0, 3.0]
     t_map = [
-        [gap / math.sqrt(sigma_total(n, s) ** 2 + sigma_far**2) for n in n_grid]
-        for s in sys_grid
+        [gap / math.sqrt(sigma_total(n, s) ** 2 + sigma_far**2) for n in n_grid] for s in sys_grid
     ]
     # N -> infinity: the statistical term vanishes and the exclusion saturates
     # at a ceiling set by the systematic alone.  This column is the chapter's
@@ -314,8 +309,13 @@ def main() -> None:
 
     # -- cross-check points the browser must reproduce ------------------------
     check_points = []
-    for n_ev, s_sys, mu in ((1, 0.0, 70.0), (41, 0.0, 67.4), (10000, 2.0, 67.4),
-                            (400, 0.5, 73.04), (100, 1.0, 70.2)):
+    for n_ev, s_sys, mu in (
+        (1, 0.0, 70.0),
+        (41, 0.0, 67.4),
+        (10000, 2.0, 67.4),
+        (400, 0.5, 73.04),
+        (100, 1.0, 70.2),
+    ):
         sig = sigma_total(n_ev, s_sys)
         tp = tension(mu, sig, planck)
         ts = tension(mu, sig, shoes)
@@ -337,7 +337,9 @@ def main() -> None:
     # is from the arbitration ceiling.  Both numbers in that sentence are emitted
     # here rather than typed into the page.
     genre = _anchor(GENRE_KEY)
-    genre_sigma = (genre["asym"]["hi"] + genre["asym"]["lo"]) / 2 if "asym" in genre else genre["sigma"]
+    genre_sigma = (
+        (genre["asym"]["hi"] + genre["asym"]["lo"]) / 2 if "asym" in genre else genre["sigma"]
+    )
     genre_anchor = {
         "key": GENRE_KEY,
         "label": genre["label"],
@@ -406,14 +408,22 @@ def main() -> None:
     OUT_FILE.write_text(json.dumps(payload, indent=1, sort_keys=False) + "\n")
 
     print(f"wrote {OUT_FILE.relative_to(REPO_ROOT)}  ({OUT_FILE.stat().st_size:,} bytes)")
-    print(f"  gap                {gap:.2f} km/s/Mpc = {gap / planck['H0'] * 100:.2f}% of the early value")
-    print(f"  two-number sigma   {n_sigma:.2f} (paper quotes {payload['tension']['published_n_sigma']:.1f})")
-    print(f"  precision ceiling  {ceiling:.4f} km/s/Mpc = {ceiling_frac * 100:.2f}% of H0"
-          f"  (parked on {planck['key']}; parked on {shoes['key']}: {ceiling_parked_late:.4f})")
-    print(f"  genre anchor       {genre_anchor['label']}: {genre['H0']:.1f} "
-          f"+{genre['asym']['hi']:.1f}/-{genre['asym']['lo']:.1f} = "
-          f"{genre_anchor['frac_of_own_H0'] * 100:.1f}% of its own H0, "
-          f"{genre_anchor['ratio_to_ceiling']:.1f}x the ceiling  [{genre_anchor['cite']}]")
+    print(
+        f"  gap                {gap:.2f} km/s/Mpc = {gap / planck['H0'] * 100:.2f}% of the early value"
+    )
+    print(
+        f"  two-number sigma   {n_sigma:.2f} (paper quotes {payload['tension']['published_n_sigma']:.1f})"
+    )
+    print(
+        f"  precision ceiling  {ceiling:.4f} km/s/Mpc = {ceiling_frac * 100:.2f}% of H0"
+        f"  (parked on {planck['key']}; parked on {shoes['key']}: {ceiling_parked_late:.4f})"
+    )
+    print(
+        f"  genre anchor       {genre_anchor['label']}: {genre['H0']:.1f} "
+        f"+{genre['asym']['hi']:.1f}/-{genre['asym']['lo']:.1f} = "
+        f"{genre_anchor['frac_of_own_H0'] * 100:.1f}% of its own H0, "
+        f"{genre_anchor['ratio_to_ceiling']:.1f}x the ceiling  [{genre_anchor['cite']}]"
+    )
     print(f"  N needed (sys=0)   {n_needed_zero_sys:.2f} -> {math.ceil(n_needed_zero_sys)} events")
     for ex in examples:
         print(
@@ -437,7 +447,7 @@ def _read_h_convention() -> dict[str, Any]:
     path = next((p for p in CONSTANTS_CANDIDATES if p.exists()), None)
     if path is None:
         raise FileNotFoundError(
-            "master_thesis_code/constants.py not found in "
+            "darksiren_emri/constants.py not found in "
             + " or ".join(str(p) for p in CONSTANTS_CANDIDATES)
         )
     pattern = re.compile(r"^H\s*:\s*float\s*=\s*([0-9.]+)")
@@ -449,7 +459,7 @@ def _read_h_convention() -> dict[str, Any]:
                 "definition": "H0 / (100 km s^-1 Mpc^-1)",
                 "H": float(m.group(1)),
                 "role": "the mock universe's injected truth",
-                "source": f"master_thesis_code/constants.py:{lineno}",
+                "source": f"darksiren_emri/constants.py:{lineno}",
                 "source_line": line.strip(),
             }
     raise ValueError(f"no 'H: float = ...' line found in {path}")

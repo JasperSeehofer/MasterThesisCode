@@ -35,8 +35,8 @@ sys.path.insert(0, str(REPO))
 
 import pandas as pd
 
-from master_thesis_code.plotting._helpers import get_figure, save_figure
-from master_thesis_code.plotting._style import apply_style
+from darksiren_emri.plotting._helpers import get_figure, save_figure
+from darksiren_emri.plotting._style import apply_style
 
 TRUTH_H = 0.73
 CSV = REPO / "simulations/diagnostics/event_likelihoods.csv"

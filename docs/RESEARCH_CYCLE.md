@@ -229,6 +229,38 @@ Independence-enforced, propose-only. Run it at go/kill/pivot points.
 (`~/.claude/skills/commission/`), not committed with this repo, and RESEARCH mode
 needs a `.commission-research.yaml` config, which this repo does **not** have yet.
 
+### Ritual A6 — periodic assumption & performance audit
+
+Distinct from Stage L (external-literature pull) and from `/commission
+--research` (claim-history falsification): A6 is an **internal** re-check that
+today's approximations and today's performance choices still hold under
+today's premises — nothing here requires new literature or a live claim
+thread. Cadence-driven, not decision-blocking.
+
+**Cadence.** Every 2 completed campaigns, or 6 weeks of wall time, whichever
+comes first. Owner: whoever holds the orchestration seat (Fable-tier session)
+at the time the cadence fires; may delegate the checklist mechanics (§below)
+to a `sonnet`/medium subagent, keep verdict authorship at orchestration tier.
+
+**Trigger events (out-of-cycle).** See `PERF_ROADMAP`-adjacent proposal doc
+`AUDIT_RITUAL_PROPOSAL.md` §4 for the canonical list; summarized: new
+campaign kickoff, new venue/instrument, a `/physics-change` merge that
+touches an approximation this ritual tracks, cluster config change (node
+type, partition catalogue, packing rules).
+
+**Procedure.** Run the shared checklist (below). Each item gets one of:
+CURRENT (re-verified, no drift) / DRIFTED (re-verified, now stale — states
+the delta) / UNCHECKED (not yet re-verified this cycle — never silently
+skipped). File findings as an `AUDIT_<date>.md` next to the campaign it was
+run against. DRIFTED items on approximation error budgets route to
+`/physics-change`; DRIFTED items on perf choices route to a `PERF_ROADMAP.md`
+update; DRIFTED items on the assumption register route to a
+`docs/LITERATURE_WARNINGS.md` status update.
+
+**Checklist.** Shared with Option B (routine prompt) verbatim — see
+`AUDIT_RITUAL_PROPOSAL.md` §3, not duplicated here to avoid drift between two
+copies of the same list.
+
 **Exit artifact:** An `ADJUDICATION_<date>.md` with per-claim verdicts from the
 fixed vocabulary — `FINDING` · `REFUTED` · `AMENDED` · `UNDETERMINED` — plus the
 verdict appended below the pre-registration's line.
@@ -247,8 +279,8 @@ mechanism hunt beyond D1, and it is the explicit gatekeeper for "trusted run".
 
 1. **SBC / P–P coverage** of the FULL two-channel estimator on truth-known
    synthetic universes at the production venue.
-   Asset: `master_thesis_code/validation/pp_coverage.py` (`PPCoverageConfig`,
-   `run_coverage`, CLI `uv run python -m master_thesis_code.validation.pp_coverage
+   Asset: `darksiren_emri/validation/pp_coverage.py` (`PPCoverageConfig`,
+   `run_coverage`, CLI `uv run python -m darksiren_emri.validation.pp_coverage
    --kernel volume --mixture-mode ... --output pp_coverage_results.json`).
    Written from scratch by the 2026-07-01 commission and deliberately *not*
    importing production inference code — that independence is its scientific
@@ -476,3 +508,4 @@ without a row is a change that cannot be shown to have been earned.
 | 2026-08-04 | A3 — harness acceptance criteria | 4 | TO-BUILD `pp_coverage.py` extension now carries three acceptance criteria: 2-channel with g recomputed per h; production N; multi-candidate host balls | the residual 2D displacement rides the completion-leg mass factor's h-slope (event-summed ḡ(h) Δln ≈ 0.048 grid-wide; per-event sub-threshold, ensemble-dominant) — exactly the N-coherent class small-N, single-candidate SBC structurally cannot see | `results/run_20260804_postfix/gate_vii/gate_vii_readout.json`; `BIAS_HISTORY_LEDGER.md` §1 row 86 |
 | 2026-08-04 | A4 — evidence correction on A1/A3 | 3, 4 | A1/A3 precedent numbers corrected after adjudication: g_frac is NOT a per-h near-scalar (1587 distinct per-event values at h=0.73, range 0.076–0.242); frozen-g 2D MAPs are 0.66/0.64 (not 0.700); event-summed ḡ(h) 0.1348→0.1413, bit-identical both venues | two subagents disagreed on the numbers; a deciding single-instrument run refuted the interpreter's near-scalar claim while STRENGTHENING the qualitative finding (larger collapse, overshoots below injected 0.73) | `results/run_20260804_postfix/gate_vii/adjudicate_g_frac.py`, `.../viz_data.json` |
 | 2026-08-05 | A5 — Stage L: external consult | 0, 5, cross-cutting + `/physics-change` gate | New cross-cutting **Stage L** (symptom card up an abstraction ladder → rings R0…R4, R0 = already-cited papers re-read for warnings → independence-preserving timeboxed search → `[LIT]`-tagged stage-0 intake with mandatory quote-verification-before-mapping), four entry triggers (mandatory R0 sweep at every stage 0; auto-trigger on two consecutive MIXED/UNDETERMINED; before any `/physics-change` adoption; lightweight at runbook rollover); `[LIT]` added to the tag vocabulary; the `/physics-change` gate package extended to a **6th item** (source equations' stated validity conditions, checked per venue) — approved, pending application; new register `docs/LITERATURE_WARNINGS.md`. Pipeline **not** renumbered. **TODO (physics-change-owned commit): add gate item 6 to `.claude/skills/physics-change/SKILL.md`.** | the decisive external input on the Hitchhiker thread sat in an **already-cited** paper (arXiv:2212.08694 §2.3, after Eq. 30) quoted in this repo for weeks and was surfaced by author memory, not by the cycle — already-cited ≠ already-heeded | `results/campaign51_20260728/realistic_20260729/CLAIM_HITCHHIKER_INDEPENDENCE_20260805.md.DRAFT`; `gate_b_20260730/BIAS_HISTORY_LEDGER.md` §1 row 95; `results/campaign51_20260728/RUNBOOK_NEXT_SESSION_8.md` §5; `docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md:174-179` |
+| 2026-08-12 | A6 — periodic assumption & performance audit | 1, 3, 6, cross-cutting | New recurring ritual, cadence and trigger-gated (not stage-blocking): a standing **Assumption & Performance Audit** re-validates (a) approximation error budgets (interpolation tolerances, surrogate forms e.g. kappa_cap/p0 surrogates in `emri_rate.py`), (b) perf choices vs current unit economics (CPU-h/seed anchors, contention factors, packing rules), (c) `docs/LITERATURE_WARNINGS.md` register entries for staleness. Runs on a cadence (recommend: every 2 campaigns or 6 weeks, whichever is sooner) OR on a trigger event (§4). Produces an AUDIT_<date>.md under the active campaign's results dir; does not gate stage 3/5 decisions on its own — findings route to `/physics-change` (formula drift) or a perf-roadmap update (perf drift) as appropriate. | author mandate 2026-08-12: approximations and perf choices earn re-validation on a schedule, not only when a symptom forces the question — [[realistic-venue-performance-goal]] names realistic-venue infra as reusable, so its assumptions must stay current for follow-on projects too | `results/campaign51_20260728/RUNBOOK_NEXT_SESSION_9.md` §2 item 4; `results/venue_transfer_20260811/perf/PERF_ROADMAP.md` (the class of finding this ritual re-validates) |

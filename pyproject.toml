@@ -1,5 +1,5 @@
 [project]
-name = "master-thesis-code"
+name = "darksiren-emri"
 description = "Bayesian inference of the Hubble constant H0 from EMRI dark sirens with LISA"
 version = "0.1.0"
 requires-python = ">=3.10,<3.14"
@@ -21,8 +21,8 @@ dependencies = [
 
 [project.urls]
 Documentation = "https://jasperseehofer.github.io/MasterThesisCode/"
-Repository = "https://github.com/JasperSeehofer/MasterThesisCode"
-Issues = "https://github.com/JasperSeehofer/MasterThesisCode/issues"
+Repository = "https://github.com/JasperSeehofer/darksiren-emri"
+Issues = "https://github.com/JasperSeehofer/darksiren-emri/issues"
 
 [project.optional-dependencies]
 cpu = [
@@ -128,21 +128,21 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["master_thesis_code"]
+known-first-party = ["darksiren_emri"]
 
 [tool.pytest.ini_options]
-testpaths = ["master_thesis_code_test"]
-addopts = "-v --tb=short --cov=master_thesis_code --cov-report=term-missing --cov-report=xml"
+testpaths = ["darksiren_emri_test"]
+addopts = "-v --tb=short --cov=darksiren_emri --cov-report=term-missing --cov-report=xml"
 markers = [
     "gpu: requires CUDA GPU and cupy — skip with '-m not gpu'",
     "slow: long-running test (>10s)",
 ]
 
 [tool.coverage.run]
-source = ["master_thesis_code"]
+source = ["darksiren_emri"]
 omit = [
-    "master_thesis_code_test/*",
-    "master_thesis_code/*/_generated/*",
+    "darksiren_emri_test/*",
+    "darksiren_emri/*/_generated/*",
 ]
 
 [tool.coverage.report]

@@ -78,14 +78,14 @@ echo "  GPU:           ${CUDA_VISIBLE_DEVICES:-not set}"
 echo ""
 
 # Injection code uses relative paths from CWD and reads the galaxy catalog via
-# ./master_thesis_code/galaxy_catalogue/ (handler.py:24). Use a PRIVATE per-run
+# ./darksiren_emri/galaxy_catalogue/ (handler.py:24). Use a PRIVATE per-run
 # CWD (TC-03) instead of re-pointing the shared $PROJECT_ROOT/simulations
 # symlink, so concurrent runs with different RUN_DIRs cannot cross-contaminate.
 mkdir -p "$RUN_DIR/simulations/injections"
 JOB_CWD="$RUN_DIR/cwd"
 mkdir -p "$JOB_CWD"
 ln -sfn "$RUN_DIR/simulations" "$JOB_CWD/simulations"
-ln -sfn "$PROJECT_ROOT/master_thesis_code" "$JOB_CWD/master_thesis_code"
+ln -sfn "$PROJECT_ROOT/darksiren_emri" "$JOB_CWD/darksiren_emri"
 cd "$JOB_CWD"
 
 # Issue #51: INJ_MIXTURE=1 enables the stratified mix3_50_25_25 measure
@@ -95,7 +95,7 @@ if [[ "${INJ_MIXTURE:-0}" == "1" ]]; then
     MIXTURE_FLAG=(--injection_mixture)
 fi
 
-python -m master_thesis_code "$RUN_DIR" \
+python -m darksiren_emri "$RUN_DIR" \
     --injection_campaign \
     --h_value "$H_VALUE" \
     --simulation_steps "$INJ_STEPS" \
