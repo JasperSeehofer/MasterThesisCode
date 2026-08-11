@@ -117,6 +117,41 @@ construction from v1 (+[0, 9049]) and v2 (+[20000, 29049]); unit-tested.
     per-seed CPU against the derived 13.06/2.84 CPU-ms/pair anchors — the
     abort-(a) input); ``--smoke`` runs full N by default and only reduces
     fidelity when ``--n-events-cap`` is passed explicitly.
+11. *Opt-in intra-seed h-grain parallel mode* (``--grain h``; the default
+    ``--grain seed`` is the registered campaign's pool-over-seeds mode,
+    untouched). Motivation: one seed is a 982-event × ΣK = 1,193,703-pair ×
+    41-h unit (~3.79 CPU-h measured), so the seed-grain unit is hours long;
+    the 41 h-points of the estimator loop are independent given the seed's
+    draws. Construction (bit-identity by design): the registered RNG phase —
+    prereg §4 steps 2–4, one sequential PCG64 stream per seed in the
+    registered order (divergence 7) — runs SERIALLY in the parent via
+    :func:`_draw_seed_realization` (the exact code the seed-grain path runs,
+    sub-second), so the draws are the registered ones by construction; the
+    estimator's per-h body (:func:`_channel_terms_at_h`, which consumes no
+    RNG) is then farmed to a fork pool over the 41 h-points, each task
+    executing the identical code with the IDENTICAL fixed chunk geometry
+    (``chunk_pairs``/:data:`_G_NODE_CHUNK` — identical array shapes ⇒
+    identical BLAS kernels ⇒ identical floats, divergence 2) and returning
+    three scalars; reassembly is array indexing, and the slope + readout +
+    record assembly run in the parent unchanged. Per-seed records are
+    BYTE-IDENTICAL to seed-grain output for ANY worker count (unit-tested
+    cross-mode over every venue cell type, including a real-K capped-``g``
+    multi-chunk case). h-grain (41 units/seed) was chosen over raw per-event
+    grain per the measured load imbalance: the peak event (K = 245,364)
+    holds ~20.6 % of all pairs, capping pure event-parallel speedup at ~5×.
+    A (seed, event_idx)-rekeyed RNG mode was rejected: the sequential-shared
+    stream is positionally coupled across events (vectorized draws; the
+    glade sampler consumes decile-by-decile across ALL events), so rekeying
+    would change every registered draw and require a new seed plan +
+    re-certification. Both modes fork from the same parent process, so the
+    BLAS threading environment is inherited identically; campaigns must not
+    change ``OMP_NUM_THREADS``/``OPENBLAS_NUM_THREADS`` between modes they
+    intend to compare byte-for-byte. NOT mirrored into
+    ``calibration_gate.py``: the gate's per-h loop
+    (``log_channel_posteriors_ball``) is separate certified code (identity
+    ``065e7f58``, pinned by the running campaign) and this module modifies
+    neither parent — TODO(seed-grain-parents): if the gate is ever
+    re-certified, port the ``_channel_terms_at_h`` split there the same way.
 
 **Estimator (prereg §4 step 5, gate math with vector σ):** the gate's
 certified mirror generalized to per-candidate σ_z vectors — bare kernel ×
@@ -986,18 +1021,82 @@ def log_channel_posteriors_ball_sigma_vector(
     """
     cfg = gctx.cl_ctx.config
     n_h = len(cfg.h_grid)
-    n = universe.z_true.size
     ln1 = np.zeros(n_h, dtype=np.float64)
     ln2 = np.zeros(n_h, dtype=np.float64)
     ln_gfrac = np.zeros(n_h, dtype=np.float64)
 
+    sig_z = np.asarray(sigma_z_pairs, dtype=np.float64)
+    if sig_z.shape != ball.z_obs.shape:
+        raise ValueError(f"sigma_z_pairs shape {sig_z.shape} != pairs shape {ball.z_obs.shape}")
+
+    for k in range(n_h):
+        ln1[k], ln2[k], ln_gfrac[k] = _channel_terms_at_h(
+            gctx, universe, ball, sig_z, k, chunk_pairs=chunk_pairs
+        )
+
+    return ln1, ln2, _slope_at_truth(cfg, ln_gfrac)
+
+
+def _slope_at_truth(
+    cfg: cl.ClosedLoopConfig, ln_gfrac: npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    """``sum_dlog_gfrac_dh`` from neighbouring grid values (verbatim math).
+
+    Args:
+        cfg: The closed-loop config (grid + truth).
+        ln_gfrac: Per-h ``Σ ln(L2/L1)`` over both-finite events.
+
+    Returns:
+        The 1-element slope array, exactly as the gate's tail computes it.
+    """
+    n_h = len(cfg.h_grid)
+    h_arr = np.asarray(cfg.h_grid, dtype=np.float64)
+    i_true = int(np.argmin(np.abs(h_arr - cfg.h_true)))
+    lo = max(i_true - 1, 0)
+    hi = min(i_true + 1, n_h - 1)
+    slope = (ln_gfrac[hi] - ln_gfrac[lo]) / (h_arr[hi] - h_arr[lo])
+    return np.asarray([slope], dtype=np.float64)
+
+
+def _channel_terms_at_h(
+    gctx: cg.GateContext,
+    universe: cl.SyntheticUniverse,
+    ball: cg.HostBall,
+    sig_z: npt.NDArray[np.float64],
+    k: int,
+    *,
+    chunk_pairs: int = DEFAULT_CHUNK_PAIRS,
+) -> tuple[float, float, float]:
+    """One h-point of the vector-σ estimator loop (the divergence-11 unit).
+
+    The per-h body of :func:`log_channel_posteriors_ball_sigma_vector`,
+    verbatim: it consumes no RNG, depends on no cross-h state (the
+    ``z_of_dl_tables[k]`` ladder is precomputed context), and runs the SAME
+    fixed chunk geometry as the serial loop (``_pair_chunks`` partition +
+    :data:`_G_NODE_CHUNK` cap) — identical array shapes, hence identical
+    BLAS kernels, hence bit-identical floats whichever process executes it.
+    The tiny per-call recomputation of exact indexing products
+    (``d_obs_p = d_L_obs[ev]`` etc.) is FP-free.
+
+    Args:
+        gctx: The gate context.
+        universe: The event set.
+        ball: The candidate balls.
+        sig_z: Per-candidate σ_z as a validated float64 array.
+        k: Index into the h grid.
+        chunk_pairs: Pair-row chunk target (divergence 2; ``0`` = exact
+            gate-shape mode).
+
+    Returns:
+        ``(ln1[k], ln2[k], ln_gfrac[k])`` for this h.
+    """
+    cfg = gctx.cl_ctx.config
+    h = cfg.h_grid[k]
+    n = universe.z_true.size
     x = gctx.cl_ctx.gl_nodes
     w_gl = gctx.cl_ctx.gl_weights
     ev = ball.event_idx
     z_obs = ball.z_obs
-    sig_z = np.asarray(sigma_z_pairs, dtype=np.float64)
-    if sig_z.shape != z_obs.shape:
-        raise ValueError(f"sigma_z_pairs shape {sig_z.shape} != pairs shape {z_obs.shape}")
     d_obs_e = universe.d_L_obs
     sig_e = universe.sigma_dL
     d_obs_p = d_obs_e[ev]
@@ -1007,85 +1106,153 @@ def log_channel_posteriors_ball_sigma_vector(
     chunks = _pair_chunks(n_pairs, chunk_pairs)
     g_node_chunk = _G_NODE_CHUNK if chunk_pairs > 0 else 0  # exact mode couples both
 
-    for k, h in enumerate(cfg.h_grid):
-        d_L_nodes, z_tab = gctx.cl_ctx.z_of_dl_tables[k]
-        z_hi_e = np.interp(d_obs_e * (1.0 + cl._SIGMA_WINDOW * sig_e), d_L_nodes, z_tab)
-        z_lo_e = np.interp(d_obs_e * (1.0 - cl._SIGMA_WINDOW * sig_e), d_L_nodes, z_tab)
-        z_lo_e = np.maximum(z_lo_e, 1e-6)
-        z_hi_e = np.minimum(z_hi_e, z_tab[-1])
-        z_lo_p = z_lo_e[ev]
-        z_hi_p = z_hi_e[ev]
+    d_L_nodes, z_tab = gctx.cl_ctx.z_of_dl_tables[k]
+    z_hi_e = np.interp(d_obs_e * (1.0 + cl._SIGMA_WINDOW * sig_e), d_L_nodes, z_tab)
+    z_lo_e = np.interp(d_obs_e * (1.0 - cl._SIGMA_WINDOW * sig_e), d_L_nodes, z_tab)
+    z_lo_e = np.maximum(z_lo_e, 1e-6)
+    z_hi_e = np.minimum(z_hi_e, z_tab[-1])
+    z_lo_p = z_lo_e[ev]
+    z_hi_p = z_hi_e[ev]
 
-        c1 = np.zeros(n_pairs, dtype=np.float64)
-        c2 = np.zeros(n_pairs, dtype=np.float64)
-        for a0, a1 in chunks:
-            sl = np.arange(a0, a1, dtype=np.int64)
-            sig_c = sig_z[sl]
-            q = sig_c > 0.0
-            if np.any(q):
-                rows_q = sl[q]
-                zo = z_obs[rows_q]
-                so = sig_c[q]
-                a = np.maximum(z_lo_p[rows_q], zo - cg._IMPOSTOR_KERNEL_WINDOW * so)
-                b = np.minimum(z_hi_p[rows_q], zo + cg._IMPOSTOR_KERNEL_WINDOW * so)
-                valid = b > a
-                half = 0.5 * (b - a)
-                mid = 0.5 * (b + a)
-                z_nodes = mid[:, None] + half[:, None] * x[None, :]
-                d_L_n = np.asarray(
-                    dist_vectorized(np.maximum(z_nodes.reshape(-1), 1e-8), h=h),
-                    dtype=np.float64,
-                ).reshape(z_nodes.shape)
-                d_L_frac = d_L_n / d_obs_p[rows_q][:, None]
-                p_gw = norm.pdf(d_L_frac, loc=1.0, scale=sig_p[rows_q][:, None])
-                kern = norm.pdf(z_nodes, loc=zo[:, None], scale=so[:, None])
-                integ = kern * p_gw
-                c1q = half * (integ @ w_gl)
-                g = _g_ball_capped(
-                    gctx, universe, ev[rows_q], z_nodes, d_L_frac, valid, node_chunk=g_node_chunk
-                )
-                c2q = half * ((integ * g) @ w_gl)
-                c1[rows_q] = np.where(valid, c1q, 0.0)
-                c2[rows_q] = np.where(valid, c2q, 0.0)
-            if not np.all(q):
-                rows_p = sl[~q]
-                zo = z_obs[rows_p]
-                valid_p = (zo >= z_lo_p[rows_p]) & (zo <= z_hi_p[rows_p])
-                d_pt = np.asarray(dist_vectorized(np.maximum(zo, 1e-8), h=h), dtype=np.float64)
-                frac = d_pt / d_obs_p[rows_p]
-                p_gw_p = norm.pdf(frac, loc=1.0, scale=sig_p[rows_p])
-                g_pt = _g_ball_capped(
-                    gctx,
-                    universe,
-                    ev[rows_p],
-                    zo[:, None],
-                    frac[:, None],
-                    valid_p,
-                    node_chunk=g_node_chunk,
-                )[:, 0]
-                c1[rows_p] = np.where(valid_p, p_gw_p, 0.0)
-                c2[rows_p] = np.where(valid_p, p_gw_p * g_pt, 0.0)
+    c1 = np.zeros(n_pairs, dtype=np.float64)
+    c2 = np.zeros(n_pairs, dtype=np.float64)
+    for a0, a1 in chunks:
+        sl = np.arange(a0, a1, dtype=np.int64)
+        sig_c = sig_z[sl]
+        q = sig_c > 0.0
+        if np.any(q):
+            rows_q = sl[q]
+            zo = z_obs[rows_q]
+            so = sig_c[q]
+            a = np.maximum(z_lo_p[rows_q], zo - cg._IMPOSTOR_KERNEL_WINDOW * so)
+            b = np.minimum(z_hi_p[rows_q], zo + cg._IMPOSTOR_KERNEL_WINDOW * so)
+            valid = b > a
+            half = 0.5 * (b - a)
+            mid = 0.5 * (b + a)
+            z_nodes = mid[:, None] + half[:, None] * x[None, :]
+            d_L_n = np.asarray(
+                dist_vectorized(np.maximum(z_nodes.reshape(-1), 1e-8), h=h),
+                dtype=np.float64,
+            ).reshape(z_nodes.shape)
+            d_L_frac = d_L_n / d_obs_p[rows_q][:, None]
+            p_gw = norm.pdf(d_L_frac, loc=1.0, scale=sig_p[rows_q][:, None])
+            kern = norm.pdf(z_nodes, loc=zo[:, None], scale=so[:, None])
+            integ = kern * p_gw
+            c1q = half * (integ @ w_gl)
+            g = _g_ball_capped(
+                gctx, universe, ev[rows_q], z_nodes, d_L_frac, valid, node_chunk=g_node_chunk
+            )
+            c2q = half * ((integ * g) @ w_gl)
+            c1[rows_q] = np.where(valid, c1q, 0.0)
+            c2[rows_q] = np.where(valid, c2q, 0.0)
+        if not np.all(q):
+            rows_p = sl[~q]
+            zo = z_obs[rows_p]
+            valid_p = (zo >= z_lo_p[rows_p]) & (zo <= z_hi_p[rows_p])
+            d_pt = np.asarray(dist_vectorized(np.maximum(zo, 1e-8), h=h), dtype=np.float64)
+            frac = d_pt / d_obs_p[rows_p]
+            p_gw_p = norm.pdf(frac, loc=1.0, scale=sig_p[rows_p])
+            g_pt = _g_ball_capped(
+                gctx,
+                universe,
+                ev[rows_p],
+                zo[:, None],
+                frac[:, None],
+                valid_p,
+                node_chunk=g_node_chunk,
+            )[:, 0]
+            c1[rows_p] = np.where(valid_p, p_gw_p, 0.0)
+            c2[rows_p] = np.where(valid_p, p_gw_p * g_pt, 0.0)
 
-        L1 = np.bincount(ev, weights=c1, minlength=n) / K
-        L2 = np.bincount(ev, weights=c2, minlength=n) / K
-        # Prereg §4 step 5 normalisation, N_det FIXED (the gate's divergence-10
-        # convention verbatim): an event with L_i = 0 excludes this h via the
-        # finite -745/event penalty.
-        ok1 = (L1 > 0.0) & np.isfinite(L1)
-        ok2 = (L2 > 0.0) & np.isfinite(L2)
-        lnL1 = np.where(ok1, np.log(np.where(ok1, L1, 1.0)), cg._LN_ZERO_EVENT)
-        lnL2 = np.where(ok2, np.log(np.where(ok2, L2, 1.0)), cg._LN_ZERO_EVENT)
-        ln1[k] = float(np.sum(lnL1)) - float(n) * gctx.cl_ctx.log_alpha[k]
-        ln2[k] = float(np.sum(lnL2)) - float(n) * gctx.cl_ctx.log_alpha[k]
-        both = ok1 & ok2
-        ln_gfrac[k] = float(np.sum(np.log(L2[both] / L1[both])))
+    L1 = np.bincount(ev, weights=c1, minlength=n) / K
+    L2 = np.bincount(ev, weights=c2, minlength=n) / K
+    # Prereg §4 step 5 normalisation, N_det FIXED (the gate's divergence-10
+    # convention verbatim): an event with L_i = 0 excludes this h via the
+    # finite -745/event penalty.
+    ok1 = (L1 > 0.0) & np.isfinite(L1)
+    ok2 = (L2 > 0.0) & np.isfinite(L2)
+    lnL1 = np.where(ok1, np.log(np.where(ok1, L1, 1.0)), cg._LN_ZERO_EVENT)
+    lnL2 = np.where(ok2, np.log(np.where(ok2, L2, 1.0)), cg._LN_ZERO_EVENT)
+    ln1_k = float(np.sum(lnL1)) - float(n) * gctx.cl_ctx.log_alpha[k]
+    ln2_k = float(np.sum(lnL2)) - float(n) * gctx.cl_ctx.log_alpha[k]
+    both = ok1 & ok2
+    ln_gfrac_k = float(np.sum(np.log(L2[both] / L1[both])))
+    return float(ln1_k), float(ln2_k), float(ln_gfrac_k)
 
-    h_arr = np.asarray(cfg.h_grid, dtype=np.float64)
-    i_true = int(np.argmin(np.abs(h_arr - cfg.h_true)))
-    lo = max(i_true - 1, 0)
-    hi = min(i_true + 1, n_h - 1)
-    slope = (ln_gfrac[hi] - ln_gfrac[lo]) / (h_arr[hi] - h_arr[lo])
-    return ln1, ln2, np.asarray([slope], dtype=np.float64)
+
+# ── Divergence 11: intra-seed h-grain parallel estimator ─────────────────────
+
+_H_STATE: (
+    tuple[cg.GateContext, cl.SyntheticUniverse, cg.HostBall, npt.NDArray[np.float64], int] | None
+) = None
+
+
+def _h_task(k: int) -> tuple[float, float, float]:
+    """Fork-pool task: one h-point read from the module-global state."""
+    if _H_STATE is None:
+        raise RuntimeError("h-grain task state not initialised (fork-only worker)")
+    gctx, universe, ball, sig_z, chunk_pairs = _H_STATE
+    return _channel_terms_at_h(gctx, universe, ball, sig_z, k, chunk_pairs=chunk_pairs)
+
+
+def log_channel_posteriors_ball_sigma_vector_hgrain(
+    gctx: cg.GateContext,
+    universe: cl.SyntheticUniverse,
+    ball: cg.HostBall,
+    sigma_z_pairs: npt.NDArray[np.float64],
+    *,
+    chunk_pairs: int = DEFAULT_CHUNK_PAIRS,
+    workers: int = 1,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """h-grain twin of :func:`log_channel_posteriors_ball_sigma_vector`.
+
+    Farms the 41 independent h-points to a fork pool (divergence 11): every
+    task runs :func:`_channel_terms_at_h` — the identical per-h code with the
+    identical chunk geometry — and returns three scalars; reassembly is array
+    indexing and the slope is :func:`_slope_at_truth` verbatim, so the result
+    is BIT-IDENTICAL to the serial function for any ``workers``. The large
+    inputs reach the workers via fork copy-on-write of a module global (no
+    pickling of arrays); ``workers <= 1`` degenerates to the serial loop.
+
+    Args:
+        gctx: The gate context.
+        universe: The event set.
+        ball: The candidate balls (``z_obs`` already σ_z-scattered).
+        sigma_z_pairs: Per-candidate σ_z, aligned with ``ball.z_obs``.
+        chunk_pairs: Pair-row chunk target (divergence 2; must match the
+            geometry being compared against, as in the serial function).
+        workers: Fork-pool size (capped at the grid length).
+
+    Returns:
+        ``(ln_post_1d, ln_post_2d, sum_dlog_gfrac_dh)`` exactly as the
+        serial function's.
+    """
+    global _H_STATE
+    cfg = gctx.cl_ctx.config
+    n_h = len(cfg.h_grid)
+    sig_z = np.asarray(sigma_z_pairs, dtype=np.float64)
+    if sig_z.shape != ball.z_obs.shape:
+        raise ValueError(f"sigma_z_pairs shape {sig_z.shape} != pairs shape {ball.z_obs.shape}")
+
+    _H_STATE = (gctx, universe, ball, sig_z, chunk_pairs)
+    try:
+        if workers > 1:
+            ctx_mp = mp.get_context("fork")
+            with ctx_mp.Pool(processes=min(workers, n_h)) as pool:
+                terms = pool.map(_h_task, range(n_h), chunksize=1)
+        else:
+            terms = [_h_task(k) for k in range(n_h)]
+    finally:
+        _H_STATE = None
+
+    ln1 = np.zeros(n_h, dtype=np.float64)
+    ln2 = np.zeros(n_h, dtype=np.float64)
+    ln_gfrac = np.zeros(n_h, dtype=np.float64)
+    for k, (a, b, c) in enumerate(terms):
+        ln1[k] = a
+        ln2[k] = b
+        ln_gfrac[k] = c
+    return ln1, ln2, _slope_at_truth(cfg, ln_gfrac)
 
 
 # ── Per-seed driver ──────────────────────────────────────────────────────────
@@ -1122,6 +1289,68 @@ def run_seed_venue(seed: int, vctx: VenueContext | None = None) -> dict[str, Any
     context = vctx if vctx is not None else _VCTX
     if context is None:
         raise RuntimeError("venue-transfer context not initialised")
+    universe, ball, sigma_pairs = _draw_seed_realization(seed, context)
+    ln1, ln2, slope = log_channel_posteriors_ball_sigma_vector(
+        context.gctx, universe, ball, sigma_pairs, chunk_pairs=context.vcfg.chunk_pairs
+    )
+    return _assemble_seed_record(seed, context, universe, ball, sigma_pairs, ln1, ln2, slope)
+
+
+def run_seed_venue_hgrain(
+    seed: int, vctx: VenueContext | None = None, workers: int = 1
+) -> dict[str, Any]:
+    """h-grain twin of :func:`run_seed_venue` (divergence 11).
+
+    Phase 1 — the registered RNG phase (prereg §4 steps 2–4) runs serially on
+    the single seeded stream via :func:`_draw_seed_realization`, so the draws
+    are the registered ones by construction. Phase 2 — the RNG-free estimator
+    is parallelised over the h grid
+    (:func:`log_channel_posteriors_ball_sigma_vector_hgrain`, bit-identical
+    to the serial loop). Phase 3 — slope/readout/record assembly run
+    unchanged. The record is BYTE-IDENTICAL to :func:`run_seed_venue`'s for
+    any ``workers`` (unit-tested).
+
+    Args:
+        seed: The seed of this noise + ball + σ_z realization.
+        vctx: Shared context; falls back to the process-global one.
+        workers: Fork-pool size for the h grid (``<= 1`` = in-process).
+
+    Returns:
+        The per-seed record, exactly as :func:`run_seed_venue`'s.
+    """
+    context = vctx if vctx is not None else _VCTX
+    if context is None:
+        raise RuntimeError("venue-transfer context not initialised")
+    universe, ball, sigma_pairs = _draw_seed_realization(seed, context)
+    ln1, ln2, slope = log_channel_posteriors_ball_sigma_vector_hgrain(
+        context.gctx,
+        universe,
+        ball,
+        sigma_pairs,
+        chunk_pairs=context.vcfg.chunk_pairs,
+        workers=workers,
+    )
+    return _assemble_seed_record(seed, context, universe, ball, sigma_pairs, ln1, ln2, slope)
+
+
+def _draw_seed_realization(
+    seed: int, context: VenueContext
+) -> tuple[cl.SyntheticUniverse, cg.HostBall, npt.NDArray[np.float64]]:
+    """Prereg §4 steps 2–4 on the single seeded stream (registered RNG order).
+
+    The generation phase of :func:`run_seed_venue`, factored out verbatim so
+    the h-grain mode (divergence 11) consumes the IDENTICAL sequential draws:
+    noise → ball → σ_z texture, one ``np.random.default_rng(seed)`` consumed
+    in the registered order (divergence 7). Consumes ALL of the seed's
+    randomness; everything downstream is deterministic.
+
+    Args:
+        seed: The realization seed.
+        context: The venue context.
+
+    Returns:
+        ``(universe, ball, sigma_pairs)`` ready for the vector-σ estimator.
+    """
     vcfg = context.vcfg
     gctx = context.gctx
     rng = np.random.default_rng(seed)
@@ -1168,10 +1397,39 @@ def run_seed_venue(seed: int, vctx: VenueContext | None = None) -> dict[str, Any
         else:
             raise ValueError(f"unknown sigma_mode '{vcfg.sigma_mode}'")
 
-    ln1, ln2, slope = log_channel_posteriors_ball_sigma_vector(
-        gctx, universe, ball, sigma_pairs, chunk_pairs=vcfg.chunk_pairs
-    )
+    return universe, ball, sigma_pairs
 
+
+def _assemble_seed_record(
+    seed: int,
+    context: VenueContext,
+    universe: cl.SyntheticUniverse,
+    ball: cg.HostBall,
+    sigma_pairs: npt.NDArray[np.float64],
+    ln1: npt.NDArray[np.float64],
+    ln2: npt.NDArray[np.float64],
+    slope: npt.NDArray[np.float64],
+) -> dict[str, Any]:
+    """Readout + prereg §6 record from precomputed posteriors (RNG-free).
+
+    The tail of :func:`run_seed_venue`, factored out verbatim and shared by
+    both grain modes (divergence 11) — deterministic given its inputs.
+
+    Args:
+        seed: The realization seed.
+        context: The venue context.
+        universe: The drawn event set.
+        ball: The drawn candidate balls.
+        sigma_pairs: Per-candidate σ_z.
+        ln1: 1D unnormalised log posterior.
+        ln2: 2D unnormalised log posterior.
+        slope: ``sum_dlog_gfrac_dh`` scalar array.
+
+    Returns:
+        The JSON-serialisable per-seed record.
+    """
+    vcfg = context.vcfg
+    n = context.z_true.size
     h_arr = np.asarray(vcfg.h_grid, dtype=np.float64)
     r1 = cl.posterior_readout(h_arr, ln1)
     r2 = cl.posterior_readout(h_arr, ln2)
@@ -1416,6 +1674,7 @@ def run_cell_venue(
     workers: int,
     *,
     allow_dirty: bool = False,
+    grain: str = "seed",
 ) -> dict[str, Any]:
     """Run one cell×truth sweep and assemble the results document.
 
@@ -1425,20 +1684,33 @@ def run_cell_venue(
     Args:
         vcfg: The cell configuration.
         seeds: Seeds to run.
-        workers: Worker processes (``<= 1`` runs in-process).
+        workers: Worker processes (``<= 1`` runs in-process). At
+            ``grain="seed"`` this is the pool-over-seeds size; at
+            ``grain="h"`` it is the per-seed fork-pool size over the h grid.
         allow_dirty: Permit a dirty IMPORT PATH (smoke/validate only —
             :func:`main` rejects it for registered cell runs; recorded).
+        grain: ``"seed"`` (registered default — the campaign's
+            pool-over-seeds mode, untouched) or ``"h"`` (divergence 11:
+            seeds run serially in the parent, each seed's estimator loop
+            forked over the 41 h-points; per-seed records byte-identical).
 
     Returns:
         The full results dict (written to JSON by :func:`main`).
+
+    Raises:
+        ValueError: On an unknown ``grain``.
     """
+    if grain not in ("seed", "h"):
+        raise ValueError(f"unknown grain '{grain}' (expected 'seed' or 'h')")
     commit, dirt = cg._enforce_clean_import_path(allow_dirty)
     global _VCTX
     if _VCTX is None or _VCTX.vcfg != vcfg:
         _VCTX = build_venue_context(vcfg)
     context = _VCTX
     t0 = time.monotonic()
-    if workers > 1:
+    if grain == "h":
+        records = [run_seed_venue_hgrain(s, context, workers) for s in seeds]
+    elif workers > 1:
         ctx_mp = mp.get_context("fork")
         with ctx_mp.Pool(
             processes=workers, initializer=_venue_worker_init, initargs=(vcfg,)
@@ -1467,6 +1739,7 @@ def run_cell_venue(
         "pin_integrity": context.pin_integrity,
         "seeds": [int(s) for s in seeds],
         "workers": workers,
+        "grain": grain,
         "wall_time_s": wall,
         "wall_time_per_seed_s": wall / max(len(seeds), 1),
         "aggregate": agg,
@@ -1771,6 +2044,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--out", type=str, default=None, help="output JSON path")
     p.add_argument("--workers", type=int, default=max(mp.cpu_count() - 2, 1))
     p.add_argument(
+        "--grain",
+        choices=("seed", "h"),
+        default="seed",
+        help=(
+            "parallelism grain (divergence 11): 'seed' = the registered "
+            "campaign's pool-over-seeds mode (default, untouched); 'h' = "
+            "opt-in intra-seed fork pool over the 41 h-points — per-seed "
+            "records are byte-identical to seed grain for any worker count"
+        ),
+    )
+    p.add_argument(
         "--smoke",
         action="store_true",
         help="3 seeds, 1 worker, + V-T2 spot-check (full pinned N unless --n-events-cap)",
@@ -1877,7 +2161,7 @@ def main(argv: list[str] | None = None) -> int:
         seeds = seeds[: args.n_seeds]
 
     workers = 1 if args.smoke else args.workers
-    doc = run_cell_venue(vcfg, seeds, workers, allow_dirty=args.allow_dirty)
+    doc = run_cell_venue(vcfg, seeds, workers, allow_dirty=args.allow_dirty, grain=args.grain)
     doc["smoke"] = args.smoke
 
     if args.smoke:

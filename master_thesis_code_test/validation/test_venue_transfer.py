@@ -714,6 +714,158 @@ def test_run_seed_venue_t0_anchor_shape_maps_near_truth() -> None:
     assert abs(rec["map_2d"] - 0.730) <= 0.02
 
 
+# ── h-grain parallel mode (divergence 11) ────────────────────────────────────
+
+
+def _toy_mode_context(
+    balls: str,
+    sigma_mode: str,
+    *,
+    chunk_pairs: int = vt.DEFAULT_CHUNK_PAIRS,
+    k_hi: int = 8,
+    n: int = 12,
+) -> vt.VenueContext:
+    """A toy VenueContext for any (balls, sigma_mode) venue cell type."""
+    if balls == "poisson4":
+        gctx = _real_ladder_context(sigma_z=0.035, lambda_ball=4.0, n_events=n)
+    else:
+        gctx = _real_ladder_context(sigma_z=0.0, lambda_ball=0.0, n_events=n)
+    rng = np.random.default_rng(41)
+    z_true = rng.uniform(0.15, 0.9, size=n)
+    d_L = np.asarray(dist_vectorized(z_true, h=0.730), dtype=np.float64)
+    K = rng.integers(1, k_hi, size=n).astype(np.int64)
+    z_cat = np.random.default_rng(0).uniform(0.0, 1.5, size=2000)
+    sz_cat = np.random.default_rng(1).uniform(0.001, 0.08, size=2000)
+    edges, pools = vt.build_sigma_sampler(z_cat, sz_cat)
+    return vt.VenueContext(
+        vcfg=vt.VenueConfig(
+            cell="custom",
+            h_true=0.730,
+            balls=balls,
+            sigma_mode=sigma_mode,
+            chunk_pairs=chunk_pairs,
+        ),
+        gctx=gctx,
+        event_rows=np.arange(n, dtype=np.int64),
+        d_L=d_L,
+        M_row=np.full(n, 5.0e5),
+        sigma_dL=np.full(n, 0.02),
+        sigma_Mz=np.full(n, 1e-8),
+        rho=np.zeros(n),
+        z_true=z_true,
+        K=K,
+        n_horizon_dropped=0,
+        z_decile_edges=edges,
+        sigma_pool_deciles=pools,
+    )
+
+
+@pytest.mark.parametrize("workers", [1, 3])
+@pytest.mark.parametrize(
+    ("balls", "sigma_mode"),
+    [
+        ("real_k", "zero"),  # T-0
+        ("real_k", "flat035"),  # T-b
+        ("real_k", "glade"),  # T-c (maximal path)
+        ("poisson4", "flat035"),  # T-a (the gate's draw_ball verbatim)
+    ],
+)
+def test_hgrain_record_byte_identical_to_seed_grain(
+    balls: str, sigma_mode: str, workers: int
+) -> None:
+    """Divergence 11 acceptance bar: same (seed, cell) => byte-identical
+    per-seed record for any worker count, across every venue cell type."""
+    vctx = _toy_mode_context(balls, sigma_mode)
+    ref = vt.run_seed_venue(4242, vctx)
+    par = vt.run_seed_venue_hgrain(4242, vctx, workers=workers)
+    assert json.dumps(par, sort_keys=True) == json.dumps(ref, sort_keys=True)
+
+
+def test_hgrain_real_k_capped_multichunk_byte_identical(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Real-K capped case: multi-chunk pair partition + split g calls engaged
+    (the campaign's chunked geometry, scaled down) — still byte-identical,
+    and identical across worker counts."""
+    monkeypatch.setattr(vt, "_G_NODE_CHUNK", 40)  # < n_quad=50 => per-row g splits
+    vctx = _toy_mode_context("real_k", "glade", chunk_pairs=7, k_hi=30)
+    assert len(vt._pair_chunks(int(np.sum(vctx.K)), 7)) > 1  # chunking engaged
+    ref = json.dumps(vt.run_seed_venue(31415, vctx), sort_keys=True)
+    par2 = json.dumps(vt.run_seed_venue_hgrain(31415, vctx, workers=2), sort_keys=True)
+    par5 = json.dumps(vt.run_seed_venue_hgrain(31415, vctx, workers=5), sort_keys=True)
+    assert par2 == ref
+    assert par5 == ref
+
+
+def test_hgrain_is_deterministic() -> None:
+    """V-T2 carried to the new mode: same seed twice => bit-identical."""
+    vctx = _toy_mode_context("real_k", "glade")
+    a = vt.run_seed_venue_hgrain(777, vctx, workers=3)
+    b = vt.run_seed_venue_hgrain(777, vctx, workers=3)
+    assert json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+
+
+def test_hgrain_estimator_bitwise_matches_serial() -> None:
+    """The h-grain estimator twin equals the serial loop bit-for-bit."""
+    gctx = _real_ladder_context(sigma_z=0.035, lambda_ball=4.0, n_events=20)
+    rng = np.random.default_rng(53)
+    uni = _real_ladder_universe(20, rng)
+    ball = cg.draw_ball(gctx, uni, rng)
+    sigma_pairs = np.full(ball.z_obs.size, 0.035, dtype=np.float64)
+    a1, a2, asl = vt.log_channel_posteriors_ball_sigma_vector(gctx, uni, ball, sigma_pairs)
+    b1, b2, bsl = vt.log_channel_posteriors_ball_sigma_vector_hgrain(
+        gctx, uni, ball, sigma_pairs, workers=3
+    )
+    np.testing.assert_array_equal(a1, b1)
+    np.testing.assert_array_equal(a2, b2)
+    np.testing.assert_array_equal(asl, bsl)
+
+
+def test_hgrain_estimator_rejects_shape_mismatch() -> None:
+    """The h-grain twin carries the serial function's alignment guard."""
+    gctx = _real_ladder_context(sigma_z=0.035, lambda_ball=4.0, n_events=5)
+    rng = np.random.default_rng(37)
+    uni = _real_ladder_universe(5, rng)
+    ball = cg.draw_ball(gctx, uni, rng)
+    with pytest.raises(ValueError, match="shape"):
+        vt.log_channel_posteriors_ball_sigma_vector_hgrain(
+            gctx, uni, ball, np.zeros(ball.z_obs.size + 1)
+        )
+
+
+def test_run_cell_venue_grain_dispatch_and_equality(monkeypatch: pytest.MonkeyPatch) -> None:
+    """run_cell_venue: grain='h' per-seed records + aggregate equal grain='seed';
+    unknown grains are refused; the mode is recorded in the document."""
+    toy = _toy_mode_context("real_k", "glade")
+    monkeypatch.setattr(vt, "build_venue_context", lambda vcfg, check_pins=True: toy)
+    monkeypatch.setattr(cg, "_git_state", lambda: ("abc", {"import_path": [], "other": []}))
+    try:
+        vt._VCTX = None
+        doc_seed = vt.run_cell_venue(toy.vcfg, [11, 12], 1, grain="seed")
+        vt._VCTX = None
+        doc_h = vt.run_cell_venue(toy.vcfg, [11, 12], 3, grain="h")
+        with pytest.raises(ValueError, match="grain"):
+            vt.run_cell_venue(toy.vcfg, [11], 1, grain="event")
+    finally:
+        vt._VCTX = None
+    assert doc_seed["grain"] == "seed"
+    assert doc_h["grain"] == "h"
+    assert json.dumps(doc_seed["per_seed"], sort_keys=True) == json.dumps(
+        doc_h["per_seed"], sort_keys=True
+    )
+    assert json.dumps(doc_seed["aggregate"], sort_keys=True) == json.dumps(
+        doc_h["aggregate"], sort_keys=True
+    )
+
+
+def test_cli_grain_flag_default_and_choices() -> None:
+    """--grain defaults to the registered 'seed' mode; bad values are refused."""
+    assert vt.build_parser().parse_args(["--cell", "Tc"]).grain == "seed"
+    assert vt.build_parser().parse_args(["--cell", "Tc", "--grain", "h"]).grain == "h"
+    with pytest.raises(SystemExit):
+        vt.build_parser().parse_args(["--cell", "Tc", "--grain", "event"])
+
+
 # ── Classification (DS-VT bands) ─────────────────────────────────────────────
 
 

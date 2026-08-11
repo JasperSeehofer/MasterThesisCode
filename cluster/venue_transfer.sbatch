@@ -27,6 +27,26 @@
 # Each task writes results/venue_transfer_20260811/<cell>_h<truth>_results_seedsSTART_COUNT.json
 # (per-chunk documents, combined at readout; every JSON embeds the clean-rule
 # provenance + the recomputed V-T3 pin block).
+#
+# ── OPT-IN intra-seed h-grain mode (venue_transfer.py divergence 11) ──────────
+# NOT the campaign default — do NOT edit the python line below or resubmit the
+# running array; the registered campaign stays at --grain seed. For follow-on
+# campaigns or straggler re-runs, --grain h forks each seed's 41 estimator
+# h-points instead of pooling over seeds: per-seed wall time drops from hours
+# to minutes at --workers 41, and per-seed records are BYTE-IDENTICAL to seed
+# grain for any worker count (unit-tested cross-mode, incl. real-K capped-g
+# multi-chunk cases). Seeds then run serially per task, so size the chunk
+# accordingly (e.g. fewer seeds per task, more array tasks). Example:
+#   python -m master_thesis_code.validation.venue_transfer \
+#     --cell Tc --truth 0.730 --seed-range "$START:$COUNT" \
+#     --workers 41 --grain h \
+#     --out "results/<NEW_RUN_DIR>/Tc_h0p730_results_seeds${START}_${COUNT}.json"
+# Keep the BLAS threading env (OMP_NUM_THREADS / OPENBLAS_NUM_THREADS, from
+# modules.sh) identical to the seed-grain runs — both modes fork workers from
+# the same parent env, and byte-for-byte comparability assumes the same
+# kernels. Memory note: h-grain workers share the parent context copy-on-write
+# but each materialises its own per-chunk intermediates (bounded by
+# --chunk-pairs x 50 nodes, same as a seed-grain worker).
 
 #SBATCH --job-name=venue-transfer
 #SBATCH --ntasks=1
