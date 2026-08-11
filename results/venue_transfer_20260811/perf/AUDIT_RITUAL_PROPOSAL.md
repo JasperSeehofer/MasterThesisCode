@@ -1,4 +1,4 @@
-DRAFT — for author approval, not self-adopted (Track B item 4, 2026-08-12)
+ADOPTED (Option A) — author approval 2026-08-12; A6 applied to docs/RESEARCH_CYCLE.md. Option B not adopted. DRIFTED→action handoff: report-only until author triage (default pending §5 decision).
 
 # Assumption & Performance Audit — recurring-ritual proposal
 
