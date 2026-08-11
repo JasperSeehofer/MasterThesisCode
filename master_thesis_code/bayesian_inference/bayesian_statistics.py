@@ -1747,8 +1747,54 @@ def _phi_dark_mass_log10_grid(
     return log10_M, M_grid, phi, Z_phi
 
 
+@functools.lru_cache(maxsize=1)
+def _phi_ln_dark_mass_affine_coeffs() -> tuple[float, float, float, float, float]:
+    r"""Segment-affine coefficients of ``ln phi_unnorm`` vs ``log10 M``.
+
+    [PHYSICS] perf/realistic-venue interpolation swap (2026-08-12), PENDING
+    AUTHOR RATIFICATION. On the Babak band the unnormalised density
+    ``phi(log10 M) = dn/dlog10 M x R_eff`` is an exact piecewise power law
+    (Eqs. 5, 23, 26-27, 30, 31x34: exponents -0.3, -0.19, +0.06 and the
+    kappa surrogate's +0.5 below ``M_turn``), because the Gamma min-cap never
+    binds (max ratio 0.1253 < 1 on [1e4, 1e7]). Hence ``ln phi`` is exactly
+    affine in ``log10 M`` on each side of the single kink at ``log10 M = 5``
+    (``kappa_cap`` default ``M_turn = 1e5``): evaluating the two affine
+    branches IS linear interpolation off the minimal kink-aligned 3-node
+    grid, and reproduces the chain analytically — the only residual is the
+    log/lerp/exp floating-point roundtrip, O(few ULP), adversarially measured
+    max rel dev 1.8e-15 (14 ULP, 2M-sample sweep). Regression tripwire:
+    ``test_phi_interpolation_regression.py::test_affinity_premise_still_holds``.
+
+    The coefficients are DERIVED numerically from calls to the exact chain
+    (:func:`~master_thesis_code.dark_siren_injection.dark_mass_log10_density_unnormalised`)
+    at the three nodes — the density is never re-typed here
+    (FIXB_PATHA_PACKAGE.md §3.2 contract).
+
+    Returns:
+        ``(kink, a_lo, b_lo, a_hi, b_hi)`` with
+        ``ln phi = a + b * log10 M`` per segment.
+
+    Tests that monkeypatch ``dark_mass_log10_density_unnormalised`` must
+    ``cache_clear()`` this function as well as :func:`_phi_dark_mass_log10_grid`
+    (the flat-phi Jacobian test in ``test_closed_loop_gfrac.py`` is the precedent).
+    """
+    lo = math.log10(M_SOURCE_FRAME_MIN)
+    hi = math.log10(M_SOURCE_FRAME_MAX)
+    # Eq. (30) surrogate turn-over in emri_rate.kappa_cap: M_turn = 1e5.
+    kink = 5.0
+    x = np.array([lo, kink, hi], dtype=np.float64)
+    y = np.log(dark_mass_log10_density_unnormalised(10.0**x))
+    b_lo = float((y[1] - y[0]) / (kink - lo))
+    a_lo = float(y[0] - b_lo * lo)
+    b_hi = float((y[2] - y[1]) / (hi - kink))
+    a_hi = float(y[1] - b_hi * kink)
+    return kink, a_lo, b_lo, a_hi, b_hi
+
+
 def dark_mass_density_per_mass(
     M: npt.NDArray[np.float64],
+    *,
+    exact: bool = False,
 ) -> npt.NDArray[np.float64]:
     r"""``phi(M)``: the dark-host mass density per unit ``M`` (zero off-band).
 
@@ -1765,8 +1811,20 @@ def dark_mass_density_per_mass(
     the band the density is exactly zero (a dark host outside the band does not
     exist in the population, so ``g_i`` must not be extrapolated there).
 
+    [PHYSICS] perf/realistic-venue (2026-08-12), PENDING AUTHOR RATIFICATION:
+    the default path evaluates the chain as the two-segment affine form of
+    ``ln phi`` in ``log10 M`` (:func:`_phi_ln_dark_mass_affine_coeffs` — the
+    minimal kink-aligned lerp) instead of re-running the ``emri_rate.py``
+    power-law chain per call (76.2% of measured seed wall time,
+    ``results/venue_transfer_20260811/perf/PERF_ROADMAP.md`` §1-§2).
+    The substitution is analytically exact (piecewise power law — see the
+    table's docstring); residual is O(few ULP). ``exact=True`` restores the
+    verbatim pre-swap evaluation for equivalence tests and counterfactuals.
+
     Args:
         M: Source-frame MBH masses in solar masses (any shape).
+        exact: Evaluate the full ``emri_rate.py`` chain per call (pre-swap
+            behaviour) instead of the interpolation table.
 
     Returns:
         ``phi(M)`` in ``M_sun^-1``, same shape as ``M``.
@@ -1775,7 +1833,15 @@ def dark_mass_density_per_mass(
     M_arr = np.asarray(M, dtype=np.float64)
     inside = (M_arr >= M_SOURCE_FRAME_MIN) & (M_arr <= M_SOURCE_FRAME_MAX)
     safe = np.where(inside, M_arr, M_SOURCE_FRAME_MIN)
-    density = dark_mass_log10_density_unnormalised(safe) / (safe * math.log(10.0)) / Z_phi
+    if exact:
+        # Eqs. (5), (23), (31)x(34) in Babak et al. (2017), arXiv:1703.09722
+        unnorm = dark_mass_log10_density_unnormalised(safe)
+    else:
+        # Same Eqs. via the analytically exact kink-aligned segment lerp.
+        kink, a_lo, b_lo, a_hi, b_hi = _phi_ln_dark_mass_affine_coeffs()
+        x = np.log10(safe)
+        unnorm = np.exp(np.where(x < kink, a_lo + b_lo * x, a_hi + b_hi * x))
+    density = unnorm / (safe * math.log(10.0)) / Z_phi
     return np.asarray(np.where(inside, density, 0.0), dtype=np.float64)
 
 

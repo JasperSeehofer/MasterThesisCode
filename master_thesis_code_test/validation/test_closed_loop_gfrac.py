@@ -101,7 +101,10 @@ def test_g_i_flat_phi_gives_the_minus_one_jacobian_slope(monkeypatch: pytest.Mon
     )
     cache = bs._phi_dark_mass_log10_grid
     assert isinstance(cache, functools._lru_cache_wrapper)
+    affine_cache = bs._phi_ln_dark_mass_affine_coeffs
+    assert isinstance(affine_cache, functools._lru_cache_wrapper)
     cache.cache_clear()
+    affine_cache.cache_clear()
     try:
         z = np.linspace(0.05, 1.2, 25)
         det_M_z = 6.0e5
@@ -112,6 +115,7 @@ def test_g_i_flat_phi_gives_the_minus_one_jacobian_slope(monkeypatch: pytest.Mon
         assert np.allclose(slope, -1.0, atol=1e-6)
     finally:
         cache.cache_clear()
+        affine_cache.cache_clear()
 
 
 def test_g_i_real_phi_slope_is_positive_above_the_kink() -> None:
