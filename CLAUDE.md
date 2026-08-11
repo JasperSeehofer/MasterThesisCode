@@ -211,7 +211,6 @@ Any edit to these files that modifies a computed value (not just refactoring/typ
 - `constants.py`
 - `LISA_configuration.py`
 - `parameter_estimation/parameter_estimation.py`
-- `datamodels/galaxy.py`
 - `bayesian_inference/bayesian_statistics.py`
 - `bayesian_inference/simulation_detection_probability.py`
 - `cosmological_model.py`
@@ -221,6 +220,15 @@ Any edit to these files that modifies a computed value (not just refactoring/typ
 ## Python Conventions
 
 Dataclass mutable-default handling (`field(default_factory=...)`) and mandatory type annotations (modern `list[...]`/`X | None` syntax, `npt.NDArray[np.float64]`, `Callable` typing, mypy config) — live in **`.claude/rules/python-conventions.md`**, auto-loaded when editing `master_thesis_code/**/*.py`.
+
+## Proposing decisions
+
+Decision-gating proposals go in a **reviewable artifact** — a book chapter, a docs page, or a
+standalone explainer — with the decision table inline, not in a chat summary. The approval happens
+against something that persists and can be re-read; a summary in the transcript cannot be revisited,
+diffed, or cited later. Applies to research-cycle proposals, pre-registered measurements, and
+standing-decision changes. (Codified 2026-08-11 from two consistent author signals, 2026-08-05 and
+2026-08-07.)
 
 ## Testing Strategy
 
@@ -307,45 +315,11 @@ Use these entry points:
 - `/gsd:debug` for investigation and bug fixing
 - `/gsd:execute-phase` for planned phase work
 
-Do not make direct repo edits outside a GSD or GPD workflow unless the user explicitly asks to bypass it.
-
-### GSD -> GPD Routing
-
-GSD is the primary command surface. When a GSD workflow encounters **physics work**, it must delegate to the corresponding GPD command instead of handling it with GSD agents. This applies whether the user invokes GSD explicitly or the system routes automatically.
-
-**A task is physics work if it:**
-- Modifies a formula, physical constant, PSD coefficient, waveform parameter, or frequency limit (same trigger as `/physics-change`)
-- Involves a derivation, dimensional analysis, limiting-case check, or convergence study
-- Requires literature lookup for a physics method or known result
-- Is described in physics terms (e.g., "fix the Fisher matrix stencil", "add confusion noise to PSD")
-
-**Routing table (GSD command -> GPD equivalent):**
-
-| GSD command | When physics-flagged, delegate to | Notes |
-|---|---|---|
-| `/gsd:plan-phase N` | `/gpd:plan-phase N` | GPD planner adds verification criteria, limiting cases |
-| `/gsd:execute-phase N` | `/gpd:execute-phase N` | GPD executor applies physics protocols (dimensional analysis, sign checks) |
-| `/gsd:quick` | `/gpd:quick` | GPD quick mode with physics guarantees |
-| `/gsd:debug` | `/gpd:debug` | GPD debugger uses scientific method, checks dimensions/limits |
-| `/gsd:verify-work` | `/gpd:verify-work` | GPD verifier checks physics correctness, not just task completion |
-| `/gsd:research-phase N` | `/gpd:research-phase N` | GPD researcher surveys physics literature |
-| `/gsd:discuss-phase N` | `/gpd:discuss-phase N` | Either system works; GPD if physics-heavy |
-
-**What stays in GSD (never routed):**
-- Code refactoring, test infrastructure, CI/CD, cluster scripts, documentation
-- Dependency management, import cleanup, type annotation work
-- Plotting code changes (unless the plot formula itself is physics)
-- `/gsd:ship`, `/gsd:pr-branch`, `/gsd:profile-user`, `/gsd:settings`
-
-**Mixed phases:** If a GSD phase contains both software and physics tasks, keep the phase in GSD but invoke GPD for the physics subtasks. The GSD phase tracks overall progress; GPD handles the physics execution with its protocols.
-
-**State tracking:** GSD tracks progress in `.planning/`, GPD in `.gpd/`. Both systems commit atomically. They are independent ledgers for independent concerns, with one exception:
-
-**Sync rule:** When GPD completes a milestone that overlaps with GSD's active milestone, update GSD state to reflect completion and any scope changes. Run `/gsd-progress` after GPD milestone completion to detect drift. If GSD's active milestone was fully executed by GPD, mark it shipped in `.planning/MILESTONES.md` and `.planning/ROADMAP.md`, then update `.planning/STATE.md` to point at the next milestone.
+Do not make direct repo edits outside the `/research-cycle` protocol unless the user explicitly asks to bypass it.
 
 ### GitHub Integration
 
-GitHub issues, labels, and milestones are the **external-facing** record of project state. GSD/GPD workflows must keep them in sync as work progresses. This is not optional — stale issues erode trust in the tracker.
+GitHub issues, labels, and milestones are the **external-facing** record of project state. Workflows must keep them in sync as work progresses. This is not optional — stale issues erode trust in the tracker.
 
 **When to update GitHub (mandatory):**
 
@@ -356,7 +330,7 @@ GitHub issues, labels, and milestones are the **external-facing** record of proj
 | A phase or milestone is **planned** that maps to open issues | Assign those issues to the relevant GitHub milestone | `gh issue edit N --milestone "..."` |
 | A phase **completes** and resolves multiple issues | Close all resolved issues in one pass with per-issue comments | Batch `gh issue close` |
 | Work priority changes (e.g., issue becomes paper-blocking) | Update labels accordingly | `gh issue edit N --add-label "paper-blocker"` |
-| A new milestone cycle starts (`/gsd:new-milestone` or `/gpd:new-milestone`) | Create a GitHub milestone if one doesn't exist for it | `gh api repos/.../milestones --method POST` |
+| A new milestone cycle starts | Create a GitHub milestone if one doesn't exist for it | `gh api repos/.../milestones --method POST` |
 
 **Labels to use:**
 - `bug` — something is broken
@@ -369,7 +343,7 @@ GitHub issues, labels, and milestones are the **external-facing** record of proj
 **Milestone:** The "Paper Submission" milestone tracks all issues that must be resolved before the paper is submitted. All open physics/design issues should be assigned to it.
 
 **What NOT to do:**
-- Do not create GitHub issues for internal GSD/GPD tracking (phase plans, verification checklists) — those belong in `.planning/` and `.gpd/`
+- Do not create GitHub issues for internal planning (phase plans, verification checklists) — those belong in `.planning/` and `.gpd/`
 - Do not duplicate TODO.md items as issues unless they represent distinct, actionable bugs or features
 - Do not update issues for purely internal refactoring that has no user-facing effect
 <!-- GSD:workflow-end -->
