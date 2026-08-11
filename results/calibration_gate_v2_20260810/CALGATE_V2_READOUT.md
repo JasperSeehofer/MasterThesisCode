@@ -183,3 +183,17 @@ Stage-5 stop rule of record: "stop digging" requires coverage pass ∧ width-on-
 
 ---
 *Scored 2026-08-10 by `readout_score_v2.py` (mechanical; zero band adjustments; zero adjudication). Machine-readable twin: `CALGATE_V2_READOUT.json`. Ledger and book untouched by this readout. No commit made.*
+
+
+---
+
+## AUTHOR CONTINUATION (2026-08-11) — appended post-readout
+
+The author's verbatim reply to this readout's presented report and recommendation list: **"please continue as
+recommended by you"** (2026-08-11), followed later by the overnight escalation ruling (verbatim in the ledger §5
+block of the same date). Effect: acceptance-by-reference of the presented recommendations; the orchestrator-derived
+itemization (i)–(vi) and its provenance caveat live in `gate_b_20260730/BIAS_HISTORY_LEDGER.md` §5
+("AUTHOR CONTINUATION (2026-08-11)"), with **explicit itemized author confirmation queued for 2026-08-12**.
+Consequence executed the same night: thread 17 opened (ledger row #98); the clause-(b) decider pre-registered
+(`../venue_transfer_20260811/PREREGISTRATION_VENUE_TRANSFER.md`, commit e77eecad), instrument built and
+adversarially CONFIRMED (commit 2ece8801), campaign launched (cluster array 6252702).

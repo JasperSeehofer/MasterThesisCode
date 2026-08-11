@@ -218,3 +218,11 @@ registered document, none exercised here):**
 
 *Readout complete. Nothing above rules; the ledger, the claim files, the
 book, and prereg §11 are untouched by this pass.*
+
+
+---
+
+*Note (2026-08-11): the four open author decisions listed above were resolved by the v2 cycle — see
+`../calibration_gate_v2_20260810/PREREGISTRATION_CALIBRATION_GATE_V2.md` (deviation register D1–D8),
+`CALGATE_V2_READOUT.md` (gate TRUSTWORTHY, KEEP-DIGGING(b)), and ledger row #98 + §5 (2026-08-11 continuation,
+itemized confirmation queued 2026-08-12).*
