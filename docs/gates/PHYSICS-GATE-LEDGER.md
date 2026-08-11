@@ -52,3 +52,6 @@ are not.
 | 2026-08-12 | 87c6670b | presented | PENDING AUTHOR RATIFICATION | bayesian_statistics.py:dark_mass_density_per_mass | phi(M) two-segment affine swap, 5-item package in PERF_ROADMAP.md §5 + test file docstring |
 | 2026-08-12 | 87c6670b | implemented | PASS | bayesian_statistics.py:dark_mass_density_per_mass | ref comments + regression pins + seam test + tripwire test |
 | 2026-08-12 | 87c6670b | verified | PASS | bayesian_statistics.py:dark_mass_density_per_mass | sign/units unchanged (same phi, same normalisation); limits: pins at band edges + kink; adversarial verify CONFIRMED 1.8e-15; counterfactual smoke tolerance registered (rel 1e-8, 2D channel) |
+| 2026-08-12 | dfedf19c | presented | DIRECTION APPROVED 2026-08-12 / PACKAGE PENDING AUTHOR RATIFICATION | bayesian_statistics.py:completion_mass_factor_g | Route 1 adaptive GH order, package in ROUTE1_GATE_PACKAGE.md |
+| 2026-08-12 | dfedf19c | implemented | PASS | bayesian_statistics.py:completion_mass_factor_g | adaptive path + 7 tests incl. fast-order pin + gate doc |
+| 2026-08-12 | dfedf19c | verified | PASS | bayesian_statistics.py:completion_mass_factor_g | xhigh adversarial CONFIRMED, bound 2.5e-37, in-support max 9.6e-16, off-support zero-vs-dust divergence registered, smoke rel 1.26e-14, 9.28x cumulative |
