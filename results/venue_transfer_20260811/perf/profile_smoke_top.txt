@@ -1,0 +1,59 @@
+n_events_cap=30 n_events=30 sum_K=20024 max_K=14586
+context_build_s=19.599 seed_wall_s=124.921
+
+         154407 function calls (153011 primitive calls) in 124.921 seconds
+
+   Ordered by: cumulative time
+   List reduced from 233 to 25 due to restriction <25>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000  124.921  124.921 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/validation/venue_transfer.py:1270(run_seed_venue)
+        1    0.001    0.001  124.916  124.916 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/validation/venue_transfer.py:980(log_channel_posteriors_ball_sigma_vector)
+       41    0.265    0.006  124.915    3.047 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/validation/venue_transfer.py:1061(_channel_terms_at_h)
+       82    5.708    0.070  122.037    1.488 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/validation/venue_transfer.py:905(_g_ball_capped)
+     1394   20.671    0.015  116.279    0.083 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/bayesian_inference/bayesian_statistics.py:1935(completion_mass_factor_g)
+     1394   20.531    0.015   95.184    0.068 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/bayesian_inference/bayesian_statistics.py:1750(dark_mass_density_per_mass)
+     1394    2.207    0.002   74.646    0.054 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/dark_siren_injection.py:332(dark_mass_log10_density_unnormalised)
+     1394    5.008    0.004   53.427    0.038 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/emri_rate.py:235(R_eff_per_mbh)
+     1394   20.696    0.015   20.698    0.015 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/emri_rate.py:128(duty_cycle_Gamma)
+     1394   19.006    0.014   19.008    0.014 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/emri_rate.py:72(mbh_mass_function)
+     1394   14.526    0.010   14.528    0.010 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/emri_rate.py:100(R0_per_mbh)
+     1394   13.192    0.009   13.193    0.009 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/emri_rate.py:167(kappa_cap)
+      164    0.591    0.004    1.519    0.009 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/stats/_distn_infrastructure.py:2051(pdf)
+       82    0.132    0.002    1.088    0.013 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/physical_relations.py:226(dist_vectorized)
+       82    0.002    0.000    0.937    0.011 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/interpolate/_interpolate.py:788(__call__)
+       82    0.929    0.011    0.930    0.011 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/interpolate/_interpolate.py:908(_evaluate)
+      164    0.001    0.000    0.451    0.003 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/stats/_continuous_distns.py:423(_pdf)
+      164    0.450    0.003    0.450    0.003 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/stats/_continuous_distns.py:362(_norm_pdf)
+     1394    0.012    0.000    0.418    0.000 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/special/_orthogonal.py:827(roots_hermite)
+     1394    0.092    0.000    0.407    0.000 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/special/_orthogonal.py:159(_gen_roots_and_weights)
+      164    0.001    0.000    0.302    0.002 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/numpy/lib/_function_base_impl.py:2100(place)
+      164    0.301    0.002    0.301    0.002 {built-in method numpy._core._multiarray_umath._place}
+2788/1394    0.030    0.000    0.252    0.000 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/_lib/_util.py:1149(wrapper)
+     1394    0.004    0.000    0.208    0.000 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/linalg/_decomp.py:1036(eigvals_banded)
+     1394    0.131    0.000    0.190    0.000 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/linalg/_decomp.py:661(eig_banded)
+
+
+         154407 function calls (153011 primitive calls) in 124.921 seconds
+
+   Ordered by: internal time
+   List reduced from 233 to 15 due to restriction <15>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     1394   20.696    0.015   20.698    0.015 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/emri_rate.py:128(duty_cycle_Gamma)
+     1394   20.671    0.015  116.279    0.083 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/bayesian_inference/bayesian_statistics.py:1935(completion_mass_factor_g)
+     1394   20.531    0.015   95.184    0.068 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/bayesian_inference/bayesian_statistics.py:1750(dark_mass_density_per_mass)
+     1394   19.006    0.014   19.008    0.014 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/emri_rate.py:72(mbh_mass_function)
+     1394   14.526    0.010   14.528    0.010 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/emri_rate.py:100(R0_per_mbh)
+     1394   13.192    0.009   13.193    0.009 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/emri_rate.py:167(kappa_cap)
+       82    5.708    0.070  122.037    1.488 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/validation/venue_transfer.py:905(_g_ball_capped)
+     1394    5.008    0.004   53.427    0.038 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/emri_rate.py:235(R_eff_per_mbh)
+     1394    2.207    0.002   74.646    0.054 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/dark_siren_injection.py:332(dark_mass_log10_density_unnormalised)
+       82    0.929    0.011    0.930    0.011 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/interpolate/_interpolate.py:908(_evaluate)
+      164    0.591    0.004    1.519    0.009 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/stats/_distn_infrastructure.py:2051(pdf)
+      164    0.450    0.003    0.450    0.003 /home/jasper/Repositories/MasterThesisCode/.venv/lib/python3.13/site-packages/scipy/stats/_continuous_distns.py:362(_norm_pdf)
+      164    0.301    0.002    0.301    0.002 {built-in method numpy._core._multiarray_umath._place}
+       41    0.265    0.006  124.915    3.047 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/validation/venue_transfer.py:1061(_channel_terms_at_h)
+       82    0.132    0.002    1.088    0.013 /home/jasper/Repositories/MasterThesisCode/master_thesis_code/physical_relations.py:226(dist_vectorized)
+
+
