@@ -287,3 +287,48 @@ not measured live — the running campaign was not queried):**
 - `results/venue_transfer_20260811/perf/profile_smoke_top.txt` — top-25 cumulative +
   top-15 tottime tables, plus run metadata (n_events_cap, ΣK, max K, wall times).
 - `results/venue_transfer_20260811/perf/PERF_ROADMAP.md` — this document.
+
+---
+
+## 5. Post-swap addendum (2026-08-12, branch `perf/realistic-venue`) — PENDING AUTHOR RATIFICATION
+
+Lever #3 was implemented on this branch as a `/physics-change`-gated swap in
+`bayesian_statistics.py::dark_mass_density_per_mass`, with two premise revisions
+found by measurement (the author's re-check-the-premise discipline, applied):
+
+1. **`np.interp` refuted:** the roadmap's assumed interpolation route measured
+   2.5x SLOWER than the exact chain on the dev machine (numpy's fractional pow
+   is libmvec-vectorized; `np.interp`'s per-element search dominates).
+   Replaced by the analytically equivalent minimal form: phi(M) is an exact
+   two-segment power law (Gamma min-cap never binds, max 0.1253 < 1), so
+   `ln phi` is affine in `log10 M` per segment with one kink at `log10 M = 5`;
+   the default path now evaluates the two affine branches with coefficients
+   derived numerically from exact-chain calls at nodes {4, 5, 7} (never
+   re-typed). Adversarial verification: CONFIRMED, worst in-band deviation
+   1.8e-15 (14 ULP, 2M-sample sweep). `exact=True` restores the verbatim chain.
+2. **Realized gain 1.42x, not 3-5x:** post-swap seed wall 88.03 s vs 124.92 s
+   baseline (`COUNTERFACTUAL_SMOKE.md`; in-process exact-vs-affine 1.51x). The
+   roadmap's 3-5x assumed the chain was compute-bound; it is memory-bandwidth
+   bound — `dark_mass_density_per_mass` remains 65.7% of seed wall even as
+   pure affine+exp arithmetic (~8 full array passes over multi-million-element
+   temporaries per call).
+3. **Registered numerical tolerance (new divergence class, V-T5 style):** the
+   swap is NOT bit-identical end-to-end. Counterfactual smoke (Tc(0.730),
+   real_k/glade, n=30, seed 20260808+44000): `map_1d` and all non-2D fields
+   byte-identical; 11 2D-channel leaves (`edge_mass_2d`, `ln_post_2d[i]`,
+   `map_2d_refined`, `mean_2d`, `pit_2d`, `sum_dlog_gfrac_dh`) differ by
+   max abs 2.842e-12 / max rel 5.150e-9 — accumulated double-precision
+   rounding from the changed evaluation order, same class as the accepted
+   `chunk_pairs` divergence 2. Registered tolerance for exact-vs-affine
+   comparisons: rel 1e-8 on 2D-channel scalars.
+4. **GPU (lever #4): NO-GO reaffirmed post-swap.** The residual hot spot is
+   bandwidth-bound elementwise work — technically GPU-ideal, but both §3
+   gating conditions still fail (no long-wall GPU partition; a further
+   non-bit-identical certification class). Revisit only per §3's conditions.
+5. **Next levers (not implemented, future /physics-change intake):**
+   (a) temporary-array fusion in `dark_mass_density_per_mass` /
+   `completion_mass_factor_g` (~1.2-1.3x, cheap, same tolerance class);
+   (b) semi-analytic Gauss-Hermite x piecewise-power-law contraction of
+   `completion_mass_factor_g` — the integrand is Gaussian x exp(affine) per
+   segment, so the inner contraction has closed-form pieces (erf terms); could
+   remove most of the residual 65.7%. Needs a full derivation package.

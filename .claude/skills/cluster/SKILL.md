@@ -49,6 +49,33 @@ Only proceed when it says `VERDICT: READY ✓`. Paths/expectations live in
    they never run and clog the view. Preflight flags them; clear with `scancel <id>`.
 4. **Seed convention.** Per-task seed = `BASE_SEED + SLURM_ARRAY_TASK_ID`
    (reproducible; resubmits reproduce). Recorded in `run_metadata_<task>.json`.
+5. **Node topology: `cpu_il` is 128-core, plain `cpu` is 192-core.** Size
+   `--cpus-per-task`/packing assumptions against the partition you actually requested —
+   a 64-core reservation on `cpu_il` leaves less headroom than the same number on `cpu`.
+   `dev_cpu_il` QOS caps are tight: **MaxSubmit 4 / MaxRunning 1 / 30-min wall** — fine
+   for a smoke test, not for anything you intend to leave running.
+6. **Cross-task memory-bandwidth contention is real and measured, not theoretical.**
+   ~25-core tasks packed 5/node run **~1.7× slower per seed** than the same task packed
+   2/node (venue-transfer campaign anchor, ~4h uncontended → ~7h contended per seed).
+   Size `--time` against the **contended** per-seed anchor, not the uncontended one,
+   whenever more than 2 tasks/node are packed — sizing against uncontended timing under
+   tight packing risks a mid-run SLURM kill.
+7. **Grain vs. walltime: match `--cpus-per-task` to the actual worker count.**
+   `mp.Pool(processes=N)` only has work for as many workers as there are seeds in the
+   task's range — reserving 64 cores for a 25-seed pool idles up to 39 cores/task for
+   the whole run. Either shrink the reservation to match the seed count (accepting
+   contention per gotcha 6, and resizing `--time` by ~1.7×), or use a finer parallel
+   grain (e.g. `--grain h`) to give the reserved cores work *within* a seed instead of
+   leaving them idle across seeds.
+8. **`sbatch --test-only` ignores backfill.** Its predicted start times are off by
+   orders of magnitude for short, wide jobs (EXP-61) — do not size a campaign's
+   submission plan around them. Log probe-vs-actual pairs at each submission instead of
+   trusting the estimate.
+9. **Instruments that write JSON only at run end lose everything on a walltime kill** —
+   there is no partial-progress checkpoint to resume from. Size `--time` with margin
+   against the *contended* anchor (gotcha 6); `scontrol` walltime extensions are denied
+   for regular users, so a job sized too tight has no recovery path but resubmitting
+   from scratch.
 
 ### The pipeline & where artifacts land
 ```
