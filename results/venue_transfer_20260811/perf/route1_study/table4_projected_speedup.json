@@ -1,0 +1,86 @@
+[
+  {
+    "avg_nodes_per_z_node": 8.0,
+    "fallback_fraction": 0.0,
+    "n_low": 8,
+    "projected_seed_wall_speedup": 4.929143561306223,
+    "t_tol": 4
+  },
+  {
+    "avg_nodes_per_z_node": 12.0,
+    "fallback_fraction": 0.0,
+    "n_low": 12,
+    "projected_seed_wall_speedup": 3.8489295164782296,
+    "t_tol": 4
+  },
+  {
+    "avg_nodes_per_z_node": 16.0,
+    "fallback_fraction": 0.0,
+    "n_low": 16,
+    "projected_seed_wall_speedup": 3.1570639305445938,
+    "t_tol": 4
+  },
+  {
+    "avg_nodes_per_z_node": 24.0,
+    "fallback_fraction": 0.0,
+    "n_low": 24,
+    "projected_seed_wall_speedup": 2.3222060957910013,
+    "t_tol": 4
+  },
+  {
+    "avg_nodes_per_z_node": 8.0,
+    "fallback_fraction": 0.0,
+    "n_low": 8,
+    "projected_seed_wall_speedup": 4.929143561306223,
+    "t_tol": 5
+  },
+  {
+    "avg_nodes_per_z_node": 12.0,
+    "fallback_fraction": 0.0,
+    "n_low": 12,
+    "projected_seed_wall_speedup": 3.8489295164782296,
+    "t_tol": 5
+  },
+  {
+    "avg_nodes_per_z_node": 16.0,
+    "fallback_fraction": 0.0,
+    "n_low": 16,
+    "projected_seed_wall_speedup": 3.1570639305445938,
+    "t_tol": 5
+  },
+  {
+    "avg_nodes_per_z_node": 24.0,
+    "fallback_fraction": 0.0,
+    "n_low": 24,
+    "projected_seed_wall_speedup": 2.3222060957910013,
+    "t_tol": 5
+  },
+  {
+    "avg_nodes_per_z_node": 8.0,
+    "fallback_fraction": 0.0,
+    "n_low": 8,
+    "projected_seed_wall_speedup": 4.929143561306223,
+    "t_tol": 6
+  },
+  {
+    "avg_nodes_per_z_node": 12.0,
+    "fallback_fraction": 0.0,
+    "n_low": 12,
+    "projected_seed_wall_speedup": 3.8489295164782296,
+    "t_tol": 6
+  },
+  {
+    "avg_nodes_per_z_node": 16.0,
+    "fallback_fraction": 0.0,
+    "n_low": 16,
+    "projected_seed_wall_speedup": 3.1570639305445938,
+    "t_tol": 6
+  },
+  {
+    "avg_nodes_per_z_node": 24.0,
+    "fallback_fraction": 0.0,
+    "n_low": 24,
+    "projected_seed_wall_speedup": 2.3222060957910013,
+    "t_tol": 6
+  }
+]
