@@ -605,3 +605,51 @@ after this file is committed, no edits above this line.
 *(The instrument commit hash, smoke results, V-T5 no-drift evidence,
 deviations discovered during the run, and the readout are appended here with
 dated headings; the text above stays.)*
+
+### 2026-08-11 — Operational deviation: array 6252702 runtime blowout and resubmission — PENDING AUTHOR RATIFICATION 2026-08-12
+
+Campaign array **6252702** (49 tasks, `cpu_il`, 64 cpus/task,
+`--time=04:00:00`, per the §5 cluster plan): **10 COMPLETED** (the 8 T-0
+chunks, T-a, and T-c(0.730) seeds 75:25), **39 TIMEOUT** at the 4 h limit
+with no output JSON. The instrument writes its chunk JSON only at run
+completion — no partial outputs exist for the timed-out tasks (verified:
+exactly the 10 completed JSONs are on disk).
+
+**Root cause (operational, not statistical).** The §5 wall prediction
+(≤ 2 h/task at 64 workers) implicitly assumed the 64 workers subdivide
+per-seed cost. The instrument's `mp.Pool` parallelizes **over seeds**; a
+single seed is a single-process unit. A 25-seed chunk therefore cannot
+finish faster than one seed's single-process wall, measured at ≈ 3.8–3.95 h
+for the heavy cells (task 28, the one completing heavy task: wall 3:56:07,
+CPU 94.63 h / 25 seeds on uc2n810-class node uc2n804). The 4 h request left
+minutes of headroom; the 38 sibling heavy tasks (T-b + remaining T-c) hit
+the limit just short of completion. Memory was never a factor (≈ 18 GB /
+125 GB).
+
+**Measured vs predicted per-seed cost.** Measured heavy per-seed CPU =
+94.63 CPU-h / 25 = **3.79 CPU-h/seed**, i.e. 0.87× the derived 4.33 CPU-h
+anchor — **abort (a) does NOT trip** (trip point 2× = 8.66 CPU-h/seed), and
+the corrected array plan projects campaign wall ≪ 12 h, so **no N-floor
+fallback stage is invoked**. The blowout is purely the wall-time sizing of
+the array request, not the registered CPU budget.
+
+**Completed-chunk validity.** `Tc_h0p730_results_seeds75_25.json` verified
+as a full registered run: `n_events = n_events_run = 982` on all 25 seeds,
+`n_events_cap = null`, `smoke = false`, seeds 20304883–20304907 (base
+20260808 + 44075…44099, the registered T-c(0.730) block), `K_sum =
+1,193,703` per seed, `pin_integrity.pass = true`, import path clean. It is
+**RETAINED**, as are the 8 T-0 chunks and T-a.
+
+**Resubmission (NON-STATISTICAL operational deviation).** Seeds, seed→cell
+map, chunking, bands, statistics, thresholds, and the instrument commit
+(`2ece8801`) are all untouched. The 39 timed-out tasks are resubmitted from
+the same sbatch with CLI overrides only: `--array=9-27,29-48`,
+`--cpus-per-task=25` (matches the 25-seed parallel grain; embeds
+`workers = 25` instead of 64 in those chunk JSONs — result-invariant, the
+Pool maps seed→record deterministically per V-T2), `--time=09:00:00`
+(≈ 2× the measured 3.93 h task wall). Submitted job id recorded in the
+readout entry.
+
+**PENDING AUTHOR RATIFICATION 2026-08-12** (per the active overnight
+mandate; this note is operational bookkeeping, not a readout — no band,
+statistic, or seed changes anywhere above).
