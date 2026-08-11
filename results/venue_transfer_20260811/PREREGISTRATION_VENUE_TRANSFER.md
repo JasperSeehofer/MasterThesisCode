@@ -664,3 +664,12 @@ required this §11 evidence *before* the campaign; the launch-phase validate ski
 (`validate_results_novt5.json`) and the full run completed only after the (partially timed-out) first
 array — a compliance-order deviation with no statistical content, bundled with the 2026-08-12
 operational-deviation note for author ratification.
+
+
+**§11 addendum 2 (2026-08-12): second straggler resubmission.** Array 6253922 (39 tasks, --time=09:00:00,
+25 cores) completed 17 and timed out 22: packed 25-core tasks run ~1.6–1.9× slower than the uncontended
+64-core reference (memory-bandwidth contention; completed walls 6:08–7:38 vs 3:56 reference) — the 9 h
+"2× margin" was computed against uncontended timing. Remaining 22 chunks resubmitted as array 6259842
+(--time=24:00:00, same 25-core grain, same registered seed chunks — NON-STATISTICAL, nothing else changed).
+Cumulative outputs: 27/49 chunks (10 + 17). Lesson filed for the perf roadmap: margins must be computed
+against contended timing, or tasks sized one-per-node. Bundled with the pending 2026-08-12 ratifications.
