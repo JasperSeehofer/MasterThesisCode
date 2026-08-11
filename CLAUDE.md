@@ -13,9 +13,24 @@ dimensional analysis, limiting-case check, literature reference, and a regressio
 interpretation, and the "why does this result appear" analysis are the author's; the tooling
 documented below encodes the guard-rails that keep the AI-assisted parts verifiable and honest.
 
-## Environment Setup
+## Orchestration: model & effort tiering (author mandate, 2026-08-07)
 
-This project uses [uv](https://docs.astral.sh/uv/) for Python dependency management.
+**A session running on Fable (top-tier model) is ALWAYS an orchestration session.** Fable holds
+the scientific farsight and structure and uses it to orchestrate the research steps; it delegates
+everything not on the high-orchestration / scientifically-complex end to subagents (use them
+heavily) and workflows. Applies to single `Agent` spawns exactly as to `Workflow` launches —
+do **not** let every agent inherit the top-tier session model by default. Before every launch,
+assign per agent from this routing table:
+
+- **Model** — mechanical/formulaic stages (record appending, file generation, commits, schema
+  recon, running existing scripts on new inputs) → `sonnet` (or `haiku` for pure lookups);
+  derivation, adversarial verification, pre-registration authoring, physics interpretation →
+  inherit (top tier). When unsure between two tiers for a mechanical task, pick the cheaper one.
+- **Effort** — `low/medium` for mechanical stages, `high` for standard analysis, `xhigh` ONLY for
+  adversarial verifiers, novel derivations, and band/prereg authoring. Uniform-xhigh workflows are
+  a drift smell: justify each xhigh in the launch summary or lower it.
+
+State the chosen tiering (one line) when proposing a workflow so the author can veto overkill.
 
 ### Install uv
 
@@ -114,6 +129,8 @@ python -m master_thesis_code <working_dir> --evaluate [--h_value 0.73]
 python -m master_thesis_code <working_dir> --snr_analysis
 ```
 
+Every `--evaluate` run emits a per-event both-channel diagnostics CSV — check the run dir before building provenance caveats.
+
 ## Cluster Deployment
 
 All bwUniCluster 3.0 (KIT) operations — submit/monitor/retrieve, SLURM/CLI flags, preflight, and dataset provenance — are owned by the `cluster` skill, the single source of operational truth. **Use the `/cluster` skill (`.claude/skills/cluster/SKILL.md`)** instead of duplicating flags and recipes here; see also `cluster/README.md`.
@@ -162,7 +179,7 @@ The codebase has two distinct pipelines:
 6. **`physical_relations.py` wCDM params w0, wa silently ignored** [MEDIUM] — GitHub #4: `dist()` accepts them but passes to a hardcoded-ΛCDM hypergeometric function. The review PR (2026-07-04) adds a `NotImplementedError` guard so non-default `w_0`/`w_a` raise instead of silently returning ΛCDM.
 ~~7. **`bayesian_inference/bayesian_inference.py` hardcoded 10% distance error**~~ [MOOT — Pipeline A removed in `c1571a2`]. Production Pipeline B uses per-source Cramér-Rao bounds from the CSV. GitHub #5 closed.
 ~~8. **`constants.py` WMAP-era cosmology**~~ [RESOLVED as design choice — G11]: fiducial `OMEGA_M=0.2726`, H0=70.4 km/s/Mpc deliberately match the Barausse (2012) M1 EMRI-population cosmology (arXiv:1201.5888) for a self-consistent mock universe; the Planck-2018 mismatch is a tracked systematic in `docs/gates/G7_systematics_budget.md` (row 6), not a bug. GitHub #6 closed.
-9. **`datamodels/galaxy.py:66` galaxy redshift uncertainty non-standard scaling** [LOW] — GitHub #7: `0.013 * (1+z)^3` has no reference; **this file is dead** (imported only by `test_benchmarks.py`; production uses `galaxy_catalogue/handler.py`). Slated for deletion in the review PR.
+~~9. **`datamodels/galaxy.py:66` galaxy redshift uncertainty non-standard scaling**~~ [MOOT — file deleted]: `datamodels/galaxy.py` (Pipeline-A synthetic catalog, GitHub #7) was removed in commit `90bd40ee` (2026-07-04) as dead code; production uses `galaxy_catalogue/handler.py`.
 
 ---
 
@@ -201,36 +218,9 @@ Any edit to these files that modifies a computed value (not just refactoring/typ
 
 ---
 
-## Dataclass Conventions
+## Python Conventions
 
-Never use a mutable object as a bare default in a `@dataclass`. Python 3.13 raises `ValueError` at class-definition time. Always wrap with `field(default_factory=...)`:
-
-```python
-# Wrong: bar: MyMutableClass = MyMutableClass()  — crashes Python 3.13
-# Correct:
-bar: MyMutableClass = field(default_factory=MyMutableClass)
-```
-
----
-
-## Typing Conventions
-
-All public and private functions/methods must have complete type annotations on every parameter and on the return type. The only exception is `__init__` where the return type may be omitted.
-
-- Use `list[float]` not `List[float]`, `dict[str, int]` not `Dict[str, int]`, `X | None` not `Optional[X]`. Do **not** add `from __future__ import annotations`.
-- Use `npt.NDArray[np.float64]` for typed arrays. Never use bare `np.ndarray` without a dtype parameter.
-- CuPy has no mypy stubs. Annotate GPU-capable functions with `npt.NDArray[np.float64]` and add a comment that cupy arrays are also accepted at runtime. Never use `cp.ndarray` as a type annotation.
-- Use `Callable` from `typing`, never lowercase `callable`. For signature-preserving decorators, use a `TypeVar` bound to `Callable[..., Any]` with `@functools.wraps`.
-
-**mypy:** Config in `pyproject.toml`. Key flags: `disallow_untyped_defs = true`, `disallow_incomplete_defs = true`. CuPy, `few`, `fastlisaresponse`, and `GPUtil` are under `ignore_missing_imports`.
-
----
-
-## HPC / GPU Best Practices
-
-Mandatory GPU-cluster + CPU-testability patterns — the array-namespace `xp` pattern, guarded `cupy` imports, hot-path vectorization, GPU memory management, the `USE_GPU`-from-CLI rule, and the bwUniCluster entry point — live in **`.claude/rules/hpc-gpu.md`**, auto-loaded when editing `master_thesis_code/**/*.py`. See [[scientific-computing-validation]] for the promoted cross-project form.
-
----
+Dataclass mutable-default handling (`field(default_factory=...)`) and mandatory type annotations (modern `list[...]`/`X | None` syntax, `npt.NDArray[np.float64]`, `Callable` typing, mypy config) — live in **`.claude/rules/python-conventions.md`**, auto-loaded when editing `master_thesis_code/**/*.py`.
 
 ## Testing Strategy
 
