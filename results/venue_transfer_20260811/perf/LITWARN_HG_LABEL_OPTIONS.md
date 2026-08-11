@@ -1,6 +1,6 @@
 # H-g status-label nonconformance — options for author decision
 
-**Author decision required — no edit applied.**
+**APPLIED — Option A ratified by author 2026-08-12.**
 
 Source: `docs/LITERATURE_WARNINGS.md`, row H-g (arXiv:2212.08694 table, line 53).
 Runbook §3.6 flags this as a "5-min fix, author call on label" item.
