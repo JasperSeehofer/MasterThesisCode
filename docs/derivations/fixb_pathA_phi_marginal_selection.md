@@ -133,7 +133,11 @@ Quadrature conventions are those of the measured anchors: 600 log₁₀M nodes o
 **Scope guard (gate (iii-a)):** the φ-convention tables are **new** and are
 consumed by `absolute_marginal` only. The legacy `D`/`β_Ḡ`/`β_G` tables and the
 `generator_marginal` assembly are byte-identical, protecting the issue-#51
-idealized-1D pin (md5 `1e81ba22`).
+idealized-1D pin (issue #51 gate P5, reproduced to `rtol=1e-12` against a
+committed values golden). *The md5 digest formerly cited here (`1e81ba22`) was
+retired 2026-08-12: numpy SIMD dispatch made it host-dependent (max relative
+deviation 3.73e-16 between AVX-512 and AVX2 runners) while the pinned physics
+never moved.*
 
 ## 3. Dimensional analysis and limiting cases
 
