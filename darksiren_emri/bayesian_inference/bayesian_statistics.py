@@ -2078,7 +2078,8 @@ def completion_mass_factor_g(
             that degree (Abramowitz & Stegun 25.4.46) is bounded by the
             relative half-width to the ``2n`` power, which for n=8 and
             ``relwidth <= _G_I_ADAPT_MAX_RELWIDTH = 0.02`` stays << 1e-12 for
-            the piecewise power-law exponents in play (max |exponent| 1.43;
+            the piecewise power-law exponents in play (max exponent
+            magnitude 1.43;
             see ``results/venue_transfer_20260811/perf/ROUTE1_GATE_PACKAGE.md``
             and the harvested-node study cited there). Passing ``adaptive=False``
             restores the pinned n=64 single-group convention byte-for-byte,
