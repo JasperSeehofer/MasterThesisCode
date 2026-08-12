@@ -120,3 +120,34 @@ Mission spec:
 
 Cluster workspace expires 2026-09-23. GLADE reduced catalogue is gitignored (~1.6 GB) — stage
 from dev box if a fresh cluster clone ever happens (see cluster skill gotcha 2).
+
+
+---
+
+## 6. Track A resume recipe (appended 2026-08-12 12:35, session wrap)
+
+State at wrap: venue-transfer final wave = cluster array **6259842**, 37/49 registered chunks on
+cluster (`~/MasterThesisCode/results/venue_transfer_20260811/`), 6 running (elapsed ≤4:47, 24 h
+limit — no timeout risk), rest backfilling. Expected done: afternoon/evening 2026-08-12.
+
+Resume steps (fresh session, verbatim):
+1. `ssh bwunicluster 'sacct -j 6259842 -X -n --format=State | sort | uniq -c'` — require all
+   COMPLETED and 49 `T*_results*.json` chunks present (`ls .../venue_transfer_20260811/T*_results*.json | wc -l`).
+   If any FAILED/TIMEOUT: resubmit only those array indices (pattern of §11 addendum 2; 24 h limit).
+2. `rsync -az bwunicluster:MasterThesisCode/results/venue_transfer_20260811/ results/venue_transfer_20260811/`
+   (merge; local already holds prereg + perf/ + validate JSONs — do not clobber those).
+3. Run the readout chain as a 4-agent workflow modeled EXACTLY on the calgate-v2 one
+   (script reference: `.../workflows/scripts/calgate-v2-readout-wf_5367a0aa-949.js` pattern):
+   collect/integrity (sonnet/high; verify seed plan vs prereg §5, provenance commits e77eecad/2ece8801
+   or descendants with empty import-path diff, chunk-merge completeness 1,200 seeds) →
+   mechanical band scoring vs PREREGISTRATION_VENUE_TRANSFER.md incl. DS-VT1..5, V-T1..5, the
+   ablation ladder, and branch determination (inherit/high) → independent adversarial recompute
+   (inherit/xhigh) → ship+push (sonnet/medium). Branch call is presented to the author, never
+   self-adjudicated.
+4. If TRANSFER-CONFIRMED: /physics-change intake on estimator photo-z handling is AUTHOR-GATED —
+   prepare the intake package, do not open the gate without the author.
+5. Then: author ratification bundle (§1), book ch14, ledger row 99.
+
+NOTE: chunk files are per-seed-range (`T*_results_seeds<start>_<n>.json`) — the collect agent
+must merge ranges per cell and verify the union equals the registered seed blocks exactly.
+Monitors from the prior session are dead by construction — re-arm nothing; just check state.
