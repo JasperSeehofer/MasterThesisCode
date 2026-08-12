@@ -6,10 +6,14 @@ than hidden inside it. Two classes of pin live here:
 
 **Must-not-move** (the change is wrong if any of these moves):
 
-* **R1** — the 1D (without-BH-mass) numerator content is byte-identical
-  (issue #51 idealized-1D digest ``1e81ba22`` of record): the path-(A) change
-  touches selection objects and the 2D completion leg only, never the host
-  kernel. Pinned here as an md5 of a deterministic 1D numerator vector.
+* **R1** — the 1D (without-BH-mass) numerator/denominator content is
+  reproduced to ``rtol=1e-12`` (issue #51 gate P5, "path (A) touches
+  selection objects and the 2D completion leg only, never the host kernel"):
+  pinned as a values golden of the deterministic 1D block below (columns
+  0-1 are the physics content ``N_g``/``D_g``; columns 2-3 are STAT-04
+  quadrature-outside-grid diagnostics carried along in the same array, not
+  numerator content themselves). A tolerance compare rather than a byte
+  digest is deliberate — see the test docstring for why.
 * **R1/(iii-a)** — the ``generator_marginal`` assembly consumes the *legacy*
   shared ``beta_G``/``beta_Gbar``/``D`` tables and must stay byte-identical;
   path (A) installs NEW phi-convention tables consumed by
@@ -42,7 +46,6 @@ plain constants because reproducing them needs the 200k-injection pool and the
 CPU-only; no GPU marker.
 """
 
-import hashlib
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -216,13 +219,67 @@ def _deterministic_1d_numerator() -> npt.NDArray[np.float64]:
     return np.ascontiguousarray(np.asarray(out, dtype=np.float64))
 
 
+# Golden values for `_deterministic_1d_numerator()`, generated on this exact
+# code path (git blame this constant, do not hand-edit). Shape (6, 4); rows
+# are the 6 synthetic hosts, columns are:
+#   0  N_g   — numerator_without_bh_mass (physics content, gate-P5-guarded)
+#   1  D_g   — denominator_without_bh_mass (physics content, gate-P5-guarded)
+#   2  quadrature_weight_outside_grid_numerator   (STAT-04 diagnostic, all 0)
+#   3  quadrature_weight_outside_grid_denominator (STAT-04 diagnostic)
+# Captured on the default (AVX-512 / X86_V4) numpy SIMD dispatch path.
+_R1_GOLDEN: npt.NDArray[np.float64] = np.array(
+    [
+        [65.786031214837507, 0.94691259482656309, 0.0, 0.017035447849954366],
+        [219.71706143750842, 0.93703502605520039, 0.0, 0.015238410507965405],
+        [497.73979390007048, 0.9265400539580918, 0.0, 0.01376338380938529],
+        [750.08852477352355, 0.91560873357452732, 0.0, 0.0],
+        [742.04801834291038, 0.90436628298765964, 0.0, 0.0],
+        [477.48316195576768, 0.89289753854892617, 0.0, 0.0],
+    ],
+    dtype=np.float64,
+)
+
+
 def test_R1_one_d_numerator_content_digest() -> None:
-    """md5 of the 1D numerator content — must not move (issue #51 gate P5)."""
+    """The 1D numerator/denominator content must not move (issue #51 gate P5).
+
+    Pins ``_deterministic_1d_numerator()`` against a values golden
+    (``_R1_GOLDEN`` above) rather than a byte digest, compared at
+    ``rtol=1e-12`` / ``atol=0.0``.
+
+    Why not bitwise: this array is saturated with ``np.exp`` calls (the
+    Gaussian/MVN kernels and the ``p_det = exp(-d_L/5)`` stub), and NumPy
+    2.4's x86-64 wheels dispatch `exp`/`log`/`log1p`/`expm1`/`cbrt`/`x**1.5`
+    to different (each <1-ULP-accurate, but mutually non-bit-identical) SIMD
+    loops depending on the host CPU's available instruction set (baseline
+    X86_V2 vs AVX2 X86_V3 vs AVX-512 X86_V4). GitHub's runner fleet is
+    heterogeneous in this respect, so a bitwise md5 pin here tested which VM
+    the job landed on, not the physics: measured divergence between the
+    X86_V4 and X86_V3 paths on this exact array is 7/24 elements changed by
+    1-3 ULP, max relative difference 3.73e-16 — the numerator/denominator
+    content itself does not move.
+
+    Why rtol=1e-12: about 4 orders of magnitude above the measured 3.73e-16
+    hardware noise floor (so it does not re-introduce the flake), and about
+    6 orders of magnitude below anything that could shift an H0 MAP (so it
+    still catches a real regression in the host kernel).
+
+    To re-verify hardware stability locally:
+        NPY_DISABLE_CPU_FEATURES=X86_V4 uv run pytest \
+            darksiren_emri_test/test_fixb_pathA_regression_pins.py::test_R1_one_d_numerator_content_digest
+    should pass just the same as the unset-env default run.
+    """
     vec = _deterministic_1d_numerator()
-    digest = hashlib.md5(vec.tobytes()).hexdigest()
-    assert digest == "c28d5f3ada21ac6f46f7c5d6e7b5dcd2", (
-        f"1D numerator content changed (digest {digest}); path (A) must not "
-        "touch the host kernel (regression R1, #51 idealized-1D pin)."
+    np.testing.assert_allclose(
+        vec,
+        _R1_GOLDEN,
+        rtol=1e-12,
+        atol=0.0,
+        err_msg=(
+            "1D numerator/denominator content changed beyond hardware SIMD "
+            "noise (rtol=1e-12); path (A) must not touch the host kernel "
+            "(regression R1, #51 gate P5)."
+        ),
     )
 
 
