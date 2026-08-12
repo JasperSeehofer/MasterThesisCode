@@ -2,7 +2,7 @@
 
 High-level development arc of the EMRI dark-siren H₀ inference pipeline. For scientific
 assumptions and known limitations see [`docs/source/limitations.rst`](docs/source/limitations.rst)
-and the published [documentation](https://jasperseehofer.github.io/MasterThesisCode/); the detailed
+and the published [documentation](https://jasperseehofer.github.io/darksiren-emri/); the detailed
 H₀-bias investigation is in [`docs/H0_BIAS_RESOLUTION.md`](docs/H0_BIAS_RESOLUTION.md).
 
 **Status legend:** ✅ done · 🔄 in progress · 🔬 cluster/data-gated · 📝 planned

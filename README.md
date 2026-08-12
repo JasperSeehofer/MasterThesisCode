@@ -1,8 +1,8 @@
 # darksiren-emri
 
 [![CI](https://github.com/JasperSeehofer/darksiren-emri/actions/workflows/ci.yml/badge.svg)](https://github.com/JasperSeehofer/darksiren-emri/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://jasperseehofer.github.io/MasterThesisCode/)
-[![Interactive Figures](https://img.shields.io/badge/figures-interactive-56B4E9)](https://jasperseehofer.github.io/MasterThesisCode/interactive/)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://jasperseehofer.github.io/darksiren-emri/)
+[![Interactive Figures](https://img.shields.io/badge/figures-interactive-56B4E9)](https://jasperseehofer.github.io/darksiren-emri/interactive/)
 
 **End-to-end EMRI dark-siren H₀ inference — with the book that teaches it.**
 
@@ -10,7 +10,7 @@ darksiren-emri measures the Hubble constant H₀ from Extreme Mass Ratio Inspira
 gravitational-wave events detected by the LISA space observatory, using Bayesian analysis with
 the GLADE+ galaxy catalogue and a completeness correction (Gray et al. 2020). It ships as
 working, GPU-capable research code — and as
-*[A Dark Siren Discovery Book](https://jasperseehofer.github.io/MasterThesisCode/book/)*, an
+*[A Dark Siren Discovery Book](https://jasperseehofer.github.io/darksiren-emri/book/)*, an
 interactive, build-and-break narrative that walks a reader from "why does H₀ disagree with
 itself" to a working estimator, including the wrong turns the project itself took along the way.
 If you're new to dark sirens, start with the book. If you know the field, the pipeline below is
@@ -234,7 +234,7 @@ weighted by a comoving volume prior. Implemented in
 `galaxy_catalogue/glade_completeness.py`.
 
 For known limitations, model assumptions, verified components, and scientific references,
-see the [documentation](https://jasperseehofer.github.io/MasterThesisCode/limitations.html).
+see the [documentation](https://jasperseehofer.github.io/darksiren-emri/limitations.html).
 For the H₀ posterior bias investigation timeline, see [`docs/H0_BIAS_RESOLUTION.md`](docs/H0_BIAS_RESOLUTION.md).
 
 ---

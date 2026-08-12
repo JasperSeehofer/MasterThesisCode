@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://jasperseehofer.github.io/MasterThesisCode/"
+Documentation = "https://jasperseehofer.github.io/darksiren-emri/"
 Repository = "https://github.com/JasperSeehofer/darksiren-emri"
 Issues = "https://github.com/JasperSeehofer/darksiren-emri/issues"
 

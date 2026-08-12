@@ -101,7 +101,18 @@ they'll be mechanically fixed in the same pass as §1, once the local directory 
 
 ## 4. GitHub Pages / book URL migration
 
-**Not done.** Two things change together once Phase 3's `gh repo rename` lands, but Pages
+**Done, verified live 2026-08-12.** `https://jasperseehofer.github.io/darksiren-emri/` and
+`.../book/` both serve 200. The old path
+(`https://jasperseehofer.github.io/MasterThesisCode/`) 404s — GitHub Pages does **not** redirect
+a renamed-repo's project-pages URL, confirming the RUNBOOK-9 "redirects are a grace period, not a
+permanent alias" warning applied here too (no redirect at all, in fact). `README.md` (Docs +
+Interactive Figures badges, hero book link, and the limitations-doc link),
+`ROADMAP.md:5`, and `pyproject.toml` `[project.urls] Documentation` are updated to the new URL.
+`docs/REBRAND_PROPOSAL.md`, `book/BUILD_REPORT.md`, and `book/design/BOOK_TECH_DESIGN.md` still
+reference the old URL deliberately — they are dated reports/design snapshots describing history,
+left as-is.
+
+Two things change together once Phase 3's `gh repo rename` lands, but Pages
 propagation and any external links need a deliberate check, not an assumption:
 
 - Docs Pages: `https://jasperseehofer.github.io/MasterThesisCode/` →
@@ -136,8 +147,8 @@ or redirected once taken.
 - [ ] §1: fresh Claude Code session in the renamed local directory retrieves prior project memory
 - [ ] §2: cluster job (any `cluster/*.sbatch`) submitted and completes successfully from
       `~/darksiren-emri` with a rebuilt venv
-- [ ] §4: `https://jasperseehofer.github.io/darksiren-emri/` and `.../book/` both resolve and
-      serve current content
+- [x] §4: `https://jasperseehofer.github.io/darksiren-emri/` and `.../book/` both resolve and
+      serve current content (verified 2026-08-12; old URL 404s, no redirect)
 - [ ] §5: PyPI name reserved (only if/when publication becomes real)
 
 Until all boxes are checked, treat the GitHub-repo-level rename (Phase 3) as complete but the
