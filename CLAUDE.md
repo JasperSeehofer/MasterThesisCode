@@ -305,52 +305,14 @@ See Typing Conventions, Dataclass Conventions, and HPC/GPU sections above for de
 See Architecture section above for pipeline descriptions and module responsibilities.
 <!-- GSD:architecture-end -->
 
-<!-- GSD:workflow-start source:GSD defaults -->
-## GSD Workflow Enforcement
+## Workflow & GitHub Integration
 
-Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
-
-Use these entry points:
-- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd:debug` for investigation and bug fixing
-- `/gsd:execute-phase` for planned phase work
-
-Do not make direct repo edits outside the `/research-cycle` protocol unless the user explicitly asks to bypass it.
-
-### GitHub Integration
-
-GitHub issues, labels, and milestones are the **external-facing** record of project state. Workflows must keep them in sync as work progresses. This is not optional — stale issues erode trust in the tracker.
-
-**When to update GitHub (mandatory):**
-
-| Event | GitHub action | Command pattern |
-|---|---|---|
-| A bug or issue is **resolved** by a phase or quick task | Close the issue with a comment referencing the fix (commit, phase, file:line) | `gh issue close N --comment "..."` |
-| A new bug is **discovered** during work | Open a new issue with appropriate labels (`bug`, `physics`, `paper-blocker`, etc.) | `gh issue create --title "..." --label "..." --milestone "..."` |
-| A phase or milestone is **planned** that maps to open issues | Assign those issues to the relevant GitHub milestone | `gh issue edit N --milestone "..."` |
-| A phase **completes** and resolves multiple issues | Close all resolved issues in one pass with per-issue comments | Batch `gh issue close` |
-| Work priority changes (e.g., issue becomes paper-blocking) | Update labels accordingly | `gh issue edit N --add-label "paper-blocker"` |
-| A new milestone cycle starts | Create a GitHub milestone if one doesn't exist for it | `gh api repos/.../milestones --method POST` |
-
-**Labels to use:**
-- `bug` — something is broken
-- `physics` — physics formula or scientific correctness
-- `paper-blocker` — must fix before paper submission
-- `design-choice` — deliberate simplification, documented
-- `enhancement` — new feature or improvement
-- `documentation` — docs improvement
-
-**Milestone:** The "Paper Submission" milestone tracks all issues that must be resolved before the paper is submitted. All open physics/design issues should be assigned to it.
-
-**What NOT to do:**
-- Do not create GitHub issues for internal planning (phase plans, verification checklists) — those belong in `.planning/` and `.gpd/`
-- Do not duplicate TODO.md items as issues unless they represent distinct, actionable bugs or features
-- Do not update issues for purely internal refactoring that has no user-facing effect
-<!-- GSD:workflow-end -->
+Workflow entry points and the GitHub issue/label/milestone sync contract live in
+`.claude/rules/gsd-workflow.md` (relocated 2026-08-12 to keep this file within its byte budget).
 
 <!-- GSD:profile-start -->
 ## Developer Profile
 
-> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
+> Profile not yet configured. Run `/gsd-profile-user` to generate your developer profile.
 > This section is managed by `generate-claude-profile` -- do not edit manually.
 <!-- GSD:profile-end -->

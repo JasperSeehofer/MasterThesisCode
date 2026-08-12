@@ -81,21 +81,58 @@ fi
 echo
 
 # --- Step 4: garden registry Path column --------------------------------
+#
+# The garden's session-start hook (wiki/assets/claude-hooks/wiki-session-start.sh)
+# finds a project by testing whether the registry Path column is a PREFIX of $CWD,
+# and `exit 0`s silently when nothing matches. So a renamed directory with a stale
+# registry Path does not error — it just stops briefing this repo, with no signal.
+# That makes this step a HARD requirement, not a nicety: abort rather than warn.
+#
+# The registry lives at wiki/meta/registry.md, NOT at the repo root. (An earlier
+# revision of this script pointed at $GARDEN/registry.md, which does not exist —
+# it would have taken the "skipping" branch and produced exactly the silent
+# no-briefing failure described above.)
 echo "[4/7] Updating garden registry..."
-REGISTRY="$HOME/Repositories/garden/registry.md"
-if [ -f "$REGISTRY" ]; then
-    cp "$REGISTRY" "$REGISTRY.bak"
-    echo "  backup: $REGISTRY.bak"
-    if grep -q "$OLD_DIR" "$REGISTRY"; then
-        sed -i "s|$OLD_DIR|$NEW_DIR|g" "$REGISTRY"
-        echo "  updated line(s):"
-        grep -n "$NEW_DIR" "$REGISTRY" | sed 's/^/    /'
-    else
-        echo "  WARNING: zero occurrences of $OLD_DIR found in $REGISTRY — nothing changed."
-    fi
-else
-    echo "  WARNING: $REGISTRY not found — skipping registry update."
+GARDEN="$HOME/Repositories/garden"
+REGISTRY="$GARDEN/wiki/meta/registry.md"
+if [ ! -f "$REGISTRY" ]; then
+    echo "ABORT: $REGISTRY not found." >&2
+    echo "       The repo directory has already been moved to $NEW_DIR and Claude" >&2
+    echo "       project memory re-keyed. Fix the garden checkout, then update the" >&2
+    echo "       Path column by hand and continue from step 5." >&2
+    exit 1
 fi
+cp "$REGISTRY" "$REGISTRY.bak"
+echo "  backup: $REGISTRY.bak"
+if ! grep -q "$OLD_DIR" "$REGISTRY"; then
+    echo "ABORT: zero occurrences of $OLD_DIR in $REGISTRY." >&2
+    echo "       Either the Path column was already migrated, or the registry row" >&2
+    echo "       is keyed differently than expected. Verify by hand before going on —" >&2
+    echo "       a wrong Path here silently disables the vault briefing for this repo." >&2
+    exit 1
+fi
+sed -i "s|$OLD_DIR|$NEW_DIR|g" "$REGISTRY"
+echo "  updated line(s):"
+grep -n "$NEW_DIR" "$REGISTRY" | sed 's/^/    /'
+# Verify the hook's own prefix test now succeeds against the new path.
+if awk -F '|' -v new="$NEW_DIR" '
+      /\|/ && !/---/ && !/Project.*Path/ {
+        gsub(/^ +| +$/,"",$3); if ($3 == new) found=1
+      } END { exit found ? 0 : 1 }' "$REGISTRY"; then
+    echo "  verified: a Path column now equals $NEW_DIR (hook prefix test will match)"
+else
+    echo "ABORT: no registry Path column exactly equals $NEW_DIR after the edit." >&2
+    echo "       Restore $REGISTRY.bak and investigate — the briefing hook would" >&2
+    echo "       silently stop firing for this repo." >&2
+    exit 1
+fi
+echo "  NOTE: the vault slug stays 'master-thesis-code'. Downstream tables"
+echo "        (interaction-feedback reminders, briefing-feedback, portfolio-health,"
+echo "        context-budget, agent-weaknesses) key on the SLUG, not the path, so"
+echo "        they keep working untouched. Renaming the slug is a separate,"
+echo "        optional migration — see the garden's rename plan."
+echo "  TODO(manual): commit the garden change — the vault is a git repo and this"
+echo "        script deliberately does not commit on your behalf outside this repo."
 echo
 
 # --- Step 5: §3 reference fixes inside the renamed repo -----------------
