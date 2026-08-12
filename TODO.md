@@ -1,5 +1,55 @@
 # TODO's
 
+## Backlog — future free time (author, 2026-08-12)
+
+Author-dictated, not scheduled against any current milestone. Quoted text is the
+author's own wording verbatim; bracketed `[Derived: ...]` notes are added
+cross-references, not the author's words.
+
+### Literature / comparison tasks
+
+- [ ] **StableEMRIFisher comparison** — author: "explore more into STableEMRIFisher
+      and compare to our code if it clearly is superior or if our code actually
+      exceeds it, becuase it looks like our pipeline A literally. if we get
+      inspired by it, we want to cite it!" [Derived: "pipeline A" here means the
+      EMRI simulation/Fisher pipeline; `docs/REBRAND_PROPOSAL.md`'s repo survey
+      already has a first-pass entry on StableEMRIFisher to start from.]
+- [ ] **CHIMERA analysis** — author: "similarly explore CHIMERA, I want a detailed
+      analysis if it points at clear improvements that we should consider or if
+      our code already is more advanced." [Derived: `docs/gates/G5b_chimera_icarogw_inspection.md`
+      already holds a line-by-line adversarial inspection — start there; this
+      item asks for the forward-looking improvement analysis on top of it.]
+- [ ] **gwcosmo comparison** — author: "same for gwcosmo, is this actually the
+      same as I am building?? same as the two above. Maybe this could be a great
+      comparison repo since I wasnt really aware of it so far." [Derived:
+      `docs/gates/G5a_gwcosmo_inspection.md` (prior audit) and `REBRAND_PROPOSAL.md`'s
+      comparison table summarize the differences already known — the backlog item
+      is the deeper "is this actually the same thing?" assessment plus the
+      comparison-repo potential.]
+
+### Research-cycle candidates (stage-0 intake per `docs/RESEARCH_CYCLE.md`)
+
+- [ ] **Research: stellar mass–BH mass relation survey** — author: "The stellar
+      mass - bh mass relation: I never put much thought into this. Are there
+      other relations and scientific works on that relation that we should
+      consider and compare in our project?" [Derived: current choice is Reines &
+      Volonteri 2015 (AGN M_BH–M_* total); see `MASS_RELATION_ASSESSMENT.md` and
+      the 555f018 scatter/precedence fixes — the survey should cover alternatives
+      (e.g. Kormendy–Ho-class bulge relations, low-mass/dwarf AGN relations),
+      their scatter, and applicability to our host population.]
+- [ ] **Research: d_L–z degeneracy disentangling (exploratory)** — author: "The
+      main problem atm is the galaxy catalog, as it has large errors. Can we
+      somehow disentangle the d_L - z degeneracy from the d_L measurements and
+      the M_z measurement directly?? In the best case we could use the high
+      accuracy measured parameters of the EMRI event as any parameter with large
+      errors will smear the results. this is an exploratory research project.
+      does the moving detector LISA somehow help here - we 'detect' the events
+      from different angles and slightly different distances." [Derived: connects
+      to the F5 σ_z/σ_M feasibility forecast (with-BH-mass channel) and the
+      harvested fact that EMRI M_z conditionals are ~1e-6-precision; the LISA
+      constellation-motion question (orbital baseline ~2 AU, Doppler/parallax-type
+      information) is the novel angle to scope.]
+
 ## 🔆 Next-campaign prep (2026-08-04, from Fix B path (A) — author decision D1)
 
 - [ ] **D1 remedy (i) — retire the stale `ParameterSpace.p0` bounds** (`datamodels/parameter_space.py:96-113`).
