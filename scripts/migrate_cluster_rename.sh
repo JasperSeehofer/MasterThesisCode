@@ -84,7 +84,50 @@ printed for you to copy/paste or read before acting.
 #     containing "MasterThesisCode".
 # Fix any hits found; there is no script for this step by design.
 
+--- A5b. REPAIR the repo-internal symlink (added 2026-08-13) --------------
+# Found by audit: one PINNED input symlink embeds BOTH dead names — the old
+# repo dir AND the old package dir (the package was renamed in git at
+# 227e7a32, so the target path dies at A3 even before the A1 mv):
+#
+#   results/campaign51_20260728/realistic_20260729/realizations_staged/
+#     cluster_parent_reduced_galaxy_catalogue.csv
+#   -> $HOME/MasterThesisCode/master_thesis_code/galaxy_catalogue/
+#        reduced_galaxy_catalogue.csv
+#
+# It is one of the three V-T3 pins of the venue-transfer instrument and the
+# sigma_z sampler input of the mechanism-isolation arms. Repair AFTER A1:
+#
+#   cd ~/darksiren-emri
+#   ln -sfn "$HOME/darksiren-emri/darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv" \
+#     results/campaign51_20260728/realistic_20260729/realizations_staged/cluster_parent_reduced_galaxy_catalogue.csv
+#   ls -lL results/campaign51_20260728/realistic_20260729/realizations_staged/cluster_parent_reduced_galaxy_catalogue.csv
+#
+# NOTE the 1.6 GB reduced_galaxy_catalogue.csv and m_th_map_nside32.npy are
+# gitignored, so `git pull` will NOT move them into the new package dir --
+# they must be moved by hand, or the symlink repointed at wherever they sit:
+#
+#   mkdir -p darksiren_emri/galaxy_catalogue
+#   mv master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv \
+#      master_thesis_code/galaxy_catalogue/m_th_map_nside32.npy \
+#      darksiren_emri/galaxy_catalogue/
+#
+# Two further symlinks under results/lcat_h_dependence_20260725/*/cwd/ point
+# at the DEV BOX path /home/jasper/Repositories/MasterThesisCode and are
+# already dead today; they are inert probe leftovers -- delete or ignore.
+
 --- A6. Smoke-test before trusting the rename ----------------------------
+# ORDERING (corrected 2026-08-13): this smoke test CANNOT run before the
+# Part B docs pass has landed on the cluster. gpu_smoke.sbatch hardcodes
+# PROJECT_ROOT="${PROJECT_ROOT:-$HOME/MasterThesisCode}", which is dead the
+# moment A1 completes. The working order is:
+#     A1-A5b  ->  Part B (local, --docs-pass)  ->  push  ->
+#     git pull on the cluster  ->  A6 smoke  ->  preflight
+# preflight.sh has the same problem (REPO defaults to $HOME/MasterThesisCode
+# while its CATALOG path already uses darksiren_emri/), so preflight will
+# keep reporting false ABSENTs until Part B is pulled. To run it in the gap,
+# pass the path explicitly:
+#     ssh bwunicluster CLUSTER_REPO=\$HOME/darksiren-emri bash -s < cluster/preflight.sh
+#
 # Submit one small job from the renamed checkout to confirm PROJECT_ROOT,
 # module loads, and the rebuilt venv all resolve correctly, e.g.:
 #   sbatch --array=1-2 cluster/gpu_smoke.sbatch
@@ -138,6 +181,7 @@ run_part_b() {
         "cluster/evaluate_closure_h065.sbatch"
         "cluster/campaign_orchestrator.sh"
         "cluster/venue_transfer.sbatch"
+        "cluster/mechanism_isolation.sbatch"
         "cluster/evaluate.sbatch"
         "cluster/preflight.sh"
         "cluster/inject.sbatch"
