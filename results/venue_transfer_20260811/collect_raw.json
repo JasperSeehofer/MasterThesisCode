@@ -1,0 +1,2892 @@
+{
+  "extraction_metadata": {
+    "script": "results/venue_transfer_20260811/collect_extract.py",
+    "n_chunk_files_found": 49,
+    "prereg_path": "results/venue_transfer_20260811/PREREGISTRATION_VENUE_TRANSFER.md"
+  },
+  "provenance": {
+    "per_chunk": [
+      {
+        "file": "results/venue_transfer_20260811/T0_h0p730_results_seeds0_25.json",
+        "git_commit": "2ece88019d596399592dcbbaa3ac921bccffbf7e",
+        "git_commit_short": "2ece8801",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 5,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 64,
+        "wall_time_s": 176.5183136248961,
+        "wall_time_per_seed_s": 7.060732544995845,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20300808,
+          20300832
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/T0_h0p730_results_seeds100_25.json",
+        "git_commit": "2ece88019d596399592dcbbaa3ac921bccffbf7e",
+        "git_commit_short": "2ece8801",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 5,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 64,
+        "wall_time_s": 171.338998275809,
+        "wall_time_per_seed_s": 6.853559931032359,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20300908,
+          20300932
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/T0_h0p730_results_seeds125_25.json",
+        "git_commit": "2ece88019d596399592dcbbaa3ac921bccffbf7e",
+        "git_commit_short": "2ece8801",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 5,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 64,
+        "wall_time_s": 205.30349193001166,
+        "wall_time_per_seed_s": 8.212139677200467,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20300933,
+          20300957
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/T0_h0p730_results_seeds150_25.json",
+        "git_commit": "2ece88019d596399592dcbbaa3ac921bccffbf7e",
+        "git_commit_short": "2ece8801",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 5,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 64,
+        "wall_time_s": 150.81986022205092,
+        "wall_time_per_seed_s": 6.032794408882037,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20300958,
+          20300982
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/T0_h0p730_results_seeds175_25.json",
+        "git_commit": "2ece88019d596399592dcbbaa3ac921bccffbf7e",
+        "git_commit_short": "2ece8801",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 5,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 64,
+        "wall_time_s": 236.34593300905544,
+        "wall_time_per_seed_s": 9.453837320362219,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20300983,
+          20301007
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/T0_h0p730_results_seeds25_25.json",
+        "git_commit": "2ece88019d596399592dcbbaa3ac921bccffbf7e",
+        "git_commit_short": "2ece8801",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 5,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 64,
+        "wall_time_s": 186.10369809810072,
+        "wall_time_per_seed_s": 7.444147923924029,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20300833,
+          20300857
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/T0_h0p730_results_seeds50_25.json",
+        "git_commit": "2ece88019d596399592dcbbaa3ac921bccffbf7e",
+        "git_commit_short": "2ece8801",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 5,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 64,
+        "wall_time_s": 304.6205565170385,
+        "wall_time_per_seed_s": 12.184822260681539,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20300858,
+          20300882
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/T0_h0p730_results_seeds75_25.json",
+        "git_commit": "2ece88019d596399592dcbbaa3ac921bccffbf7e",
+        "git_commit_short": "2ece8801",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 5,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 64,
+        "wall_time_s": 189.36098653590307,
+        "wall_time_per_seed_s": 7.574439461436123,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20300883,
+          20300907
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Ta_h0p730_results_seeds0_200.json",
+        "git_commit": "2ece88019d596399592dcbbaa3ac921bccffbf7e",
+        "git_commit_short": "2ece8801",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 5,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 64,
+        "wall_time_s": 157.8338379021734,
+        "wall_time_per_seed_s": 0.789169189510867,
+        "n_seeds_in_chunk": 200,
+        "seeds_range": [
+          20301808,
+          20302007
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "poisson4",
+        "K_sum_values_in_chunk": [
+          4757,
+          4775,
+          4783,
+          4789,
+          4791,
+          4794,
+          4800,
+          4803,
+          4810,
+          4813,
+          4814,
+          4821,
+          4828,
+          4829,
+          4832,
+          4834,
+          4837,
+          4840,
+          4842,
+          4843,
+          4846,
+          4848,
+          4849,
+          4850,
+          4852,
+          4854,
+          4855,
+          4856,
+          4858,
+          4859,
+          4860,
+          4861,
+          4862,
+          4864,
+          4865,
+          4866,
+          4867,
+          4868,
+          4869,
+          4870,
+          4872,
+          4874,
+          4876,
+          4878,
+          4879,
+          4880,
+          4883,
+          4887,
+          4889,
+          4890,
+          4891,
+          4892,
+          4893,
+          4895,
+          4896,
+          4898,
+          4899,
+          4900,
+          4901,
+          4902,
+          4903,
+          4904,
+          4905,
+          4906,
+          4907,
+          4909,
+          4910,
+          4911,
+          4912,
+          4913,
+          4914,
+          4915,
+          4916,
+          4919,
+          4920,
+          4921,
+          4922,
+          4923,
+          4924,
+          4925,
+          4926,
+          4927,
+          4928,
+          4929,
+          4930,
+          4931,
+          4938,
+          4939,
+          4941,
+          4943,
+          4945,
+          4947,
+          4949,
+          4950,
+          4952,
+          4953,
+          4955,
+          4956,
+          4958,
+          4959,
+          4961,
+          4962,
+          4963,
+          4965,
+          4968,
+          4970,
+          4971,
+          4974,
+          4975,
+          4976,
+          4979,
+          4981,
+          4983,
+          4984,
+          4987,
+          4988,
+          4990,
+          4991,
+          4993,
+          4997,
+          4999,
+          5003,
+          5007,
+          5008,
+          5011,
+          5015,
+          5018,
+          5027,
+          5033,
+          5043,
+          5049,
+          5051,
+          5056,
+          5064,
+          5069,
+          5089,
+          5128
+        ],
+        "K_sum_pin_applicable": false,
+        "K_sum_matches_pin_all_seeds": null
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tb_h0p730_results_seeds0_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 32,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 28854.15867709089,
+        "wall_time_per_seed_s": 1154.1663470836356,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20302808,
+          20302832
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tb_h0p730_results_seeds100_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 32,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 29753.82250008313,
+        "wall_time_per_seed_s": 1190.1529000033252,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20302908,
+          20302932
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tb_h0p730_results_seeds125_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 24743.239291384816,
+        "wall_time_per_seed_s": 989.7295716553926,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20302933,
+          20302957
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tb_h0p730_results_seeds150_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 23518.648686538916,
+        "wall_time_per_seed_s": 940.7459474615566,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20302958,
+          20302982
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tb_h0p730_results_seeds175_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 32,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 17532.07431524503,
+        "wall_time_per_seed_s": 701.2829726098012,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20302983,
+          20303007
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tb_h0p730_results_seeds25_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 32,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 37186.41776691936,
+        "wall_time_per_seed_s": 1487.4567106767745,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20302833,
+          20302857
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tb_h0p730_results_seeds50_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 32,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 33798.98178008199,
+        "wall_time_per_seed_s": 1351.9592712032795,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20302858,
+          20302882
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tb_h0p730_results_seeds75_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 30511.623502821196,
+        "wall_time_per_seed_s": 1220.464940112848,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20302883,
+          20302907
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p690_results_seeds0_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 32,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 32492.122450321913,
+        "wall_time_per_seed_s": 1299.6848980128766,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20303808,
+          20303832
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p690_results_seeds100_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 24532.73285723501,
+        "wall_time_per_seed_s": 981.3093142894004,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20303908,
+          20303932
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p690_results_seeds125_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 28929.069176253863,
+        "wall_time_per_seed_s": 1157.1627670501546,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20303933,
+          20303957
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p690_results_seeds150_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 27461.990240783896,
+        "wall_time_per_seed_s": 1098.4796096313557,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20303958,
+          20303982
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p690_results_seeds175_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 30734.48634810699,
+        "wall_time_per_seed_s": 1229.3794539242797,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20303983,
+          20304007
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p690_results_seeds25_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 33,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 17845.169982691994,
+        "wall_time_per_seed_s": 713.8067993076797,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20303833,
+          20303857
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p690_results_seeds50_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 33,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 35237.84772527311,
+        "wall_time_per_seed_s": 1409.5139090109244,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20303858,
+          20303882
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p690_results_seeds75_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 25158.886279819068,
+        "wall_time_per_seed_s": 1006.3554511927628,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20303883,
+          20303907
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds0_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 28972.97724784678,
+        "wall_time_per_seed_s": 1158.9190899138712,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20304808,
+          20304832
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds100_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 34,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 17527.03530364693,
+        "wall_time_per_seed_s": 701.0814121458773,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20304908,
+          20304932
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds125_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 35,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 25004.862623803318,
+        "wall_time_per_seed_s": 1000.1945049521327,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20304933,
+          20304957
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds150_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 38,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 35083.85992934182,
+        "wall_time_per_seed_s": 1403.3543971736729,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20304958,
+          20304982
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds175_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 38,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 23461.346848657355,
+        "wall_time_per_seed_s": 938.4538739462942,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20304983,
+          20305007
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds200_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 23111.64967298601,
+        "wall_time_per_seed_s": 924.4659869194403,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305008,
+          20305032
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds225_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 23107.896288140677,
+        "wall_time_per_seed_s": 924.3158515256271,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305033,
+          20305057
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds250_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 40,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 17476.037897008006,
+        "wall_time_per_seed_s": 699.0415158803203,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305058,
+          20305082
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds25_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 31169.42073071003,
+        "wall_time_per_seed_s": 1246.776829228401,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20304833,
+          20304857
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds275_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 23340.933371962048,
+        "wall_time_per_seed_s": 933.637334878482,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305083,
+          20305107
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds300_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 40,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 36619.27247466426,
+        "wall_time_per_seed_s": 1464.7708989865705,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305108,
+          20305132
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds325_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 31297.37955628289,
+        "wall_time_per_seed_s": 1251.8951822513156,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305133,
+          20305157
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds350_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 40,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 31951.612612164114,
+        "wall_time_per_seed_s": 1278.0645044865646,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305158,
+          20305182
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds375_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 25335.388761616312,
+        "wall_time_per_seed_s": 1013.4155504646525,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305183,
+          20305207
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds50_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 33,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 28984.17635798268,
+        "wall_time_per_seed_s": 1159.3670543193073,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20304858,
+          20304882
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p730_results_seeds75_25.json",
+        "git_commit": "2ece88019d596399592dcbbaa3ac921bccffbf7e",
+        "git_commit_short": "2ece8801",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 12,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 64,
+        "wall_time_s": 14100.761231428012,
+        "wall_time_per_seed_s": 564.0304492571205,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20304883,
+          20304907
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p770_results_seeds0_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 47,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 33782.51656589471,
+        "wall_time_per_seed_s": 1351.3006626357883,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305808,
+          20305832
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p770_results_seeds100_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 47,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 34519.795834867284,
+        "wall_time_per_seed_s": 1380.7918333946914,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305908,
+          20305932
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p770_results_seeds125_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 47,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 23567.520157568622,
+        "wall_time_per_seed_s": 942.7008063027449,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305933,
+          20305957
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p770_results_seeds150_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 47,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 23153.54269586783,
+        "wall_time_per_seed_s": 926.1417078347132,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305958,
+          20305982
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p770_results_seeds175_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 47,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 29863.617473082617,
+        "wall_time_per_seed_s": 1194.5446989233046,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305983,
+          20306007
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p770_results_seeds25_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 31669.188484133978,
+        "wall_time_per_seed_s": 1266.7675393653592,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305833,
+          20305857
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p770_results_seeds50_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 47,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 25979.132768901996,
+        "wall_time_per_seed_s": 1039.1653107560799,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305858,
+          20305882
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      },
+      {
+        "file": "results/venue_transfer_20260811/Tc_h0p770_results_seeds75_25.json",
+        "git_commit": "e93f3068bcc45e7d2bd71fa91b9d399dc909dca2",
+        "git_commit_short": "e93f3068",
+        "import_path_clean": true,
+        "git_dirty": true,
+        "dirt_inventory_import_path": [],
+        "dirt_inventory_other_count": 15,
+        "allow_dirty": false,
+        "smoke": false,
+        "workers": 25,
+        "wall_time_s": 22031.862067260314,
+        "wall_time_per_seed_s": 881.2744826904126,
+        "n_seeds_in_chunk": 25,
+        "seeds_range": [
+          20305883,
+          20305907
+        ],
+        "pin_integrity_pass": true,
+        "n_events_values_in_chunk": [
+          982
+        ],
+        "n_events_run_values_in_chunk": [
+          982
+        ],
+        "n_events_cap": null,
+        "balls_mode": "real_k",
+        "K_sum_values_in_chunk": [
+          1193703
+        ],
+        "K_sum_pin_applicable": true,
+        "K_sum_matches_pin_all_seeds": true
+      }
+    ],
+    "commit_pair_check": {
+      "commits": [
+        "2ece8801",
+        "e93f3068"
+      ],
+      "ancestor_relationship_verified": true,
+      "older": "2ece8801",
+      "newer": "e93f3068",
+      "import_path_diff_empty": true,
+      "import_path_diff_stat_raw": ""
+    },
+    "rename_disclosure": {
+      "rename_commit": "227e7a32",
+      "rename_description": "refactor: rename package master_thesis_code -> darksiren_emri (rebrand phase b)",
+      "newest_campaign_commit_checked": "e93f3068",
+      "rename_postdates_campaign": true,
+      "note": "V-T4 clean-rule import_path_clean flags in every chunk JSON were evaluated against the OLD import path (master_thesis_code/, master_thesis_code_test/) at run time, since the rename had not yet happened. This is a disclosure item, not a defect: the flags are still a correct clean-rule evaluation for the state of the repo at run time."
+    },
+    "distinct_git_commits": [
+      "2ece8801",
+      "e93f3068"
+    ],
+    "commit_counts": {
+      "e93f3068": 39,
+      "2ece8801": 10
+    },
+    "all_import_path_clean": true,
+    "all_smoke_false": true,
+    "all_pin_integrity_pass": true,
+    "all_K_sum_matches_pin": true
+  },
+  "seed_plan": {
+    "per_cell": {
+      "T0": {
+        "prereg_name": "T-0",
+        "h_true": 0.73,
+        "expected_n": 200,
+        "expected_range": [
+          20300808,
+          20301007
+        ],
+        "realized_n": 200,
+        "realized_n_unique": 200,
+        "n_duplicate_seeds_within_cell": 0,
+        "n_missing_vs_registered_block": 0,
+        "missing_seeds": [],
+        "n_extra_vs_registered_block": 0,
+        "extra_seeds": [],
+        "exact_match": true
+      },
+      "Ta": {
+        "prereg_name": "T-a",
+        "h_true": 0.73,
+        "expected_n": 200,
+        "expected_range": [
+          20301808,
+          20302007
+        ],
+        "realized_n": 200,
+        "realized_n_unique": 200,
+        "n_duplicate_seeds_within_cell": 0,
+        "n_missing_vs_registered_block": 0,
+        "missing_seeds": [],
+        "n_extra_vs_registered_block": 0,
+        "extra_seeds": [],
+        "exact_match": true
+      },
+      "Tb": {
+        "prereg_name": "T-b",
+        "h_true": 0.73,
+        "expected_n": 200,
+        "expected_range": [
+          20302808,
+          20303007
+        ],
+        "realized_n": 200,
+        "realized_n_unique": 200,
+        "n_duplicate_seeds_within_cell": 0,
+        "n_missing_vs_registered_block": 0,
+        "missing_seeds": [],
+        "n_extra_vs_registered_block": 0,
+        "extra_seeds": [],
+        "exact_match": true
+      },
+      "Tc_h0p690": {
+        "prereg_name": "T-c(0.690)",
+        "h_true": 0.69,
+        "expected_n": 200,
+        "expected_range": [
+          20303808,
+          20304007
+        ],
+        "realized_n": 200,
+        "realized_n_unique": 200,
+        "n_duplicate_seeds_within_cell": 0,
+        "n_missing_vs_registered_block": 0,
+        "missing_seeds": [],
+        "n_extra_vs_registered_block": 0,
+        "extra_seeds": [],
+        "exact_match": true
+      },
+      "Tc_h0p730": {
+        "prereg_name": "T-c(0.730)",
+        "h_true": 0.73,
+        "expected_n": 400,
+        "expected_range": [
+          20304808,
+          20305207
+        ],
+        "realized_n": 400,
+        "realized_n_unique": 400,
+        "n_duplicate_seeds_within_cell": 0,
+        "n_missing_vs_registered_block": 0,
+        "missing_seeds": [],
+        "n_extra_vs_registered_block": 0,
+        "extra_seeds": [],
+        "exact_match": true
+      },
+      "Tc_h0p770": {
+        "prereg_name": "T-c(0.770)",
+        "h_true": 0.77,
+        "expected_n": 200,
+        "expected_range": [
+          20305808,
+          20306007
+        ],
+        "realized_n": 200,
+        "realized_n_unique": 200,
+        "n_duplicate_seeds_within_cell": 0,
+        "n_missing_vs_registered_block": 0,
+        "missing_seeds": [],
+        "n_extra_vs_registered_block": 0,
+        "extra_seeds": [],
+        "exact_match": true
+      }
+    },
+    "cross_cell_checks": {
+      "total_realized_seeds_all_cells": 1400,
+      "total_realized_seeds_unique_all_cells": 1400,
+      "cross_cell_duplicate_seeds": [],
+      "v1_envelope_checked": [
+        20260808,
+        20269857
+      ],
+      "v1_collisions": [],
+      "v2_envelope_checked": [
+        20280808,
+        20289857
+      ],
+      "v2_collisions": [],
+      "reserved_blocks_checked": [
+        [
+          20306808,
+          20307207
+        ],
+        [
+          20307808,
+          20308207
+        ]
+      ],
+      "reserved_block_collisions": [],
+      "registered_total_expected": 1400
+    }
+  },
+  "abort_criteria": {
+    "per_cell": {
+      "T0": {
+        "n_seeds": 200,
+        "nonfinite_ln_post_1d_count": 0,
+        "nonfinite_ln_post_1d_fraction": 0.0,
+        "nonfinite_ln_post_1d_stop_triggered_gt_1pct": false,
+        "nonfinite_ln_post_2d_count": 0,
+        "nonfinite_ln_post_2d_fraction": 0.0,
+        "nonfinite_ln_post_2d_stop_triggered_gt_1pct": false,
+        "horizon_dropped_values": [
+          0
+        ],
+        "max_horizon_drop_fraction_of_982": 0.0,
+        "n_seeds_horizon_drop_gt_5pct": 0,
+        "horizon_guard_stop_triggered": false,
+        "balls_mode": "real_k",
+        "uses_real_k_pin": true,
+        "K_sum_pin": 1193703,
+        "K_sum_mismatched_seeds": [],
+        "K_sum_all_match_pin": true,
+        "K_sum_distinct_values_count": 1,
+        "K_sum_min_max": [
+          1193703,
+          1193703
+        ],
+        "K_sum_note": "real_k balls: K_sum must equal the 1,193,703 census pin on every seed (checked above)"
+      },
+      "Ta": {
+        "n_seeds": 200,
+        "nonfinite_ln_post_1d_count": 0,
+        "nonfinite_ln_post_1d_fraction": 0.0,
+        "nonfinite_ln_post_1d_stop_triggered_gt_1pct": false,
+        "nonfinite_ln_post_2d_count": 0,
+        "nonfinite_ln_post_2d_fraction": 0.0,
+        "nonfinite_ln_post_2d_stop_triggered_gt_1pct": false,
+        "horizon_dropped_values": [
+          0
+        ],
+        "max_horizon_drop_fraction_of_982": 0.0,
+        "n_seeds_horizon_drop_gt_5pct": 0,
+        "horizon_guard_stop_triggered": false,
+        "balls_mode": "poisson4",
+        "uses_real_k_pin": false,
+        "K_sum_pin": null,
+        "K_sum_mismatched_seeds": [],
+        "K_sum_all_match_pin": null,
+        "K_sum_distinct_values_count": 137,
+        "K_sum_min_max": [
+          4757,
+          5128
+        ],
+        "K_sum_note": "poisson4 balls (T-a, registered design VT-D2/\u00a75): K_sum is a per-seed random draw, no fixed pin"
+      },
+      "Tb": {
+        "n_seeds": 200,
+        "nonfinite_ln_post_1d_count": 0,
+        "nonfinite_ln_post_1d_fraction": 0.0,
+        "nonfinite_ln_post_1d_stop_triggered_gt_1pct": false,
+        "nonfinite_ln_post_2d_count": 0,
+        "nonfinite_ln_post_2d_fraction": 0.0,
+        "nonfinite_ln_post_2d_stop_triggered_gt_1pct": false,
+        "horizon_dropped_values": [
+          0
+        ],
+        "max_horizon_drop_fraction_of_982": 0.0,
+        "n_seeds_horizon_drop_gt_5pct": 0,
+        "horizon_guard_stop_triggered": false,
+        "balls_mode": "real_k",
+        "uses_real_k_pin": true,
+        "K_sum_pin": 1193703,
+        "K_sum_mismatched_seeds": [],
+        "K_sum_all_match_pin": true,
+        "K_sum_distinct_values_count": 1,
+        "K_sum_min_max": [
+          1193703,
+          1193703
+        ],
+        "K_sum_note": "real_k balls: K_sum must equal the 1,193,703 census pin on every seed (checked above)"
+      },
+      "Tc_h0p690": {
+        "n_seeds": 200,
+        "nonfinite_ln_post_1d_count": 0,
+        "nonfinite_ln_post_1d_fraction": 0.0,
+        "nonfinite_ln_post_1d_stop_triggered_gt_1pct": false,
+        "nonfinite_ln_post_2d_count": 0,
+        "nonfinite_ln_post_2d_fraction": 0.0,
+        "nonfinite_ln_post_2d_stop_triggered_gt_1pct": false,
+        "horizon_dropped_values": [
+          0
+        ],
+        "max_horizon_drop_fraction_of_982": 0.0,
+        "n_seeds_horizon_drop_gt_5pct": 0,
+        "horizon_guard_stop_triggered": false,
+        "balls_mode": "real_k",
+        "uses_real_k_pin": true,
+        "K_sum_pin": 1193703,
+        "K_sum_mismatched_seeds": [],
+        "K_sum_all_match_pin": true,
+        "K_sum_distinct_values_count": 1,
+        "K_sum_min_max": [
+          1193703,
+          1193703
+        ],
+        "K_sum_note": "real_k balls: K_sum must equal the 1,193,703 census pin on every seed (checked above)"
+      },
+      "Tc_h0p730": {
+        "n_seeds": 400,
+        "nonfinite_ln_post_1d_count": 0,
+        "nonfinite_ln_post_1d_fraction": 0.0,
+        "nonfinite_ln_post_1d_stop_triggered_gt_1pct": false,
+        "nonfinite_ln_post_2d_count": 0,
+        "nonfinite_ln_post_2d_fraction": 0.0,
+        "nonfinite_ln_post_2d_stop_triggered_gt_1pct": false,
+        "horizon_dropped_values": [
+          0
+        ],
+        "max_horizon_drop_fraction_of_982": 0.0,
+        "n_seeds_horizon_drop_gt_5pct": 0,
+        "horizon_guard_stop_triggered": false,
+        "balls_mode": "real_k",
+        "uses_real_k_pin": true,
+        "K_sum_pin": 1193703,
+        "K_sum_mismatched_seeds": [],
+        "K_sum_all_match_pin": true,
+        "K_sum_distinct_values_count": 1,
+        "K_sum_min_max": [
+          1193703,
+          1193703
+        ],
+        "K_sum_note": "real_k balls: K_sum must equal the 1,193,703 census pin on every seed (checked above)"
+      },
+      "Tc_h0p770": {
+        "n_seeds": 200,
+        "nonfinite_ln_post_1d_count": 0,
+        "nonfinite_ln_post_1d_fraction": 0.0,
+        "nonfinite_ln_post_1d_stop_triggered_gt_1pct": false,
+        "nonfinite_ln_post_2d_count": 0,
+        "nonfinite_ln_post_2d_fraction": 0.0,
+        "nonfinite_ln_post_2d_stop_triggered_gt_1pct": false,
+        "horizon_dropped_values": [
+          0
+        ],
+        "max_horizon_drop_fraction_of_982": 0.0,
+        "n_seeds_horizon_drop_gt_5pct": 0,
+        "horizon_guard_stop_triggered": false,
+        "balls_mode": "real_k",
+        "uses_real_k_pin": true,
+        "K_sum_pin": 1193703,
+        "K_sum_mismatched_seeds": [],
+        "K_sum_all_match_pin": true,
+        "K_sum_distinct_values_count": 1,
+        "K_sum_min_max": [
+          1193703,
+          1193703
+        ],
+        "K_sum_note": "real_k balls: K_sum must equal the 1,193,703 census pin on every seed (checked above)"
+      }
+    }
+  },
+  "raw_statistics": {
+    "per_cell_channel": {
+      "T0": {
+        "prereg_name": "T-0",
+        "h_true": 0.73,
+        "n_seeds": 200,
+        "1d": {
+          "hpd50": {
+            "k": 200,
+            "n": 200,
+            "fraction": 1.0
+          },
+          "hpd68": {
+            "k": 200,
+            "n": 200,
+            "fraction": 1.0
+          },
+          "hpd90": {
+            "k": 200,
+            "n": 200,
+            "fraction": 1.0
+          },
+          "pit_ks": {
+            "D": null,
+            "n": 200,
+            "note": "T-0 PIT-exempt (degenerate PIT, VT-D8)"
+          },
+          "map_bias": {
+            "mean": 3.2592224829163244e-05,
+            "se": 3.302703155238014e-05,
+            "n": 200,
+            "raw_map_refined_mean": 0.7300325922248291,
+            "h_true": 0.73
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.0,
+            "median_of_per_seed_means": 0.0
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "R_dose": null,
+          "rail_low": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.0,
+          "post_sd_mean": 0.0,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 0.0,
+            "median_edge_mass": 0.0,
+            "edge_contaminated_gt_10pct": false
+          }
+        },
+        "2d": {
+          "hpd50": {
+            "k": 200,
+            "n": 200,
+            "fraction": 1.0
+          },
+          "hpd68": {
+            "k": 200,
+            "n": 200,
+            "fraction": 1.0
+          },
+          "hpd90": {
+            "k": 200,
+            "n": 200,
+            "fraction": 1.0
+          },
+          "pit_ks": {
+            "D": null,
+            "n": 200,
+            "note": "T-0 PIT-exempt (degenerate PIT, VT-D8)"
+          },
+          "map_bias": {
+            "mean": 3.3070665046182614e-05,
+            "se": 3.302609326781198e-05,
+            "n": 200,
+            "raw_map_refined_mean": 0.7300330706650462,
+            "h_true": 0.73
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.0,
+            "median_of_per_seed_means": 0.0
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "R_dose": null,
+          "rail_low": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.0,
+          "post_sd_mean": 0.0,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 0.0,
+            "median_edge_mass": 0.0,
+            "edge_contaminated_gt_10pct": false
+          }
+        }
+      },
+      "Ta": {
+        "prereg_name": "T-a",
+        "h_true": 0.73,
+        "n_seeds": 200,
+        "1d": {
+          "hpd50": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd68": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd90": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "pit_ks": {
+            "D": 0.9999999999999986,
+            "n": 200
+          },
+          "map_bias": {
+            "mean": 0.03482422929464657,
+            "se": 0.00015771618357471678,
+            "n": 200,
+            "raw_map_refined_mean": 0.7648242292946467,
+            "h_true": 0.73
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.035,
+            "median_of_per_seed_means": 0.035
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.035,
+            "median": 0.035
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "R_dose": 0.9949779798470447,
+          "rail_low": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.003618519648737131,
+          "post_sd_mean": 0.003624844118724449,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 0.0,
+            "median_edge_mass": 0.0,
+            "edge_contaminated_gt_10pct": false
+          }
+        },
+        "2d": {
+          "hpd50": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd68": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd90": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "pit_ks": {
+            "D": 1.0,
+            "n": 200
+          },
+          "map_bias": {
+            "mean": 0.036469204812290316,
+            "se": 0.00015764491991546316,
+            "n": 200,
+            "raw_map_refined_mean": 0.7664692048122903,
+            "h_true": 0.73
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.035,
+            "median_of_per_seed_means": 0.035
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.035,
+            "median": 0.035
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "R_dose": 1.0419772803511518,
+          "rail_low": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.0036145983787376386,
+          "post_sd_mean": 0.0036212213902144675,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 0.0,
+            "median_edge_mass": 0.0,
+            "edge_contaminated_gt_10pct": false
+          }
+        }
+      },
+      "Tb": {
+        "prereg_name": "T-b",
+        "h_true": 0.73,
+        "n_seeds": 200,
+        "1d": {
+          "hpd50": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd68": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd90": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "pit_ks": {
+            "D": 0.9999999999999992,
+            "n": 200
+          },
+          "map_bias": {
+            "mean": 0.035952652836181015,
+            "se": 0.000155866723582546,
+            "n": 200,
+            "raw_map_refined_mean": 0.7659526528361811,
+            "h_true": 0.73
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.03500000000000001,
+            "median_of_per_seed_means": 0.03500000000000001
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.035,
+            "median": 0.035
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "R_dose": 1.0272186524623144,
+          "rail_low": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.0036885397810830114,
+          "post_sd_mean": 0.0036944418952597137,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 0.0,
+            "median_edge_mass": 0.0,
+            "edge_contaminated_gt_10pct": false
+          }
+        },
+        "2d": {
+          "hpd50": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd68": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd90": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "pit_ks": {
+            "D": 1.0,
+            "n": 200
+          },
+          "map_bias": {
+            "mean": 0.0376560821154938,
+            "se": 0.00015553872079591413,
+            "n": 200,
+            "raw_map_refined_mean": 0.7676560821154937,
+            "h_true": 0.73
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.03500000000000001,
+            "median_of_per_seed_means": 0.03500000000000001
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.035,
+            "median": 0.035
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "R_dose": 1.0758880604426797,
+          "rail_low": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.0036868468056263843,
+          "post_sd_mean": 0.003692601357829308,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 0.0,
+            "median_edge_mass": 0.0,
+            "edge_contaminated_gt_10pct": false
+          }
+        }
+      },
+      "Tc_h0p690": {
+        "prereg_name": "T-c(0.690)",
+        "h_true": 0.69,
+        "n_seeds": 200,
+        "1d": {
+          "hpd50": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd68": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd90": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "pit_ks": {
+            "D": 0.9999999999970899,
+            "n": 200
+          },
+          "map_bias": {
+            "mean": 0.03653525692523382,
+            "se": 0.00028329279793550606,
+            "n": 200,
+            "raw_map_refined_mean": 0.7265352569252337,
+            "h_true": 0.69
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.04145185262189211,
+            "median_of_per_seed_means": 0.04144810680467649
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.041433925156255845,
+            "median": 0.04142589711698025
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 0.000795847040679298,
+            "median": 0.0007895598821482396
+          },
+          "R_dose": 0.8813902060902902,
+          "rail_low": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.004249096132221611,
+          "post_sd_mean": 0.004252954520885444,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 3.8865284059155765e-198,
+            "median_edge_mass": 2.8854108995211615e-217,
+            "edge_contaminated_gt_10pct": false
+          }
+        },
+        "2d": {
+          "hpd50": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd68": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd90": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "pit_ks": {
+            "D": 0.9999999999999526,
+            "n": 200
+          },
+          "map_bias": {
+            "mean": 0.03896735816512068,
+            "se": 0.0002929326698391497,
+            "n": 200,
+            "raw_map_refined_mean": 0.7289673581651206,
+            "h_true": 0.69
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.04145185262189211,
+            "median_of_per_seed_means": 0.04144810680467649
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.041433925156255845,
+            "median": 0.04142589711698025
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 0.000795847040679298,
+            "median": 0.0007895598821482396
+          },
+          "R_dose": 0.9400631262627985,
+          "rail_low": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.004300209358758807,
+          "post_sd_mean": 0.004286611420463753,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 4.512187920744425e-205,
+            "median_edge_mass": 2.5233378384553884e-224,
+            "edge_contaminated_gt_10pct": false
+          }
+        }
+      },
+      "Tc_h0p730": {
+        "prereg_name": "T-c(0.730)",
+        "h_true": 0.73,
+        "n_seeds": 400,
+        "1d": {
+          "hpd50": {
+            "k": 0,
+            "n": 400,
+            "fraction": 0.0
+          },
+          "hpd68": {
+            "k": 0,
+            "n": 400,
+            "fraction": 0.0
+          },
+          "hpd90": {
+            "k": 0,
+            "n": 400,
+            "fraction": 0.0
+          },
+          "pit_ks": {
+            "D": 0.9999999999995325,
+            "n": 400
+          },
+          "map_bias": {
+            "mean": 0.03724511345252423,
+            "se": 0.00022322490853395212,
+            "n": 400,
+            "raw_map_refined_mean": 0.7672451134525242,
+            "h_true": 0.73
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.04177514939560432,
+            "median_of_per_seed_means": 0.04177762653393621
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.041841625578552935,
+            "median": 0.041818806778484055
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 0.0006497051611665548,
+            "median": 0.0006425383868516708
+          },
+          "R_dose": 0.89156146635931,
+          "rail_low": {
+            "k": 0,
+            "n": 400,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 400,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.004375516770425057,
+          "post_sd_mean": 0.004378891173388238,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 0.0,
+            "median_edge_mass": 0.0,
+            "edge_contaminated_gt_10pct": false
+          }
+        },
+        "2d": {
+          "hpd50": {
+            "k": 0,
+            "n": 400,
+            "fraction": 0.0
+          },
+          "hpd68": {
+            "k": 0,
+            "n": 400,
+            "fraction": 0.0
+          },
+          "hpd90": {
+            "k": 0,
+            "n": 400,
+            "fraction": 0.0
+          },
+          "pit_ks": {
+            "D": 0.9999999999999817,
+            "n": 400
+          },
+          "map_bias": {
+            "mean": 0.03972003086355606,
+            "se": 0.0002304437897027529,
+            "n": 400,
+            "raw_map_refined_mean": 0.769720030863556,
+            "h_true": 0.73
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.04177514939560432,
+            "median_of_per_seed_means": 0.04177762653393621
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.041841625578552935,
+            "median": 0.041818806778484055
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 0.0006497051611665548,
+            "median": 0.0006425383868516708
+          },
+          "R_dose": 0.9508052379995917,
+          "rail_low": {
+            "k": 0,
+            "n": 400,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 400,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.0044104844119728995,
+          "post_sd_mean": 0.004410762112573547,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 0.0,
+            "median_edge_mass": 0.0,
+            "edge_contaminated_gt_10pct": false
+          }
+        }
+      },
+      "Tc_h0p770": {
+        "prereg_name": "T-c(0.770)",
+        "h_true": 0.77,
+        "n_seeds": 200,
+        "1d": {
+          "hpd50": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd68": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd90": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "pit_ks": {
+            "D": 0.9999999997342535,
+            "n": 200
+          },
+          "map_bias": {
+            "mean": 0.03852821163014224,
+            "se": 0.00028571754329167966,
+            "n": 200,
+            "raw_map_refined_mean": 0.8085282116301422,
+            "h_true": 0.77
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.04208187315223074,
+            "median_of_per_seed_means": 0.04208607175095623
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.04225479925298428,
+            "median": 0.0422603953300002
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 0.0005148139863936004,
+            "median": 0.0005126903425726499
+          },
+          "R_dose": 0.9155536278237147,
+          "rail_low": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.004534025645986851,
+          "post_sd_mean": 0.004421075045082366,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 2.3840596163893223e-13,
+            "median_edge_mass": 0.0,
+            "edge_contaminated_gt_10pct": false
+          }
+        },
+        "2d": {
+          "hpd50": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd68": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "hpd90": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "pit_ks": {
+            "D": 0.9999999999784,
+            "n": 200
+          },
+          "map_bias": {
+            "mean": 0.041031666367229665,
+            "se": 0.0002966771771904372,
+            "n": 200,
+            "raw_map_refined_mean": 0.8110316663672298,
+            "h_true": 0.77
+          },
+          "sigma_z_mean_pairs": {
+            "mean": 0.04208187315223074,
+            "median_of_per_seed_means": 0.04208607175095623
+          },
+          "sigma_z_median_pairs": {
+            "mean": 0.04225479925298428,
+            "median": 0.0422603953300002
+          },
+          "frac_pairs_sigma_lt_5e-3": {
+            "mean": 0.0005148139863936004,
+            "median": 0.0005126903425726499
+          },
+          "R_dose": 0.9750437253303349,
+          "rail_low": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "rail_high": {
+            "k": 0,
+            "n": 200,
+            "fraction": 0.0
+          },
+          "post_sd_median": 0.004621514195305103,
+          "post_sd_mean": 0.004495485909950378,
+          "edge_mass": {
+            "edge_loaded_count": 0,
+            "edge_loaded_fraction": 0.0,
+            "mean_edge_mass": 9.265815892334217e-12,
+            "median_edge_mass": 0.0,
+            "edge_contaminated_gt_10pct": false
+          }
+        }
+      }
+    }
+  },
+  "validate_json_crosscheck": {
+    "validate_results_full.json": {
+      "path": "results/venue_transfer_20260811/validate_results_full.json",
+      "seed_plan_pass": true,
+      "v_t2_determinism_pass": true,
+      "v_t3_pin_integrity_pass": true,
+      "v_t5_no_drift_pass": true,
+      "v_t4_clean_rule": "evaluated per-registered-run (embedded in every chunk JSON), not a standalone field here",
+      "note": "v_t2, v_t3, v_t5 fields directly PASS in this file; seed_plan.pass supports the VT-D7 disjoint-seed-plan requirement (not itself one of the five named V-T checks). V-T1 (T-0 anchor bias/rail check) and V-T4 (clean rule) are NOT fields of this file \u2014 V-T1 is a per-cell raw-statistics check (see raw_statistics.per_cell_channel.T0) and V-T4 is embedded per-chunk (import_path_clean)."
+    },
+    "validate_results_novt5.json": {
+      "path": "results/venue_transfer_20260811/validate_results_novt5.json",
+      "seed_plan_pass": true,
+      "v_t2_determinism_pass": true,
+      "v_t3_pin_integrity_pass": true,
+      "v_t5_no_drift_pass": null,
+      "v_t5_note": "skipped (--skip-v-t5)",
+      "note": "This is the earlier launch-phase validate that SKIPPED V-T5 (prereg \u00a711 addendum: compliance-order deviation, no statistical content)."
+    },
+    "v_t_check_evidence_map": {
+      "V-T1 (T-0 anchor)": "raw_statistics.per_cell_channel.T0 in this file (bias/rail values); band comparison against |bias|<=0.010/rail<=0.05 reserved for later agent",
+      "V-T2 (determinism)": "validate_results_full.json v_t2.pass=true (bit-identical re-run spot-check, seed 20303808, n_events_cap=40)",
+      "V-T3 (pin integrity)": "validate_results_full.json v_t3.pass=true AND per-chunk pin_integrity.pass in every one of the 49 chunk JSONs (see provenance.per_chunk)",
+      "V-T4 (clean rule)": "embedded per-chunk: import_path_clean field in every one of the 49 chunk JSONs (see provenance.all_import_path_clean)",
+      "V-T5 (no-drift)": "validate_results_full.json v_t5.pass=true (3/3 seeds, bit-identical to committed v2 B2(0.730) per_seed records); validate_results_novt5.json v_t5.pass=null (skipped, earlier launch-phase run)"
+    }
+  },
+  "disclosure_items": [
+    {
+      "id": "rename-naming-shift",
+      "text": "Repo renamed master_thesis_code -> darksiren_emri (package) and MasterThesisCode -> darksiren-emri (dir) at commit 227e7a32, which postdates both campaign commits (2ece8801, e93f3068) per verified git ancestor check. The prereg's V-T4 clean rule names the OLD import path; chunk JSONs' import_path_clean flags were evaluated against the OLD name at run time. This is a disclosure item, not a defect."
+    },
+    {
+      "id": "commit-pair-provenance",
+      "text": "10 chunks carry git_commit 2ece8801, 39 carry e93f3068. Verified: 2ece8801 is an ancestor of e93f3068; the diff 2ece8801..e93f3068 touches ONLY 4 markdown files under results/ (0 lines under master_thesis_code/, master_thesis_code_test/, darksiren_emri/, or darksiren_emri_test/) -- import-path diff is empty, so the registered-commit chain holds per the R1-ratified D-4/D-5 pattern."
+    },
+    {
+      "id": "operational-history-non-statistical",
+      "text": "Three SLURM arrays were required to complete the 49 chunks (6252702: 10/49 COMPLETED; 6253922: 17/39 remaining COMPLETED; 6259842: 22/22 remaining COMPLETED). Per prereg \u00a711, seeds/chunking/bands/statistics/instrument commit were untouched across resubmissions; only --time/--cpus-per-task changed. workers field is 64 in first-wave chunks, 25 in resubmitted ones -- result-invariant per V-T2, and confirmed here: K_sum equals the 1,193,703 pin on every seed regardless of worker count (see abort_criteria.per_cell.*.K_sum_all_match_pin)."
+    },
+    {
+      "id": "pending-author-ratification",
+      "text": "Three deviation notes in prereg \u00a711 (the 6252702 runtime-blowout/resubmission note, the compliance-order note re: V-T5 sequencing, and the 6253922 memory-bandwidth-contention/second-resubmission note) are explicitly marked PENDING AUTHOR RATIFICATION in the registered file and must be surfaced in the readout's disclosure list -- none are statistical and none touch bands/seeds/statistics, but they are not yet author-closed."
+    },
+    {
+      "id": "validate-novt5-is-earlier-launch-phase-run",
+      "text": "validate_results_novt5.json predates validate_results_full.json in the campaign timeline (the launch-phase validate that skipped V-T5 per prereg \u00a711 addendum); validate_results_full.json is the authoritative, complete V-T1..V-T5 evidence run (V-T5 pass=true, 3/3 seeds bit-identical to committed v2 B2(0.730))."
+    }
+  ]
+}

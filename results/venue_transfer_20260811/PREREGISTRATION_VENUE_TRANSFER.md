@@ -673,3 +673,81 @@ operational-deviation note for author ratification.
 (--time=24:00:00, same 25-core grain, same registered seed chunks — NON-STATISTICAL, nothing else changed).
 Cumulative outputs: 27/49 chunks (10 + 17). Lesson filed for the perf roadmap: margins must be computed
 against contended timing, or tasks sized one-per-node. Bundled with the pending 2026-08-12 ratifications.
+
+
+---
+
+## §11 READOUT ENTRY (2026-08-13): campaign complete, verified — arrays 6252702 / 6253922 / 6259842
+
+**Status: BRANCH FIRED BY THE TREE — TRANSFER-CONFIRMED. NOT ADJUDICATED (awaiting author ruling).**
+This entry is appended by the Ship agent per the standing rule ("only the Ship agent may append,
+and only on an author ruling" is the eventual verdict-of-record gate — this entry records the
+fired-branch readout + independent CONFIRMED verification; it is not itself an author ruling).
+
+**Validity (§8-§10, all clauses):** ALL PASS. V-T1 T-0 anchor: grid-argmax bias +0.000000
+(SE 0.000000) both channels, all 200 seeds argmax exactly at h=0.730; refined companion
++0.000033±0.000033. R_low=R_high=0.000. Hard trigger did NOT fire. V-T2 determinism PASS
+(validate_results_full.json + independent in-campaign corroboration, workers=64 vs 25, identical
+K_sum=1,193,703). V-T3 pin integrity PASS on two independent sources (validate_results_full.json
++ all 49 chunk JSONs; 1200/1200 real_k seeds at SigmaK=1,193,703 exactly; T-a structurally exempt,
+balls="poisson4" per registered §5/VT-D2 — not a mismatch). V-T4 clean rule PASS (49/49 chunks
+import_path_clean=true). V-T5 no-drift PASS (bit-reproduction of committed v2 B2_h0p730 records,
+3/3 seeds, 41 shared fields, zero mismatches; gate-shape mode chunk_pairs=0 — campaign ran
+chunk_pairs=16384, see discrepancy note below). Registered-commit chain re-verified live:
+2ece8801 (10 chunks) ancestor of e93f3068 (39 chunks); import-path diff EMPTY under both old and
+new package names; prereg diff is a pure append at line 608 into §11 (VT-D0(ii) holds). Seed plan
+(VT-D7) exact: 1400/1400 seeds, 0 duplicates, 0 missing/extra, 0 collisions with any reserved
+envelope. Abort criteria (a)-(d): NONE triggered. §8 edge-contamination guard: 0 of 12
+cell×channel entries EDGE-CONTAMINATED. VENUE-CONFOUNDED trigger set: 0 of 9 members fired.
+
+**Branch fired (registered order, §10):** (1) VENUE-CONFOUNDED — does not fire. (2)
+TRANSFER-CONFIRMED — fires: T-c 1D is COLLAPSE-REPRODUCED at all three truths (0.690/0.730/0.770),
+both wings agree with the N=400 decision cell. (3) TRANSFER-REFUTED — not reached. (4) MIXED — not
+reached. Headline (1D, VT-D6): T-c(0.730) N=400 1D = COLLAPSE-REPRODUCED (bias +0.037237±0.000230,
+R_dose 0.8914, HPD90 0/400, rails 0.000/0.000). Secondary 2D reported alongside: also
+COLLAPSE-REPRODUCED (bias +0.039713±0.000246, R_dose 0.9506). No 1D/2D split. DS-VT5 ladder
+(rung 0 v2 baseline → T-a → T-b → T-c(0.730)): every rung COLLAPSE-REPRODUCED in both channels;
+killing axis = NONE.
+
+**Independent verification (adjudicate_venue_transfer.py, own re-derivation from the 41-point
+ln_post vectors of all 1400×2 seed-channels, imports nothing from the instrument or the readout
+scripts): VERDICT = CONFIRMED.** Raw-level fidelity: max |deviation| from instrument-stored
+per-seed fields is 1.50e-14 (post_sd) and 0.0 elsewhere, across 114,800 ln_post values, zero
+non-finite. All 16 scored fields × 12 cell-channels match the readout to max |Δ|=5.33e-15, all 12
+classifications identical. Bands re-derived from scratch match the prereg §7 literals exactly.
+Seed plan, provenance chain, and branch-tree evaluation independently reproduced with the same
+result. Self-adjudication scan: no ruling language found; every §7 formulation item is correctly
+framed as an author call.
+
+**Discrepancies surfaced by verification, none of which changes the fired branch** (full list in
+the readout's companion verification record, not reproduced here): two undisclosed
+compliance-order deviations (pre-campaign smoke never run/no artifact; §11 was empty at
+instrument-commit time, populated only after the first array had already run) — both
+non-statistical, no branch impact; the as-run contended per-seed CPU exceeds the abort-(a) trip
+point in 11 of 40 heavy chunks under the packed-25-core grain (abort (a) is not a
+VENUE-CONFOUNDED trigger, and its fallback direction is conservative, so this cannot flip the
+branch); V-T5's PASS covers the gate-shape code path (chunk_pairs=0), not the campaign's
+chunk_pairs=16384 path, at an established ≤5e-16 relative (≤1 ULP) divergence — immaterial next to
+the ~1e15×-larger posterior scale; several presentational/units-mixing notes in §7 of the readout
+(R_dose range mixing grid-argmax/refined endpoints; "~300x" statement mixing quantised and refined
+statistics). None of these bear on validity, the branch call, or any reported number beyond
+rounding/wording.
+
+**Pending author ratification carried forward, unchanged by this entry:** the three §11 deviation
+notes above (array 6252702 runtime blowout/resubmission; V-T5 compliance-order deviation; second
+straggler resubmission/array 6259842) remain PENDING AUTHOR RATIFICATION, joined by the two
+newly-surfaced compliance-order items from verification (missing pre-campaign smoke artifact;
+§11 not populated with commit hash/smoke/V-T5 evidence before the campaign launched).
+
+**Artifacts of record:** `VENUE_TRANSFER_READOUT.md` / `.json` (readout), `collect_raw.json` +
+`collect_extract.py` (raw extraction), `score_venue_transfer.py` (independent re-scorer),
+`adjudicate_venue_transfer.py` + `adjudicate_venue_transfer_results.json` (independent
+adjudication), 49 campaign chunk JSONs, `logs/` (cluster array logs), `validate_results_full.json`,
+`validate_results_novt5.json`. Nothing above this line, and nothing above the earlier §11
+addenda, was modified to produce this entry.
+
+**Author decisions requested (unchanged from the readout, restated for the record):** (1) ratify
+or reject the five compliance-order/operational deviation notes now on record; (2) rule on the
+fired branch (TRANSFER-CONFIRMED); (3) decide whether to order the reserved W1 (per-galaxy rate
+weights) and/or O2 (volume_deconv kernel form) arms; (4) decide whether to open the
+`/physics-change` intake on the estimator's photo-z handling (prepared, not opened).
