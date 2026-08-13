@@ -69,3 +69,30 @@ def test_unknown_dose_target_is_rejected(masking_inputs) -> None:  # type: ignor
     host_mask, sigma_pairs, noise, z_obs = masking_inputs
     with pytest.raises(ValueError, match="unknown dose_target"):
         _apply_dose_mask("hosts", host_mask, sigma_pairs, noise, z_obs)
+
+
+def test_mech_arm_registry_is_separate_and_disjoint() -> None:
+    """The mechanism arms live in their own +50000 decade, outside the v3 envelope."""
+    from darksiren_emri.validation import venue_transfer as vt
+
+    assert set(vt.MECH_CELL_SPECS) == {"MN0", "MEH", "MEI"}
+    # the venue-transfer registry must NOT have been widened
+    assert not (set(vt.CELL_SPECS) & set(vt.MECH_CELL_SPECS))
+    assert set(vt.ALL_CELL_SPECS) == set(vt.CELL_SPECS) | set(vt.MECH_CELL_SPECS)
+
+    v3_hi = vt.VT_BASE_SEED + vt.V3_SEED_OFFSET_ENVELOPE[1]
+    mech: set[int] = set()
+    for name, spec in vt.MECH_CELL_SPECS.items():
+        block = vt.venue_cell_seeds(spec, 0.730, 0, None)
+        assert len(block) == 15, name
+        assert min(block) > v3_hi, f"{name} collides with the v3 envelope"
+        assert not (mech & set(block)), f"{name} overlaps another arm"
+        mech.update(block)
+
+    # dose targets are pinned in the registry, not selectable at the CLI
+    assert vt.MECH_CELL_SPECS["MN0"].dose_target == "all"
+    assert vt.MECH_CELL_SPECS["MEH"].dose_target == "host"
+    assert vt.MECH_CELL_SPECS["MEI"].dose_target == "impostors"
+    # and every arm is otherwise the campaign's decision cell
+    for spec in vt.MECH_CELL_SPECS.values():
+        assert (spec.balls, spec.sigma_mode, spec.truths) == ("real_k", "glade", (0.730,))

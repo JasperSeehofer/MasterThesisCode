@@ -294,6 +294,11 @@ class VenueCellSpec:
         truths: Injected ``h_true`` values.
         n_seeds: Registered seeds per truth (aligned with ``truths``).
         seed_offsets: Per-truth offsets from :data:`VT_BASE_SEED`.
+        dose_target: Which ball members this cell doses (``"all"`` for every
+            venue-transfer cell; the mechanism-isolation split-dose arms pin
+            ``"host"``/``"impostors"`` HERE rather than exposing a CLI flag,
+            so an arm's dose target and its seed block are selected together
+            by cell name and neither can be chosen post-hoc.
     """
 
     name: str
@@ -303,6 +308,7 @@ class VenueCellSpec:
     truths: tuple[float, ...]
     n_seeds: tuple[int, ...]
     seed_offsets: tuple[int, ...]
+    dose_target: str = "all"
 
 
 CELL_SPECS: dict[str, VenueCellSpec] = {
@@ -321,6 +327,24 @@ CELL_SPECS: dict[str, VenueCellSpec] = {
 }
 # W1 (+46000) and O2 (+47000) are registered but NOT built — NOT-EVALUABLE
 # per prereg §9 items 3 and 2; reserved blocks are never run post-hoc.
+
+# ── Mechanism-isolation arms (separate prereg, registered 2026-08-13) ─────────
+# results/mechanism_study_20260813/PREREGISTRATION_MECHANISM_ISOLATION.md +
+# ARMS.md. Same decision-cell configuration as T-c(0.730) in every respect
+# except which ball members receive the dose. Disjoint +50000 decade.
+MECH_CELL_SPECS: dict[str, VenueCellSpec] = {
+    "MN0": VenueCellSpec("MN0", "N-0", "real_k", "glade", (0.730,), (15,), (50000,), "all"),
+    "MEH": VenueCellSpec("MEH", "E1-host", "real_k", "glade", (0.730,), (15,), (50100,), "host"),
+    "MEI": VenueCellSpec(
+        "MEI", "E1-imp", "real_k", "glade", (0.730,), (15,), (50200,), "impostors"
+    ),
+}
+# Deliberately NOT merged into CELL_SPECS: that mapping is the venue-transfer
+# prereg §5 registry and is guarded by a test asserting every one of its seeds
+# lies inside the v3 envelope (+40000…+45399). The mechanism arms live in the
+# disjoint +50000 decade under a different pre-registration, so they get their
+# own registry and only the CLI sees the union.
+ALL_CELL_SPECS: dict[str, VenueCellSpec] = {**CELL_SPECS, **MECH_CELL_SPECS}
 
 
 @dataclass(frozen=True)
@@ -2093,8 +2117,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--cell",
-        choices=("T0", "Ta", "Tb", "Tc", "W1", "O2"),
-        help="prereg §5 cell to run (W1/O2 are reserved, NOT built)",
+        choices=("T0", "Ta", "Tb", "Tc", "W1", "O2", "MN0", "MEH", "MEI"),
+        help=(
+            "prereg §5 cell to run (W1/O2 are reserved, NOT built); "
+            "MN0/MEH/MEI are the mechanism-isolation split-dose arms "
+            "(separate prereg, results/mechanism_study_20260813/)"
+        ),
     )
     p.add_argument("--truth", type=float, default=None, help="h_true (must be in the cell's set)")
     p.add_argument(
@@ -2211,7 +2239,7 @@ def main(argv: list[str] | None = None) -> int:
             "is never run post-hoc (VT-D7) — buildable only by author order."
         )
 
-    spec = CELL_SPECS[args.cell]
+    spec = ALL_CELL_SPECS[args.cell]
     truth = args.truth if args.truth is not None else spec.truths[0]
     if not any(abs(truth - t) < 1e-12 for t in spec.truths):
         raise SystemExit(f"truth {truth} not in cell {spec.name} registered set {spec.truths}")
@@ -2224,6 +2252,7 @@ def main(argv: list[str] | None = None) -> int:
         sigma_mode=spec.sigma_mode,
         n_events_cap=args.n_events_cap,
         chunk_pairs=args.chunk_pairs,
+        dose_target=spec.dose_target,
     )
 
     if args.seeds is not None:
