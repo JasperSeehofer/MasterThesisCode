@@ -145,8 +145,21 @@ or redirected once taken.
 ## 6. Verification gate for calling this checklist done
 
 - [ ] §1: fresh Claude Code session in the renamed local directory retrieves prior project memory
-- [ ] §2: cluster job (any `cluster/*.sbatch`) submitted and completes successfully from
-      `~/darksiren-emri` with a rebuilt venv
+- [~] §2: cluster migration EXECUTED 2026-08-13 — `~/MasterThesisCode` -> `~/darksiren-emri`,
+      remote repointed, pulled to `e83ed0b9`, venv rebuilt from scratch (`uv sync --extra gpu`),
+      stale `master_thesis_code/` removed. Preflight reads **VERDICT: READY ✓** and V-T3
+      `pin_integrity.pass = True` on the renamed checkout. Job array **6303086**
+      (`cluster/mechanism_isolation.sbatch`) submitted from `~/darksiren-emri`; **box closes when
+      it completes.** Migration notes worth keeping:
+      (a) the pull aborted three times on untracked campaign outputs that had since been committed
+      from the dev box — 147 files were moved to `~/rename_backup_20260813` only after all 49
+      chunk md5s were verified byte-identical to the committed copies, and all 147 re-verified
+      against the checkout afterwards (identical=147, differs=0, only-in-backup=0);
+      (b) git truncates the "would be overwritten" list, so the move had to loop (67, then 20);
+      (c) the gitignored 1.6 GB `reduced_galaxy_catalogue.csv` had to be moved by hand into
+      `darksiren_emri/galaxy_catalogue/` — `git pull` cannot relocate an ignored file — and the
+      pinned symlink repointed at it (verified against the registered md5 pin, not just existence);
+      (d) 4 dead dev-box probe symlinks deleted; 0 symlinks now embed the old name.
 - [x] §4: `https://jasperseehofer.github.io/darksiren-emri/` and `.../book/` both resolve and
       serve current content (verified 2026-08-12; old URL 404s, no redirect)
 - [ ] §5: PyPI name reserved (only if/when publication becomes real)
