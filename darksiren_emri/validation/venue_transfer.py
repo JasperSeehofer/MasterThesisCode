@@ -189,7 +189,7 @@ import multiprocessing as mp
 import os
 import time
 from dataclasses import asdict, dataclass, field
-from typing import Any
+from typing import Any, Literal, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -299,6 +299,10 @@ class VenueCellSpec:
             ``"host"``/``"impostors"`` HERE rather than exposing a CLI flag,
             so an arm's dose target and its seed block are selected together
             by cell name and neither can be chosen post-hoc.
+        dose_scales: ``(f_host, f_impostors)`` continuous dose fractions for
+            the 2-D dose-scan cells (mechanism-study amendment A-2,
+            2026-08-13); ``None`` for every cell registered before the scan,
+            which is driven by ``dose_target`` instead.
     """
 
     name: str
@@ -309,6 +313,7 @@ class VenueCellSpec:
     n_seeds: tuple[int, ...]
     seed_offsets: tuple[int, ...]
     dose_target: str = "all"
+    dose_scales: tuple[float, float] | None = None
 
 
 CELL_SPECS: dict[str, VenueCellSpec] = {
@@ -338,13 +343,53 @@ MECH_CELL_SPECS: dict[str, VenueCellSpec] = {
     "MEI": VenueCellSpec(
         "MEI", "E1-imp", "real_k", "glade", (0.730,), (15,), (50200,), "impostors"
     ),
+    # MN0X: the null arm re-run at N=100 to settle a validity check on data
+    # rather than by widening a band. Its block [50000, 50100) is a
+    # deliberate SUPERSET of MN0's [50000, 50015) — the already-run seeds
+    # are kept, never discarded (discarding them would be selection).
+    "MN0X": VenueCellSpec("MN0X", "N-0x", "real_k", "glade", (0.730,), (100,), (50000,), "all"),
 }
 # Deliberately NOT merged into CELL_SPECS: that mapping is the venue-transfer
 # prereg §5 registry and is guarded by a test asserting every one of its seeds
 # lies inside the v3 envelope (+40000…+45399). The mechanism arms live in the
 # disjoint +50000 decade under a different pre-registration, so they get their
 # own registry and only the CLI sees the union.
-ALL_CELL_SPECS: dict[str, VenueCellSpec] = {**CELL_SPECS, **MECH_CELL_SPECS}
+
+# ── 2-D dose scan (mechanism-study amendment A-2, registered 2026-08-13) ────
+# 16 cells S{h}{i}, h,i in 0..3, scanning host/impostor dose fractions
+# independently over SCAN_DOSE_FRACTIONS. Disjoint +51000 decade (1.5 decades
+# reserved: +51000…+52599).
+SCAN_DOSE_FRACTIONS: tuple[float, float, float, float] = (0.0, 0.25, 0.5, 1.0)
+# S23 (h=2, i=3) is the only cell that can discriminate the two competing
+# hypotheses under study, so it alone is registered at higher N; every other
+# cell in the 4x4 grid stays at the base N=15.
+SCAN_HIGH_N_CELL = "S23"
+SCAN_HIGH_N = 100
+SCAN_CELL_SPECS: dict[str, VenueCellSpec] = {}
+for _h in range(4):
+    for _i in range(4):
+        _name = f"S{_h}{_i}"
+        _n = SCAN_HIGH_N if _name == SCAN_HIGH_N_CELL else 15
+        SCAN_CELL_SPECS[_name] = VenueCellSpec(
+            name=_name,
+            prereg_cell=_name,
+            balls="real_k",
+            sigma_mode="glade",
+            truths=(0.730,),
+            n_seeds=(_n,),
+            seed_offsets=(51000 + 100 * (4 * _h + _i),),
+            dose_target="all",
+            dose_scales=(SCAN_DOSE_FRACTIONS[_h], SCAN_DOSE_FRACTIONS[_i]),
+        )
+del _h, _i, _name, _n
+# Deliberately kept SEPARATE from both CELL_SPECS (the venue-transfer prereg
+# §5 registry, guarded by the v3-envelope test) and MECH_CELL_SPECS (the
+# mechanism-isolation split-dose arms) — only ALL_CELL_SPECS is the union.
+ALL_CELL_SPECS: dict[str, VenueCellSpec] = {
+    **CELL_SPECS,
+    **MECH_CELL_SPECS,
+    **SCAN_CELL_SPECS,
+}
 
 
 @dataclass(frozen=True)
@@ -374,6 +419,11 @@ class VenueConfig:
             undosed member also gets ``σ_k = 0`` so the estimator point-
             evaluates it (matched-model — an exact redshift must not be given
             a finite kernel).
+        dose_scales: ``(f_host, f_impostors)`` continuous dose fractions for
+            the 2-D dose-scan cells (mechanism-study amendment A-2,
+            2026-08-13); overrides ``dose_target`` when not ``None``. The
+            three registered split-dose arms leave this ``None`` and are
+            selected via ``dose_target`` instead.
         n_events_cap: Smoke/validate-only truncation of the pinned event list
             (divergence 9); ``None`` on registered runs.
         chunk_pairs: Event-aligned chunk target (divergence 2; never changes
@@ -388,6 +438,7 @@ class VenueConfig:
     flat_sigma_z: float = 0.035
     lambda_poisson: float = 4.0
     dose_target: str = "all"
+    dose_scales: tuple[float, float] | None = None
     crb_reference_csv: str = CRB_CSV_PATH
     frozeng_emit_json: str = FROZENG_EMIT_JSON
     pruned_catalogue_csv: str = PRUNED_CATALOGUE_CSV
@@ -848,6 +899,26 @@ def build_venue_context(vcfg: VenueConfig, *, check_pins: bool = True) -> VenueC
 
 
 # ── Generator: pinned-K balls (VT-D2) ────────────────────────────────────────
+
+
+@overload
+def draw_ball_pinned(
+    vctx: VenueContext,
+    universe: cl.SyntheticUniverse,
+    rng: np.random.Generator,
+    *,
+    return_host_mask: Literal[False] = False,
+) -> cg.HostBall: ...
+
+
+@overload
+def draw_ball_pinned(
+    vctx: VenueContext,
+    universe: cl.SyntheticUniverse,
+    rng: np.random.Generator,
+    *,
+    return_host_mask: Literal[True],
+) -> tuple[cg.HostBall, npt.NDArray[np.bool_]]: ...
 
 
 def draw_ball_pinned(
@@ -1389,6 +1460,7 @@ def _apply_dose_mask(
     sigma_pairs: npt.NDArray[np.float64],
     noise: npt.NDArray[np.float64],
     z_obs: npt.NDArray[np.float64],
+    dose_scales: tuple[float, float] | None = None,
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Apply the σ_z dose to the selected ball members only (ARMS.md arm E1).
 
@@ -1401,30 +1473,39 @@ def _apply_dose_mask(
 
     Args:
         dose_target: ``"all"`` (registered default), ``"host"`` or
-            ``"impostors"``.
+            ``"impostors"``. Ignored when ``dose_scales`` is given.
         host_mask: True at the host member of each event.
         sigma_pairs: The drawn per-candidate σ_z, pre-mask.
         noise: The drawn standard-normal scatter vector, pre-mask.
         z_obs: The ball's TRUE member redshifts, pre-dose.
+        dose_scales: ``(f_host, f_impostors)`` continuous dose fractions for
+            the 2-D dose-scan cells (mechanism-study amendment A-2,
+            2026-08-13). ``None`` keeps the three registered split-dose arms,
+            which are the corners ``(1,1)``, ``(1,0)`` and ``(0,1)`` of the
+            same grid.
 
     Returns:
-        ``(sigma_pairs, z_obs)`` after masking.
+        ``(sigma_pairs, z_obs)`` after scaling.
 
     Raises:
         ValueError: If ``dose_target`` is not a registered value.
     """
-    if dose_target == "all":
-        mask = np.ones(z_obs.size, dtype=bool)
+    if dose_scales is not None:
+        s_host, s_imp = dose_scales
+    elif dose_target == "all":
+        s_host, s_imp = 1.0, 1.0
     elif dose_target == "host":
-        mask = host_mask
+        s_host, s_imp = 1.0, 0.0
     elif dose_target == "impostors":
-        mask = ~host_mask
+        s_host, s_imp = 0.0, 1.0
     else:
         raise ValueError(f"unknown dose_target '{dose_target}'")
-    return (
-        np.where(mask, sigma_pairs, 0.0),
-        z_obs + np.where(mask, sigma_pairs * noise, 0.0),
-    )
+    # Per-member scale factor; exactly 1.0 and 0.0 reproduce the three
+    # registered arms bit-for-bit (multiplication by 1.0 is exact, by 0.0 gives
+    # exactly 0.0), which AR-1 asserts.
+    scale = np.where(host_mask, s_host, s_imp)
+    scaled_sigma = sigma_pairs * scale
+    return (scaled_sigma, z_obs + scaled_sigma * noise)
 
 
 def _draw_seed_realization(
@@ -1479,22 +1560,20 @@ def _draw_seed_realization(
         ball = cg.draw_ball(gctx, universe, rng)
         sigma_pairs = np.full(ball.z_obs.size, vcfg.flat_sigma_z, dtype=np.float64)
     else:
-        ball_out = draw_ball_pinned(context, universe, rng, return_host_mask=True)
-        assert isinstance(ball_out, tuple)  # noqa: S101 - narrow the overload for mypy
-        ball, host_mask = ball_out
+        ball, host_mask = draw_ball_pinned(context, universe, rng, return_host_mask=True)
         if vcfg.sigma_mode == "zero":
             sigma_pairs = np.zeros(ball.z_obs.size, dtype=np.float64)
         elif vcfg.sigma_mode == "flat035":
             sigma_pairs = np.full(ball.z_obs.size, vcfg.flat_sigma_z, dtype=np.float64)
             noise = rng.standard_normal(ball.z_obs.size)
             sigma_pairs, ball.z_obs = _apply_dose_mask(
-                vcfg.dose_target, host_mask, sigma_pairs, noise, ball.z_obs
+                vcfg.dose_target, host_mask, sigma_pairs, noise, ball.z_obs, vcfg.dose_scales
             )
         elif vcfg.sigma_mode == "glade":
             sigma_pairs = draw_member_sigma_z(context, ball.z_obs, rng)
             noise = rng.standard_normal(ball.z_obs.size)
             sigma_pairs, ball.z_obs = _apply_dose_mask(
-                vcfg.dose_target, host_mask, sigma_pairs, noise, ball.z_obs
+                vcfg.dose_target, host_mask, sigma_pairs, noise, ball.z_obs, vcfg.dose_scales
             )
         else:
             raise ValueError(f"unknown sigma_mode '{vcfg.sigma_mode}'")
@@ -2117,7 +2196,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--cell",
-        choices=("T0", "Ta", "Tb", "Tc", "W1", "O2", "MN0", "MEH", "MEI"),
+        choices=(
+            "T0",
+            "Ta",
+            "Tb",
+            "Tc",
+            "W1",
+            "O2",
+            "MN0",
+            "MEH",
+            "MEI",
+            "MN0X",
+            *sorted(SCAN_CELL_SPECS),
+        ),
         help=(
             "prereg §5 cell to run (W1/O2 are reserved, NOT built); "
             "MN0/MEH/MEI are the mechanism-isolation split-dose arms "
@@ -2253,6 +2344,7 @@ def main(argv: list[str] | None = None) -> int:
         n_events_cap=args.n_events_cap,
         chunk_pairs=args.chunk_pairs,
         dose_target=spec.dose_target,
+        dose_scales=spec.dose_scales,
     )
 
     if args.seeds is not None:
