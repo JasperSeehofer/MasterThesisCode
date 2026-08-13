@@ -367,3 +367,52 @@ dictation — and every item is **QUEUED for the author's explicit itemized conf
 **Overnight escalation protocol (author-ruled, same day):** if the venue-transfer read fires TRANSFER-CONFIRMED,
 the /physics-change gate package is executed overnight IN FULL on a held `physics/` branch, marked PENDING AUTHOR
 RATIFICATION (2026-08-12); production `main` is not modified; morning act = merge-or-revert.
+
+---
+
+### Row #99 — thread 17 VENUE-TRANSFER: campaign complete, TRANSFER-CONFIRMED, AUTHOR-RATIFIED 2026-08-13
+
+**Measurement.** Venue-transfer campaign (prereg `e77eecad`, instrument `2ece8801`, readout commit
+`d45fbf15`): 49 chunks / 1,400 seeds over cluster arrays 6252702 → 6253922 → 6259842 (final wave
+22/22 COMPLETED, zero FAILED/TIMEOUT). Branch fired by the registered tree: **TRANSFER-CONFIRMED**.
+VENUE-CONFOUNDED did not fire (0 of 9 trigger-set members). Independent adversarial adjudication:
+**CONFIRMED**, every scored statistic reproduced from the raw 41-point `ln_post` vectors with
+independent implementations to ≤ 5.33e-15.
+
+**Decision cell** T-c(0.730), N = 400, 1D (registered headline, VT-D6): HPD 50/68/90 coverage
+0.000/0.000/0.000 (band at N=400: 0.870–0.930 at 90 %); PIT–KS D = 1.000 (PASS ≤ 0.0679) —
+saturated, not marginal; MAP bias **+0.037237 ± 0.000230** (DEFECT edge 0.030); σ̄_pairs = 0.041775 ⇒
+**R_dose = 0.891** (band [0.75, 1.25]); rails 0.000/0.000 (band ≤ 0.02) — RAIL-EMERGENT did not fire;
+post_sd median 0.004376 ⇒ the estimator is displaced by **8.5×** its own claimed width. 2D agrees
+(bias +0.039713, R_dose 0.951). Both wings COLLAPSE-REPRODUCED ⇒ truth-uniformity leg holds.
+**DS-VT5 ladder killing axis: NONE** (v2 +0.0353 → T-a +0.0349 → T-b +0.0359 → T-c +0.0372).
+T-0 anchor (σ_z = 0): all 200 seeds argmax exactly on truth, rails 0 — the apparatus is unbiased.
+
+**Author ratification, attribution-precise.** The readout, the adversarial discrepancy list, and a
+three-decision table were presented as a reviewable artifact (per the CLAUDE.md "Proposing decisions"
+rule). The author replied verbatim: **"It is ratified."** and **"I want to open the physics change"**
+(2026-08-13). The itemization below is **orchestrator-derived** from the bundle that was on the page
+when those words were written — it is NOT a verbatim author dictation:
+
+- (i) branch **TRANSFER-CONFIRMED** accepted as the registered result of the campaign;
+- (ii) the three §11 operational deviation notes (runtime blowout + resubmission; V-T5 compliance-order;
+  contention resubmission 6259842) ratified;
+- (iii) the two deviations newly surfaced by the adjudicator ratified: **the prereg §5 pre-campaign
+  smoke was never run** (its abort-(a) input was substituted post hoc from array 6252702) and
+  **VT-D0(iv) was violated** (§11 was empty at instrument-commit time; first content at `e93f3068`,
+  after the first array had already run);
+- (iv) escalation **opened**: `/physics-change` intake on the estimator's photo-z handling — author-gated
+  and now author-opened, see row #100 when the gate package lands.
+
+**Standing disclosures carried forward** (non-branch-impacting, from the adjudication): contended-node
+per-seed CPU crossed the registered 8.66 CPU-h abort-(a) trip point in 11 of 40 heavy chunks (registered
+consequence would have been to *shrink* the campaign — running at full N was the conservative direction);
+V-T5 certified the core at `chunk_pairs=0` while every campaign chunk ran `chunk_pairs=16384` (ULP-scale,
+immaterial against ln_post separations of order unity); V-T2 exercised n_events_cap=40 on the dev box, not
+the 982-event chunk geometry; the package/repo rename (`227e7a32`) postdates the campaign, so V-T4's
+clean-rule wording names the old import path.
+
+**W1 (reserved rate-weights arm): NOT RUN — author-dropped 2026-08-13** as a standalone confirmation arm;
+its question (equal-weight vs rate-weighted candidate prior) is folded into the mechanism-isolation study
+that opens the physics-change thread. Seeds +46000…+46399 remain reserved and unconsumed. O2
+(`volume_deconv`) remains NOT-EVALUABLE and reserved (+47000…+47399).

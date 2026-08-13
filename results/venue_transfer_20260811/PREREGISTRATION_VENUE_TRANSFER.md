@@ -751,3 +751,20 @@ or reject the five compliance-order/operational deviation notes now on record; (
 fired branch (TRANSFER-CONFIRMED); (3) decide whether to order the reserved W1 (per-galaxy rate
 weights) and/or O2 (volume_deconv kernel form) arms; (4) decide whether to open the
 `/physics-change` intake on the estimator's photo-z handling (prepared, not opened).
+
+
+### 2026-08-13 — AUTHOR RATIFICATION of the readout entry and of all five pending deviations
+
+The readout entry above (branch **TRANSFER-CONFIRMED**, adversarial verdict CONFIRMED) and the full
+pending-deviation bundle were presented to the author as a reviewable artifact. The author replied
+verbatim: **"It is ratified."** — covering the branch, the three §11 operational deviation notes, and the
+two deviations surfaced by the adjudicator (the never-run §5 pre-campaign smoke, and the VT-D0(iv)
+violation whereby §11 was empty at instrument-commit time). The itemization is orchestrator-derived from
+the presented bundle, not a verbatim author dictation; ledger row #99 carries the same record.
+
+Escalation: the author opened the pre-stated `/physics-change` intake on the estimator's photo-z handling
+verbatim — **"I want to open the physics change"**. The reserved **W1** rate-weights arm is
+author-dropped as a standalone confirmation cell (seeds +46000…+46399 remain reserved and unconsumed);
+its question is carried into the mechanism-isolation study that opens the physics-change thread.
+
+No band, statistic, seed, or threshold anywhere above this line is altered by this note.
