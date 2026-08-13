@@ -368,3 +368,65 @@ a directional sub-prediction, reported alongside the verdict.
 
 *Verdict to be appended below by the session that reads out this study — after this file is
 committed, no edits above this line.*
+
+
+---
+
+## Operational completion record — 2026-08-13 (NOT a readout, NOT a verdict)
+
+Array **6303086** (`cluster/mechanism_isolation.sbatch`), partition `cpu_il`, 15 cores/task,
+12 h requested. **All 3 tasks COMPLETED**, zero FAILED/TIMEOUT:
+
+| task | arm | elapsed | seeds |
+|---|---|---|---|
+| 0 | MN0 (dose=all) | 00:58:08 | 20310808–20310822 |
+| 1 | MEH (dose=host) | 00:02:20 | 20310908–20310922 |
+| 2 | MEI (dose=impostors) | 00:56:30 | 20311008–20311022 |
+
+**Probe-vs-actual pair (EXP-61 discipline).** `sbatch --test-only` predicted a start of
+**2026-08-17T08:26** — four days out. Actual start was **within ~30 minutes of submission**, and the
+whole array completed **inside 1 h**. The probe ignores backfill and is again wrong by orders of
+magnitude for short wide jobs; second recorded instance after the venue-transfer campaign. The 12 h
+request (3.8 h uncontended × the 1.9× contention factor) was ~12× larger than needed — the arms are
+15 seeds rather than the campaign's 25, and the two heavy tasks shared an otherwise-quiet 128-core node.
+
+**Retrieval.** `rsync -az --exclude='*.md'` — the exclude is deliberate and stronger than
+`--ignore-existing`: it makes it impossible for a cluster copy to overwrite this registered file or
+`ARMS.md`. (The venue-transfer retrieval earlier on 2026-08-13 silently reverted its own prereg with
+a plain `rsync`; that is the incident this guard exists for.) Verified post-transfer: both `.md`
+files show no modification in `git status`.
+
+**Registered checks passing.** `K_sum = 1,193,703` on all 45 seeds across all three arms;
+`n_events = n_events_run = 982`; zero rails in any arm or channel; zero non-finite `ln_post`.
+Dosing verified per arm via `sigma_z_mean_pairs`: MN0 0.041813, MEI 0.041786 (impostors dosed),
+MEH 0.000035 (= 0.0418 × 982/1,193,703 — exactly and only the hosts).
+
+**Raw extraction (mechanical; no band scoring, no classification, no branch).**
+
+| arm | ch | N | bias | SE | post_sd median |
+|---|---|---|---|---|---|
+| MN0 | 1d | 15 | +0.034667 | 0.001579 | 0.004265 |
+| MN0 | 2d | 15 | +0.037000 | 0.001604 | 0.004315 |
+| MEH | 1d | 15 | +0.004000 | 0.000535 | 0.000187 |
+| MEH | 2d | 15 | +0.004333 | 0.000454 | 0.000262 |
+| MEI | 1d | 15 | +0.000000 | 0.000000 | 0.000000 |
+| MEI | 2d | 15 | +0.000000 | 0.000000 | 0.000000 |
+
+**Two facts the readout session must confront (stated here, adjudicated nowhere).**
+
+1. **The split is strongly non-additive.** MEH + MEI = +0.004 against MN0's +0.0347. The registered
+   DS-M5 prediction (MEI ≥ 0.030, MEH ≤ 0.012) is *inverted on its decisive half*: the impostor-only
+   arm carries **nothing**. Its posterior is not merely unbiased — it collapses onto a **single grid
+   point** holding all the mass (MN0 spreads over 10), i.e. one exact host redshift overwhelms
+   ~1,216 smeared impostors outright. Verified not to be an un-dosed arm: `sigma_z_mean_pairs` is
+   full and `K_sum` is pinned.
+2. **V-M1 fails as written.** Campaign decision-cell 1D bias +0.037237; MN0 measured +0.034667;
+   |Δ| = **0.002570 against a registered ±0.002 window**, so STUDY-CONFOUNDED fires mechanically.
+   Offered as disclosure and NOT as grounds to move the band: the N = 15 SE is 0.001579, so this is
+   a **1.63 σ** deviation, and the ±0.002 window was registered without accounting for the arm's own
+   sampling error — it is tighter than the statistic it gates. The 2D channel lands at +0.037000, on
+   the campaign value. **The band may not be adjusted after a readout (§3 anti-tuning); it is
+   recorded here as a design fault of this pre-registration, for the author's ruling.**
+
+The scoring readout and the branch call are pending and belong to a separate session; nothing above
+constitutes either.

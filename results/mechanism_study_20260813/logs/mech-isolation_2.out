@@ -1,0 +1,6 @@
+Loading bwUniCluster modules...
+  Loaded: compiler/gnu/14.2
+  Loaded: devel/cuda/12.8
+  Loaded: devel/python/3.13.3-gnu-14.2
+  Workspace: /pfs/work9/workspace/scratch/st_ac147838-emri
+mech-isolation task=2 cell=MEI truth=0.730 seeds=0:15 workers=15 host=uc2n861.localdomain commit=e83ed0b99fa77c3ce91cc58edea571b718aed981
