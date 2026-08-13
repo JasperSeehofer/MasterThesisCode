@@ -340,6 +340,16 @@ class VenueConfig:
             input).
         injection_data_dir: Injection pool defining ``S_4D`` (inherited
             estimator config, v2 §5 verbatim).
+        dose_target: Which ball members receive the σ_z dose — ``"all"`` (the
+            registered venue-transfer behaviour and the default), ``"host"``
+            or ``"impostors"``. The split-dose arms of the mechanism-isolation
+            study (``results/mechanism_study_20260813/``, prereg registered
+            2026-08-13, ARMS.md arm E1) are the only users of the non-default
+            values. The mask is applied AFTER every RNG draw, so all three
+            settings consume the identical stream in the identical order; an
+            undosed member also gets ``σ_k = 0`` so the estimator point-
+            evaluates it (matched-model — an exact redshift must not be given
+            a finite kernel).
         n_events_cap: Smoke/validate-only truncation of the pinned event list
             (divergence 9); ``None`` on registered runs.
         chunk_pairs: Event-aligned chunk target (divergence 2; never changes
@@ -353,6 +363,7 @@ class VenueConfig:
     sigma_mode: str
     flat_sigma_z: float = 0.035
     lambda_poisson: float = 4.0
+    dose_target: str = "all"
     crb_reference_csv: str = CRB_CSV_PATH
     frozeng_emit_json: str = FROZENG_EMIT_JSON
     pruned_catalogue_csv: str = PRUNED_CATALOGUE_CSV
@@ -819,7 +830,9 @@ def draw_ball_pinned(
     vctx: VenueContext,
     universe: cl.SyntheticUniverse,
     rng: np.random.Generator,
-) -> cg.HostBall:
+    *,
+    return_host_mask: bool = False,
+) -> cg.HostBall | tuple[cg.HostBall, npt.NDArray[np.bool_]]:
     """Draw the candidate balls with per-event PINNED multiplicity (VT-D2).
 
     The gate's :func:`~darksiren_emri.validation.calibration_gate.draw_ball`
@@ -833,11 +846,18 @@ def draw_ball_pinned(
         vctx: The venue context (pinned ``K``; impostor tables via ``gctx``).
         universe: The pinned event set with this seed's observation noise.
         rng: Seeded generator.
+        return_host_mask: If True, additionally return the boolean mask
+            selecting the host member of each event (one True per event,
+            positioned by the same lexsort the ball already applies). It is a
+            relabelling of draws that already happen and consumes NO
+            randomness, so the default and non-default paths are bit-identical
+            in every draw. Used by the split-dose arms (mechanism-isolation
+            prereg, ARMS.md AR-2).
 
     Returns:
         The :class:`~darksiren_emri.validation.calibration_gate.HostBall`
         with ``z_obs`` = TRUE member redshifts (σ_z texture applied by the
-        caller).
+        caller); or ``(ball, host_mask)`` when ``return_host_mask`` is set.
     """
     gctx = vctx.gctx
     n = universe.z_true.size
@@ -867,13 +887,19 @@ def draw_ball_pinned(
     ev_all = ev_all[order]
 
     K_real = np.bincount(ev_all, minlength=n).astype(np.int64)
-    return cg.HostBall(
+    ball = cg.HostBall(
         z_obs=z_all.copy(),
         event_idx=ev_all,
         K=K_real,
         n_impostors_total=total_imp,
         n_degenerate_windows=int(degenerate.sum()),
     )
+    if not return_host_mask:
+        return ball
+    # Pure relabelling of the draws above: the first n entries of the
+    # pre-sort concatenation are the hosts, carried through the SAME order.
+    is_host = np.concatenate([np.ones(n, dtype=bool), np.zeros(total_imp, dtype=bool)])[order]
+    return ball, is_host
 
 
 # ── Estimator: vector-σ generalization of the gate's ball path ───────────────
@@ -1333,6 +1359,50 @@ def run_seed_venue_hgrain(
     return _assemble_seed_record(seed, context, universe, ball, sigma_pairs, ln1, ln2, slope)
 
 
+def _apply_dose_mask(
+    dose_target: str,
+    host_mask: npt.NDArray[np.bool_],
+    sigma_pairs: npt.NDArray[np.float64],
+    noise: npt.NDArray[np.float64],
+    z_obs: npt.NDArray[np.float64],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Apply the σ_z dose to the selected ball members only (ARMS.md arm E1).
+
+    Called AFTER every RNG draw of the seed, so ``"all"``, ``"host"`` and
+    ``"impostors"`` consume the identical stream in the identical order and
+    differ only by which members the already-drawn dose reaches (V-M2 /
+    AR-3). Undosed members get ``σ_k = 0`` as well as an unperturbed
+    redshift, so the estimator point-evaluates them: an exact redshift must
+    never be handed a finite kernel (matched-model, prereg §5).
+
+    Args:
+        dose_target: ``"all"`` (registered default), ``"host"`` or
+            ``"impostors"``.
+        host_mask: True at the host member of each event.
+        sigma_pairs: The drawn per-candidate σ_z, pre-mask.
+        noise: The drawn standard-normal scatter vector, pre-mask.
+        z_obs: The ball's TRUE member redshifts, pre-dose.
+
+    Returns:
+        ``(sigma_pairs, z_obs)`` after masking.
+
+    Raises:
+        ValueError: If ``dose_target`` is not a registered value.
+    """
+    if dose_target == "all":
+        mask = np.ones(z_obs.size, dtype=bool)
+    elif dose_target == "host":
+        mask = host_mask
+    elif dose_target == "impostors":
+        mask = ~host_mask
+    else:
+        raise ValueError(f"unknown dose_target '{dose_target}'")
+    return (
+        np.where(mask, sigma_pairs, 0.0),
+        z_obs + np.where(mask, sigma_pairs * noise, 0.0),
+    )
+
+
 def _draw_seed_realization(
     seed: int, context: VenueContext
 ) -> tuple[cl.SyntheticUniverse, cg.HostBall, npt.NDArray[np.float64]]:
@@ -1385,15 +1455,23 @@ def _draw_seed_realization(
         ball = cg.draw_ball(gctx, universe, rng)
         sigma_pairs = np.full(ball.z_obs.size, vcfg.flat_sigma_z, dtype=np.float64)
     else:
-        ball = draw_ball_pinned(context, universe, rng)
+        ball_out = draw_ball_pinned(context, universe, rng, return_host_mask=True)
+        assert isinstance(ball_out, tuple)  # noqa: S101 - narrow the overload for mypy
+        ball, host_mask = ball_out
         if vcfg.sigma_mode == "zero":
             sigma_pairs = np.zeros(ball.z_obs.size, dtype=np.float64)
         elif vcfg.sigma_mode == "flat035":
             sigma_pairs = np.full(ball.z_obs.size, vcfg.flat_sigma_z, dtype=np.float64)
-            ball.z_obs = ball.z_obs + sigma_pairs * rng.standard_normal(ball.z_obs.size)
+            noise = rng.standard_normal(ball.z_obs.size)
+            sigma_pairs, ball.z_obs = _apply_dose_mask(
+                vcfg.dose_target, host_mask, sigma_pairs, noise, ball.z_obs
+            )
         elif vcfg.sigma_mode == "glade":
             sigma_pairs = draw_member_sigma_z(context, ball.z_obs, rng)
-            ball.z_obs = ball.z_obs + sigma_pairs * rng.standard_normal(ball.z_obs.size)
+            noise = rng.standard_normal(ball.z_obs.size)
+            sigma_pairs, ball.z_obs = _apply_dose_mask(
+                vcfg.dose_target, host_mask, sigma_pairs, noise, ball.z_obs
+            )
         else:
             raise ValueError(f"unknown sigma_mode '{vcfg.sigma_mode}'")
 
