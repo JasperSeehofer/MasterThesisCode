@@ -13,12 +13,12 @@
 # confirms M5'; MN0 must reproduce the campaign's +0.037 +- 0.002 or the study
 # is STUDY-CONFOUNDED and nothing else may be read.
 #
-# Submit (from ~/MasterThesisCode on the cluster; consult /cluster + preflight
+# Submit (from ~/darksiren-emri on the cluster; consult /cluster + preflight
 # first, require VERDICT: READY, probe with sbatch --test-only):
 #   mkdir -p results/mechanism_study_20260813/logs
 #   sbatch --array=0-2 --partition=cpu_il --cpus-per-task=15 --time=12:00:00 \
-#     --output="$HOME/MasterThesisCode/results/mechanism_study_20260813/logs/%x_%a.out" \
-#     --error="$HOME/MasterThesisCode/results/mechanism_study_20260813/logs/%x_%a.err" \
+#     --output="$HOME/darksiren-emri/results/mechanism_study_20260813/logs/%x_%a.out" \
+#     --error="$HOME/darksiren-emri/results/mechanism_study_20260813/logs/%x_%a.err" \
 #     cluster/mechanism_isolation.sbatch
 #
 # Budget: MN0/MEI are heavy (all impostors dosed => the sigma_z>0 quadrature
@@ -39,7 +39,7 @@
 
 set -euo pipefail
 
-PROJECT_ROOT="${PROJECT_ROOT:-$HOME/MasterThesisCode}"
+PROJECT_ROOT="${PROJECT_ROOT:-$HOME/darksiren-emri}"
 source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 cd "$PROJECT_ROOT"

@@ -14,7 +14,7 @@
 # output: $WS/campaign_orchestrator_submissions.log.
 #
 # Launch:
-#   cd ~/MasterThesisCode && nohup bash cluster/campaign_orchestrator.sh \
+#   cd ~/darksiren-emri && nohup bash cluster/campaign_orchestrator.sh \
 #       > /dev/null 2>&1 & disown
 # Status:  tail $(ws_find emri)/campaign_orchestrator.log
 # Stop:    pkill -f 'campaign_orchestrator[.]sh'   # bracket idiom: don't match the ssh wrapper shell

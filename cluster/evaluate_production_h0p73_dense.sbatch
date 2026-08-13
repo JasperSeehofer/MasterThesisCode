@@ -43,7 +43,7 @@ fi
 # system python3 on compute nodes does not have numpy)
 # ---------------------------------------------------------------------------
 
-PROJECT_ROOT="${PROJECT_ROOT:-$HOME/MasterThesisCode}"
+PROJECT_ROOT="${PROJECT_ROOT:-$HOME/darksiren-emri}"
 source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 

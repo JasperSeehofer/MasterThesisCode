@@ -12,7 +12,7 @@ There are **two distinct directories**, and confusing them causes most failures:
 
 | | What | Where |
 |---|---|---|
-| **PROJECT_ROOT** | the **code** + the **galaxy catalog** | `~/MasterThesisCode` (the one repo) |
+| **PROJECT_ROOT** | the **code** + the **galaxy catalog** | `~/darksiren-emri` (the one repo) |
 | **RUN_DIR** | this run's **output** (logs, CSVs, posteriors) | `$WORKSPACE/run_YYYYMMDD_seedS/` |
 
 The package uses **relative paths from the current working directory**:
@@ -30,7 +30,7 @@ no shared `$PROJECT_ROOT/simulations` symlink to fight over anymore.
 
 **Env threading:** submit wrappers pass everything the sbatch needs via
 `sbatch --export=ALL,RUN_DIR=…,BASE_SEED=…`. The sbatch validates them and falls
-back to `PROJECT_ROOT=${PROJECT_ROOT:-$HOME/MasterThesisCode}`.
+back to `PROJECT_ROOT=${PROJECT_ROOT:-$HOME/darksiren-emri}`.
 
 **Modules:** `.venv/bin/python` is linked to the module `libpython3.13.so`. Every
 job `source cluster/modules.sh` (which also exports `$WORKSPACE`, `$PROJECT_ROOT`,
@@ -73,7 +73,7 @@ Summary for anyone writing or resizing a new sbatch:
 
 ## 3. The three regular pipelines (exact commands)
 
-Run all of these **from `~/MasterThesisCode` after `source cluster/modules.sh`.**
+Run all of these **from `~/darksiren-emri` after `source cluster/modules.sh`.**
 
 ### 3a. Simulation → CRB (+ auto merge → evaluate → combine)
 One command chains simulate (GPU) → merge (CPU) → evaluate (CPU) → combine:
@@ -166,7 +166,7 @@ For a quick interactive GPU/CPU shell instead of a batch script:
 ```bash
 salloc --partition=dev_gpu_h100 --gres=gpu:1 --time=00:20:00
 # then, on the allocated node:
-cd ~/MasterThesisCode && source cluster/modules.sh && source .venv/bin/activate
+cd ~/darksiren-emri && source cluster/modules.sh && source .venv/bin/activate
 python -m darksiren_emri /tmp/testrun --simulation_steps 2 --seed 1 --use_gpu
 ```
 For a batch one-off, copy `cluster/JOB_TEMPLATE.sbatch` and submit with a small
@@ -226,7 +226,7 @@ inline wrapper that makes `RUN_DIR` and passes `--export`.
 ## 7. Pre-launch checklist
 
 1. `ssh bwunicluster 'bash -s' < cluster/preflight.sh` → `VERDICT: READY ✓`.
-2. Right **branch/commit** (`git -C ~/MasterThesisCode log -1`)? Catalog **8-col**?
+2. Right **branch/commit** (`git -C ~/darksiren-emri log -1`)? Catalog **8-col**?
 3. `source cluster/modules.sh` (so `$WORKSPACE` resolves).
 4. **Test small first** (`--tasks 2 --steps 10`, or the smoke test).
 5. Set `--seed`. Note the printed `RUN_DIR` + job IDs.

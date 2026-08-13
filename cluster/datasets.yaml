@@ -22,7 +22,7 @@
 
 meta:
   workspace: /pfs/work9/workspace/scratch/st_ac147838-emri   # ws_find emri
-  dev_box_repo: /home/jasper/Repositories/MasterThesisCode
+  dev_box_repo: /home/jasper/Repositories/darksiren-emri
   commission_base: {tag: commission-base, commit: b593f02, branch: physics/photoz-joint-normalisation}
   expected_catalog_cols: 8            # reduced_galaxy_catalogue.csv (redshift-flag retained, 479afdd+)
   retirement_banner: "DATA_INVENTORY.md — all pre-2026-06-20 (pre mass-convention + L_cat fixes) CRBs/injections/posteriors are RETIRED"

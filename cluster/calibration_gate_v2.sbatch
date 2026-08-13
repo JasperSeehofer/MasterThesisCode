@@ -8,10 +8,10 @@
 #   9: V1 0.730
 # Seeds are pinned INSIDE the instrument by the prereg seed plan (base 20260808 +
 # registered offsets); SLURM_ARRAY_TASK_ID selects the job, never the seed.
-# Submit (from ~/MasterThesisCode on the cluster):
+# Submit (from ~/darksiren-emri on the cluster):
 #   sbatch --array=0-9 --partition=dev_cpu_il --cpus-per-task=64 --time=00:25:00 \
-#     --output="$HOME/MasterThesisCode/results/calibration_gate_v2_20260810/logs/%x_%a.out" \
-#     --error="$HOME/MasterThesisCode/results/calibration_gate_v2_20260810/logs/%x_%a.err" \
+#     --output="$HOME/darksiren-emri/results/calibration_gate_v2_20260810/logs/%x_%a.out" \
+#     --error="$HOME/darksiren-emri/results/calibration_gate_v2_20260810/logs/%x_%a.err" \
 #     cluster/calibration_gate_v2.sbatch
 # Fallback partition for re-runs without the 30-min cap: cpu_il / cpu (128 cpus).
 
@@ -20,7 +20,7 @@
 
 set -euo pipefail
 
-PROJECT_ROOT="${PROJECT_ROOT:-$HOME/MasterThesisCode}"
+PROJECT_ROOT="${PROJECT_ROOT:-$HOME/darksiren-emri}"
 source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 cd "$PROJECT_ROOT"

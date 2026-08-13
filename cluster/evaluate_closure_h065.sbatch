@@ -38,7 +38,7 @@ H_VALUE="${H_VALUES[$SLURM_ARRAY_TASK_ID]}"
 # Environment setup
 # ---------------------------------------------------------------------------
 
-PROJECT_ROOT="${PROJECT_ROOT:-$HOME/MasterThesisCode}"
+PROJECT_ROOT="${PROJECT_ROOT:-$HOME/darksiren-emri}"
 source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 

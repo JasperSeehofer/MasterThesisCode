@@ -27,7 +27,7 @@ Only proceed when it says `VERDICT: READY ✓`. Paths/expectations live in
 
 ### Canonical facts (verify with preflight, don't assume)
 - **SSH alias:** `bwunicluster` (works non-interactively / `BatchMode`).
-- **ONE repo:** `~/MasterThesisCode`. Do **not** make separate clones/worktrees for
+- **ONE repo:** `~/darksiren-emri`. Do **not** make separate clones/worktrees for
   parallel or "frozen" work — instead branch and **tag** (e.g. `commission-base`);
   archaeology returns via `git checkout <tag>`. (A redundant `mtc-eval` worktree
   was retired 2026-07-01 for exactly this reason.)
@@ -43,7 +43,7 @@ Only proceed when it says `VERDICT: READY ✓`. Paths/expectations live in
 2. **Catalog schema.** `reduced_galaxy_catalogue.csv` must be **8 columns**
    (redshift-flag retained, commit 479afdd+). A 6/7-col copy is stale and read
    silently. It is gitignored (~1.6 GB); stage from the dev box:
-   `rsync -avz --partial darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv bwunicluster:MasterThesisCode/darksiren_emri/galaxy_catalogue/`
+   `rsync -avz --partial darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv bwunicluster:darksiren-emri/darksiren_emri/galaxy_catalogue/`
    (GLADE+.txt is not on the cluster; the reduced csv cannot self-rebuild there.)
 3. **Zombie jobs.** A failed parent leaves dependents `DependencyNeverSatisfied` —
    they never run and clog the view. Preflight flags them; clear with `scancel <id>`.
@@ -105,7 +105,7 @@ Output root:  $WORKSPACE/run_YYYYMMDD_seedS/
 
 ### Launching jobs & writing new ones
 Full guide with exact commands for every case: **`cluster/LAUNCHING_JOBS.md`**.
-- **Mental model:** PROJECT_ROOT (`~/MasterThesisCode`, code+catalog) vs RUN_DIR
+- **Mental model:** PROJECT_ROOT (`~/darksiren-emri`, code+catalog) vs RUN_DIR
   (`$WORKSPACE/run_*`, output). Jobs `cd $PROJECT_ROOT` then
   `ln -sfn $RUN_DIR/simulations $PROJECT_ROOT/simulations` (the pipeline uses
   relative paths from CWD). Env is threaded via `sbatch --export=ALL,RUN_DIR=…`.

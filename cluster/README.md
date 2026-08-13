@@ -16,7 +16,7 @@ Five commands from login to results:
 
 2. Pull the latest code:
    ```bash
-   cd ~/MasterThesisCode && git pull
+   cd ~/darksiren-emri && git pull
    ```
 
 3. First-time setup (only needed once):

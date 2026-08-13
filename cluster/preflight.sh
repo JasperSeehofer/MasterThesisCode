@@ -11,14 +11,14 @@
 #   • From the dev box (recommended — no need to place it on the cluster):
 #       ssh bwunicluster 'bash -s' < cluster/preflight.sh
 #   • On the cluster directly:
-#       bash ~/MasterThesisCode/cluster/preflight.sh
+#       bash ~/darksiren-emri/cluster/preflight.sh
 #
 # It is read-only: it never submits, cancels, edits, or deletes anything.
 
 # --- config (overridable via env; falls back to cluster.env if present) --------
-REPO="${CLUSTER_REPO:-$HOME/MasterThesisCode}"
+REPO="${CLUSTER_REPO:-$HOME/darksiren-emri}"
 [ -f "$REPO/cluster/cluster.env" ] && . "$REPO/cluster/cluster.env" 2>/dev/null
-REPO="${CLUSTER_REPO:-$HOME/MasterThesisCode}"
+REPO="${CLUSTER_REPO:-$HOME/darksiren-emri}"
 WS_NAME="${CLUSTER_WORKSPACE_NAME:-emri}"
 EXPECT_COLS="${EMRI_EXPECTED_CATALOG_COLS:-8}"
 WARN_DAYS="${EMRI_WORKSPACE_WARN_DAYS:-14}"

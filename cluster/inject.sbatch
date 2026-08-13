@@ -27,8 +27,8 @@ set -euo pipefail
 
 # SLURM copies sbatch scripts to /var/spool/slurmd/ before execution, so
 # BASH_SOURCE[0] points to the spool copy. Use PROJECT_ROOT (exported by
-# submit_injection.sh via --export=ALL) or fall back to ~/MasterThesisCode.
-PROJECT_ROOT="${PROJECT_ROOT:-$HOME/MasterThesisCode}"
+# submit_injection.sh via --export=ALL) or fall back to ~/darksiren-emri.
+PROJECT_ROOT="${PROJECT_ROOT:-$HOME/darksiren-emri}"
 source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 

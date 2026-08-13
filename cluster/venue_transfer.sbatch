@@ -14,11 +14,11 @@
 # v3 offsets +40000..+45399); SLURM_ARRAY_TASK_ID selects the job, never the seed.
 # Reserved blocks +46000 (W1) / +47000 (O2) are NOT built and have no task here.
 #
-# Submit (from ~/MasterThesisCode on the cluster; consult /cluster + preflight first,
+# Submit (from ~/darksiren-emri on the cluster; consult /cluster + preflight first,
 # require VERDICT: READY, probe with sbatch --test-only — prereg §5 venue rule):
 #   sbatch --array=0-48 --partition=cpu_il --cpus-per-task=64 --time=04:00:00 \
-#     --output="$HOME/MasterThesisCode/results/venue_transfer_20260811/logs/%x_%a.out" \
-#     --error="$HOME/MasterThesisCode/results/venue_transfer_20260811/logs/%x_%a.err" \
+#     --output="$HOME/darksiren-emri/results/venue_transfer_20260811/logs/%x_%a.out" \
+#     --error="$HOME/darksiren-emri/results/venue_transfer_20260811/logs/%x_%a.err" \
 #     cluster/venue_transfer.sbatch
 # Prereg budget: heavy seed ~4.33 CPU-h derived => ~<=2 h wall/task predicted at 64
 # workers (<=4 h requested). Smoke-measured per-seed CPU is the abort-(a) input —
@@ -53,7 +53,7 @@
 
 set -euo pipefail
 
-PROJECT_ROOT="${PROJECT_ROOT:-$HOME/MasterThesisCode}"
+PROJECT_ROOT="${PROJECT_ROOT:-$HOME/darksiren-emri}"
 source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 cd "$PROJECT_ROOT"

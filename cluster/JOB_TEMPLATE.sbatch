@@ -28,7 +28,7 @@ set -euo pipefail
 # ---- 2. Environment (identical in every job — do not change) -----------------
 # SLURM runs a spool copy of this file, so BASH_SOURCE is useless here. Rely on
 # PROJECT_ROOT exported by the wrapper (--export=ALL), else fall back.
-PROJECT_ROOT="${PROJECT_ROOT:-$HOME/MasterThesisCode}"
+PROJECT_ROOT="${PROJECT_ROOT:-$HOME/darksiren-emri}"
 source "$PROJECT_ROOT/cluster/modules.sh"   # loads gnu/cuda/python modules; needed for libpython
 source "$VENV_PATH/bin/activate"            # $VENV_PATH exported by modules.sh
 

@@ -81,7 +81,7 @@ echo "[setup] Pushing evaluate_closure_h_true_finegrid.sbatch to cluster..."
 for i in 1 2 3 4 5; do
     if scp -o ConnectTimeout=20 -o ConnectionAttempts=3 \
         "$PROJECT_ROOT/cluster/evaluate_closure_h_true_finegrid.sbatch" \
-        "$CLUSTER_HOST:~/MasterThesisCode/cluster/" 2>&1; then
+        "$CLUSTER_HOST:~/darksiren-emri/cluster/" 2>&1; then
         echo "  pushed."
         break
     fi
@@ -126,11 +126,11 @@ for h_truth in $TRUTHS; do
     # 4. Submit — array/partition/cpus chosen at orchestrator entry; sbatch
     #    stride logic auto-adapts via SLURM_ARRAY_TASK_COUNT.
     echo "[4/5] Submitting sbatch on $SBATCH_PARTITION (array=$SBATCH_ARRAY, cpus=$SBATCH_CPUS)..."
-    submit_out=$(ssh_retry "cd ~/MasterThesisCode && \
+    submit_out=$(ssh_retry "cd ~/darksiren-emri && \
         sbatch --array=$SBATCH_ARRAY \
             --partition=$SBATCH_PARTITION \
             --cpus-per-task=$SBATCH_CPUS \
-            --export=ALL,RUN_DIR=$cluster_run_dir,H_TRUE=$h_truth,PROJECT_ROOT=\$HOME/MasterThesisCode \
+            --export=ALL,RUN_DIR=$cluster_run_dir,H_TRUE=$h_truth,PROJECT_ROOT=\$HOME/darksiren-emri \
             --output=$cluster_run_dir/simulations/logs/closure_multi_%A_%a.out \
             --error=$cluster_run_dir/simulations/logs/closure_multi_%A_%a.err \
             cluster/evaluate_closure_h_true_finegrid.sbatch")

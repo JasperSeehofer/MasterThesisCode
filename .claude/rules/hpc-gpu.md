@@ -23,7 +23,7 @@ improvise SSH/SLURM commands from memory:
 3. **To launch or write a job**, follow `cluster/LAUNCHING_JOBS.md` and copy
    `cluster/JOB_TEMPLATE.sbatch`. Test small first (`--tasks 2 --steps 10`).
 
-There is **ONE repo** on the cluster (`~/MasterThesisCode`); never create separate
+There is **ONE repo** on the cluster (`~/darksiren-emri`); never create separate
 clones/worktrees for parallel or "frozen" work — branch + tag instead. Dataset
 locations/provenance: `cluster/datasets.yaml`; staleness tiers: `DATA_INVENTORY.md`.
 
