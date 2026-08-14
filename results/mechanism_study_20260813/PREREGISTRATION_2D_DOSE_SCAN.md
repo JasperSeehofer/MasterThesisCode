@@ -709,3 +709,77 @@ author, never self-adjudicated.**
 
 *Verdict to be appended below by the session that reads out this scan — after this file is
 committed, no edits above this line.*
+
+---
+
+## VERDICT (appended by the read-out session, 2026-08-14)
+
+Scored against `results/mechanism_study_20260813/SCAN_READOUT.md` /
+`score_2d_scan_output.json` (`score_2d_scan.py`), instrument commit `3aedbe55`, data commit
+`5b0bd17a`.
+
+- **BRANCH 2 — INTERACTION-BILINEAR — fired by the registered tree**, checked in the registered
+  order. Branch 1 did not fire (0 of 4 confound members). DS-D2 NON-ADDITIVE at S33 (D = +0.033667,
+  23.4σ); DS-D3 SHAPE-INTERACTION at S23 (b = +0.023650 ≥ 0.01150132, +28.2 realized SE above the
+  boundary). Branches 3/4/5 not reached — branch 5 is the residual "anything else" class and is
+  unreachable once branch 2 fires.
+- **BRANCH 2's PRE-STATED MEANING IS BARRED FROM BEING QUOTED.** The registered meaning ("a genuine
+  product-form interaction", strictly bilinear D = I·f_h·f_i) is refuted by the scan's own
+  registered statistics: b(S23) sits +10.33σ above H-INT's own point prediction 0.017333 using the
+  REGISTERED SE (+14.64σ using the realized SE); bilinear residuals are positive at all nine
+  evaluable cells and >3σ at S22 (+3.76), S31 (+7.64) and S23 (+5.47). H-THRESH is independently
+  refuted on its own terms at 17.96σ (S13) and 50.18σ (S23). **Both registered shapes are wrong.**
+- **REGISTERED DEFECT RECORDED — DS-D3 is a one-sided threshold with no upper edge**, so
+  SHAPE-INTERACTION fires for any sufficiently large value, INCLUDING values that refute the
+  hypothesis it names. The threshold is NOT adjusted (§4.7 anti-tuning); it is recorded here as a
+  design fault of this pre-registration for a future amendment, exactly as the ±0.002 V-M1 window
+  was recorded in AMENDMENT_A1 §3. Author ruling on this recording is captured in the ledger row.
+- **The positive finding — GATE × AMPLIFIER, not a symmetric product.** The host is an ABSOLUTE
+  gate: the entire f_host=0 row is exactly +0.000000 at every impostor dose including full dose,
+  60/60 seeds, degenerate posterior (map_1d == map_2d == 0.73 exactly, post_sd == 0.0 exactly). The
+  impostor sea is a GRADED AMPLIFIER: removing it leaves +0.0047…+0.0060, about 15 % of the effect.
+  This supports half of branch 2's pre-stated consequence and refutes the other half.
+- **Confirmed collateral**: the parity argument is confirmed and sharpened; the M5 reweighting
+  closure remains binding (no weight change turns a bias into an EXACT zero with a degenerate
+  posterior); §5.4's sub-prediction is confirmed — the f_imp=0 column is small and POSITIVE at all
+  four host doses and never negative, so the interaction does not deliver `pp_coverage`'s
+  −0.02…−0.046, leaving the M1 negative quadratic term as the pre-named carrier of that sign flip.
+- **NOT supported, stated explicitly**: the apparent flat middle interval at f_host=1 is 1.17σ,
+  UNRESOLVED — no plateau claim licensed. The f_host=0.5 dip is 2.93σ, MARGINAL, NOT established.
+  No functional form was fitted: the registered floor gives 5.175 distinguishable levels and §6
+  item 8 bars finer claims. NO REPAIR IS PROPOSED.
+- **Adversarially verified: CONFIRMED.** All DS-D1..DS-D6 scores, corner checks, dosing checks and
+  the branch determination reproduced independently; no band loosened, interpolated, or taken from
+  the wrong N row; seed plan 325 unique with zero collisions across all 120 cell pairs. Notably the
+  verifier re-derived the §6 item 1 exclusion threshold (0.16310) independently and confirmed the
+  excluded low-corner set is exactly {S11, S12, S21} as registered pre-data — and that this
+  exclusion runs AGAINST the readout's own conclusion, since those cells carry the largest
+  anti-bilinear residuals.
+- **Disclosures raised by verification, recorded not cleaned up**: (i) V-D5 is labelled PASS in the
+  readout header but is strictly NOT-EVALUABLE for the 16 scan cells, which run on fresh seeds with
+  no committed golden — the body discloses the scope, the header over-claims; a non-evaluable check
+  is not a failed one, so branch 1 is unaffected. (ii) The f_host=0.5 dip call is
+  CONVENTION-FRAGILE: 2.93σ under the inherited ddof=1 convention but 3.034σ (RESOLVED) under
+  ddof=0 — undisclosed in the readout, the single "not established" call sitting inside rounding
+  distance of its boundary. (iii) §4.7's "supported at >3σ" item 3 contradicts its own §4.6 caveat:
+  the f_host=0.25 row difference is 1.36σ. (iv) The H-INT-prediction distance uses the realized SE
+  without disclosure (registered SE gives +10.33σ). (v) V-D2 / AD-1..AD-3 were not re-executed.
+  (vi) Undisclosed naming deviation: prereg §2.1 fixes two fields `dose_frac_host`/`dose_frac_imp`,
+  the implementation uses a single `dose_scales` tuple — semantics and float operand order
+  identical, corners reduce exactly, so naming only.
+
+### Author ratification, attribution-precise
+
+The author approved the readout work with the verbatim words **"all approved as you recommend"** —
+this covered the [DO] items only. On the branch question the author FIRST ruled **"as you
+recommended"** for branch 5, on the basis of an ORCHESTRATOR FRAMING that adversarial verification
+subsequently CORRECTED (the framing had called branch 5's condition "factually satisfied but
+unreachable"; branch 5 is in fact the residual "anything else" class and the tree genuinely fires
+branch 2). **The branch-5 ruling is SUPERSEDED** for this reason. The orchestrator brought the
+corrected framing back to the author rather than letting the superseded ruling stand, and the
+author then ruled verbatim **"a"** against a presented two-option table — i.e. the final ruling
+records branch 2 as fired, with the DS-D3 defect logged and branch 2's meaning barred, exactly as
+stated above. Every itemisation in this verdict is orchestrator-derived, not author dictation. The
+approval-scope convention now in `CLAUDE.md` (commit `804b4c5d`) — [DO]/[RULE]/[STANDING] tags,
+with the binding default that an approval never propagates to a decision whose inputs did not exist
+when it was given — exists because of this correction loop.

@@ -416,3 +416,92 @@ clean-rule wording names the old import path.
 its question (equal-weight vs rate-weighted candidate prior) is folded into the mechanism-isolation study
 that opens the physics-change thread. Seeds +46000…+46399 remain reserved and unconsumed. O2
 (`volume_deconv`) remains NOT-EVALUABLE and reserved (+47000…+47399).
+
+---
+
+### Row #100 — thread 17 mechanism isolation + Amendment A1: V-M1 null re-measured at N=100, A1-PASS
+
+**Mechanism-isolation register, before any instrument run.** Six-candidate register and four L0
+closures: **M3 refuted** (implied shift +6.0e-7 vs the observed +0.0372, short by 6.2e4 and wrong
+dose trend); **M4 refuted** (the "missing" term is identically 1 and deleting α outright leaves the
+σ_z keying intact at +0.0165); **M1 refuted as sole mechanism on SIGN** (predicting H0 LOW),
+retained as a fitted negative quadratic b ≈ −5.29 with the linear driver a ≈ +1.15, the quantity
+every candidate must supply; **M5-as-stated refuted on attribution** (76 % of the bias survives an
+unscattered population); **M2 refuted by the T-0 anchor**. The split-dose arms and the
+NON-ADDITIVE result (MEH +0.004000 + MEI +0.000000 vs MN0 +0.034667).
+
+**The V-M1 false-fail and its resolution.** The ±0.002 window was ASSERTED not derived, carried a
+~21 % false-fail rate under an exact null, and was settled ON DATA at N = 100 rather than widened.
+**A1-PASS**: MN0X 1D mean bias +0.037250 ± 0.000494 vs reference 0.037237, |Δ| = 0.000013, 153.8×
+inside the unchanged ±0.002 window. A1-DET bit-identical across the `e83ed0b9 → 3aedbe55`
+cross-commit refactor, 15/15 seeds, 44 fields, max relative deviation 0.0. Adversarially verified
+CONFIRMED across all 425 seeds. Does NOT retroactively pass the N = 15 MN0 result — that remains
+FAILED on the record. **The registered-defect precedent this sets**: a design fault in a
+pre-registered window is recorded rather than quietly widened, exactly as DS-D3's one-sided
+threshold defect is recorded in row #101.
+
+Evidence commits: `73141160` (prereg, A1 amendment + 2D scan, author-ratified), `3aedbe55`
+(instrument), `5b0bd17a` (data retrieved). Key artifacts in `../../../mechanism_study_20260813/`:
+`PREREGISTRATION_MECHANISM_ISOLATION.md`, `AMENDMENT_A1_VM1_NULL_AT_N100.md` (+ verdict block,
+this row), `ARMS.md`, `M1_missing_volume_prior.md`, `M3_truncation_window.md`,
+`M4_alpha_sigma_blindness.md`, `M5_smeared_candidate_prior.md`, `A1_READOUT.md`/`.json`,
+`score_a1.py`, `MN0X_h0p730_results_seeds0_100.json` + `MN0`/`MEH`/`MEI` arm JSONs.
+
+---
+
+### Row #101 — thread 17 2D dose scan: BRANCH 2 fired, meaning barred, gate × amplifier
+
+**Branch determination.** `PREREGISTRATION_2D_DOSE_SCAN.md`'s registered tree, checked in the
+registered order, fires **BRANCH 2 — INTERACTION-BILINEAR**: DS-D2 NON-ADDITIVE at S33
+(D = +0.033667, 23.4σ) and DS-D3 SHAPE-INTERACTION at S23 (b = +0.023650 ≥ 0.01150132, +28.2
+realized SE above the boundary). Branch 1 (SCAN-CONFOUNDED) did not fire, 0 of 4 members, including
+Amendment A1 returning A1-PASS (row #100). Branches 3/4/5 not reached.
+
+**Meaning barred.** Branch 2's pre-stated meaning — a genuine strictly-bilinear product-form
+interaction D = I·f_h·f_i — is refuted by the scan's own registered statistics: b(S23) sits
++10.33σ above H-INT's own point prediction using the registered SE (+14.64σ realized); bilinear
+residuals positive at all nine evaluable cells, >3σ at S22/S31/S23. H-THRESH independently refuted
+at 17.96σ/50.18σ. **Both registered shapes are wrong; branch 2's meaning clause is barred from
+being quoted.**
+
+**Registered defect recorded, not repaired.** DS-D3 is a one-sided threshold with no upper edge, so
+SHAPE-INTERACTION fires for any sufficiently large value, including values that refute the
+hypothesis it names. Not adjusted (§4.7 anti-tuning); recorded as a design fault for a future
+amendment.
+
+**Positive finding — gate × amplifier.** Host is an absolute gate: f_host=0 row exactly
++0.000000 at every impostor dose, 60/60 seeds, degenerate posterior. Impostor sea is a graded
+amplifier: removing it leaves +0.0047…+0.0060, ~15 % of the effect. Supports half of branch 2's
+pre-stated consequence, refutes the other half.
+
+**Collateral confirmed:** the parity argument sharpened; the M5 reweighting closure remains
+binding; §5.4's sub-prediction confirmed (f_imp=0 column small and positive at all four host doses,
+never negative — the M1 negative quadratic term remains the pre-named carrier of `pp_coverage`'s
+sign flip). **Not supported**: the f_host=1 flat-middle claim (1.17σ, UNRESOLVED) and the
+f_host=0.5 dip (2.93σ, MARGINAL). No functional form fitted; no repair proposed.
+
+**Adversarially verified CONFIRMED** — all DS-D1..DS-D6 scores, corner and dosing checks, and the
+branch determination reproduced independently; six disclosures recorded (V-D5 header over-claim,
+dip-call convention-fragility, an internal §4.6/§4.7 contradiction, undisclosed SE choice in the
+H-INT distance, two un-re-executed checks, and a naming-only field deviation) — none change the
+branch call.
+
+**Author ratification, attribution-precise — record the correction loop.** The author approved the
+readout work with the verbatim words **"all approved as you recommend"**, covering the [DO] items
+only. On the branch question the author FIRST ruled **"as you recommended"** for branch 5, on the
+basis of an orchestrator framing subsequently CORRECTED by adversarial verification (the framing
+had called branch 5's condition "factually satisfied but unreachable"; branch 5 is in fact the
+residual "anything else" class, and the tree genuinely fires branch 2). **The branch-5 ruling is
+SUPERSEDED.** The orchestrator brought the corrected framing back to the author rather than letting
+the superseded ruling stand, and the author then ruled verbatim **"a"** against a presented
+two-option table — the final ruling: record branch 2 as fired, DS-D3 defect logged, branch 2's
+meaning barred. Every itemisation above is orchestrator-derived, not author dictation. This
+correction loop is the reason the approval-scope convention now in `CLAUDE.md` (commit `804b4c5d`)
+exists: **[DO]/[RULE]/[STANDING]** tags, with the binding default that an approval never propagates
+to a decision whose inputs did not exist when it was given.
+
+Evidence commits: `73141160` (prereg, author-ratified), `3aedbe55` (instrument), `5b0bd17a` (data
+retrieved), `804b4c5d` (CLAUDE.md approval-scope tags, unpushed prior to this row). Key artifacts
+in `../../../mechanism_study_20260813/`: `PREREGISTRATION_2D_DOSE_SCAN.md` (+ verdict block, this
+row), `SCAN_READOUT.md`, `score_2d_scan.py`, `score_2d_scan_output.json`, `S00`…`S33` arm JSONs,
+`adjudicate_mechanism_study.py` + output JSON.

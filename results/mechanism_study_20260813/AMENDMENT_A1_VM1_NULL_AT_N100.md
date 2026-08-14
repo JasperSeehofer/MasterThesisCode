@@ -367,3 +367,39 @@ branch call, which remains pending and belongs to a separate session.**
 
 *Verdict to be appended below by the session that reads out MN0X — after this file is committed, no
 edits above this line.*
+
+---
+
+## VERDICT (appended by the read-out session, 2026-08-14)
+
+Scored against `results/mechanism_study_20260813/A1_READOUT.md` /
+`A1_READOUT.json` (`score_a1.py`), instrument commit `3aedbe55`, data commit `5b0bd17a`.
+
+- **A1-PASS.** MN0X 1D mean bias +0.037250 ± 0.000494 vs reference 0.037237; |Δ| = 0.000013
+  against the UNCHANGED ±0.002 window, 153.8× inside, 0.024σ of the difference SE. Registered
+  pre-data prediction +0.03685 ± 0.00056 met at +0.71σ.
+- The measurement is as close as the statistic allows: at N = 100 a mean is an integer multiple of
+  5e-5; the reference sits at 744.74 ticks (unattainable), the measurement at 745 exactly.
+- The 85 FRESH seeds alone mean +0.037706 ± 0.000499, i.e. +3.57σ above the registered fail
+  threshold; the original N = 15 block was a −1.90σ fluctuation of its own seeds.
+- 2D secondary +0.039750 vs 0.039713, also inside. No 1D/2D split. A1-FAIL does not fire.
+- **A1-DET PASS, exceeding its registered minimum**: 15/15 shared seeds compared (registered
+  minimum 2) across 44 value fields each including both full 41-point `ln_post` vectors; max
+  relative deviation 0.0, bit-identical, MAPs exactly equal. A genuine CROSS-COMMIT test (MN0 at
+  `e83ed0b9`, MN0X at `3aedbe55`, which refactors the dose application), so it empirically confirms
+  `ARMS.md` AR-1 on real campaign data. The run log confirms seeds=0:100 were recomputed fresh, no
+  stored record reused — more conservative than registered.
+- **Adversarially verified: CONFIRMED.** Independent reimplementation rebuilt every
+  posterior-derived statistic from raw `ln_post` vectors for all 425 seeds with max deviation
+  exactly 0.0.
+- **What A1-PASS does NOT license**: it does not retroactively pass the N = 15 MN0 result (A1 §3
+  bars it; MN0's V-M1 status at N = 15 remains FAILED). The correct reading is that the null is now
+  measured at a precision where the registered window is meaningful, and at that precision it
+  reproduces. No band changed.
+- **Open disclosure D-A1-2: V-M5 was NOT re-executed at `3aedbe55`.** A1-DET's bit-identity plus
+  the AR unit tests are strong evidence but are not the registered V-M5 artifact. Carried forward
+  for the parent readout session. Also D-A1-3: MEH/MEI sit at the pre-refactor commit.
+- Verification's two cosmetic notes on A1: one line mixes ddof=0 and ddof=1 SE conventions
+  (4.07/3.68 vs 4.05/3.67 — verdict unchanged); and the quantisation argument says "the 0.005 grid
+  spacing" when the canonical grid is non-uniform {0.005, 0.01} — the argument holds because all
+  100 MAPs land in the fine region, but the condition was unstated.
