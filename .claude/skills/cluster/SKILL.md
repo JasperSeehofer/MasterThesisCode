@@ -5,7 +5,6 @@ description: >
   the always-run-first preflight readiness gate, submit/monitor/retrieve recipes,
   the dataset inventory, and the known gotchas. Use whenever a task involves the
   cluster — before submitting jobs, checking state, or retrieving results.
-disable-model-invocation: true
 argument-hint: [preflight | status | submit | pull | inventory]
 allowed-tools: Bash, Read
 ---
