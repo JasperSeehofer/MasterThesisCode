@@ -256,3 +256,23 @@ already conformant and left unchanged.
 under `paper/` are append-only or read-only. Bands were locked at pre-registration and are not to be
 moved after a readout — the three known-defective rules stay recorded until an amendment fixes them
 **prospectively**.
+
+---
+
+## 7. Overnight closeout (appended 2026-08-14, after §1–§6 were written)
+
+- **§3.2 is DONE — do not action it.** The 150 MB `oldrepo/` in the repo root was a registered git
+  worktree at `891109e1`, created by an orchestrator error: `git -C <repo> worktree add -f oldrepo <sha>`
+  resolves the path relative to the **repo**, not the caller's cwd, so a worktree intended for the
+  scratchpad landed in the repo root. Removed with `git worktree remove --force` + `git worktree prune`;
+  `git worktree list` is clean and no references remain. **Gotcha worth keeping: `git -C X worktree add
+  <relpath>` is relative to X, not to your shell.** Use an absolute path for throwaway worktrees, and
+  check `git worktree list` — not just `ls` — when cleaning up, because a pruned-but-present directory
+  and a registered-but-moved worktree look identical from the filesystem.
+- **A second worktree is registered at the OLD repo name**: `/home/jasper/Repositories/MasterThesisCode-book`,
+  on branch `book/formula-explorer` at `836c7e5a`. It predates this session and holds a real working
+  branch, so it was **deliberately left alone** — removing an author's branch checkout overnight is not
+  a cleanup call an agent should make. It is a rebrand leftover and belongs with the §3.3 checklist
+  correction; decide whether to relocate or retire it.
+- **Book ch14 did not land** (confirmed: no `book/generators/gen_ch14.py`, no `book(ch14):` commit).
+  It stays as §3.1, with `CAMPAIGN_REPORT_20260814.md` as its ready-made source.
