@@ -29,6 +29,13 @@ assign per agent from this routing table:
 - **Effort** — `low/medium` for mechanical stages, `high` for standard analysis, `xhigh` ONLY for
   adversarial verifiers, novel derivations, and band/prereg authoring. Uniform-xhigh workflows are
   a drift smell: justify each xhigh in the launch summary or lower it.
+- **Top-tier hard cap (author mandate, 2026-08-14)** — at most **~3 top-tier (inherit) agents per
+  workflow**: the synthesis chair plus at most 1–2 decisive verifiers. Every fanned-out stage
+  (audit lenses, reproducers, judge panels, per-item verifiers) runs `sonnet` regardless of its
+  adversarial label — panel redundancy substitutes for model tier. Compute each phase's fan-out
+  (items × panel size) BEFORE launch and state it in the launch summary; any phase whose fan-out
+  depends on an earlier phase's output must carry an explicit cap in the script. Third-party
+  workflow engines (e.g. /commission) must be re-tiered to this table before launch.
 
 State the chosen tiering (one line) when proposing a workflow so the author can veto overkill.
 
