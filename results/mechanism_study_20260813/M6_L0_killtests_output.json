@@ -1,0 +1,301 @@
+{
+  "preregistration": "results/mechanism_study_20260813/PREREGISTRATION_M2PRIME_ABLATION.md \u00a72",
+  "data_source": "the 20 committed *_h0p730_results_seeds*.json files (16 S-cell dose grid used for the kill tests)",
+  "method_note": "All quantities recomputed from raw per-seed ln_post_1d/ln_post_2d vectors and per-seed map_*/post_sd_* fields; the per-file 'aggregate' block was never read.",
+  "test_i_tilt_dose_invariance": {
+    "registered_group": [
+      "S10",
+      "S11",
+      "S12",
+      "S13",
+      "S20",
+      "S21",
+      "S22",
+      "S23",
+      "S30",
+      "S31",
+      "S32",
+      "S33"
+    ],
+    "channel_1d": {
+      "per_cell_mean_slope": {
+        "S10": 4484.786719381005,
+        "S11": 3370.6945822833445,
+        "S12": 2956.2232652137486,
+        "S13": 2719.5344319591554,
+        "S20": 3840.6942914412957,
+        "S21": 3544.3147326937205,
+        "S22": 2745.0177442997397,
+        "S23": 2642.907349599384,
+        "S30": 3682.891407469285,
+        "S31": 3399.5950204674814,
+        "S32": 2962.8060496205076,
+        "S33": 2667.0932815894994
+      },
+      "grand_mean": 3251.379906334847,
+      "fractional_deviation": {
+        "S10": 0.37934872225882993,
+        "S11": 0.036696627089325994,
+        "S12": -0.09077888454253777,
+        "S13": -0.16357530946767154,
+        "S20": 0.18125054656278533,
+        "S21": 0.09009553937026311,
+        "S22": -0.15573761806442038,
+        "S23": -0.18714286680247413,
+        "S30": 0.13271641997100972,
+        "S31": 0.04558529559829615,
+        "S32": -0.08875427204064794,
+        "S33": -0.17970419993275746
+      },
+      "max_abs_fractional_deviation": 0.37934872225882993,
+      "verdict": "KILL"
+    },
+    "channel_2d": {
+      "per_cell_mean_slope": {
+        "S10": 4609.583232126093,
+        "S11": 3492.3053648355785,
+        "S12": 3076.088541645002,
+        "S13": 2840.3571914500426,
+        "S20": 3970.7006604222233,
+        "S21": 3671.9779377908203,
+        "S22": 2870.1543532580617,
+        "S23": 2769.6119982164532,
+        "S30": 3818.1006466500035,
+        "S31": 3531.124794305407,
+        "S32": 3092.5919838820582,
+        "S33": 2798.654608398814
+      },
+      "grand_mean": 3378.437609415046,
+      "fractional_deviation": {
+        "S10": 0.3644127152977709,
+        "S11": 0.03370426468827045,
+        "S12": -0.08949375502079909,
+        "S13": -0.15926901135172022,
+        "S20": 0.17530678955167195,
+        "S21": 0.0868864138730088,
+        "S22": -0.1504492060887844,
+        "S23": -0.18020922141699902,
+        "S30": 0.13013797739218336,
+        "S31": 0.04519461435808412,
+        "S32": -0.08460882176317004,
+        "S33": -0.17161275951951574
+      },
+      "max_abs_fractional_deviation": 0.3644127152977709,
+      "verdict": "KILL"
+    },
+    "verdict": "KILL",
+    "comparison_only": {
+      "note": "Not the registered set. Fixed f_i=1.0 column {S13,S23,S33} reproduces the commission's 2625-2720 nats/h reference band; the interior-9 set is shown for reference against test (ii)/(iii).",
+      "fi1_column_1d": {
+        "S13": 2719.5344319591554,
+        "S23": 2642.907349599384,
+        "S33": 2667.0932815894994
+      },
+      "fi1_column_2d": {
+        "S13": 2840.3571914500426,
+        "S23": 2769.6119982164532,
+        "S33": 2798.654608398814
+      },
+      "fi1_column_1d_range": [
+        2642.907349599384,
+        2719.5344319591554
+      ],
+      "fi1_column_2d_range": [
+        2769.6119982164532,
+        2840.3571914500426
+      ],
+      "interior9_1d": {
+        "S11": 3370.6945822833445,
+        "S12": 2956.2232652137486,
+        "S13": 2719.5344319591554,
+        "S21": 3544.3147326937205,
+        "S22": 2745.0177442997397,
+        "S23": 2642.907349599384,
+        "S31": 3399.5950204674814,
+        "S32": 2962.8060496205076,
+        "S33": 2667.0932815894994
+      },
+      "interior9_2d": {
+        "S11": 3492.3053648355785,
+        "S12": 3076.088541645002,
+        "S13": 2840.3571914500426,
+        "S21": 3671.9779377908203,
+        "S22": 2870.1543532580617,
+        "S23": 2769.6119982164532,
+        "S31": 3531.124794305407,
+        "S32": 3092.5919838820582,
+        "S33": 2798.654608398814
+      },
+      "interior9_1d_range": [
+        2642.907349599384,
+        3544.3147326937205
+      ],
+      "interior9_2d_range": [
+        2769.6119982164532,
+        3671.9779377908203
+      ]
+    }
+  },
+  "test_ii_bias_sigma2_constancy": {
+    "interior9_cells": [
+      "S11",
+      "S12",
+      "S13",
+      "S21",
+      "S22",
+      "S23",
+      "S31",
+      "S32",
+      "S33"
+    ],
+    "channel_1d": {
+      "per_cell": {
+        "S11": {
+          "mean_bias": 0.012666666666666678,
+          "median_post_sd": 0.0023313166818992904,
+          "ratio": 2330.5573758321275
+        },
+        "S12": {
+          "mean_bias": 0.01200000000000001,
+          "median_post_sd": 0.0024868967616410837,
+          "ratio": 1940.2859211901086
+        },
+        "S13": {
+          "mean_bias": 0.014000000000000012,
+          "median_post_sd": 0.0026151232091445025,
+          "ratio": 2047.1219997320547
+        },
+        "S21": {
+          "mean_bias": 0.019000000000000017,
+          "median_post_sd": 0.002672199188026993,
+          "ratio": 2660.8227528200796
+        },
+        "S22": {
+          "mean_bias": 0.016000000000000014,
+          "median_post_sd": 0.002764438741010145,
+          "ratio": 2093.659449075691
+        },
+        "S23": {
+          "mean_bias": 0.023650000000000018,
+          "median_post_sd": 0.003352248839290783,
+          "ratio": 2104.547086293996
+        },
+        "S31": {
+          "mean_bias": 0.02200000000000002,
+          "median_post_sd": 0.0028702543822443655,
+          "ratio": 2670.4343359270197
+        },
+        "S32": {
+          "mean_bias": 0.023333333333333355,
+          "median_post_sd": 0.003198066337309464,
+          "ratio": 2281.402164202575
+        },
+        "S33": {
+          "mean_bias": 0.039666666666666704,
+          "median_post_sd": 0.004383746263014794,
+          "ratio": 2064.11975016249
+        }
+      },
+      "all_same_sign": true,
+      "max_over_min_ratio": 1.3763097009378193,
+      "verdict": "SURVIVE"
+    },
+    "channel_2d": {
+      "per_cell": {
+        "S11": {
+          "mean_bias": 0.013000000000000012,
+          "median_post_sd": 0.0022708182321900293,
+          "ratio": 2521.033445691014
+        },
+        "S12": {
+          "mean_bias": 0.013000000000000012,
+          "median_post_sd": 0.0025351799089403425,
+          "ratio": 2022.6734943941974
+        },
+        "S13": {
+          "mean_bias": 0.015333333333333346,
+          "median_post_sd": 0.002650226663254736,
+          "ratio": 2183.0844640107966
+        },
+        "S21": {
+          "mean_bias": 0.01933333333333335,
+          "median_post_sd": 0.0026070371822476957,
+          "ratio": 2844.54159269495
+        },
+        "S22": {
+          "mean_bias": 0.017000000000000015,
+          "median_post_sd": 0.002785289109461212,
+          "ratio": 2191.332900538042
+        },
+        "S23": {
+          "mean_bias": 0.02465000000000003,
+          "median_post_sd": 0.003387357438181392,
+          "ratio": 2148.29971532613
+        },
+        "S31": {
+          "mean_bias": 0.02300000000000002,
+          "median_post_sd": 0.0028906842117759654,
+          "ratio": 2752.4949771023244
+        },
+        "S32": {
+          "mean_bias": 0.025000000000000022,
+          "median_post_sd": 0.003329155731965712,
+          "ratio": 2255.65038189553
+        },
+        "S33": {
+          "mean_bias": 0.04200000000000004,
+          "median_post_sd": 0.004427698313639716,
+          "ratio": 2142.363922958958
+        }
+      },
+      "all_same_sign": true,
+      "max_over_min_ratio": 1.4063276156920754,
+      "verdict": "SURVIVE"
+    },
+    "verdict": "SURVIVE"
+  },
+  "test_iii_alpha_share": {
+    "alpha_tilt_nats_per_h": 1393.6328767123289,
+    "target_pct": 52.7,
+    "tolerance_pp": 5.0,
+    "window_pct": [
+      47.7,
+      57.7
+    ],
+    "measured_total_tilt_1d": 3251.379906334847,
+    "measured_total_tilt_2d": 3378.437609415046,
+    "alpha_share_pct_1d": 42.862812616791885,
+    "alpha_share_pct_2d": 41.25080992552729,
+    "verdict_1d": "KILL",
+    "verdict_2d": "KILL",
+    "verdict": "KILL",
+    "comparison_only": {
+      "note": "alpha-share using the fi1=1.0-column total tilt from test (i)'s comparison block.",
+      "fi1_column_mean_total_1d": 2676.511687716013,
+      "fi1_column_mean_total_2d": 2802.8745993551033,
+      "alpha_share_pct_fi1_1d": 52.069000225497916,
+      "alpha_share_pct_fi1_2d": 49.721556470381564
+    }
+  },
+  "commission_reference": {
+    "source": "results/commission_research_20260814/REPORT.md",
+    "gradient_nats_per_h_band": [
+      2625,
+      2720
+    ],
+    "gradient_claimed_dose_invariant": true,
+    "alpha_share_predicted_pct": 52.7,
+    "alpha_share_measured_pct": 53.3
+  },
+  "prereg_section2_prediction": {
+    "source": "results/mechanism_study_20260813/PREREGISTRATION_M2PRIME_ABLATION.md \u00a72",
+    "total_up_tilt_nats_per_h": 2738.8,
+    "alpha_share_pct_predicted": 52.7,
+    "missing_J_share_pct_predicted": 49.1
+  },
+  "overall_verdicts": {
+    "i_tilt_dose_invariance": "KILL",
+    "ii_bias_sigma2_constancy": "SURVIVE",
+    "iii_alpha_share": "KILL"
+  }
+}
