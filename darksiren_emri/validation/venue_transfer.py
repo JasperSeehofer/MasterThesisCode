@@ -205,6 +205,16 @@ from darksiren_emri.validation import closed_loop_gfrac as cl
 _LOGGER = logging.getLogger(__name__)
 
 PREREG_PATH = "results/venue_transfer_20260811/PREREGISTRATION_VENUE_TRANSFER.md"
+# Governing preregistrations of the mechanism-study families (registered
+# 2026-08-13, disjoint +50000/+51000 decades — see MECH_CELL_SPECS and
+# SCAN_CELL_SPECS below). D2-01 fix: these families were previously stamped
+# with PREREG_PATH (the venue-transfer document), which does not govern them.
+MECH_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_MECHANISM_ISOLATION.md"
+SCAN_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_2D_DOSE_SCAN.md"
+# Stage-2 estimator-variant arms (A-M2'/A-NULL), registered 2026-08-14,
+# disjoint +53000 decade for A-M2' and a DELIBERATE +50000..+50014 seed-block
+# PAIRING with MN0X for A-NULL — see M2P_CELL_SPECS below.
+M2P_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_M2PRIME_ABLATION.md"
 DEFAULT_OUT_DIR = "results/venue_transfer_20260811"
 VT_BASE_SEED = cg.GATE_BASE_SEED  # 20260808 — the gate's base, v3 offsets +40000 decade (VT-D7)
 PARENT_CALGATE_CODE_COMMIT = "065e7f58"
@@ -277,6 +287,29 @@ _VT1_BIAS_HARD = 0.030
 _VT1_RAIL_MAX = 0.05
 
 
+# ── Estimator-variant switch (stage-2 prereg §3, registered 2026-08-14) ──────
+# Default-off, additive: every cell registered before this stage runs
+# "base", which is byte-identical to the pre-switch code path (unit-tested).
+ESTIMATOR_VARIANT_BASE = "base"
+ESTIMATOR_VARIANT_M2P_JACOBIAN = "m2prime_jacobian"
+ESTIMATOR_VARIANT_NULL_SCALE = "null_scale_1p7"
+ESTIMATOR_VARIANTS: tuple[str, ...] = (
+    ESTIMATOR_VARIANT_BASE,
+    ESTIMATOR_VARIANT_M2P_JACOBIAN,
+    ESTIMATOR_VARIANT_NULL_SCALE,
+)
+# A-M2' registered step (prereg §3): central difference of dist_vectorized in
+# z, deterministic, no RNG. physical_relations.dist_derivative is analytic
+# but scalar-only (a per-call 1000-point trapezoid, no array fast path) and
+# is not fit for the vectorized (n_rows, n_quad) quadrature loop below without
+# a severe performance regression — so the registered fallback (central
+# difference) is used, per prereg §3's "else by central difference" clause.
+M2P_JACOBIAN_EPS_Z = 1e-6
+# A-NULL registered constant (prereg §3): z- and h-independent multiplier on
+# the kernel-branch integrand.
+NULL_SCALE_FACTOR = 1.7
+
+
 # ── Cell registry (prereg §5, verbatim) ──────────────────────────────────────
 
 
@@ -303,6 +336,10 @@ class VenueCellSpec:
             the 2-D dose-scan cells (mechanism-study amendment A-2,
             2026-08-13); ``None`` for every cell registered before the scan,
             which is driven by ``dose_target`` instead.
+        estimator_variant: One of :data:`ESTIMATOR_VARIANTS` (stage-2 prereg
+            §3, 2026-08-14). ``"base"`` for every cell registered before this
+            stage (byte-identical to the pre-switch estimator); the A-M2'/
+            A-NULL arms pin their variant HERE, mirroring ``dose_target``.
     """
 
     name: str
@@ -314,6 +351,7 @@ class VenueCellSpec:
     seed_offsets: tuple[int, ...]
     dose_target: str = "all"
     dose_scales: tuple[float, float] | None = None
+    estimator_variant: str = ESTIMATOR_VARIANT_BASE
 
 
 CELL_SPECS: dict[str, VenueCellSpec] = {
@@ -385,11 +423,73 @@ del _h, _i, _name, _n
 # Deliberately kept SEPARATE from both CELL_SPECS (the venue-transfer prereg
 # §5 registry, guarded by the v3-envelope test) and MECH_CELL_SPECS (the
 # mechanism-isolation split-dose arms) — only ALL_CELL_SPECS is the union.
+
+# ── Stage-2 estimator-variant arms (registered 2026-08-14) ──────────────────
+# results/mechanism_study_20260813/PREREGISTRATION_M2PRIME_ABLATION.md §3 +
+# the corresponding ARMS.md section. Same decision cell as MN0X in every
+# respect except VenueConfig.estimator_variant. A-M2' gets a fresh disjoint
+# block (+53000); A-NULL is a DELIBERATE PAIRING with MN0X's first 15 seeds
+# (+50000..+50014, prereg §3) — the prediction is exact numerical equality
+# (up to the registered ln 1.7 shift), not independent re-estimation, so
+# reusing MN0X's seeds is the point of the design, not an accident.
+M2P_CELL_SPECS: dict[str, VenueCellSpec] = {
+    "AM2P": VenueCellSpec(
+        "AM2P",
+        "A-M2'",
+        "real_k",
+        "glade",
+        (0.730,),
+        (25,),
+        (53000,),
+        "all",
+        estimator_variant=ESTIMATOR_VARIANT_M2P_JACOBIAN,
+    ),
+    "ANULL": VenueCellSpec(
+        "ANULL",
+        "A-NULL",
+        "real_k",
+        "glade",
+        (0.730,),
+        (15,),
+        (50000,),  # PAIRED with MN0X's first 15 seeds, by design (prereg §3)
+        "all",
+        estimator_variant=ESTIMATOR_VARIANT_NULL_SCALE,
+    ),
+}
+
 ALL_CELL_SPECS: dict[str, VenueCellSpec] = {
     **CELL_SPECS,
     **MECH_CELL_SPECS,
     **SCAN_CELL_SPECS,
+    **M2P_CELL_SPECS,
 }
+
+
+def preregistration_path_for_cell(cell: str) -> str:
+    """The governing preregistration document of a cell id (D2-01 fix).
+
+    Registry-level mapping, not a per-spec field: the mechanism-isolation
+    arms (:data:`MECH_CELL_SPECS`), the 2-D dose-scan cells
+    (:data:`SCAN_CELL_SPECS`) and the stage-2 estimator-variant arms
+    (:data:`M2P_CELL_SPECS`) are registered under their own prereg
+    documents (2026-08-13 / 2026-08-14), disjoint from the venue-transfer
+    prereg that governs :data:`CELL_SPECS`. Any cell id outside all four
+    registries (e.g. ``"custom"``) falls back to :data:`PREREG_PATH`,
+    matching prior behaviour byte-for-byte.
+
+    Args:
+        cell: The ``VenueConfig.cell`` / ``VenueCellSpec.name`` id.
+
+    Returns:
+        The governing preregistration path.
+    """
+    if cell in M2P_CELL_SPECS:
+        return M2P_PREREG_PATH
+    if cell in MECH_CELL_SPECS:
+        return MECH_PREREG_PATH
+    if cell in SCAN_CELL_SPECS:
+        return SCAN_PREREG_PATH
+    return PREREG_PATH
 
 
 @dataclass(frozen=True)
@@ -429,6 +529,15 @@ class VenueConfig:
         chunk_pairs: Event-aligned chunk target (divergence 2; never changes
             any statistic).
         h_grid: Canonical 41-point grid (prereg §4 step 6).
+        estimator_variant: One of :data:`ESTIMATOR_VARIANTS` — ``"base"``
+            (the registered default and every prior cell's behaviour,
+            byte-identical to the pre-switch estimator), ``"m2prime_jacobian"``
+            (A-M2', the missing z-integral measure restored on kernel-branch
+            rows) or ``"null_scale_1p7"`` (A-NULL, the specificity control).
+            Stage-2 prereg (``PREREGISTRATION_M2PRIME_ABLATION.md``, §3,
+            2026-08-14); applied inside :func:`_channel_terms_at_h` on
+            kernel-branch (σ_z > 0) rows only — the point branch is untouched
+            by construction.
     """
 
     cell: str
@@ -446,6 +555,7 @@ class VenueConfig:
     n_events_cap: int | None = None
     chunk_pairs: int = DEFAULT_CHUNK_PAIRS
     h_grid: tuple[float, ...] = cl.CANONICAL_H_GRID
+    estimator_variant: str = ESTIMATOR_VARIANT_BASE
 
 
 def venue_cell_seeds(
@@ -1105,6 +1215,7 @@ def log_channel_posteriors_ball_sigma_vector(
     sigma_z_pairs: npt.NDArray[np.float64],
     *,
     chunk_pairs: int = DEFAULT_CHUNK_PAIRS,
+    estimator_variant: str = ESTIMATOR_VARIANT_BASE,
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     r"""Both channels' unnormalised log posteriors with PER-CANDIDATE σ_z.
 
@@ -1136,6 +1247,9 @@ def log_channel_posteriors_ball_sigma_vector(
         sigma_z_pairs: Per-candidate σ_z, aligned with ``ball.z_obs``.
         chunk_pairs: Pair-row chunk target (divergence 2; ``0`` = exact
             gate-shape mode, single chunk + unsplit ``g`` calls).
+        estimator_variant: One of :data:`ESTIMATOR_VARIANTS` (stage-2 prereg
+            §3, 2026-08-14); default ``"base"`` is byte-identical to the
+            pre-switch estimator.
 
     Returns:
         ``(ln_post_1d, ln_post_2d, sum_dlog_gfrac_dh)`` exactly as the gate's.
@@ -1152,7 +1266,13 @@ def log_channel_posteriors_ball_sigma_vector(
 
     for k in range(n_h):
         ln1[k], ln2[k], ln_gfrac[k] = _channel_terms_at_h(
-            gctx, universe, ball, sig_z, k, chunk_pairs=chunk_pairs
+            gctx,
+            universe,
+            ball,
+            sig_z,
+            k,
+            chunk_pairs=chunk_pairs,
+            estimator_variant=estimator_variant,
         )
 
     return ln1, ln2, _slope_at_truth(cfg, ln_gfrac)
@@ -1187,6 +1307,7 @@ def _channel_terms_at_h(
     k: int,
     *,
     chunk_pairs: int = DEFAULT_CHUNK_PAIRS,
+    estimator_variant: str = ESTIMATOR_VARIANT_BASE,
 ) -> tuple[float, float, float]:
     """One h-point of the vector-σ estimator loop (the divergence-11 unit).
 
@@ -1207,6 +1328,17 @@ def _channel_terms_at_h(
         k: Index into the h grid.
         chunk_pairs: Pair-row chunk target (divergence 2; ``0`` = exact
             gate-shape mode).
+        estimator_variant: One of :data:`ESTIMATOR_VARIANTS` (stage-2 prereg
+            ``PREREGISTRATION_M2PRIME_ABLATION.md`` §3, 2026-08-14).
+            ``"base"`` (default) performs the exact same float operations in
+            the exact same order as before the switch existed — byte-
+            identical, unit-tested. ``"m2prime_jacobian"`` (A-M2') multiplies
+            the kernel-branch integrand by the z-integral measure
+            ``J = |d d_L/dz| / d_obs`` before both ``c1q`` and ``c2q`` are
+            formed; the point branch (``sig_z = 0`` rows) is untouched by
+            construction — it has no such integral. ``"null_scale_1p7"``
+            (A-NULL) multiplies the kernel-branch integrand by the literal
+            constant 1.7; the point branch is untouched.
 
     Returns:
         ``(ln1[k], ln2[k], ln_gfrac[k])`` for this h.
@@ -1258,7 +1390,28 @@ def _channel_terms_at_h(
             d_L_frac = d_L_n / d_obs_p[rows_q][:, None]
             p_gw = norm.pdf(d_L_frac, loc=1.0, scale=sig_p[rows_q][:, None])
             kern = norm.pdf(z_nodes, loc=zo[:, None], scale=so[:, None])
-            integ = kern * p_gw
+            if estimator_variant == ESTIMATOR_VARIANT_BASE:
+                integ = kern * p_gw
+            elif estimator_variant == ESTIMATOR_VARIANT_M2P_JACOBIAN:
+                # A-M2' (prereg §3): J = |d d_L/dz| / d_obs, per node, via
+                # central difference of dist_vectorized at the same h
+                # (registered step eps=1e-6 in z, deterministic, no RNG —
+                # dist_derivative is analytic but scalar-only and unfit for
+                # this vectorized (n_rows, n_quad) loop, see module header).
+                eps = M2P_JACOBIAN_EPS_Z
+                z_flat = np.maximum(z_nodes.reshape(-1), 1e-8)
+                d_hi = np.asarray(dist_vectorized(z_flat + eps, h=h), dtype=np.float64)
+                d_lo = np.asarray(
+                    dist_vectorized(np.maximum(z_flat - eps, 1e-8), h=h), dtype=np.float64
+                )
+                dd_dz = ((d_hi - d_lo) / (2.0 * eps)).reshape(z_nodes.shape)
+                jac = dd_dz / d_obs_p[rows_q][:, None]
+                integ = kern * p_gw * jac
+            elif estimator_variant == ESTIMATOR_VARIANT_NULL_SCALE:
+                # A-NULL (prereg §3): z- and h-independent literal constant.
+                integ = (kern * p_gw) * NULL_SCALE_FACTOR
+            else:
+                raise ValueError(f"unknown estimator_variant '{estimator_variant}'")
             c1q = half * (integ @ w_gl)
             g = _g_ball_capped(
                 gctx, universe, ev[rows_q], z_nodes, d_L_frac, valid, node_chunk=g_node_chunk
@@ -1304,7 +1457,8 @@ def _channel_terms_at_h(
 # ── Divergence 11: intra-seed h-grain parallel estimator ─────────────────────
 
 _H_STATE: (
-    tuple[cg.GateContext, cl.SyntheticUniverse, cg.HostBall, npt.NDArray[np.float64], int] | None
+    tuple[cg.GateContext, cl.SyntheticUniverse, cg.HostBall, npt.NDArray[np.float64], int, str]
+    | None
 ) = None
 
 
@@ -1312,8 +1466,10 @@ def _h_task(k: int) -> tuple[float, float, float]:
     """Fork-pool task: one h-point read from the module-global state."""
     if _H_STATE is None:
         raise RuntimeError("h-grain task state not initialised (fork-only worker)")
-    gctx, universe, ball, sig_z, chunk_pairs = _H_STATE
-    return _channel_terms_at_h(gctx, universe, ball, sig_z, k, chunk_pairs=chunk_pairs)
+    gctx, universe, ball, sig_z, chunk_pairs, estimator_variant = _H_STATE
+    return _channel_terms_at_h(
+        gctx, universe, ball, sig_z, k, chunk_pairs=chunk_pairs, estimator_variant=estimator_variant
+    )
 
 
 def log_channel_posteriors_ball_sigma_vector_hgrain(
@@ -1324,6 +1480,7 @@ def log_channel_posteriors_ball_sigma_vector_hgrain(
     *,
     chunk_pairs: int = DEFAULT_CHUNK_PAIRS,
     workers: int = 1,
+    estimator_variant: str = ESTIMATOR_VARIANT_BASE,
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """h-grain twin of :func:`log_channel_posteriors_ball_sigma_vector`.
 
@@ -1343,6 +1500,10 @@ def log_channel_posteriors_ball_sigma_vector_hgrain(
         chunk_pairs: Pair-row chunk target (divergence 2; must match the
             geometry being compared against, as in the serial function).
         workers: Fork-pool size (capped at the grid length).
+        estimator_variant: One of :data:`ESTIMATOR_VARIANTS` (stage-2
+            prereg, 2026-08-14); forwarded to :func:`_channel_terms_at_h`
+            unchanged, so the h-grain path stays bit-identical to the serial
+            one for every variant, exactly as it already is for ``"base"``.
 
     Returns:
         ``(ln_post_1d, ln_post_2d, sum_dlog_gfrac_dh)`` exactly as the
@@ -1355,7 +1516,7 @@ def log_channel_posteriors_ball_sigma_vector_hgrain(
     if sig_z.shape != ball.z_obs.shape:
         raise ValueError(f"sigma_z_pairs shape {sig_z.shape} != pairs shape {ball.z_obs.shape}")
 
-    _H_STATE = (gctx, universe, ball, sig_z, chunk_pairs)
+    _H_STATE = (gctx, universe, ball, sig_z, chunk_pairs, estimator_variant)
     try:
         if workers > 1:
             ctx_mp = mp.get_context("fork")
@@ -1412,7 +1573,12 @@ def run_seed_venue(seed: int, vctx: VenueContext | None = None) -> dict[str, Any
         raise RuntimeError("venue-transfer context not initialised")
     universe, ball, sigma_pairs = _draw_seed_realization(seed, context)
     ln1, ln2, slope = log_channel_posteriors_ball_sigma_vector(
-        context.gctx, universe, ball, sigma_pairs, chunk_pairs=context.vcfg.chunk_pairs
+        context.gctx,
+        universe,
+        ball,
+        sigma_pairs,
+        chunk_pairs=context.vcfg.chunk_pairs,
+        estimator_variant=context.vcfg.estimator_variant,
     )
     return _assemble_seed_record(seed, context, universe, ball, sigma_pairs, ln1, ln2, slope)
 
@@ -1450,6 +1616,7 @@ def run_seed_venue_hgrain(
         sigma_pairs,
         chunk_pairs=context.vcfg.chunk_pairs,
         workers=workers,
+        estimator_variant=context.vcfg.estimator_variant,
     )
     return _assemble_seed_record(seed, context, universe, ball, sigma_pairs, ln1, ln2, slope)
 
@@ -1903,7 +2070,7 @@ def run_cell_venue(
     agg = aggregate_venue(records, vcfg)
     return {
         "instrument": "venue_transfer",
-        "preregistration": PREREG_PATH,
+        "preregistration": preregistration_path_for_cell(vcfg.cell),
         "parent_instruments": {
             "calibration_gate": {
                 "code": PARENT_CALGATE_CODE_COMMIT,
@@ -2208,11 +2375,14 @@ def build_parser() -> argparse.ArgumentParser:
             "MEI",
             "MN0X",
             *sorted(SCAN_CELL_SPECS),
+            *sorted(M2P_CELL_SPECS),
         ),
         help=(
             "prereg §5 cell to run (W1/O2 are reserved, NOT built); "
             "MN0/MEH/MEI are the mechanism-isolation split-dose arms "
-            "(separate prereg, results/mechanism_study_20260813/)"
+            "(separate prereg, results/mechanism_study_20260813/); "
+            "AM2P/ANULL are the stage-2 estimator-variant arms "
+            "(PREREGISTRATION_M2PRIME_ABLATION.md)"
         ),
     )
     p.add_argument("--truth", type=float, default=None, help="h_true (must be in the cell's set)")
@@ -2345,6 +2515,7 @@ def main(argv: list[str] | None = None) -> int:
         chunk_pairs=args.chunk_pairs,
         dose_target=spec.dose_target,
         dose_scales=spec.dose_scales,
+        estimator_variant=spec.estimator_variant,
     )
 
     if args.seeds is not None:

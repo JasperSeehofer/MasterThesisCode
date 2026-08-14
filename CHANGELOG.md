@@ -7,6 +7,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added (orchestration guard-rail + mechanism-study stage 2, 2026-08-14)
+- **`.claude/hooks/workflow-tier-lint.py` + `.claude/settings.json` PreToolUse hook** —
+  author mandate after a commission workflow fanned out ~40 inherit-model judges: hard
+  cap of ~3 inherit-tier agents per `Workflow` launch, fan-out stages must run a cheap
+  model override; blocks (exit 2, offending line numbers) on violation, fails open on
+  parse errors. `CLAUDE.md` codifies the cap.
+- **Commission review of the mechanism-isolation cycle** (`results/commission_research_20260814/`,
+  `.commission-research.yaml`, `results/commission_history.jsonl`) — independent 27-agent
+  run over handoff claims C-A..C-E; arithmetic confirmed via 3-4 disjoint reproduction
+  paths, interpretive layer revised (M5 toy ruled unfaithful at production K;
+  `PREREG_PATH` provenance defect found). Adopted, `BIAS_HISTORY_LEDGER.md` row #102.
+- **`results/mechanism_study_20260813/PREREGISTRATION_M2PRIME_ABLATION.md` + `ARMS.md`
+  stage-2 addendum** — registers the A-M2′ term-ablation arm and the A-NULL specificity
+  control under Amendment A8-v2 (per-branch referents, execution-completeness, no
+  toy-calibrated numbers). `darksiren_emri/validation/venue_transfer.py` gains an
+  `estimator_variant` switch (`base` / `m2prime_jacobian` / `null_scale_1p7`); the point
+  branch is untouched by construction. `cluster/m2prime_ablation.sbatch` submits the
+  two arms (AM2P: fresh seeds +53000..+53024; ANULL: paired seeds +50000..+50014,
+  deliberately matching MN0X's first 15) and now aborts instead of overwriting an
+  existing output JSON.
+- **`darksiren_emri_test/validation/test_m2prime_ablation_arms.py`** — registered null
+  checks for both arms, including the DS-N1 floor-aware integer shift law: on a hand-built
+  synthetic case with one always-valid event and one event that floors (all candidates
+  outside its window) at off-truth h, `Δln_post/ln(1.7)` lands within 1e-6 nats of an
+  integer in `[0, N]` at every grid point, equals `N` only where no event floors, and the
+  per-channel argmax is unchanged — the naive "N·ln 1.7 everywhere" rule would
+  false-FAIL against the stored MN0X floors this law is designed to tolerate.
+- **`darksiren_emri_test/validation/test_venue_transfer_prereg.py`** — locks
+  `preregistration_path_for_cell` per-family stamping (venue-transfer / mechanism-isolation
+  / 2-D dose scan / M2′ ablation), fixing the mis-attribution of 20 mechanism-study result
+  JSONs (commission finding D2-01; correction recorded in
+  `results/mechanism_study_20260813/PROVENANCE_CORRECTION_20260814.json`).
+
 ### Added (bias-resolution instrumentation + calibration, 2026-08-04/05)
 - **`--freeze_g_frac_ref_h <float>`** (default off, byte-identical off-path; commit
   `121f57d8`) — frozen-g counterfactual toggle for the gate (vii) follow-up; pins each
