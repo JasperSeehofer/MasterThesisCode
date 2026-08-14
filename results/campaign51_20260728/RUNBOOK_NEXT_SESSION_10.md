@@ -276,3 +276,22 @@ moved after a readout — the three known-defective rules stay recorded until an
   correction; decide whether to relocate or retire it.
 - **Book ch14 did not land** (confirmed: no `book/generators/gen_ch14.py`, no `book(ch14):` commit).
   It stays as §3.1, with `CAMPAIGN_REPORT_20260814.md` as its ready-made source.
+
+
+---
+
+## 8. STOP — read the independent-review handoff first (appended 2026-08-14)
+
+Before actioning §1 or §2 of this runbook: **`HANDOFF_20260814_INDEPENDENT_REVIEW.md`** (same
+directory). Author instruction 2026-08-14 — an independent session assesses the completed cycle and
+decides whether it agrees with the outgoing session's recommendations *before* they are implemented.
+
+Nothing has been ruled: branch 2 is unruled, A8 is drafted-not-adopted, no repair proposed. That is
+deliberate — all three sit downstream of the framing under review, so recording a ruling first would
+enter a `[RULE]` in the ledger ahead of the audit that might reframe it.
+
+The handoff separates what is **measured** (do not re-verify — adversarially reproduced at max
+deviation exactly 0.0 across 425 seeds) from what is **claim** (C-A…C-E, each with its attack
+surface named). **C-B — whether abort (d) should fire — carries the night**: if it should, the study
+STOPs and every L0 closure reopens. Recommended mechanism: `/commission --research`, scoped to §2 of
+the handoff.
