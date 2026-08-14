@@ -230,6 +230,27 @@ diffed, or cited later. Applies to research-cycle proposals, pre-registered meas
 standing-decision changes. (Codified 2026-08-11 from two consistent author signals, 2026-08-05 and
 2026-08-07.)
 
+### Approval scope — tag every item in a decision list
+
+Every item put to the author carries a tag, so a one-word reply is unambiguous:
+
+- **[DO]** — authorize work. "Approved" grants it.
+- **[RULE]** — a scientific ruling on evidence already in front of the author. "Approved"/"ratified"
+  grants it and it binds the record.
+- **[STANDING]** — pre-authorize a *class* of future decisions. Granted only when the author says so
+  explicitly; the proposal must state the scope and when it lapses.
+
+**Binding default: an approval never propagates to a decision whose inputs did not exist when it was
+given.** A branch call, verdict or band comparison that has not been computed yet is never covered by
+a blanket "all approved" — it returns to the author as a fresh [RULE]. Keep "approved" for [DO] and
+"ratified" for [RULE] so even an untagged reply is readable.
+
+This is the input side of the attribution-precise recording convention already used in
+`BIAS_HISTORY_LEDGER.md` (quote the author's verbatim words; mark any itemisation as
+orchestrator-derived). That convention makes the *record* honest; this one makes the *ask* honest.
+(Codified 2026-08-14 from the author's clarification that "all approved" meant the listed items, not
+recursively.)
+
 ## Testing Strategy
 
 Tests must be fully runnable on a CPU-only development machine. Code written with the `xp` pattern is testable on CPU without mocking.
