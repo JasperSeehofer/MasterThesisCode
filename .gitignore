@@ -27,6 +27,11 @@ saved_figures/
 !.planning/*.png
 # Exception: committed documentation gallery figures (served on GitHub Pages)
 !docs/source/figures/*.png
+# Campaign-report figures are tracked deliberately: the A7 report renders them
+# inline, so the PNG must resolve in-repo. Narrow allowlist, matching the
+# pattern above, rather than a force-add that leaves the file tracked while the
+# global rule says otherwise (2026-08-14).
+!results/mechanism_study_20260813/*.png
 
 # Run metadata (per-run)
 run_metadata.json
