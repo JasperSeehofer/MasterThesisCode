@@ -225,3 +225,9 @@ stacked slope against S_need = 1.94 × 10³), at a few CPU-minutes each — far 
 `darksiren_emri.physical_relations.dist_vectorized` and
 `darksiren_emri.validation.closed_loop_gfrac.load_sigma_triples`, and mirrors lines 1109-1147
 verbatim in structure. No production module was modified.
+
+---
+
+## Addendum (2026-08-14) — status downgraded to *plausible pending committed artifact* (ledger row #102)
+
+The refutation's analytic core stands and is toy-independent: the 2Φ̄(4) = 6.3e-5 per-event ceiling against S_need = 1.94e3 closes M3 by ≥3 orders of magnitude with no toy input, and an independent adversarial rebuild reproduced the bottom-line numbers. Two record defects, per the commission: `m3_toy.py` was never committed (this note's decisive numerics are not reproducible from the repo), and §2's "the bound is tight" claim is false in the admitted z_obs ∈ (z_hi, z_hi + 5σ_k] regime. The closure verdict is unchanged; the note does not meet the project's own reproduction bar until a reproducer is committed.

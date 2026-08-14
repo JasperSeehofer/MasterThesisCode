@@ -583,3 +583,24 @@ marginally worse on 2D. No verdict depends on it (V-M1/A1 are 1D, and MN0X is in
 0.000013 / 0.000037), and the conclusion is if anything strengthened — missing on both channels is more
 consistent with an under-powered window than with a 1D-specific fluctuation — but the corroborating
 evidence originally cited was invalid and is withdrawn.
+
+---
+
+## Row #102 — 2026-08-14 — Independent review adopted; author ruling on the mechanism-isolation bundle
+
+**Trigger:** author instruction 2026-08-14 (an independent session assesses the completed cycle before its recommendations are implemented). Mechanism: `/commission --research` (run `wf_6def92de-d96`, 27 agents), chair-adjudicated in `results/commission_research_20260814/REPORT.md`, with two findings chair-verified by hand (the PREREG_PATH provenance defect; the M5-toy production-K re-execution, independently re-driven: K=50 +0.0317±0.0007, K=1216 +0.0339±0.0006 vs the instrument's exact 0.000000 — divergence GROWS with K).
+
+**Author's verbatim ruling (2026-08-14):** "thanks and please go ahead as you recommended."
+(Full message continues: "Whenever we have evidenced feedback for the research cycle please so we can improve it while we use it. Dont forget that you are the orchestrator and use tiering for workflows and subagents.")
+
+**Orchestrator-derived itemization of what that grants** (the referenced recommendation set is the chair's adjudication in `results/commission_research_20260814/REPORT.md`; every item's inputs existed when the ruling was given):
+
+1. **[RULE] Abort (d):** deemed **met IN SUBSTANCE** (the registered letter — a sign disagreement — still does not fire on a zero). Consequence, scoped by the commission's dependence audit: every **toy-dependent M5/W1 sub-closure** (M5 note rows B/C/D/H/I/P/Q/R and the W1 toy leg) is downgraded to **NOT ESTABLISHED**; **M1 and M4 stand** (demonstrably toy-independent: analytic + committed pp_coverage artifacts; exactness identity + α-deletion on stored campaign posteriors); **M3 stands on its analytic core** (≥10³ shortfall with zero toy input), its note downgraded to *plausible pending committed artifact*. The study **continues** — this is a scoped reopening, not a STOP.
+2. **[RULE] Parent branch 2:** recorded as **PREMATURE ADJUDICATION** — the count-based branch was adjudicated over an incomplete registered arm set (registered estimator-side arm A-M2′ unrun). Supersedes both previously tabled readings ((a) fired-meaning-barred and (b) NO-OWNER). No term is named. Resolved only by running A-M2′ or withdrawing it by a further [RULE].
+3. **[RULE] V-M1 branch-1 disjunct:** discharged to MN0X by registered amendment (prospective; MN0's N=15 FAILED status on the record is unchanged).
+4. **[RULE] S00 / DS-D4:** the float-epsilon reading is adopted (b_S00 = 2.2e-16 ≡ 0 at grid precision; SCAN-CONFOUNDED did not fire); DS-D4 is restated as a **bound** (|refined residual| ≲ 1e-4), not annihilation — "exact zero" is a grid statistic.
+5. **[STANDING] Amendment A8 adopted AS REVISED** (see `docs/RESEARCH_CYCLE.md` row A8): Instance-2 predicate corrected; two-sidedness check kept (BLOCKING); **execution-completeness check added (BLOCKING): no count-based branch may be adjudicated while a registered arm capable of changing the count is unrun**; band-derivation disclosure NON-BLOCKING. Scope: all future pre-registrations in this thread and its successors; lapses only on author revocation.
+6. **[DO] A-M2′** is authorized, together with the registration of two additional candidate classes surfaced by the commission from committed data: **M6** (σ_z-blind aggregate log-posterior tilt × dose-controlled curvature composite) and **M7** (host/impostor ball-window inclusion asymmetry, named in the intake dossier's parity text but never assigned an M-ID).
+7. **[DO] Mechanical repairs:** PREREG_PATH parameterization + a correction artifact for the 20 mis-stamped result JSONs; the recovered M5 toy committed with provenance; a pinned-inputs checksum manifest; errata/addenda to the registered documents (this row's companion appends).
+
+**Attribution:** itemization above is orchestrator-derived from the author's blanket grant; the author's own words are only the quoted sentences.

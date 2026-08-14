@@ -765,3 +765,9 @@ Naming the mechanism is the next stage's job (§6 item 7).
 
 *This readout is a mechanical scoring plus the interpretation §10 assigns to the readout session. It
 appends nothing to any pre-registration, adjudicates nothing, and commits nothing.*
+
+---
+
+## Addendum (2026-08-14) — corrections of record (ledger row #102)
+
+**(i) V-D5 header correction:** the header's PASS over-claims; for the 16 scan cells V-D5 is strictly **NOT-EVALUABLE** (fresh disjoint seeds, no committed golden), as the body discloses. **(ii) S00 reading:** the registered exact-equality confound rule is adjudicated under the float-epsilon reading (b_S00 = 2.2e-16 ≡ 0 at grid precision); SCAN-CONFOUNDED did not fire. **(iii) DS-D4 restated as a bound:** refined (off-grid) MAP residuals on the f_host = 0 row are nonzero at ~1e-4 in all 60 seeds; the row is bounded, not annihilated — "exactly zero" is a statement at 0.005-grid precision only. **(iv) Label bar:** the SHAPE-INTERACTION label may not be quoted anywhere without the caveat that b(S23) sits +10.33σ above H-INT's own registered prediction; the only quotable shape conclusion is **both registered shapes are wrong**.

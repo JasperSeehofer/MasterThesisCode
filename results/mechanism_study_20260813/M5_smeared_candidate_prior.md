@@ -352,3 +352,9 @@ per-candidate sigma_z rather than the GLADE decile sampler; K uniform per cell r
 K distribution (median 84, max 245364); simplified hard-horizon `alpha(h)`; N = 400 events vs 982.
 It reproduces the anchor (sigma = 0), the sign, the magnitude (R_dose 0.72-0.95 vs 0.88-1.07), and
 the dose-linearity — sufficient for mechanism discrimination, not a substitute for a registered cell.
+
+---
+
+## Addendum (2026-08-14) — toy unfaithful at production K (ledger row #102)
+
+The commission re-executed this note's toy (recovered from session scratchpad; registered K=50 impostor-only value +0.02468 reproduced) unchanged at K=84 and K=1216: the impostor-only prediction **grows** to +0.0279 and **+0.0341**, against the instrument's exactly 0.000000 (MEI, 15/15 seeds). The chair independently re-drove it (+0.0317±0.0007 at K=50, +0.0339±0.0006 at K=1216, protocol variant kerneling the exact host). The K-saturation account is therefore **inverted at production K** and abort (d) was ruled met in substance. Consequence: every sub-closure of this note that consumes toy output (rows B/C/D/H/I/P/Q/R) and the W1 toy leg are **NOT ESTABLISHED** pending re-derivation on a faithful instrument-side ablation. The refutation of M5′-as-registered by DS-M5 on the instrument is unaffected (it is a raw measurement, not a toy result). Toy source now committed under `toys/`.

@@ -172,3 +172,9 @@ registration time.
 ---
 
 *Cited by: PROPOSED amendment row A8, `docs/RESEARCH_CYCLE.md` (amendment ledger).*
+
+---
+
+## Addendum (2026-08-14) — Instance 2 corrected; A8 adopted as revised (ledger row #102)
+
+The commission review refuted this document's Instance-2 predicate: branch 2 was not unsatisfiable-in-meaning from the moment written — `A-M2′` was a registered estimator-side arm, so an eligible referent-bearing arm existed at registration. The fault is re-diagnosed as **readout-time adjudication of a count-based branch over an incomplete registered arm set**, and A8 was adopted AS REVISED with a new blocking execution-completeness check (see `docs/RESEARCH_CYCLE.md` row A8). The two originally proposed blocking checks would have PASSED this thread's pre-registrations; the revised third check is the one that would have caught the actual fault.

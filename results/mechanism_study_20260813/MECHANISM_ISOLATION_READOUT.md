@@ -702,3 +702,9 @@ they *jointly rule out*.
 *This readout is a mechanical scoring of the parent pre-registration plus the interpretation §4
 assigns to the readout session. It appends nothing to any pre-registration, adjudicates nothing,
 proposes no repair, and edits no registered document.*
+
+---
+
+## Addendum (2026-08-14) — rulings of record after the independent review
+
+Ledger row #102 records the author's 2026-08-14 ruling following the adopted commission review (`results/commission_research_20260814/REPORT.md`). Binding on this readout: **(i)** branch 2 is recorded as **PREMATURE ADJUDICATION** (count-based branch adjudicated while registered arm A-M2′ was unrun) — no term is named and both previously tabled readings are superseded; **(ii)** abort (d) is deemed **met in substance** (toy unfaithful at production K: re-executed prediction +0.0341 impostor-only at K=1216 vs measured exactly 0.000000) — toy-dependent M5/W1 sub-closures are NOT ESTABLISHED, M1/M4 stand toy-independent, M3 stands on its analytic core; **(iii)** the V-M1 branch-1 disjunct is discharged to MN0X by registered amendment, MN0's N=15 FAILED status unchanged; **(iv)** MEI's TERM-OWNS classification carries **zero term-attribution power** (degenerate single-grid-point posterior; any register candidate would produce it). This addendum edits nothing above; it is the registered landing of ledger row #102.
