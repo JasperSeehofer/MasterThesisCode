@@ -87,3 +87,6 @@ results/campaign51_20260728/realistic_20260729/seed*/real_r*/prepared_cramer_rao
 results/campaign51_20260728/realistic_20260729/gate_b_20260730/injection_pool_mix200k_20260728/
 results/campaign51_20260728/realistic_20260729/d1_sand/pool_p0kept/
 results/campaign51_20260728/realistic_20260729/d1_sand/pool_p0window/
+
+# Commission research notes (propose-only, not tracked)
+.commission-notes.md

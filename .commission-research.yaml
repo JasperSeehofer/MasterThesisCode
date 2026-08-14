@@ -1,0 +1,146 @@
+# .commission-research.yaml — scaffolded 2026-08-14 by the independent-review session
+# (author instruction 2026-08-14: independent assessment of the mechanism-isolation cycle
+# before its recommendations are implemented). Scope: the five framing claims C-A..C-E of
+# results/campaign51_20260728/HANDOFF_20260814_INDEPENDENT_REVIEW.md — NOT the measured
+# statistics, which are adversarially confirmed at max deviation 0.0 across 425 seeds.
+
+kind: research
+thread: mechanism-isolation-h0-bias
+reporting_period: "the mechanism-isolation arc, 2026-08-13..14 (commits 891109e1..bb566411)"
+min_converging_lines: 2
+budget:
+  max_agents: 30
+  token_target: 2000000
+
+independence:
+  withhold_ground_truth: false   # the claims are interpretive framings, not numeric values
+  neutral_brief: >
+    A dark-siren H0 inference pipeline has a confirmed, production-realism bias: with
+    photometric host redshifts (sigma_z ~ 0.035) the H0 MAP displaces by about +1 x sigma_z
+    (+0.0372 at N=400, coverage 0/400), while an exact-redshift control puts 200/200 seeds on
+    truth. An overnight pre-registered mechanism-isolation study (three split-dose arms
+    MN0/MEH/MEI, a null arm MN0X, and a 16-cell 2D dose scan over host/impostor dose scales)
+    attempted to identify WHICH estimator term produces the bias. Every scored statistic has
+    already been independently reimplemented and reproduced at max deviation exactly 0.0
+    across 425 seeds — the arithmetic is settled. What is NOT settled is the interpretive
+    layer: what the completed design could in principle identify, whether a registered abort
+    condition should be deemed to fire, whether the six-candidate mechanism register is
+    complete, and how two pre-registration branch faults should be handled. Audit those
+    interpretive claims for correctness from the registered artifacts and code alone, and
+    determine whether each survives a real attempt to falsify it.
+  denylist:
+    - "results/campaign51_20260728/HANDOFF_20260814_INDEPENDENT_REVIEW.md"
+    - "results/campaign51_20260728/RUNBOOK_NEXT_SESSION_*.md"
+    - "results/mechanism_study_20260813/CAMPAIGN_REPORT_20260814.md"
+    - "results/mechanism_study_20260813/MECHANISM_ISOLATION_READOUT.md"
+    - "results/mechanism_study_20260813/A1_READOUT.md"
+    - "results/mechanism_study_20260813/SCAN_READOUT.md"
+    - "results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md"
+    - "book/**"
+    - "memory/**"
+    - "CLAUDE.md"
+    - ".claude/**"
+    - "results/commission_history.jsonl"
+
+claims:
+  - id: C-A-design-identifiability
+    statement: >
+      "The completed study could never have identified an estimator term: every arm (MN0, MEH,
+      MEI, MN0X) and all 16 scan cells vary a generator-side dose only; the estimator is
+      byte-identical across arms, so the study's title question (which estimator term produces
+      the bias) was unanswerable by construction, and its SINGLE-OWNER branch was
+      unsatisfiable-in-meaning from registration." Settle: does dose_scales (instrument
+      darksiren_emri/validation/venue_transfer.py at commits e83ed0b9 and 3aedbe55) touch
+      anything the estimator reads beyond the input sigma_z vector, in ANY of the 16 scan
+      cells? Could a term-level conclusion be licensed indirectly, e.g. by the exact-zero
+      f_host=0 row constraining the integrand's functional form?
+    supporting_paths: ["darksiren_emri/validation/venue_transfer.py", "results/mechanism_study_20260813/ARMS.md", "results/mechanism_study_20260813/PREREGISTRATION_*.md"]
+  - id: C-B-abort-d-should-not-fire
+    statement: >
+      "Registered abort condition (d) — a SIGN disagreement between the L0 toy prediction and
+      the L1 instrument — should not be deemed to fire, even though the toy predicted +0.0247
+      for MEI where the instrument measured exactly 0.000000 (100% magnitude failure, zero has
+      no sign), because the L0 closures M1 (sign, analytic derivation + pp_coverage evidence),
+      M3 (analytic 6.2e4 shortfall + wrong dose trend), and M4 (term identically 1, analytic)
+      do not materially depend on toy output; only M5 leaned on the toy and the instrument
+      superseded it." Settle: audit each closure note (results/mechanism_study_20260813/M1_*.md,
+      M3_*.md, M4_*.md, M5_*.md) for its ACTUAL dependence on the L0 toy — if any of M1/M3/M4
+      materially rests on toy output, abort (d) arguably fires, the study stops, and every L0
+      closure reopens. This is the highest-stakes claim.
+    supporting_paths: ["results/mechanism_study_20260813/M1_missing_volume_prior.md", "results/mechanism_study_20260813/M3_truncation_window.md", "results/mechanism_study_20260813/M4_alpha_sigma_blindness.md", "results/mechanism_study_20260813/M5_smeared_candidate_prior.md", "results/mechanism_study_20260813/PREREGISTRATION_MECHANISM_ISOLATION.md"]
+  - id: C-C-register-completeness
+    statement: >
+      "M2-prime (missing measure/Jacobian inside the z-integral, acting at the integrand peak)
+      is the six-candidate register's only surviving unrun candidate, so it is the next
+      measurement." Settle: is the register (M1, M2, M2', M3, M4, M5) complete? Try to name a
+      seventh candidate mechanism consistent with all sixteen constraints C1-C16 in
+      results/mechanism_study_20260813/PHYSICS_CHANGE_INTAKE_DOSSIER.md — in particular one
+      compatible with (i) the parity constraint (measured R_dose ~ 0.92 vs O(sigma_z^2) ~ 3.5x
+      for any symmetric smoothing), (ii) the exact-zero f_host=0 row (one exact host
+      annihilates the bias against ~1.19M smeared impostors), and (iii) the strong
+      non-additivity (split arms recover only 11.5% of the null). Must the mechanism live in
+      an estimator term at all?
+    supporting_paths: ["results/mechanism_study_20260813/PHYSICS_CHANGE_INTAKE_DOSSIER.md", "results/mechanism_study_20260813/PREREGISTRATION_MECHANISM_ISOLATION.md", "darksiren_emri/validation/venue_transfer.py"]
+  - id: C-D-amendment-A8
+    statement: >
+      "Amendment A8 — adding BLOCKING branch-referent and two-sidedness checks plus a
+      NON-BLOCKING band-derivation disclosure to the stage-2 registration discipline — is the
+      right remedy for three observed drafting faults (a one-sided threshold with no upper
+      edge; a branch satisfiable only by an arm registered as zero-estimator-change; an
+      asserted +/-0.002 window never derived, ~21% false-fail under an exact null), because
+      all three share one root: rules registered without checking they can refer to what they
+      name." Settle: is the shared-root diagnosis right or pattern-matching? Does a BLOCKING
+      registration check impose real cost on legitimate designs?
+    supporting_paths: ["docs/gates/BRANCH_REFERENT_FAULT_20260814.md", "docs/RESEARCH_CYCLE.md", "results/mechanism_study_20260813/PREREGISTRATION_2D_DOSE_SCAN.md", "results/mechanism_study_20260813/AMENDMENT_A1_VM1_NULL_AT_N100.md"]
+  - id: C-E-branch2-fired-meaning-barred
+    statement: >
+      "The parent study's branch 2 (SINGLE-OWNER) should be recorded as FIRED with its meaning
+      clause barred (no term named), mirroring the treatment already applied to the 2D scan's
+      branch 2 — rather than re-read as branch 4 (NO-OWNER: a generator-side arm was never
+      eligible, count is 0), which would route to the registered NO-OWNER handling (register
+      exhausted, mandatory Stage-L literature sweep before any further arm)." Settle: from the
+      registered branch wording alone, which reading is faithful, and are the scan's DS-D3
+      fault (badly-shaped rule on a real measurement) and the parent's branch-2 fault (branch
+      naming a conclusion no arm could reach) the same fault deserving the same record?
+    supporting_paths: ["results/mechanism_study_20260813/PREREGISTRATION_MECHANISM_ISOLATION.md", "results/mechanism_study_20260813/PREREGISTRATION_2D_DOSE_SCAN.md", "results/mechanism_study_20260813/ARMS.md"]
+
+hypotheses:
+  - {id: C-A-design-identifiability, statement: "The study design could never have identified an estimator term (all arms/cells are generator-side only)", status: open}
+  - {id: C-B-abort-d-should-not-fire, statement: "Abort (d) should NOT be deemed to fire: closures M1/M3/M4 are materially toy-independent", status: open}
+  - {id: C-B-rival-abort-fires, statement: "RIVAL: at least one of M1/M3/M4 materially depends on the L0 toy, so the toy's 100% magnitude failure on MEI means abort (d) should fire and all L0 closures reopen", status: open}
+  - {id: C-C-register-completeness, statement: "The six-candidate register is complete and M2' is its only survivor", status: open}
+  - {id: C-C-rival-seventh-candidate, statement: "RIVAL: a seventh mechanism consistent with C1-C16, the parity constraint, the exact-zero host gate, and the non-additivity exists outside the register (possibly not an estimator term)", status: open}
+  - {id: C-D-amendment-A8, statement: "A8's blocking branch-referent + two-sidedness checks are the right remedy and the three faults share one root", status: open}
+  - {id: C-E-branch2-fired-meaning-barred, statement: "Recording parent branch 2 as fired-with-meaning-barred is faithful to the registered wording; the branch-4 NO-OWNER reading is not the better one", status: open}
+
+lenses:
+  - {key: design-identifiability, prompt: "What could each arm and scan cell identify IN PRINCIPLE, given what dose_scales actually touches in the instrument code at e83ed0b9 and 3aedbe55? Report at most your 3 strongest disconfirming findings against the claims."}
+  - {key: closure-dependence, prompt: "Trace each L0 closure note (M1/M3/M4/M5) line by line: which steps consume L0 toy OUTPUT versus standalone analytic derivation or committed production evidence (e.g. pp_coverage)? Report at most your 3 strongest disconfirming findings."}
+  - {key: register-completeness, prompt: "Attack the candidate space itself: enumerate mechanism classes consistent with the 16 constraints and the measured shape (parity ~ sigma_z^1, absolute host gate, non-additivity) and check each against the register. Report at most your 3 strongest disconfirming findings."}
+  - {key: registration-governance, prompt: "Assess the branch wording, the A8 remedy, and the fired-vs-no-owner reading strictly from the registered documents' own text. Report at most your 3 strongest disconfirming findings."}
+
+reproduction:
+  n: 2
+  prompt: >
+    From ARMS.md, the two preregistrations, and the instrument code at the frozen commits
+    ALONE (do not read any readout or report), independently determine: (1) what varies and
+    what is held fixed in each arm and scan cell; (2) which of the registered branches each
+    completed arm could in principle satisfy; (3) what conclusion about an ESTIMATOR TERM the
+    completed set of runs could license, if any. Then check your answer against the raw
+    per-seed results JSONs (recompute per-arm MAP-bias means from the raw ln_post vectors,
+    never trust an 'aggregate' block).
+
+red_team_crux:
+  prompt: >
+    Attack this claim on the real artifacts at the frozen commits: read the actual registered
+    wording, the actual instrument code paths, the actual closure-note derivations; run cheap
+    concrete checks (grep what dose_scales reaches, recompute a closure's analytic bound,
+    re-derive a branch eligibility) rather than reasoning from summaries.
+  decisive_on: >
+    whether the claim's stated justification is actually true of the artifacts it cites —
+    a single material counterexample (a scan cell touching the estimator, a closure step that
+    consumes toy output, a seventh viable mechanism, a branch wording that reads differently)
+    falsifies the claim.
+
+feedback_verdicts: [request-change, suggest-change, suggest-direction, raise-consideration]
+verdicts: [CONFIRMED, WRONG, INCONCLUSIVE]
