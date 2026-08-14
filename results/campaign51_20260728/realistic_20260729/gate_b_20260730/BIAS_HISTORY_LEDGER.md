@@ -505,3 +505,29 @@ retrieved), `804b4c5d` (CLAUDE.md approval-scope tags, unpushed prior to this ro
 in `../../../mechanism_study_20260813/`: `PREREGISTRATION_2D_DOSE_SCAN.md` (+ verdict block, this
 row), `SCAN_READOUT.md`, `score_2d_scan.py`, `score_2d_scan_output.json`, `S00`…`S33` arm JSONs,
 `adjudicate_mechanism_study.py` + output JSON.
+
+**Addendum to row #100 (2026-08-14, overnight): disclosure D-A1-2 CLOSED.** V-M5 — the no-drift
+anchor, re-registered earlier the same day as a values golden at rtol ≤ 1e-12 with both channels'
+MAPs exactly equal — has now been **re-executed at HEAD `94c0480a`** and **PASSES**. Artifact:
+`results/mechanism_study_20260813/VM5_GOLDEN_20260814.md` / `.json` / `verify_vm5_golden.py`
+(commit `38465df8`). Max relative deviation **1.6135e-14**, two orders of magnitude inside the
+1e-12 ceiling; the 1D channel is bit-identical on all three registered v2 seeds
+(20286808–20286810); all four MAP fields exactly equal the committed `B2_h0p730_results.json`.
+Deviation is confined to `ln_post_2d`, `mean_2d`, `pit_2d` and `M_source_median` — exactly the
+2D/mass-dependent fields the prereg predicted would move under the ratified Route 1 adaptive
+Gauss–Hermite change. Environment recorded with the artifact (numpy 2.4.3; scipy-openblas 0.3.31
+DYNAMIC_ARCH/Haswell; OMP/OPENBLAS thread vars unset), because the original bit-identity failure
+traced to BLAS/SIMD dispatch and a future re-run needs the comparison basis.
+
+A1-DET certified a *different* check (cross-commit determinism of the null arm); this is the
+registered V-M5 artifact itself, so the gap is closed by evidence of the registered kind rather
+than by a proxy. **No registered STOP fired.** D-A1-3 (MEH/MEI at the pre-refactor commit) and the
+scan's four disclosures remain live.
+
+Also filed this session and cited here for provenance:
+`results/mechanism_study_20260813/PHYSICS_CHANGE_INTAKE_DOSSIER.md` (commit `ee5815f9`) — the
+`/physics-change` intake package. It fills the one gate slot fillable today (the OLD formula,
+exactly, with per-symbol provenance) and specifies **16 constraints (C1–C16)** any future candidate
+must satisfy, each with its establishing measurement and strength. **The new-formula slot is empty
+and stays empty until the author fills it**; the dossier names no candidate and proposes no repair,
+per the scan readout's §6 item 7 bar.
