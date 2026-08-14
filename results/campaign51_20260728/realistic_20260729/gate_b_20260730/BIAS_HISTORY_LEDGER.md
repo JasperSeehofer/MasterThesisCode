@@ -531,3 +531,55 @@ exactly, with per-symbol provenance) and specifies **16 constraints (C1–C16)**
 must satisfy, each with its establishing measurement and strength. **The new-formula slot is empty
 and stays empty until the author fills it**; the dossier names no candidate and proposes no repair,
 per the scan readout's §6 item 7 bar.
+
+**Addendum 2 to row #100 (2026-08-14, overnight): the parent readout is FILED and PRESENTED —
+NOT RULED.** `results/mechanism_study_20260813/MECHANISM_ISOLATION_READOUT.md` (commit `f0817dfe`).
+Recorded here so the measurement exists on the record; the branch call is the author's and is
+outstanding.
+
+**Validity: STUDY-CONFOUNDED fires on zero legs.** V-M1 cleared via A1 (|Δ| = 0.000013, independently
+recomputed as 745 ticks × 5e-5); V-M2 via 11/11 AR unit tests at HEAD (AR-3 is not checkable in-data,
+the arms using disjoint seed blocks — disclosed); V-M3/V-M4 pass on all three arms; V-M5 closed by
+the `38465df8` golden; aborts (a)–(d) none fired. Every statistic recomputed from raw `ln_post`
+vectors agrees with the stored scalars at **0.0** relative deviation across all four arms and both
+channels.
+
+**Branch presented: 2 — SINGLE-OWNER**, sole TERM-OWNS arm MEI, identically in both channels
+(|b| = 0.000000 ≤ 0.010 and HPD90 = 1.000 ≥ 0.60). **With the branch's meaning clause disclosed as
+having no referent:** parent §2 and `ARMS.md` both register E1 as a *zero-estimator-change,
+generator-side* arm ("the estimator is byte-identical across N-0, E1-host and E1-imp"), so branch 2's
+registered meaning — "that term is the identified mechanism; the /physics-change package is written
+against it" — names a conclusion no arm in this design could support. This is the **second**
+independently drafted tree in the same thread to fire a branch whose meaning the data does not
+sustain (the first being the scan's one-sided DS-D3). Proposed remedy drafted, not adopted:
+research-cycle amendment **A8**, `docs/RESEARCH_CYCLE.md` + `docs/gates/BRANCH_REFERENT_FAULT_20260814.md`
+(commit `cd9c610e`), PENDING AUTHOR APPROVAL.
+
+**DS-M5: M5′ NOT CONFIRMED; the registered refutation clause fires**, returning the study to the
+**M2′ arm, which has never been run.** E1-imp required ≥ 0.030 and measured **+0.000000** — the whole
+requirement short, and structurally unreachable: 6 grid steps against a median **2,299-nat** margin at
+the true grid point, 15/15 seeds. E1-host required ≤ 0.012 and measured +0.004000. Non-additivity
+**+0.030667 ± 0.00166667 = 18.40σ** against MN0, **45.67σ** against MN0X; the split recovers **11.5 %**
+of the null, so 88.5 % exists only when both populations are dosed. What breaks is M5′'s *attribution*,
+not its algebra — its K-saturation account (host pinning ≈ 1/K) is falsified at production K̄ ≈ 1,216,
+where one exact host annihilates the bias against 1,192,721 smeared impostors.
+
+**Jointly with the scan, and stated plainly: no estimator TERM is established.** Both documents vary a
+generator-side dose, so the parent's own title question — which term produces the displacement — is
+answered by an input condition and a shape (gate × amplifier), not by a term. M2′ remains the
+register's only unrun candidate and the new-formula slot stays empty (see
+`PHYSICS_CHANGE_INTAKE_DOSSIER.md`, C1–C16).
+
+**Two items flagged for the author.** (i) **Abort (d) is the study's closest call**: the toy predicted
++0.0247 where the instrument measured exactly 0.000000 — a 100 % magnitude disagreement — but zero has
+no *sign*, so the literal registered wording does not fire. Were it deemed to fire, the study STOPs and
+every L0 closure reopens. (ii) The presented branch **rests on A1-PASS and the V-M5 golden, both of
+which are themselves presented-not-ruled.**
+
+**Orchestrator error corrected on the record:** MN0's 2D value was earlier reported as sitting "on the
+campaign value" by comparing it against the *1D* reference. Against its own reference it is +0.037000
+vs +0.039713 = **0.002713 — OUTSIDE the ±0.002 window**, so MN0 at N=15 missed on **both** channels,
+marginally worse on 2D. No verdict depends on it (V-M1/A1 are 1D, and MN0X is inside on both at
+0.000013 / 0.000037), and the conclusion is if anything strengthened — missing on both channels is more
+consistent with an under-powered window than with a 1D-specific fluctuation — but the corroborating
+evidence originally cited was invalid and is withdrawn.
