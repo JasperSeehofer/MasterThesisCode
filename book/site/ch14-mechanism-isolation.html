@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  Doctype + charset are deliberate: without the doctype browsers enter quirks
+  mode and KaTeX refuses to render. See ch11/ch12/ch13's identical note;
+  _template.html is frozen and omits both (filed R-ch07-3).
+
+  ch14 continues ch12/ch13's living-thread family: it is a narrative report
+  of a completed measurement arc (the mechanism-isolation study that followed
+  the venue-transfer campaign's TRANSFER-CONFIRMED ruling), not a discovery
+  chapter with predict-then-reveal widgets. Hand-authored (no gen_ch14.py in
+  the ch00-ch11 sense — but see below): the prose, structure, and figures
+  follow ch12/ch13's convention of a static inline SVG plus HTML tables, no
+  new binary/Plotly assets, per the no-new-binary-assets rule those chapters
+  established.
+
+  UNLIKE ch12/ch13, this chapter's numbers ARE machine-checked: a real
+  generator, book/generators/gen_ch14.py, re-reads the campaign's own scored
+  JSON twins (VENUE_TRANSFER_READOUT.json, MECHANISM_ISOLATION_READOUT.json,
+  score_2d_scan_output.json) and gates every headline figure quoted below to
+  float precision, emitting book/site/data/ch14_*.json as the machine-
+  readable provenance record for this page (not fetched client-side — the
+  figures here are static, transcribed by hand from the generator's own
+  printed summary, exactly as ch12's SVGs transcribe m2_results.json).
+
+  This chapter proposes NOTHING. The new-formula slot of the /physics-change
+  package this arc opened is empty and stays empty here — see §9.
+-->
+<title>Ch. 14 — Six Candidates, One Structure | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="The mechanism-isolation arc that followed the venue-transfer campaign's TRANSFER-CONFIRMED ruling: four of six candidate mechanisms for the sigma_z-dosed coverage collapse closed before a single instrument run, a parity argument that kills the whole kernel-mismatch class at once, a split-dose result that inverts its own registered prediction, and a characterised-but-unowned 'gate x amplifier' structure on the 2-D dose surface. The new-formula slot stays empty." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only. css/book.css is FROZEN; nothing here restyles a shared
+     class — these are elements this chapter introduces, mirroring ch12/13's
+     ch12-*/ch13-* page-local class naming with ch14-* of its own. */
+  .ch14-status {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 0.9rem;
+    margin: 0 0 0.3rem;
+  }
+  .ch14-status .badge { font-size: 0.72rem; }
+  .ch14-status .ch14-updated { font-size: 0.82rem; color: var(--muted); }
+  .ch14-table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 0.6rem 0; }
+  .ch14-table th, .ch14-table td { border: 1px solid var(--border); padding: 0.3rem 0.55rem; text-align: right; }
+  .ch14-table th:first-child, .ch14-table td:first-child { text-align: left; }
+  .ch14-table thead th { background: var(--paper-raised); font-weight: 600; }
+  .ch14-table td.ch14-dim { color: var(--muted); }
+  .ch14-table tr.ch14-decision td { font-weight: 700; }
+  .ch14-table-scroll { overflow-x: auto; }
+  .ch14-svg-wrap { margin: 0.7rem 0; }
+  .ch14-svg-wrap svg { max-width: 100%; height: auto; }
+  .ch14-svg-caption { font-size: 0.78rem; color: var(--muted); margin: 0.3rem 0 0; }
+  .ch14-hyp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.7rem; margin: 0.7rem 0; }
+  .ch14-hyp {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--paper-raised);
+    padding: 0.6rem 0.75rem; font-size: 0.88rem;
+  }
+  .ch14-hyp .ch14-hyp-name { font-weight: 700; display: block; margin-bottom: 0.25rem; }
+  .ch14-hyp .ch14-hyp-route { display: block; color: var(--muted); font-size: 0.8rem; margin-top: 0.35rem; }
+  .ch14-hyp .badge { margin-left: 0.35rem; }
+  .ch14-quote {
+    border-left: 3px solid #009E73; background: var(--paper-raised);
+    padding: 0.55rem 0.85rem; margin: 0.7rem 0; font-size: 0.92rem; font-style: italic;
+  }
+  .ch14-quote .ch14-quote-src { display: block; font-style: normal; color: var(--muted);
+    font-size: 0.8rem; margin-top: 0.3rem; }
+  .ch14-stat-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.6rem 0; }
+  .ch14-stat {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--paper-raised);
+    padding: 0.5rem 0.8rem; min-width: 9rem; text-align: center;
+  }
+  .ch14-stat .ch14-stat-value { font-size: 1.25rem; font-weight: 700; display: block; }
+  .ch14-stat .ch14-stat-label { font-size: 0.76rem; color: var(--muted); }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 14 &mdash; Six Candidates, One Structure</h1>
+    <p class="subtitle">The venue-transfer campaign confirmed the defect survives
+      production-matched realism and demanded a <code>/physics-change</code> package
+      &mdash; which needs a <em>new</em> formula, and only the <em>old</em> one could be
+      written. This chapter is the mechanism hunt that followed: four candidates closed
+      before a single instrument seed ran, a parity argument that kills an entire class
+      of explanation at once, a split-dose experiment that inverted its own registered
+      prediction, and a characterised, still-unowned structure on the 2-D dose surface.
+      It ends where the mechanism study itself ends &mdash; with the new-formula slot
+      empty.</p>
+
+    <div class="ch14-status">
+      <span class="badge finding">CHARACTERISED, UNOWNED</span>
+      <span class="badge open">NEW-FORMULA SLOT: EMPTY</span>
+      <span class="ch14-updated">Mechanism-isolation study run 2026-08-13
+        &middot; ledger rows #100&ndash;#101, <code>BIAS_HISTORY_LEDGER.md</code></span>
+    </div>
+    <div class="callout without">
+      <span class="callout-label">What this chapter is &mdash; and is not</span>
+      This is a narrative report of a completed measurement arc: six candidate
+      mechanisms for the &sigma;<sub>z</sub>-dosed coverage collapse, narrowed to a
+      characterised structure by a pre-registered, adversarially-verified study.
+      <strong>It proposes no repair.</strong> The mechanism study's own bar
+      (<code>SCAN_READOUT.md</code> &sect;9, item 5; the physics-change intake dossier)
+      names no candidate and stops at description &mdash; this chapter keeps that bar.
+      Filling the new-formula slot is a derivation, author-gated, and not attempted
+      here.
+    </div>
+
+    <!-- =================================================================== -->
+    <h2>1. Where Chapter 13 left off</h2>
+    <p>Chapter&nbsp;13 closed the unowned-residual thread as a ratified
+      <strong>DISSOLUTION</strong> (2026-08-08) and, the same week, a second thread
+      &mdash; open since the calibration gate&rsquo;s in-loop read &mdash; came due: a
+      1,400-seed <strong>venue-transfer campaign</strong>
+      (<code>results/venue_transfer_20260811/</code>, ledger row&nbsp;#99) asked whether
+      the &sigma;<sub>z</sub>-dosed coverage collapse survives replacing every synthetic
+      stand-in with the real thing &mdash; real events, real ball multiplicity, real
+      heterogeneous GLADE photo-z errors including the spec-z tail. It does, at every
+      rung:</p>
+
+    <div class="ch14-table-scroll">
+      <table class="ch14-table">
+        <thead>
+          <tr><th>Ladder rung</th><th>N</th><th>What was made real</th>
+            <th>1D bias</th><th>R<sub>dose</sub></th><th>1D classification</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>v2 B2(0.730) &mdash; committed baseline</td><td class="ch14-dim">400</td>
+            <td class="ch14-dim">synthetic universe, Poisson &lambda;=4 balls, flat &sigma;<sub>z</sub>=0.035</td>
+            <td>+0.0353</td><td>1.008</td><td>COLLAPSE-REPRODUCED</td></tr>
+          <tr><td>T-a</td><td class="ch14-dim">200</td>
+            <td class="ch14-dim">+ real event population</td>
+            <td>+0.0349</td><td>0.997</td><td>COLLAPSE-REPRODUCED</td></tr>
+          <tr><td>T-b</td><td class="ch14-dim">200</td>
+            <td class="ch14-dim">+ real ball multiplicity, real K<sub>i</sub></td>
+            <td>+0.0359</td><td>1.025</td><td>COLLAPSE-REPRODUCED</td></tr>
+          <tr class="ch14-decision"><td>T-c(0.730) &mdash; decision cell</td><td>400</td>
+            <td>+ real heterogeneous GLADE &sigma;<sub>z</sub>, spec-z tail included</td>
+            <td>+0.0372</td><td>0.891</td><td>COLLAPSE-REPRODUCED</td></tr>
+          <tr><td>T-0 anchor (&sigma;<sub>z</sub>&nbsp;=&nbsp;0)</td><td class="ch14-dim">200</td>
+            <td class="ch14-dim">real events, real K, no photo-z error</td>
+            <td>+0.000000</td><td class="ch14-dim">&mdash;</td><td>in-band (apparatus unbiased)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="ch14-svg-caption">Source: <code>results/venue_transfer_20260811/VENUE_TRANSFER_READOUT.json</code>
+      <code>DS_VT5_ladder</code> and <code>scored.Tc_h0p730</code>; ledger row #99.
+      <strong>DS-VT5 killing axis: none</strong> &mdash; the JSON&rsquo;s own
+      <code>killing_axis</code> field is <code>null</code>; no rung on the way from the
+      synthetic caricature to the fully realistic venue breaks the collapse.</p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The decision cell, in full
+        <span class="badge finding">RATIFIED 2026-08-13</span>
+        <span class="prov-chip">VENUE_TRANSFER_READOUT.json; ledger row #99, BIAS_HISTORY_LEDGER.md</span></span>
+      T-c(0.730), N&nbsp;=&nbsp;400, 1D channel: MAP bias
+      <strong>+0.037237&nbsp;&plusmn;&nbsp;0.000230</strong>; HPD coverage
+      <strong>0.000&nbsp;/&nbsp;0.000&nbsp;/&nbsp;0.000</strong> at 50/68/90%; PIT&ndash;KS
+      D&nbsp;=&nbsp;<strong>1.000</strong> (saturated, not marginal); rails
+      <strong>0.000&nbsp;/&nbsp;0.000</strong>. The posterior&rsquo;s own median half-width
+      (post_sd&nbsp;=&nbsp;0.004376) means the estimator is displaced by
+      <strong>8.51&times;</strong> its own claimed width. The 2D channel agrees (bias
+      +0.039713, 8.5&times; equivalent 9.00&times;). The author replied verbatim
+      <em>&ldquo;It is ratified&rdquo;</em> and <em>&ldquo;I want to open the physics
+      change&rdquo;</em> (2026-08-13): branch <strong>TRANSFER-CONFIRMED</strong>.
+    </div>
+
+    <!-- =================================================================== -->
+    <h2>2. The question this chapter asks</h2>
+    <p>A confirmed defect is not yet a repair. The <code>/physics-change</code> protocol
+      this book has cited since Chapter&nbsp;1 (see <code>.claude/rules/physics-validation.md</code>)
+      demands, before a single line of production code changes: the old formula, the new
+      formula, a reference or derivation, dimensional analysis, and a limiting-case check.
+      The venue-transfer campaign supplied the first item and nothing else &mdash; it
+      confirmed <em>that</em> the estimator is wrong, not <em>which term</em> is wrong.
+      Opening the gate with only the old formula written is not opening it at all. The
+      mechanism-isolation study that follows exists to answer one question:
+      <strong>which term of the estimator produces the collapse?</strong></p>
+
+    <!-- =================================================================== -->
+    <h2>3. Six candidates, four closed before a single instrument run</h2>
+    <p>The register that opened the study named six mechanisms. Four of them were
+      refuted by <strong>L0</strong> &mdash; analysis, toy models, and code reads against
+      the estimator&rsquo;s own source &mdash; before a single dosed seed was run on the
+      real instrument. This is the methodological heart of the chapter: cheap, decisive
+      reasoning did most of the killing.</p>
+
+    <div class="ch14-hyp-grid">
+      <div class="ch14-hyp">
+        <span class="ch14-hyp-name">M3 <span class="badge refuted">REFUTED</span></span>
+        h-dependent truncation of the unrenormalised z-kernel &mdash; the mechanism is
+        real (confirmed at the code level) but implies a MAP displacement of
+        <strong>+6.0&times;10<sup>&minus;7</sup></strong> against the observed
+        +3.72&times;10<sup>&minus;2</sup> &mdash; a factor <strong>6.2&times;10<sup>4</sup></strong>
+        short, and the implied shift <em>decreases</em> with dose, the wrong trend.
+        <span class="ch14-hyp-route">route: amplitude and dose-trend</span>
+      </div>
+      <div class="ch14-hyp">
+        <span class="ch14-hyp-name">M4 <span class="badge refuted">REFUTED</span></span>
+        &alpha;(h) is &sigma;<sub>z</sub>-blind &mdash; the term M4 says is missing is
+        <strong>identically 1</strong> at every &sigma;<sub>z</sub> (exactness argument).
+        Deleting &alpha;(h) entirely from 2,400 stored posteriors leaves a
+        &sigma;<sub>z</sub>-keyed bias of <strong>+0.0165</strong> &mdash; the keying
+        survives total deletion of the term M4 accuses.
+        <span class="ch14-hyp-route">route: the missing term is 1</span>
+      </div>
+      <div class="ch14-hyp">
+        <span class="ch14-hyp-name">M1 <span class="badge refuted">REFUTED (sole mechanism)</span></span>
+        missing comoving-volume / rate prior &mdash; predicts H<sub>0</sub> biased
+        <strong>LOW</strong> by ~0.02&ndash;0.04 (&lambda;&nbsp;&gt;&nbsp;0 throughout the
+        venue&rsquo;s population), the <strong>opposite sign</strong> of the observed
+        defect. Retained only as a compounding negative quadratic term.
+        <span class="ch14-hyp-route">route: sign</span>
+      </div>
+      <div class="ch14-hyp">
+        <span class="ch14-hyp-name">M5 <span class="badge refuted">REFUTED AS STATED</span></span>
+        equal-weight 1/K candidate prior over a smeared population &mdash; the prior half
+        is exonerated (reweighting never attenuates the bias); with
+        <strong>zero</strong> population scatter, <strong>76%</strong> of the bias
+        survives. A modified carrier M5&prime; (the estimator&rsquo;s own over-broad
+        effective candidate measure) survives all three constraints instead.
+        <span class="ch14-hyp-route">route: attribution</span>
+      </div>
+      <div class="ch14-hyp">
+        <span class="ch14-hyp-name">M2 <span class="badge refuted">CLOSED &mdash; REFUTED</span></span>
+        missing Jacobian in the point-distance term &mdash; would bias the T-0 anchor.
+        T-0 is clean: 200/200 seeds argmax exactly on truth, zero rails.
+        <span class="ch14-hyp-route">route: the anchor</span>
+      </div>
+      <div class="ch14-hyp">
+        <span class="ch14-hyp-name">M5&prime; <span class="badge candidate">SURVIVES, CONFIRMED ON THE INSTRUMENT</span></span>
+        the carrier that remains: the estimator&rsquo;s own over-broad effective
+        candidate measure, times the marginalisation Jacobian. Positive sign, linear
+        in &sigma;<sub>z</sub>, vanishing at &sigma;<sub>z</sub>=0 &mdash; not repairable
+        by any candidate reweighting. Confirmed by the split-dose experiment (&sect;6),
+        superseded in scope by the 2-D dose surface&rsquo;s gate&times;amplifier finding (&sect;7).
+        <span class="ch14-hyp-route">route: survives every registered constraint</span>
+      </div>
+    </div>
+    <p>Four candidates (M1, M2, M3, M4) closed at L0, at a cost the study itself puts at
+      a few CPU-<em>minutes</em> for M3 alone. Only M5/M5&prime; needed the instrument.</p>
+
+    <!-- =================================================================== -->
+    <h2>4. The parity argument</h2>
+    <p>Before any split-dose or 2-D scan, one piece of reasoning did more work than any
+      single measurement: an argument from the algebraic structure of a Gaussian
+      convolution, sharp enough to kill an entire <em>class</em> of candidate mechanism
+      at once, not just one member of it.</p>
+
+    <div class="ch14-quote">
+      Gaussian convolution is <strong>exp(&sigma;&sup2;&part;&sup2;/2)</strong>, an
+      expansion in <strong>even powers of &sigma; only</strong>. Therefore every
+      &ldquo;we convolved wrong&rdquo; story &mdash; the whole kernel-mismatch class
+      &mdash; is O(&sigma;<sub>z</sub>&sup2;) at leading order and predicts
+      R<sub>dose</sub>&nbsp;&prop;&nbsp;&sigma;<sub>z</sub>: a <strong>3.5&times;</strong>
+      change across the B1&rarr;B2 dose lever.
+      <span class="ch14-quote-src">PREREGISTRATION_MECHANISM_ISOLATION.md &sect;7 (parity argument)</span>
+    </div>
+
+    <div class="ch14-stat-row">
+      <div class="ch14-stat"><span class="ch14-stat-value">3.5&times;</span>
+        <span class="ch14-stat-label">predicted R<sub>dose</sub> ratio<br/>(kernel-mismatch class)</span></div>
+      <div class="ch14-stat"><span class="ch14-stat-value">0.92</span>
+        <span class="ch14-stat-label">measured R<sub>dose</sub> ratio<br/>(1.103 &rarr; 1.012)</span></div>
+    </div>
+    <p>A ratio of <strong>0.92</strong>, near unity and nowhere near the predicted
+      <strong>3.5&times;</strong>, kills every symmetric-kernel-mismatch story
+      simultaneously &mdash; whatever carries the defect must act somewhere the parity
+      argument does not reach: at the integrand peak, not in a mis-shaped tail. The M3
+      corollary makes the same point independently: because the estimator&rsquo;s
+      truncation window is pinned at &plusmn;4&sigma; in the GW-likelihood variable,
+      anything confined to the wings is capped at ~10<sup>&minus;4</sup> per event.
+      <strong>A surviving mechanism must act at the integrand peak.</strong></p>
+
+    <!-- =================================================================== -->
+    <h2>5. Cheap experiments beat expensive ones</h2>
+    <p>The venue-transfer campaign that confirmed the defect ran the decision cell at
+      N&nbsp;=&nbsp;400 seeds. It did not need to be that large to be decisive, and the
+      mechanism study did not repeat that scale: the per-seed effect is
+      <strong>~7&sigma;</strong> on its own (bias +0.037 against a per-seed MAP spread
+      of ~0.005), so mechanism cells needed only N&nbsp;~&nbsp;15&ndash;25 to separate
+      classifications by &gg;10&sigma;.</p>
+
+    <div class="ch14-stat-row">
+      <div class="ch14-stat"><span class="ch14-stat-value">~7&sigma;</span>
+        <span class="ch14-stat-label">effect size in a<br/>single seed</span></div>
+      <div class="ch14-stat"><span class="ch14-stat-value">325</span>
+        <span class="ch14-stat-label">seeds, full 2-D<br/>dose-scan programme</span></div>
+      <div class="ch14-stat"><span class="ch14-stat-value">177.8</span>
+        <span class="ch14-stat-label">realized CPU-hours<br/>(budget &asymp;259)</span></div>
+    </div>
+    <p>The entire 16-cell, 325-seed dose-scan programme &mdash; the study&rsquo;s most
+      expensive single instrument &mdash; ran under budget at 177.8 CPU-hours, inside a
+      single evening&rsquo;s wall-clock on the cluster&rsquo;s parallel array. Being
+      decisive did not require being large.</p>
+
+    <!-- =================================================================== -->
+    <h2>6. The split-dose result, and its inversion</h2>
+    <p>Before the 2-D scan, one decisive arm was registered: dose the host redshift only
+      (E1-host) or the impostor sea only (E1-imp), holding the other exact, and see which
+      one carries the bias. The registered prediction named the impostor sea as the
+      carrier &mdash; predicted &ge;0.030 &mdash; and the host as inert &mdash; predicted
+      &le;0.012.</p>
+
+    <div class="ch14-table-scroll">
+      <table class="ch14-table">
+        <thead>
+          <tr><th>Arm</th><th>What is dosed</th><th>Predicted 1D bias</th><th>Measured 1D bias</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>N-0 (null)</td><td>both host and impostor sea</td>
+            <td class="ch14-dim">reproduce the campaign, +0.037&nbsp;&plusmn;&nbsp;0.002</td>
+            <td>+0.034667</td></tr>
+          <tr><td>E1-imp</td><td>impostor sea only, host exact</td>
+            <td class="ch14-dim">&ge; +0.030 if M5&prime; carries</td>
+            <td>+0.000000</td></tr>
+          <tr><td>E1-host</td><td>host only, impostor sea exact</td>
+            <td class="ch14-dim">&le; +0.012 if M5&prime; carries</td>
+            <td>+0.004000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="ch14-svg-caption">Source: <code>results/mechanism_study_20260813/MECHANISM_ISOLATION_READOUT.json</code>
+      arms MN0/MEH/MEI; predictions from <code>PREREGISTRATION_MECHANISM_ISOLATION.md</code>
+      &sect;2.</p>
+
+    <p>The measurement runs the <em>opposite</em> way from the registered guess: the
+      impostor sea alone reproduces almost nothing (consistent with zero), while the host
+      alone carries a small but nonzero +0.004. Worse for either reading:
+      <strong>neither arm, nor their sum</strong>, reproduces N-0 &mdash;
+      0.004&nbsp;+&nbsp;0.000&nbsp;=&nbsp;0.004 against a null-arm bias of 0.035. The
+      system is strongly <strong>non-additive</strong>: whatever the two doses do
+      together, it is not what they do apart.</p>
+
+    <!-- =================================================================== -->
+    <h2>7. The 2-D dose surface</h2>
+    <p>Non-additivity on two points is a hint; a full grid is a shape. The follow-up scan
+      swept both doses independently &mdash; f<sub>host</sub> and f<sub>imp</sub>, each at
+      {0, 0.25, 0.5, 1.0} of each candidate&rsquo;s own GLADE &sigma;<sub>z</sub> &mdash;
+      16 cells, 325 seeds, adversarially re-derived cell-by-cell from the raw per-seed
+      records.</p>
+
+    <div class="ch14-svg-wrap">
+      <svg viewBox="0 0 480 340" role="img" aria-labelledby="ch14-svg-title ch14-svg-desc">
+        <title id="ch14-svg-title">2-D dose surface, 1D channel MAP bias</title>
+        <desc id="ch14-svg-desc">4 by 4 grid of MAP bias in h, rows are host dose f_host in {0, 0.25, 0.5, 1.0}, columns are impostor-sea dose f_imp in the same set. The f_host=0 row is exactly zero at every impostor dose. Bias rises toward the bottom-right corner (both doses at 1.0), reaching +0.040, roughly the full campaign defect.</desc>
+        <text x="10" y="20" font-size="12" fill="var(--muted)">f&#8347;&#7522;&#7523; (impostor dose) &rarr;</text>
+        <text x="10" y="200" font-size="12" fill="var(--muted)" transform="rotate(-90 10 200)">f&#8341;&#8348;&#8354;&#8355; (host dose) &rarr;</text>
+        <text x="167" y="34" font-size="11" fill="var(--muted)" text-anchor="middle">0</text>
+        <text x="245" y="34" font-size="11" fill="var(--muted)" text-anchor="middle">0.25</text>
+        <text x="323" y="34" font-size="11" fill="var(--muted)" text-anchor="middle">0.50</text>
+        <text x="401" y="34" font-size="11" fill="var(--muted)" text-anchor="middle">1.00</text>
+        <text x="122" y="81" font-size="11" fill="var(--muted)" text-anchor="end">0</text>
+        <text x="122" y="159" font-size="11" fill="var(--muted)" text-anchor="end">0.25</text>
+        <text x="122" y="237" font-size="11" fill="var(--muted)" text-anchor="end">0.50</text>
+        <text x="122" y="315" font-size="11" fill="var(--muted)" text-anchor="end">1.00</text>
+
+        <rect x="130" y="40" width="74" height="74" fill="var(--accent)" opacity="0.06" />
+        <text x="167" y="81" font-size="12" fill="var(--ink)" text-anchor="middle">0</text>
+        <rect x="208" y="40" width="74" height="74" fill="var(--accent)" opacity="0.06" />
+        <text x="245" y="81" font-size="12" fill="var(--ink)" text-anchor="middle">0</text>
+        <rect x="286" y="40" width="74" height="74" fill="var(--accent)" opacity="0.06" />
+        <text x="323" y="81" font-size="12" fill="var(--ink)" text-anchor="middle">0</text>
+        <rect x="364" y="40" width="74" height="74" fill="var(--accent)" opacity="0.06" />
+        <text x="401" y="81" font-size="12" fill="var(--ink)" text-anchor="middle">0</text>
+        <rect x="130" y="118" width="74" height="74" fill="var(--accent)" opacity="0.212" />
+        <text x="167" y="159" font-size="12" fill="var(--ink)" text-anchor="middle">+0.005</text>
+        <rect x="208" y="118" width="74" height="74" fill="var(--accent)" opacity="0.369" />
+        <text x="245" y="159" font-size="12" fill="var(--ink)" text-anchor="middle">+0.013</text>
+        <rect x="286" y="118" width="74" height="74" fill="var(--accent)" opacity="0.356" />
+        <text x="323" y="159" font-size="12" fill="var(--ink)" text-anchor="middle">+0.012</text>
+        <rect x="364" y="118" width="74" height="74" fill="var(--accent)" opacity="0.395" />
+        <text x="401" y="159" font-size="12" fill="var(--ink)" text-anchor="middle">+0.014</text>
+        <rect x="130" y="196" width="74" height="74" fill="var(--accent)" opacity="0.225" />
+        <text x="167" y="237" font-size="12" fill="var(--ink)" text-anchor="middle">+0.005</text>
+        <rect x="208" y="196" width="74" height="74" fill="var(--accent)" opacity="0.494" />
+        <text x="245" y="237" font-size="12" fill="var(--ink)" text-anchor="middle">+0.019</text>
+        <rect x="286" y="196" width="74" height="74" fill="var(--accent)" opacity="0.435" />
+        <text x="323" y="237" font-size="12" fill="var(--ink)" text-anchor="middle">+0.016</text>
+        <rect x="364" y="196" width="74" height="74" fill="var(--accent)" opacity="0.585" />
+        <text x="401" y="237" font-size="12" fill="#ffffff" text-anchor="middle">+0.024</text>
+        <rect x="130" y="274" width="74" height="74" fill="var(--accent)" opacity="0.238" />
+        <text x="167" y="315" font-size="12" fill="var(--ink)" text-anchor="middle">+0.006</text>
+        <rect x="208" y="274" width="74" height="74" fill="var(--accent)" opacity="0.553" />
+        <text x="245" y="315" font-size="12" fill="#ffffff" text-anchor="middle">+0.022</text>
+        <rect x="286" y="274" width="74" height="74" fill="var(--accent)" opacity="0.579" />
+        <text x="323" y="315" font-size="12" fill="#ffffff" text-anchor="middle">+0.023</text>
+        <rect x="364" y="274" width="74" height="74" fill="var(--accent)" opacity="0.9" />
+        <text x="401" y="315" font-size="12" fill="#ffffff" text-anchor="middle">+0.040</text>
+
+        <rect x="130" y="40" width="308" height="308" fill="none" stroke="var(--border)" stroke-width="1.5" />
+        <line x1="130" y1="118" x2="438" y2="118" stroke="var(--paper)" stroke-width="3" />
+        <line x1="130" y1="118" x2="438" y2="118" stroke="var(--planck)" stroke-width="1.5" stroke-dasharray="4,3" />
+      </svg>
+      <p class="ch14-svg-caption">1D-channel MAP bias in h, 16-cell grid (N=15 seeds/cell,
+        S23 corroborated at N=100). The dashed line marks the top of the f<sub>host</sub>=0
+        row: below it, every cell is nonzero; on it and above, every cell is exactly zero.
+        Source: <code>results/mechanism_study_20260813/score_2d_scan_output.json</code>
+        (adjudicator&rsquo;s own re-derivation); <code>SCAN_READOUT.md</code>; ledger row #101.</p>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Gate &times; amplifier
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">SCAN_READOUT.md; score_2d_scan_output.json; ledger row #101</span></span>
+      The <strong>host is an absolute gate</strong>: the f<sub>host</sub>=0 row is exactly
+      <strong>+0.000000</strong> at every impostor dose, 60/60 seeds, a degenerate
+      posterior. The <strong>impostor sea is a graded amplifier</strong>: removing it
+      (the f<sub>imp</sub>=0 column) leaves +0.0047&hellip;+0.0060 across the dosed host
+      levels &mdash; roughly <strong>15%</strong> of the fully-dosed S33 effect. The
+      impostor sea carries the remaining <strong>~85%</strong>, but only once the host
+      gate is open. Neither ingredient alone is close to sufficient; together they are
+      the whole defect.
+    </div>
+
+    <p>The registered decision tree fires <strong>BRANCH&nbsp;2 &mdash;
+      INTERACTION-BILINEAR</strong>: non-additivity at S33 (D&nbsp;=&nbsp;+0.033667,
+      23.4&sigma;) and a shape-interaction statistic at S23 (b&nbsp;=&nbsp;+0.023650,
+      28.2&sigma; above its own registered boundary). But the branch&rsquo;s
+      <em>meaning</em> &mdash; a genuine strictly-bilinear product form,
+      D&nbsp;=&nbsp;I&middot;f<sub>host</sub>&middot;f<sub>imp</sub> &mdash; is refuted by
+      the scan&rsquo;s own statistics at &ge;10&sigma;: b(S23) sits +10.33&sigma; above
+      H-INT&rsquo;s own point prediction (+14.64&sigma; realized); the alternative
+      threshold hypothesis, H-THRESH, is independently refuted at
+      17.96&sigma;/50.18&sigma;. <strong>The branch fires, but its pre-stated meaning may
+      not be quoted.</strong> The surface is a gate and an amplifier, not a product of two
+      independent terms &mdash; and no functional form for it has been fitted.</p>
+
+    <!-- =================================================================== -->
+    <h2>8. Two pre-registration defects, recorded not repaired</h2>
+    <p>Honest bookkeeping about the instruments themselves, not just the physics: the
+      mechanism study surfaced two design faults in its own pre-registered decision
+      statistics. Per the project&rsquo;s anti-tuning discipline, neither threshold was
+      moved after the fact &mdash; both are recorded as defects for a future amendment.</p>
+
+    <div class="ch14-hyp-grid">
+      <div class="ch14-hyp">
+        <span class="ch14-hyp-name">The &plusmn;0.002 window (V-M1)</span>
+        The Amendment-A1 tolerance window on the null-arm reproduction check was
+        <strong>asserted, not derived</strong>, and carried a <strong>~21%</strong>
+        false-fail probability of declaring STUDY-CONFOUNDED even for a perfect
+        reproduction, under an exact null. It was settled <strong>on data</strong>, at
+        N&nbsp;=&nbsp;100 (MN0X mean bias +0.037250&nbsp;&plusmn;&nbsp;0.000494,
+        |&Delta;|&nbsp;=&nbsp;0.000013, 153.8&times; inside the unchanged window) &mdash;
+        rather than the window being widened on principle.
+        <span class="ch14-hyp-route">AMENDMENT_A1_VM1_NULL_AT_N100.md</span>
+      </div>
+      <div class="ch14-hyp">
+        <span class="ch14-hyp-name">DS-D3&rsquo;s one-sided threshold</span>
+        The shape-interaction statistic has no upper edge, so
+        <strong>SHAPE-INTERACTION fires for any sufficiently large value</strong> &mdash;
+        including, in this scan, a value that <em>refutes</em> the hypothesis the
+        statistic is named for (H-INT is contradicted, not supported, at the same
+        cell that trips the threshold).
+        <span class="ch14-hyp-route">SCAN_READOUT.md §5.2, §9; ledger row #101</span>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <h2>9. What is still unknown</h2>
+    <p>The mechanism study closes with a description, not a formula. Every candidate
+      named at registration is closed, refuted-as-stated, or reduced to a compounding
+      secondary term; the surviving structure &mdash; a host gate multiplying a graded
+      impostor-sea amplifier &mdash; is characterised at high significance and has no
+      admissible functional form fitted to it. Both registered shapes for it are
+      refuted. No third shape has been proposed.</p>
+
+    <div class="ch14-quote">
+      Stated plainly: the new-formula slot is empty. Filling it is a derivation &mdash;
+      an author-gated step this readout does not take.
+      <span class="ch14-quote-src">PHYSICS_CHANGE_INTAKE_DOSSIER.md &sect;2 / &sect;3</span>
+    </div>
+
+    <p>The physics-change intake package this arc opened fills the one gate slot it can
+      fill today &mdash; the <em>old</em> formula, exactly, with per-symbol provenance
+      &mdash; and states sixteen constraints (C1&ndash;C16) any future candidate term must
+      satisfy: it must vanish identically when the host is exact at any impostor dose; it
+      must be non-separable in the two doses, since the impostor response&rsquo;s shape
+      itself changes with the host dose; it must act at the integrand peak, not in the
+      truncated wings the parity argument already excludes; and it must survive the
+      &alpha;-deletion test that M4 already ran. No published equation is known to hold in
+      this regime &mdash; the literature register carries a standing warning that the
+      reduction this estimator relies on assumes perfect galaxy redshifts (Gair et al.
+      2023, arXiv:2212.08694 &sect;2.3), a condition this project&rsquo;s own photo-z
+      errors violate at every venue. <strong>There is nothing to derive to, yet.</strong>
+      The chapter ends here, not because the story is finished, but because this is where
+      the measured record currently ends.</p>
+
+    <div class="ch14-callout-block">
+      <div class="callout">
+        <span class="callout-label">The branch-2/branch-5 question, still open</span>
+        The registered decision tree&rsquo;s branch-2 condition fires, but branch-5&rsquo;s
+        condition (&ldquo;a resolved but non-bilinear and non-threshold surface&rdquo;) is
+        also factually satisfied and was, at the time of the readout, unreachable in the
+        registered ordering. Which reading governs &mdash; and whether branch 2&rsquo;s
+        listed consequence (any candidate term must vanish when either dose is removed) is
+        retained even though its meaning clause is barred &mdash; is a standing author
+        ruling this chapter does not resolve, per <code>SCAN_READOUT.md</code> &sect;9
+        item 1.
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <div class="provenance-panel">
+      <h4>Provenance panel &mdash; every source cited in this chapter</h4>
+      <ul>
+        <li><span class="badge ratified">RATIFIED</span>
+          <code>results/venue_transfer_20260811/VENUE_TRANSFER_READOUT.md</code> +
+          <code>.json</code> &mdash; the 1,400-seed campaign, decision cell T-c(0.730),
+          ledger row #99</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/mechanism_study_20260813/M1_missing_volume_prior.md</code>,
+          <code>M3_truncation_window.md</code>, <code>M4_alpha_sigma_blindness.md</code>,
+          <code>M5_smeared_candidate_prior.md</code> &mdash; the four L0 candidate
+          closures</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/mechanism_study_20260813/PREREGISTRATION_MECHANISM_ISOLATION.md</code>
+          &mdash; the parity argument (&sect;7), the split-dose registration (&sect;2),
+          M2&rsquo;s closure</li>
+        <li><span class="badge ratified">RATIFIED</span>
+          <code>results/mechanism_study_20260813/AMENDMENT_A1_VM1_NULL_AT_N100.md</code>
+          &mdash; the &plusmn;0.002 window false-fail rate and its N=100 resettlement,
+          A1-PASS</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/mechanism_study_20260813/MECHANISM_ISOLATION_READOUT.json</code>
+          &mdash; arms MN0/MEH/MEI, the split-dose measurement</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/mechanism_study_20260813/PREREGISTRATION_2D_DOSE_SCAN.md</code>,
+          <code>SCAN_READOUT.md</code>, <code>score_2d_scan_output.json</code> &mdash;
+          the 16-cell, 325-seed dose surface, branch 2, the gate&times;amplifier finding,
+          DS-D3&rsquo;s defect</li>
+        <li><span class="badge open">OPEN</span>
+          <code>results/mechanism_study_20260813/PHYSICS_CHANGE_INTAKE_DOSSIER.md</code>
+          &mdash; the empty new-formula slot, the sixteen constraints, the literature
+          warning</li>
+        <li><span class="badge open">OPEN</span>
+          <code>results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md</code>
+          rows #99&ndash;#101 &mdash; author ratifications, attribution-precise</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Hand-authored, not generated in the ch00&ndash;ch11 sense: this chapter follows
+      ch12/ch13&rsquo;s narrative convention (no predict-then-reveal widgets, static
+      inline SVG, no new binary assets). Its headline numbers ARE machine-checked,
+      however &mdash; <code>book/generators/gen_ch14.py</code> re-reads the campaign&rsquo;s
+      own scored JSON twins and gates every figure quoted above to float precision,
+      emitting <code>book/site/data/ch14_ladder.json</code>,
+      <code>ch14_candidates.json</code>, <code>ch14_split_dose.json</code>, and
+      <code>ch14_dose_surface.json</code> as this page&rsquo;s machine-readable
+      provenance record. This page renders fully offline &mdash; Plotly and KaTeX are
+      vendored under <code>vendor/</code> (unused on this page: the one figure is a
+      static inline SVG).
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    // Bias Ledger Rail: this chapter measures and characterises a defect but
+    // does not adopt a repair, so it declares no new quantified estimator
+    // row. Carries forward ch12/13's two closed pips (grey) for continuity
+    // and adds one new amber pip for the thread this chapter's own subject:
+    // the sigma_z-dosed coverage collapse, now characterised (gate x
+    // amplifier) but still unowned -- no functional form fitted, new-formula
+    // slot empty.
+    Book.biasRail({
+      entries: [],
+      pips: [
+        { label: "sigma_z-dosed coverage collapse (T-c(0.730): +0.037, 8.5x its own posterior width) — CHARACTERISED (gate x amplifier), UNOWNED: new-formula slot empty", tone: "amber",
+          note: "VENUE_TRANSFER_READOUT.json ledger row #99; SCAN_READOUT.md ledger row #101; PHYSICS_CHANGE_INTAKE_DOSSIER.md §2" },
+        { label: "M-2 2D overlap residual (+0.0207/+0.0222 nats/event) — CLOSED 2026-08-08: dissolution (modified H-c); ~1/3 fixed-d_L excess = disclosed bounded open object", tone: "grey",
+          note: "m2_residual_owner/B_READOUT_20260808.md STAGE-5 RULING; BIAS_HISTORY_LEDGER.md §1 row 97, §4 thread 16 closed" },
+        { label: "Eq. (31) cross-term — NEGLECT-WITH-NUMBER, conditional on 6-trigger register", tone: "grey",
+          note: "NEGLECT_TRIGGER_REGISTER.md; author ruling 2026-08-07" },
+      ],
+    });
+  })();
+</script>

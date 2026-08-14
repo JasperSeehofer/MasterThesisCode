@@ -15,7 +15,11 @@
  * owner-hunt closed as a ratified dissolution (ch13 §A.7). The Atlas
  * (pipeline map + formula explorer) added 2026-08-08 as a second annex:
  * hand-authored graph (atlas_graph.json) plus one generator
- * (gen_ch_atlas.py) for the sidebar curves.
+ * (gen_ch_atlas.py) for the sidebar curves. Ch. 14 (the mechanism-isolation
+ * arc that followed the venue-transfer campaign's TRANSFER-CONFIRMED ruling)
+ * added 2026-08-14 — narrative chapter in ch12/13's living-thread style
+ * (static SVG, no widgets), but with a real generator (gen_ch14.py) that
+ * gates every headline number against the campaign's own scored JSON.
  */
 window.BOOK_CHAPTERS = [
   { file: "index.html",              short: "Contents",   title: "Contents",                                    status: "live" },
@@ -33,6 +37,7 @@ window.BOOK_CHAPTERS = [
   { file: "ch11-honest-state.html",  short: "Ch. 11",     title: "The State of the Art, Honestly",              status: "live" },
   { file: "ch12-bias-resolution.html", short: "Ch. 12",   title: "The Bias Resolution, a Live Thread",          status: "live" },
   { file: "ch13-unowned-residual.html", short: "Ch. 13",  title: "The Unowned Residual: Measured and Closed",   status: "live" },
+  { file: "ch14-mechanism-isolation.html", short: "Ch. 14", title: "Six Candidates, One Structure",             status: "live" },
   { file: "museum.html",             short: "Museum",     title: "The Defect Museum",                           status: "live" },
   { file: "atlas.html",              short: "Atlas",      title: "The Atlas — the Pipeline as One Map",         status: "live" },
 ];
