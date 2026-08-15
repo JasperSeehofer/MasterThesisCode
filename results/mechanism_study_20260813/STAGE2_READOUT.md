@@ -87,3 +87,9 @@ component the pure σ_z-blind form does not capture — the next candidate struc
 *Bands locked at registration and unchanged; scorer frozen pre-data; raw vectors rescored, the
 `aggregate` block used only as a labeled cross-check. This document is append-only from its
 registering commit.*
+
+---
+
+## Addendum (2026-08-15) — RATIFIED
+
+Ledger row #103: the author ratified branch 3 (M2′-PARTIAL) and the DS-N1 PASS as verdicts of record, accepted the 2D weak-expectation miss as recorded, and authorized the M6-revision and M7 L0 work. No repair licensed; no further instrument arm without fresh registration.

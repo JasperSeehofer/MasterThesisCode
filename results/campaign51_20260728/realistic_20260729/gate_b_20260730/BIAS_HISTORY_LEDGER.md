@@ -604,3 +604,16 @@ evidence originally cited was invalid and is withdrawn.
 7. **[DO] Mechanical repairs:** PREREG_PATH parameterization + a correction artifact for the 20 mis-stamped result JSONs; the recovered M5 toy committed with provenance; a pinned-inputs checksum manifest; errata/addenda to the registered documents (this row's companion appends).
 
 **Attribution:** itemization above is orchestrator-derived from the author's blanket grant; the author's own words are only the quoted sentences.
+
+---
+
+## Row #103 — 2026-08-15 — Stage-2 readout ratified (A-M2′ TERM-PARTIAL; DS-N1 PASS)
+
+**Author's verbatim ruling (2026-08-15):** "Readout 3 "rules" and "do" are approved, please go ahead but keep in mind you are the orchestrator and you should use subagents and workflows but think about which models and efforts to use."
+
+**Orchestrator-derived itemization** (referencing `results/mechanism_study_20260813/STAGE2_READOUT.md` §5; all inputs existed at ruling time):
+1. **[RULE]** Branch **3 — M2′-PARTIAL** is the branch of record; the DS-N1 PASS (15/15 paired seeds MAP-index-identical to MN0X, floor-aware integer shift law exact, m = 982 at every MAP) and the stage-2 readout are **verdicts of record**. Measured: restoring the z-integral measure/Jacobian removes **Δb(1D) = −0.018050 ± 0.000895** (48.5 % of b_ref = +0.037250), leaving +0.019200 ± 0.000746 with coverage 0/25 — M2′ **contributes but does not own**. Per registration: **no repair is licensed from a partial read**; the `/physics-change` new-formula slot stays empty.
+2. **[RULE]** The 2D weak-expectation miss (+0.021400 vs window upper edge +0.021, non-branch-carrying) is **accepted as recorded**.
+3. **[DO]** The M6-revision L0 work (formalize the dose-dependent tilt residual from committed data) and the M7-L0 derivation are authorized. Both stage-2 L1 slots are spent; **any further instrument arm requires a fresh registration.**
+
+Provenance: prereg `092b121b` · scorer frozen pre-data `191b0db7` · data + readout `e49f7570` · job 6315312/6315313 (AM2P 1:21:25, ANULL 0:42:16, both 0:0).
