@@ -83,7 +83,7 @@ The CRB table is git-tracked and present in any checkout of this branch, so
 the population + per-event Fisher blocks always rebuild.  The 1.7 GB reduced
 galaxy catalogue and the 200k-row injection pool are NOT tracked (they live
 in the main checkout's working tree), so those steps resolve them from, in
-order: this repo root, then a sibling ``MasterThesisCode`` checkout.  If a
+order: this repo root, then a sibling ``darksiren-emri`` checkout.  If a
 source is missing the already-committed JSON is left untouched and a NOTICE
 is printed — the generator never fails a build over an untracked artifact and
 never writes a partial or silently-degraded file.
@@ -94,7 +94,7 @@ outside ``book/``.
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch06.py
 """
 
@@ -318,11 +318,11 @@ npt_like = Any  # tiny alias so the annotation above stays readable
 
 
 def _resolve(rel: Path) -> Path | None:
-    """Find an artifact in this repo root, else in a sibling MasterThesisCode."""
+    """Find an artifact in this repo root, else in a sibling darksiren-emri."""
     here = REPO_ROOT / rel
     if here.exists():
         return here
-    sibling = REPO_ROOT.parent / "MasterThesisCode" / rel
+    sibling = REPO_ROOT.parent / "darksiren-emri" / rel
     if sibling.exists():
         return sibling
     return None
@@ -951,7 +951,7 @@ def main() -> None:
     if catalogue is None:
         print(
             "    NOTICE: reduced_galaxy_catalogue.csv not found in this repo or a "
-            "sibling MasterThesisCode checkout — the I6.1 candidate-count blocks "
+            "sibling darksiren-emri checkout — the I6.1 candidate-count blocks "
             "are not rebuilt; any committed ch06_fisher.json is left untouched."
         )
         if OUT_FISHER.exists():
@@ -969,7 +969,7 @@ def main() -> None:
     if pool is None:
         print(
             "    NOTICE: injection pool not found in this repo or a sibling "
-            "MasterThesisCode checkout — I6.2 not rebuilt; any committed "
+            "darksiren-emri checkout — I6.2 not rebuilt; any committed "
             "ch06_dt2.json is left untouched."
         )
     else:

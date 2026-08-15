@@ -58,7 +58,7 @@ Read-only outside ``book/``.
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch01.py
 """
 
@@ -214,7 +214,7 @@ def build_event() -> dict[str, Any]:
     twin = REPO_ROOT / CRB_SPEC_REL
     if not twin.exists():
         # Untracked in this worktree; try a sibling main checkout (read-only).
-        sibling = REPO_ROOT.parent / "MasterThesisCode" / CRB_SPEC_REL
+        sibling = REPO_ROOT.parent / "darksiren-emri" / CRB_SPEC_REL
         if sibling.exists():
             twin = sibling
     if twin.exists():

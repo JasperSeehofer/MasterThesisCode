@@ -9,7 +9,7 @@
 `gate_b_20260730/{ADJUDICATION,BIAS_HISTORY_LEDGER}.md`, `IDEALIZED_BASELINE_READOUT.md`,
 `REALISTIC_READOUT.md`, `docs/gates/G7_systematics_budget.md`, and the code. ≥3 numeric
 gates per chapter re-derived independently with
-`/home/jasper/Repositories/MasterThesisCode/.venv/bin/python` against the raw artifacts
+`/home/jasper/Repositories/darksiren-emri/.venv/bin/python` against the raw artifacts
 (`prepared_cramer_rao_bounds.csv`, `real_r1/diagnostics/event_likelihoods.csv`,
 `posteriors_fixed/`, `zoom/posteriors/`, `mixture_leg_log_extract.txt`,
 `injection_pool_mix200k_20260728/`, `m_th_map_nside32.npy`, `gate_result.json`).

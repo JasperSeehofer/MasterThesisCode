@@ -415,7 +415,7 @@ class TestCombinePosteriors:
 # Try both relative and absolute paths.
 _CAMPAIGN_CANDIDATES = [
     Path("results/h_sweep_20260401/posteriors"),
-    Path("/home/jasper/Repositories/MasterThesisCode/results/h_sweep_20260401/posteriors"),
+    Path("/home/jasper/Repositories/darksiren-emri/results/h_sweep_20260401/posteriors"),
 ]
 CAMPAIGN_DIR: Path | None = next((p for p in _CAMPAIGN_CANDIDATES if p.exists()), None)
 

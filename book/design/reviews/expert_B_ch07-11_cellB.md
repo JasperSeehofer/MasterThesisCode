@@ -1,7 +1,7 @@
 # Expert review B — chapters 7–11 (+ museum), against the state as of 2026-07-31
 
 Reviewer: Physics Expert B. Scope: ch07–ch11, the museum, and cross-page consequences.
-Read-only on every book page and on `MasterThesisCode`. No git operations.
+Read-only on every book page and on `darksiren-emri`. No git operations.
 
 **The single fact this review exists to deliver: cell B landed after the book was built.**
 `results/campaign51_20260728/realistic_20260729/CELLB_READOUT_20260731.md` (dated
@@ -21,7 +21,7 @@ and which I found in two places.
 
 ## §0 — Independent re-verification of cell B (so the revision can be written from measured numbers)
 
-Run with `/home/jasper/Repositories/MasterThesisCode/.venv/bin/python` from the main
+Run with `/home/jasper/Repositories/darksiren-emri/.venv/bin/python` from the main
 checkout. `cellb_readout.py` reproduces line for line; I then recomputed the pieces it does
 not print.
 

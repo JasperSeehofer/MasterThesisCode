@@ -64,7 +64,7 @@ Determinism: no RNG.  Read-only outside ``book/``.
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch11.py
 """
 
@@ -80,7 +80,7 @@ import pandas as pd
 
 # --------------------------------------------------------------------------
 # Paths.  repo root = two levels above book/generators/ ; the source repo is
-# either this checkout or a sibling ``MasterThesisCode`` checkout.
+# either this checkout or a sibling ``darksiren-emri`` checkout.
 # --------------------------------------------------------------------------
 BOOK_ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = BOOK_ROOT / "site" / "data"
@@ -92,7 +92,7 @@ _HERE = Path(__file__).resolve().parents[2]
 # branch); the per-event diagnostics CSVs and the CRB tables are NOT — they
 # live in the working tree of the main checkout only.  Every artifact is
 # therefore resolved per-path across both roots, in order.
-SEARCH_ROOTS = [_HERE, _HERE.parent / "MasterThesisCode"]
+SEARCH_ROOTS = [_HERE, _HERE.parent / "darksiren-emri"]
 
 
 def res(rel: str) -> Path | None:
@@ -167,7 +167,14 @@ class Gates:
     def check(self, name: str, got: float, expected: float, tol: float, cite: str) -> None:
         ok = abs(got - expected) <= tol
         self.rows.append(
-            {"gate": name, "got": float(got), "expected": float(expected), "tol": tol, "cite": cite, "pass": ok}
+            {
+                "gate": name,
+                "got": float(got),
+                "expected": float(expected),
+                "tol": tol,
+                "cite": cite,
+                "pass": ok,
+            }
         )
         if not ok:
             raise SystemExit(
@@ -176,7 +183,11 @@ class Gates:
             )
 
     def summary(self) -> dict[str, Any]:
-        return {"n": len(self.rows), "all_pass": all(r["pass"] for r in self.rows), "rows": self.rows}
+        return {
+            "n": len(self.rows),
+            "all_pass": all(r["pass"] for r in self.rows),
+            "rows": self.rows,
+        }
 
 
 GATES = Gates()
@@ -248,10 +259,16 @@ def build_runaways() -> dict[str, Any]:
         }
         pmaps = {k: map_subgrid(h, ci * a_in + cd * a_dk) for k, (ci, cd) in combos.items()}
         for k, v in pmaps.items():
-            GATES.check(f"{name} poisson {k}", v, float(pr["maps"][k]), 1e-6, "c5_rail_results.json")
+            GATES.check(
+                f"{name} poisson {k}", v, float(pr["maps"][k]), 1e-6, "c5_rail_results.json"
+            )
         max_shift = max(abs(v - base) for v in pmaps.values())
         GATES.check(
-            f"{name} poisson max|shift|", max_shift, float(pr["max_abs_shift"]), 1e-6, "c5_rail_results.json"
+            f"{name} poisson max|shift|",
+            max_shift,
+            float(pr["max_abs_shift"]),
+            1e-6,
+            "c5_rail_results.json",
         )
         GATES.check(
             f"{name} dark-only argmax",
@@ -307,9 +324,7 @@ def build_runaways() -> dict[str, Any]:
         )
 
     # ---- leverage ratios vs each seed's own idealized baseline -------------
-    ideal_lev = {
-        seed: lev_by_name[f"seed{seed} IDEAL"]["dh_deps_incat"] for seed in SEEDS
-    }
+    ideal_lev = {seed: lev_by_name[f"seed{seed} IDEAL"]["dh_deps_incat"] for seed in SEEDS}
     ratios: list[float] = []
     for run in runs:
         base_lev = ideal_lev[run["seed"]]
@@ -428,7 +443,9 @@ def build_dossier() -> dict[str, Any]:
     GATES.check("C3 in-cat channel diff (r1)", c3_in, 2.97, 0.02, "CLAIM_2D_BIAS C3")
     GATES.check("C3 dark channel diff (r1)", c3_dk, 15.83, 0.02, "CLAIM_2D_BIAS C3")
     GATES.check("C2 channel totals: 1D", c1_in + c1_dk, -9.30, 0.02, "CLAIM_2D_BIAS C2")
-    GATES.check("C2 channel totals: 2D", c1_in + c1_dk + c3_in + c3_dk, 9.51, 0.03, "CLAIM_2D_BIAS C2")
+    GATES.check(
+        "C2 channel totals: 2D", c1_in + c1_dk + c3_in + c3_dk, 9.51, 0.03, "CLAIM_2D_BIAS C2"
+    )
 
     return {
         "_meta": {
@@ -554,7 +571,11 @@ BOARD: list[dict[str, Any]] = [
         "+3.4 to +6.1 σ_class in 8/10 runs.",
         "refute_by": "widen the grid above 0.86 and see whether the peaks move further or stop — "
         "DONE, the refutation attempt FAILED",
-        "chips": ["CLAIM_2D_BIAS_20260730.md C5", "attack_c5_rail.py", "attack_c5_extrap_validation.py"],
+        "chips": [
+            "CLAIM_2D_BIAS_20260730.md C5",
+            "attack_c5_rail.py",
+            "attack_c5_extrap_validation.py",
+        ],
     },
     {
         "id": "C6",
@@ -673,7 +694,11 @@ BOARD: list[dict[str, Any]] = [
         "mixture and are not additive.",
         "refute_by": "show the two estimands are in fact compatible — i.e. that the realized 164/3135 "
         "is not the quantity w_G models",
-        "chips": ["CLAIM_2D_BIAS_20260730.md C9", "c9_darkdraw_check.py", "G1_beta_g_check.md:14-29"],
+        "chips": [
+            "CLAIM_2D_BIAS_20260730.md C9",
+            "c9_darkdraw_check.py",
+            "G1_beta_g_check.md:14-29",
+        ],
     },
     {
         "id": "C10",
@@ -842,22 +867,36 @@ def build_board() -> dict[str, Any]:
     # Cross-check the two board rows whose numbers this generator can re-measure
     # cheaply and independently (the rest are gated in build_dossier()).
     n_incat_61 = int(
-        (pd.read_csv(need(f"{REAL_REL}/seed61000/prepared_cramer_rao_bounds.csv"))["host_galaxy_index"] >= 0).sum()
+        (
+            pd.read_csv(need(f"{REAL_REL}/seed61000/prepared_cramer_rao_bounds.csv"))[
+                "host_galaxy_index"
+            ]
+            >= 0
+        ).sum()
     )
     n_incat_62 = int(
-        (pd.read_csv(need(f"{REAL_REL}/seed62000/prepared_cramer_rao_bounds.csv"))["host_galaxy_index"] >= 0).sum()
+        (
+            pd.read_csv(need(f"{REAL_REL}/seed62000/prepared_cramer_rao_bounds.csv"))[
+                "host_galaxy_index"
+            ]
+            >= 0
+        ).sum()
     )
     n_rows_61 = int(len(pd.read_csv(need(f"{REAL_REL}/seed61000/prepared_cramer_rao_bounds.csv"))))
     n_rows_62 = int(len(pd.read_csv(need(f"{REAL_REL}/seed62000/prepared_cramer_rao_bounds.csv"))))
     realized = (n_incat_61 + n_incat_62) / (n_rows_61 + n_rows_62)
     GATES.check("C9 realized in-cat rate 164/3135", realized, 164 / 3135, 1e-9, "CLAIM_2D_BIAS C9")
-    GATES.check("C9 realized detections 3135", float(n_rows_61 + n_rows_62), 3135.0, 0.0, "CLAIM_2D_BIAS C9")
+    GATES.check(
+        "C9 realized detections 3135", float(n_rows_61 + n_rows_62), 3135.0, 0.0, "CLAIM_2D_BIAS C9"
+    )
 
     # expB MJ-7: the board said "four are live" and listed five. After cell B
     # resolved C6 the count really is four — gated so the three count surfaces
     # (JSON, widget line, noscript) cannot drift apart again.
     live_ids = [c["id"] for c in BOARD if c["live"]]
-    GATES.check("board live count = 4 (C5, C7, C8, C9)", float(len(live_ids)), 4.0, 0.0, "expB MJ-7 / BL-6")
+    GATES.check(
+        "board live count = 4 (C5, C7, C8, C9)", float(len(live_ids)), 4.0, 0.0, "expB MJ-7 / BL-6"
+    )
     if live_ids != ["C5", "C7", "C8", "C9"]:
         raise SystemExit(f"gen_ch11 GATE FAILED: live claims are {live_ids}, expected C5/C7/C8/C9")
 

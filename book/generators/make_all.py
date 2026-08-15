@@ -9,7 +9,7 @@ Each generator is deterministic and independently re-runnable; this script
 exists only so a fresh clone (or CI) can rebuild ``book/site/data/`` with a
 single command:
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/make_all.py
 or, once this repo has its own synced `.venv`:
     uv run python book/generators/make_all.py
@@ -50,7 +50,7 @@ def main() -> None:
     """Run every generator in its own subprocess.
 
     Isolation is deliberate (integrator fix, 2026-07-31): generators resolve
-    their own source checkout (this worktree vs a sibling ``MasterThesisCode``)
+    their own source checkout (this worktree vs a sibling ``darksiren-emri``)
     and import ``darksiren_emri`` from it.  In a single shared process the
     first import wins for every later generator via ``sys.modules``, which
     broke ``gen_ch03`` (it needs the sibling checkout's newer package).  A

@@ -74,7 +74,7 @@ metric is now pinned), F-ch02-3 (realistic shares are not quotable).
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch02.py
 """
 

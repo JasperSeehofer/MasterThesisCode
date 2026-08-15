@@ -10,10 +10,10 @@ allowed-tools: Read, Grep, Bash(git log *)
 ## Known Bugs Status
 
 ### Current bug list from CLAUDE.md:
-!`sed -n '/Known Bugs/,/^---$/p' /home/jasper/Repositories/MasterThesisCode/CLAUDE.md`
+!`sed -n '/Known Bugs/,/^---$/p' /home/jasper/Repositories/darksiren-emri/CLAUDE.md`
 
 ### Check which bugs have been fixed (look for [PHYSICS] commits):
-!`git -C /home/jasper/Repositories/MasterThesisCode log --oneline --all --grep="PHYSICS" | head -20`
+!`git -C /home/jasper/Repositories/darksiren-emri log --oneline --all --grep="PHYSICS" | head -20`
 
 ### For each bug, report:
 1. **Bug ID + description** (from CLAUDE.md)

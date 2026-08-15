@@ -36,7 +36,7 @@ book/
 
 ```bash
 # from the repo root, using a venv with darksiren_emri installed
-/home/jasper/Repositories/MasterThesisCode/.venv/bin/python book/generators/make_all.py
+/home/jasper/Repositories/darksiren-emri/.venv/bin/python book/generators/make_all.py
 # or, once this worktree has its own `.venv` (uv sync --extra cpu --extra dev):
 uv run python book/generators/make_all.py
 ```

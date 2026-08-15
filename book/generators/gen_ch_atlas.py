@@ -112,7 +112,7 @@ Determinism: no RNG anywhere. Read-only outside ``book/``.
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch_atlas.py
 """
 
@@ -683,7 +683,7 @@ def build_journey() -> dict[str, Any]:
     if catalogue is None:
         print(
             "    NOTICE: reduced_galaxy_catalogue.csv not found in this repo or a "
-            "sibling MasterThesisCode checkout -- ball counts will be omitted."
+            "sibling darksiren-emri checkout -- ball counts will be omitted."
         )
         ball_counts: dict[int, int] = {}
     else:

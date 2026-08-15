@@ -56,7 +56,7 @@ Read-only outside ``book/``.
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch03.py
 """
 
@@ -82,12 +82,12 @@ def _resolve_source_root() -> Path:
     (``_mass_redshift_prune_mask``), and the large artifacts it reads (the
     1.7 GB reduced catalogue, ``results/campaign51_20260728/...``) are
     working-tree-only files that exist in the main checkout.  Prefer a sibling
-    ``MasterThesisCode`` checkout, fall back to this worktree, and probe for the
+    ``darksiren-emri`` checkout, fall back to this worktree, and probe for the
     capability rather than assuming it — no absolute paths, no silent import of
     a stale package.
     """
     here = Path(__file__).resolve().parents[2]
-    for root in (here.parent / "MasterThesisCode", here):
+    for root in (here.parent / "darksiren-emri", here):
         handler = root / "darksiren_emri" / "galaxy_catalogue" / "handler.py"
         if handler.is_file() and "_mass_redshift_prune_mask" in handler.read_text():
             return root
@@ -218,7 +218,7 @@ def _rl(a: Any, sig: int = 7) -> list[float]:
     return [_r(v, sig) for v in np.asarray(a, dtype=np.float64).ravel()]
 
 
-_DATA_ROOTS = (REPO_ROOT, WORKTREE_ROOT, WORKTREE_ROOT.parent / "MasterThesisCode")
+_DATA_ROOTS = (REPO_ROOT, WORKTREE_ROOT, WORKTREE_ROOT.parent / "darksiren-emri")
 
 
 def _pool_dir() -> Path | None:

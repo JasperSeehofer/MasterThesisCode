@@ -53,7 +53,7 @@ artifacts.  Read-only outside ``book/``; repo root resolved relatively.
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch08.py
 """
 
@@ -79,10 +79,10 @@ def _resolve(rel: Path) -> Path | None:
     The per-run ``diagnostics/event_likelihoods.csv`` files — this chapter's
     workhorse — are large and **not git-tracked**; they live in the working tree
     of the main checkout.  Look in this checkout first, then in a sibling
-    ``MasterThesisCode`` checkout, exactly as ``gen_ch04.py`` does for the
+    ``darksiren-emri`` checkout, exactly as ``gen_ch04.py`` does for the
     injection pool.  Returns ``None`` when neither has it.
     """
-    for root in (REPO_ROOT, REPO_ROOT.parent / "MasterThesisCode"):
+    for root in (REPO_ROOT, REPO_ROOT.parent / "darksiren-emri"):
         candidate = root / rel
         if candidate.exists():
             return candidate

@@ -60,7 +60,7 @@ DATA AVAILABILITY
 -----------------
 Everything except the 200k injection pool and the two diagnostics CSVs is
 git-tracked.  The pool is resolved from this repo root, then from a sibling
-``MasterThesisCode`` checkout; if absent, the factory file's pool block is left
+``darksiren-emri`` checkout; if absent, the factory file's pool block is left
 untouched (an already-committed file is never degraded) and a NOTICE is printed.
 The ``sig0_control`` diagnostics CSV is used ONLY to verify the recorded
 `generator_marginal` w_G values — never to produce a number that is not already
@@ -70,7 +70,7 @@ Determinism: no RNG anywhere; the only sampling is a fixed-stride decimation.
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch09.py
 """
 
@@ -191,10 +191,10 @@ def _rl(a: Any, sig: int = 8) -> list[float]:
 
 def _resolve(rel: Path) -> Path | None:
     """Locate an artifact without hardcoding a machine path: this checkout
-    first, then a sibling ``MasterThesisCode`` checkout.  Git-tracked artifacts
+    first, then a sibling ``darksiren-emri`` checkout.  Git-tracked artifacts
     resolve in the first branch; untracked ones (the 200k injection pool, the
     diagnostics CSVs) live only in the main working tree."""
-    for root in (REPO_ROOT, REPO_ROOT.parent / "MasterThesisCode"):
+    for root in (REPO_ROOT, REPO_ROOT.parent / "darksiren-emri"):
         candidate = root / rel
         if candidate.exists():
             return candidate

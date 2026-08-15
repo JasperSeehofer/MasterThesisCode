@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
-REPO = Path("/home/jasper/Repositories/MasterThesisCode")
+REPO = Path("/home/jasper/Repositories/darksiren-emri")
 sys.path.insert(0, str(REPO))
 
 from darksiren_emri.bayesian_inference.simulation_detection_probability import (

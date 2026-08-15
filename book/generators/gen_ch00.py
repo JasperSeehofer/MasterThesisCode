@@ -38,7 +38,7 @@ the generator has no import-time dependency on the simulation stack).
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch00.py
 """
 
@@ -61,7 +61,7 @@ OUT_FILE = OUT_DIR / "ch00_tension.json"
 
 CONSTANTS_CANDIDATES = [
     REPO_ROOT / "darksiren_emri" / "constants.py",
-    REPO_ROOT.parent / "MasterThesisCode" / "darksiren_emri" / "constants.py",
+    REPO_ROOT.parent / "darksiren-emri" / "darksiren_emri" / "constants.py",
 ]
 
 # ---------------------------------------------------------------------------

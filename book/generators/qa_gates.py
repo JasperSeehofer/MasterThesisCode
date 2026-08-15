@@ -3,7 +3,7 @@
 Four hard gates, run by ``make_all.py`` after every generator and
 runnable on its own::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/qa_gates.py
 
 They are content gates, not style gates: each one encodes a statement the
@@ -86,7 +86,7 @@ def line_of(text: str, offset: int) -> int:
 def line_text(text: str, offset: int) -> str:
     start = text.rfind("\n", 0, offset) + 1
     end = text.find("\n", offset)
-    return text[start: end if end != -1 else len(text)]
+    return text[start : end if end != -1 else len(text)]
 
 
 def allowed(text: str, offset: int, gate_id: str) -> bool:
@@ -95,7 +95,7 @@ def allowed(text: str, offset: int, gate_id: str) -> bool:
 
 
 def window(text: str, offset: int, span: int) -> str:
-    return text[max(0, offset - span): offset + span]
+    return text[max(0, offset - span) : offset + span]
 
 
 # ----------------------------------------------------------------------
@@ -105,14 +105,14 @@ def window(text: str, offset: int, span: int) -> str:
 # is pinned to -5 on purpose: ch06 legitimately prints 8.0e12 for a
 # condition number, and that must not trip the gate.
 SIGMA_DL_PATTERNS = [
-    re.compile(r"8\.0\s*\\times\s*10\^\{?\s*-\s*5\s*\}?"),          # KaTeX
+    re.compile(r"8\.0\s*\\times\s*10\^\{?\s*-\s*5\s*\}?"),  # KaTeX
     re.compile(
         r"8\.0\s*(?:&times;|×)\s*10\s*"
-        r"(?:<sup>\s*(?:&minus;|&#8722;|−|-)\s*5\s*</sup>"           # <sup>-5</sup>
-        r"|⁻⁵|&#8315;&#8309;"                                        # superscript glyphs
-        r"|\^\s*-?\s*5)"                                             # 10^-5
+        r"(?:<sup>\s*(?:&minus;|&#8722;|−|-)\s*5\s*</sup>"  # <sup>-5</sup>
+        r"|⁻⁵|&#8315;&#8309;"  # superscript glyphs
+        r"|\^\s*-?\s*5)"  # 10^-5
     ),
-    re.compile(r"8\.0\s*[eE]-0?5(?![0-9])"),                        # 8.0e-5 / 8.0e-05
+    re.compile(r"8\.0\s*[eE]-0?5(?![0-9])"),  # 8.0e-5 / 8.0e-05
 ]
 
 
@@ -187,9 +187,7 @@ def gate_ledger_rows() -> list[Violation]:
         rid = row.get("id", "?")
         missing = [c for c in LEDGER_CELLS if not str(row.get(c, "")).strip()]
         if missing:
-            out.append(
-                Violation("ROW", LEDGER, 0, f"row #{rid}: empty source cell(s) {missing}")
-            )
+            out.append(Violation("ROW", LEDGER, 0, f"row #{rid}: empty source cell(s) {missing}"))
         doc = str(row.get("documented", ""))
         if doc and not CITATION.search(doc):
             out.append(
@@ -216,7 +214,9 @@ def gate_dnr_count() -> list[Violation]:
     if flagged != EXPECTED_DNR_ROWS:
         out.append(
             Violation(
-                "DNR", LEDGER, 0,
+                "DNR",
+                LEDGER,
+                0,
                 f"{flagged} rows flagged do_not_retry, expected {EXPECTED_DNR_ROWS} "
                 f"(§2's back-reference separator class must accept ',', '/', '·', ';' "
                 f"-- recovers #41/#43/#44/#52)",
@@ -224,20 +224,31 @@ def gate_dnr_count() -> list[Violation]:
         )
     if listed != EXPECTED_DNR_ROWS:
         out.append(
-            Violation("DNR", LEDGER, 0,
-                      f"do_not_retry_rows has {listed} entries, expected {EXPECTED_DNR_ROWS}")
+            Violation(
+                "DNR",
+                LEDGER,
+                0,
+                f"do_not_retry_rows has {listed} entries, expected {EXPECTED_DNR_ROWS}",
+            )
         )
     # ... and no page may still print the old row count next to the phrase
-    stale = re.compile(r"\b26\b[^.]{0,80}do[- ]?not[- ]?re[- ]?try"
-                       r"|do[- ]?not[- ]?re[- ]?try[^.]{0,80}\b26\b(?!\d)", re.I)
+    stale = re.compile(
+        r"\b26\b[^.]{0,80}do[- ]?not[- ]?re[- ]?try"
+        r"|do[- ]?not[- ]?re[- ]?try[^.]{0,80}\b26\b(?!\d)",
+        re.I,
+    )
     for path in scanned_pages():
         text = path.read_text(encoding="utf-8")
         for m in stale.finditer(text):
             if allowed(text, m.start(), "dnr-count"):
                 continue
             out.append(
-                Violation("DNR", path, line_of(text, m.start()),
-                          f"prose still prints 26 do-not-re-try rows: {m.group(0)[:70]!r}")
+                Violation(
+                    "DNR",
+                    path,
+                    line_of(text, m.start()),
+                    f"prose still prints 26 do-not-re-try rows: {m.group(0)[:70]!r}",
+                )
             )
     return out
 
@@ -260,9 +271,13 @@ def gate_cellb_tense() -> list[Violation]:
             if not CELLB_MARKER.search(window(text, m.start(), 500)):
                 continue
             out.append(
-                Violation("TNS", path, line_of(text, m.start()),
-                          f"{m.group(0)!r} next to a cell-B reference -- cell B landed "
-                          f"2026-07-31 (jobs 6103219/6103220)")
+                Violation(
+                    "TNS",
+                    path,
+                    line_of(text, m.start()),
+                    f"{m.group(0)!r} next to a cell-B reference -- cell B landed "
+                    f"2026-07-31 (jobs 6103219/6103220)",
+                )
             )
     return out
 

@@ -2,13 +2,13 @@
 
 Status: **skeleton built and verified** (2026-07-31). Branch: `book/foundations-interactive`
 in the dedicated worktree `/home/jasper/Repositories/MasterThesisCode-book`. Never write to
-`/home/jasper/Repositories/MasterThesisCode` (main worktree) from this project.
+`/home/jasper/Repositories/darksiren-emri` (main worktree) from this project.
 
 ---
 
 ## 1. Inspection — how the current site is composed and deployed
 
-**Read-only investigation of `/home/jasper/Repositories/MasterThesisCode` (identical content
+**Read-only investigation of `/home/jasper/Repositories/darksiren-emri` (identical content
 at this commit in the book worktree, since `book/foundations-interactive` shares full history
 with `main`).**
 
@@ -128,7 +128,7 @@ build). No other runtime dependency.
 ### 2.2 Data pipeline pattern — DECIDED
 
 `book/generators/*.py` are plain Python modules with a `main() -> None` entry point, run with
-the **main repo's synced venv** (`/home/jasper/Repositories/MasterThesisCode/.venv/bin/python`,
+the **main repo's synced venv** (`/home/jasper/Repositories/darksiren-emri/.venv/bin/python`,
 or this worktree's own `.venv` once `uv sync` is run here) so `import darksiren_emri` and
 heavy deps (`numpy`, `few`, ...) resolve. `book/generators/make_all.py` is the single driver —
 imports and runs every registered generator in order; **idempotent and re-runnable** (verified:
@@ -201,7 +201,7 @@ deps are exactly what `book/generators/*.py` import). `continue-on-error: true` 
 existing interactive-figures step's philosophy: a book-generator bug must never block the
 Sphinx-docs deploy. The book lands at `https://jasperseehofer.github.io/MasterThesisCode/book/`.
 **This diff has been applied in this worktree's `.github/workflows/ci.yml`** (verified present)
-— it does not exist in `/home/jasper/Repositories/MasterThesisCode`.
+— it does not exist in `/home/jasper/Repositories/darksiren-emri`.
 
 ### 2.5 Layout/style — DECIDED
 

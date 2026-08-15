@@ -62,7 +62,7 @@ present in any checkout of this branch.  The two per-event CSVs
 (``diagnostics/event_likelihoods.csv``, ``prepared_cramer_rao_bounds.csv``) are
 **not** tracked -- they live in the working tree of the main checkout only -- so
 they are resolved from, in order: this repo root, then a sibling
-``MasterThesisCode`` checkout next to this one.  If neither has them, the
+``darksiren-emri`` checkout next to this one.  If neither has them, the
 already-committed ``ch05_mixture.json`` is left untouched and a NOTICE is
 printed: the generator never fails a build over an untracked artifact and never
 writes a partial or silently-degraded file.  (Same contract as
@@ -72,7 +72,7 @@ Determinism: no RNG anywhere.  Read-only outside ``book/``.
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch05.py
 """
 
@@ -107,7 +107,7 @@ def resolve(rel: Path) -> Path | None:
 
     Never hardcodes a machine path (BOOK_DESIGN.md section 4.3 item 6).
     """
-    for root in (REPO_ROOT, REPO_ROOT.parent / "MasterThesisCode"):
+    for root in (REPO_ROOT, REPO_ROOT.parent / "darksiren-emri"):
         candidate = root / rel
         if candidate.exists():
             return candidate
@@ -541,7 +541,7 @@ def main() -> None:
         print(
             "  NOTICE: ch05_mixture.json NOT regenerated — untracked input(s) absent:\n"
             + "".join(f"    - {p}\n" for p in missing)
-            + "    Expected at <repo>/<path> or ../MasterThesisCode/<path>.\n"
+            + "    Expected at <repo>/<path> or ../darksiren-emri/<path>.\n"
             "    The committed ch05_mixture.json is left untouched."
         )
         return

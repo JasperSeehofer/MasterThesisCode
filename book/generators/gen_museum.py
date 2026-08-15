@@ -39,7 +39,7 @@ Four data files, all deterministic, all read-only outside ``book/``:
     A re-run of the commission's own ``injection_scan.py`` (ledger #49a).  That
     script is untracked (it lives only in the main checkout's working tree), so
     the generator resolves it from this repo root, then from a sibling
-    ``MasterThesisCode`` checkout, and if neither is present leaves the
+    ``darksiren-emri`` checkout, and if neither is present leaves the
     already-committed JSON alone and prints a NOTICE -- it never writes a
     silently degraded file.
 
@@ -49,7 +49,7 @@ per injection), so its output is reproducible.
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_museum.py
 """
 
@@ -80,7 +80,7 @@ INJECTION_SCAN_REL = "results/commission_20260701/injection_scan.py"
 # artifact resolution: this worktree first, then a sibling main checkout
 # ----------------------------------------------------------------------
 def _roots() -> list[Path]:
-    return [BOOK_ROOT, BOOK_ROOT.parent / "MasterThesisCode"]
+    return [BOOK_ROOT, BOOK_ROOT.parent / "darksiren-emri"]
 
 
 def resolve(rel: str) -> Path | None:

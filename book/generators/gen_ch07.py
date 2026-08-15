@@ -61,7 +61,7 @@ magnitude and attribution, **not** the G2b↔C7 collision.
 
 Run (read-only against ``darksiren_emri/``, ``docs/`` and ``results/``):
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch07.py
 """
 

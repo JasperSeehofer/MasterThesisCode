@@ -61,7 +61,7 @@ Read-only outside ``book/``.
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch10.py
 
 Runtime ~70 s (the 16 re-run harness cells dominate).
@@ -172,16 +172,16 @@ def _resolve(rel: Path) -> Path:
     Most of what this chapter reads is git-tracked and present in any checkout
     of this branch.  ``pp_coverage_deepvenue_20260730`` (the C11 window cells)
     is untracked bulk that lives only in the main checkout's working tree, so
-    resolution falls back to a sibling ``MasterThesisCode`` directory — the
+    resolution falls back to a sibling ``darksiren-emri`` directory — the
     same convention ``gen_ch04.py`` uses for the injection pool.
     """
-    for root in (REPO_ROOT, REPO_ROOT.parent / "MasterThesisCode"):
+    for root in (REPO_ROOT, REPO_ROOT.parent / "darksiren-emri"):
         candidate = root / rel
         if candidate.exists():
             return candidate
     msg = (
         f"Required read-only artifact not found: {rel}\n"
-        f"  looked in {REPO_ROOT} and {REPO_ROOT.parent / 'MasterThesisCode'}"
+        f"  looked in {REPO_ROOT} and {REPO_ROOT.parent / 'darksiren-emri'}"
     )
     raise FileNotFoundError(msg)
 

@@ -6,7 +6,7 @@ every concept the reader must hold, in dependency order, each with (a) its autho
 — the "what breaks without this" that the book's pedagogy is built on — and (e) the places where
 the project's own sources **conflict or have been superseded**.
 
-**Written 2026-07-31.** All paths are relative to `/home/jasper/Repositories/MasterThesisCode`
+**Written 2026-07-31.** All paths are relative to `/home/jasper/Repositories/darksiren-emri`
 (the read-only source repo) unless marked otherwise. Line numbers are as of the working tree
 inspected on this date; treat them as anchors to re-grep, not as immutable.
 
@@ -618,7 +618,7 @@ Ordered by pedagogical value, not chronology. Each is a *cautionary interlude*: 
 | Coverage harness outputs | `results/pp_coverage_*/SUMMARY.md` + JSON | P–P plots, bias-vs-σ_z ladders |
 | Ablation cube / G1 | `docs/gates/G3_ablation_cube.json`, `G1_beta_g_check.json` | De-rail matrix, Option-A residual |
 
-**Run Python as:** `/home/jasper/Repositories/MasterThesisCode/.venv/bin/python` from the source repo root (the venv resolves `darksiren_emri` imports). **Read-only** on the package.
+**Run Python as:** `/home/jasper/Repositories/darksiren-emri/.venv/bin/python` from the source repo root (the venv resolves `darksiren_emri` imports). **Read-only** on the package.
 
 ---
 

@@ -12,7 +12,7 @@ merges). Where this file is silent, those files are the spec — in particular t
 question texts and answers live in `BOOK_PEDAGOGY.md` Part 3** and are used verbatim, and the
 **conflict/supersession register in `BOOK_SOURCES_MAP.md` §7 is binding in its entirety**.
 
-Repo paths: source repo = `/home/jasper/Repositories/MasterThesisCode` (READ-ONLY);
+Repo paths: source repo = `/home/jasper/Repositories/darksiren-emri` (READ-ONLY);
 worktree = `/home/jasper/Repositories/MasterThesisCode-book` (all writes). Python =
 the source repo's `.venv/bin/python`.
 
@@ -845,7 +845,7 @@ self-review against §3.4.
 
 1. **Never write outside your owned files** (§2). Never edit frozen files — shared-widget
    needs go to `WIDGET_REQUESTS.md` (append-only) with a page-local workaround.
-2. **Never write to `/home/jasper/Repositories/MasterThesisCode`** (the main worktree) —
+2. **Never write to `/home/jasper/Repositories/darksiren-emri`** (the main worktree) —
    generators read it; nothing writes it. Never edit `darksiren_emri/` in either tree.
 3. **No re-derivation.** If a step seems to need one, the chapter is over-reaching — cite
    the packet or cut the step.

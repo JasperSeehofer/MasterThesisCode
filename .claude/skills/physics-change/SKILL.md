@@ -65,4 +65,4 @@ Use `pre-commit` in the commit column until the commit exists, then update those
 short SHA when it lands. Rows go at the bottom of the `## Ledger` table (newest last).
 
 ### Known physics bugs for reference:
-!`grep -A2 "CRITICAL\|HIGH\|MEDIUM\|LOW" /home/jasper/Repositories/MasterThesisCode/CLAUDE.md | head -30`
+!`grep -A2 "CRITICAL\|HIGH\|MEDIUM\|LOW" /home/jasper/Repositories/darksiren-emri/CLAUDE.md | head -30`

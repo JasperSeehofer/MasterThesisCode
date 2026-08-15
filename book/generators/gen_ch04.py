@@ -51,7 +51,7 @@ DATA AVAILABILITY
 Everything I4.1 needs is git-tracked and present in any checkout of this
 branch.  The 200k-row injection pool is **not** tracked (it lives in the
 working tree of the main checkout only), so the horizon step resolves it
-from, in order: this repo root, then a sibling ``MasterThesisCode`` checkout
+from, in order: this repo root, then a sibling ``darksiren-emri`` checkout
 next to this one.  If neither is present the already-committed
 ``ch04_horizon.json`` is left untouched and a NOTICE is printed — the
 generator never fails a build over an untracked artifact, and never writes a
@@ -62,7 +62,7 @@ committed artifacts.  Read-only outside ``book/``.
 
 Run as::
 
-    /home/jasper/Repositories/MasterThesisCode/.venv/bin/python \\
+    /home/jasper/Repositories/darksiren-emri/.venv/bin/python \\
         book/generators/gen_ch04.py
 """
 
@@ -128,8 +128,8 @@ def _rl(a: Any, sig: int = 8) -> list[float]:
 
 def _pool_dir() -> Path | None:
     """Locate the (untracked) production injection pool without hardcoding a
-    machine path: this checkout first, then a sibling ``MasterThesisCode``."""
-    for root in (REPO_ROOT, REPO_ROOT.parent / "MasterThesisCode"):
+    machine path: this checkout first, then a sibling ``darksiren-emri``."""
+    for root in (REPO_ROOT, REPO_ROOT.parent / "darksiren-emri"):
         candidate = root / POOL_REL
         if candidate.is_dir() and any(candidate.glob("injection_h_*_task_*.csv")):
             return candidate
@@ -498,7 +498,7 @@ def main() -> None:
             return
         msg = (
             "Injection pool not found and no committed ch04_horizon.json to keep. "
-            f"Expected at <repo>/{POOL_REL} or ../MasterThesisCode/{POOL_REL}."
+            f"Expected at <repo>/{POOL_REL} or ../darksiren-emri/{POOL_REL}."
         )
         raise FileNotFoundError(msg)
 
