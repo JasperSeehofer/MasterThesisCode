@@ -617,3 +617,14 @@ evidence originally cited was invalid and is withdrawn.
 3. **[DO]** The M6-revision L0 work (formalize the dose-dependent tilt residual from committed data) and the M7-L0 derivation are authorized. Both stage-2 L1 slots are spent; **any further instrument arm requires a fresh registration.**
 
 Provenance: prereg `092b121b` · scorer frozen pre-data `191b0db7` · data + readout `e49f7570` · job 6315312/6315313 (AM2P 1:21:25, ANULL 0:42:16, both 0:0).
+
+---
+
+## Row #104 — 2026-08-15 — L0 pair + verifier corrections ratified as the candidate-register update of record
+
+**Author's verbatim ruling (2026-08-15):** "ratified"
+
+**Orchestrator-derived itemization** (the referenced update is the M6R/M7 L0 pair with the adversarial-verification addenda, commits `b34ad9dd`, `99579a8a`, `0dc21651`, `0a3d940e`; all inputs existed at ruling time):
+1. **[RULE — granted]** Candidate-register state of record: **M2′ measured PARTIAL and on-prediction** (J-tilt −1132.9 ± 36.0 vs corrected prediction ≈ −1090…−1130 including the ln D′ re-weighting term, +212.3 ± 36 measured vs +254 predicted); **M6′ PROPOSED** with corrected kill tests (KT-M6′-2/3 relabeled one-sided) and **T_res genuinely UNLOCATED** (~⅔ of the ±760 nats/h dose swing; the M1-quadratic account REFUTED — wrong sign at f_i = 0.25/0.5, ~16× overshoot at f_i = 1.0, inverted shape); **M7 CLOSED at L0** (−3.79e-4 ± 1.65e-4 under the production-curvature conversion, 2.6× inside the registered band); the 0.749 ± 0.046 tilt×curvature closure established within-grid.
+2. Standing bars unchanged: no repair from a partial read; `/physics-change` new-formula slot EMPTY; both stage-2 L1 slots spent — any further instrument arm requires a fresh registration.
+3. Next step (orchestrator-proposed at ruling time, drafting authorized by the ratification context, registration NOT yet authorized): a stage-3 preregistration PROPOSAL targeting T_res and the score-balance/overconfidence question (measured post-J tilt T(AM2P) = 1492 ± 31 ≈ the α tilt +1393.6, which is correct physics — an uncancelled correct-term tilt at truth indicates the defect may live in the curvature/score balance), preceded by a Stage-L literature sweep (R0 ring minimum).
