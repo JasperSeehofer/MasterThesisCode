@@ -110,3 +110,9 @@ full-dose value.
 No repair is proposed. Per the note's §3 and the R3 read above, the A-JREN joint arm becomes the
 next indicated step if the author wants to pursue the non-additivity possibility — that decision is
 the author's, not this toy's.
+
+---
+
+## Addendum (2026-08-15) — adversarial-verification notes
+
+Verifier re-ran all 8 full-dose seeds bit-exact (+99.5227) with independent quadrature spot-checks (1e-6 agreement) and verified all four reads' arithmetic. The 1055-vs-99.5 gap is UNDERSTOOD, not a bug — exact per-seed decomposition (seed 101): double-clip +373.4, single-clip +101.8, weight-shift residual −324.5, net +150.8; suppression = toy-population ⟨D″D/D′²⟩ ≈ 0.73 vs production 0.216 (toy's own ceiling ~+367), partial saturation (median W = 0.80 among double-clipped), and offset/weight-shift cancellation — the derivation's pre-stated possibility (i), with numbers. Two caveats of record: (1) the toy population's host z_median is 1.66 vs the production venue's 0.44 (inherited from the committed harness), so the LIVE magnitude carries population-transfer uncertainty well beyond the seed scatter — the supported statement is "LIVE, order 1e-3, sign +", not a precise +1.9e-3; (2) R3's mean sits 0.6 SE outside its band (fragile as a band read) — the BUDGET-TENSION trigger stands primarily on the sign mismatch and R2's decisive WRONG-SHAPE. Prose slip corrected for the record: seeds 101–105 span +102…+171; +40…+43 are seeds 106–108 (JSON correct throughout).

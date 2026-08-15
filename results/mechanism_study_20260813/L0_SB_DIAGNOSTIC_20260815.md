@@ -200,3 +200,9 @@ bias, not at the width.
 *Method: `l0_sb_diagnostic.py`. Raw per-cell/per-channel numbers (all 26 cells/arms, both
 degenerate-flagged and headline): `L0_SB_output.json`. No repair is proposed here; the
 `/physics-change` gate is untouched.*
+
+---
+
+## Addendum (2026-08-15) — adversarial-verification amendment: prediction (b) was miscast, and the correct reading is stronger
+
+The verifier reproduced every number (T values exact under independent stencils; T/Ā headline 1.1465 ± 0.1325; zero ±3× counterexamples) with one count correction: ANULL and MN0 are the identical dataset (same seeds, bit-identical MAPs), so "17 independent cells" reads "16 distinct (one deliberate ANULL/MN0 duplication)"; the mean moves to ~1.141, conclusion unchanged. The substantive amendment: Var_seeds[score]/Ā² estimates the frequentist MAP *scatter* (which it under-predicts by 2–3× — sd(MAP) 0.0026–0.0061 vs σ_SW 0.0011–0.0023, a real open detail), while |bias|/post_sd is a *displacement-to-width* ratio driven by the common systematic offset T/Ā that prediction (a) confirms. The sandwich theory never predicts that ratio, so its "refutation" refuted a non-prediction. **Correct restatement: the coverage failure is displacement-dominated; post_sd ≈ σ_A is approximately correctly calibrated to local curvature (§1); the 8.5× is algebraically (T/Ā)/σ_A — fully accounted for by the confirmed displacement law. No separate width mechanism is needed; the single remaining unexplained object is T itself.**
