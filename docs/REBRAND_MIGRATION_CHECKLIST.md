@@ -13,10 +13,10 @@ separate sign-off. Source plan: `docs/REBRAND_PROPOSAL.md` §5 (operational rena
 
 **Done on this dev box 2026-08-15** — `/home/jasper/Repositories/MasterThesisCode` ->
 `/home/jasper/Repositories/darksiren-emri`, Claude project state re-keyed, registry Path
-confirmed, §3 references fixed. Executed as `scripts/migrate_local_rename.sh` steps 1–3 plus a
+confirmed, §3 references fixed. Executed as `scripts/migrate_local_rename.sh` steps 1–3 plus
 by-hand steps 4–7 (the script aborted at step 4; see below). **Per-machine, not once-and-for-all:**
-every dev box needs its own run. Three things the first execution surfaced, all now fixed in the
-script:
+every dev box needs its own run. Five things the first execution surfaced, all now fixed in the
+script (which is now a 9-step, fully idempotent run):
 
 - **Step 4 could never pass on a second box.** The garden registry is a *shared, synced* file, and
   its Path column was migrated by a garden-side commit (`6caf391`, 2026-08-13) before any box ran
@@ -33,6 +33,17 @@ script:
   of the sibling worktree `.../MasterThesisCode-book`, which is **not** being renamed. Any
   find-replace over the old path must be guarded (`(?!-book)`), or it silently repoints live
   references at a directory that does not exist.
+- **`origin` was still riding GitHub's rename redirect.** The dev-box remote pointed at
+  `github.com:JasperSeehofer/MasterThesisCode.git` long after Phase 3's `gh repo rename`; push and
+  fetch kept working and merely printed a `This repository moved` notice, which is exactly the
+  RUNBOOK-9 §3.1(c) grace-period trap (§2 did `git remote set-url` on the cluster; the dev box never
+  did). Repointed 2026-08-15 to `…/darksiren-emri.git`, and the script now does it.
+- **The rename broke the linked `-book` worktree.** A linked worktree stores an *absolute* path back
+  to the main repo in its `.git` file, so after the `mv` every git command inside
+  `~/Repositories/MasterThesisCode-book` died with `fatal: not a git repository: (null)`. Fixed with
+  `git worktree repair` from the main checkout (the main repo's own back-pointer was still fine —
+  only the worktree→repo direction breaks). The worktree directory itself keeps its old name on
+  purpose; renaming it is a separate migration.
 
 The original reason for deferring — renaming first silently orphans two dependent systems:
 
@@ -180,7 +191,8 @@ or redirected once taken.
       `/home/jasper/Repositories/darksiren-emri` retrieves prior project memory (44 memory files,
       transcripts back to 2026-07-17) and the vault session-start hook briefs the project, so the
       registry Path resolves. §3 references fixed in `acd1528`; venv relocated
-      (`uv sync --reinstall` + `activate*` path rewrite). **Box stays `[~]` until every dev box has
+      (`uv sync --reinstall` + `activate*` path rewrite); `origin` repointed off the rename
+      redirect; `-book` worktree linkage repaired. **Box stays `[~]` until every dev box has
       run `scripts/migrate_local_rename.sh`** — the rename is per-machine, and a box still sitting
       at the old path has a live, broken checkout, not merely a stale one.
 - [~] §2: cluster migration EXECUTED 2026-08-13 — `~/MasterThesisCode` -> `~/darksiren-emri`,

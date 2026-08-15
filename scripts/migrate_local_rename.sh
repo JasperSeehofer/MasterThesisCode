@@ -33,7 +33,7 @@ NEW_DIR="/home/jasper/Repositories/darksiren-emri"
 OLD_NAME="MasterThesisCode"
 NEW_NAME="darksiren-emri"
 
-# Extras to sync into the relocated venv (step 6). Dev boxes are CPU boxes;
+# Extras to sync into the relocated venv (step 7). Dev boxes are CPU boxes;
 # override with UV_SYNC_EXTRAS="--extra gpu" if that ever stops being true.
 UV_SYNC_EXTRAS="${UV_SYNC_EXTRAS:---extra cpu --extra dev}"
 
@@ -63,7 +63,7 @@ echo "               in the repo. If one is open, close it now and re-run."
 echo
 
 # --- Step 1: preflight existence checks --------------------------------
-echo "[1/8] Preflight: locating the checkout..."
+echo "[1/9] Preflight: locating the checkout..."
 if [ -d "$OLD_DIR" ] && [ -d "$NEW_DIR" ]; then
     echo "ABORT: BOTH $OLD_DIR and $NEW_DIR exist — ambiguous." >&2
     echo "       Resolve by hand (which one is the live checkout?) before re-running." >&2
@@ -82,7 +82,7 @@ fi
 echo
 
 # --- Step 2: rename the repo directory ----------------------------------
-echo "[2/8] Renaming repo directory..."
+echo "[2/9] Renaming repo directory..."
 if [ "$NEEDS_MV" -eq 1 ]; then
     mv "$OLD_DIR" "$NEW_DIR"
     echo "  mv: $OLD_DIR -> $NEW_DIR"
@@ -97,7 +97,7 @@ fi
 echo
 
 # --- Step 3: re-key Claude Code project memory / session state ---------
-echo "[3/8] Re-keying Claude Code project memory/session state..."
+echo "[3/9] Re-keying Claude Code project memory/session state..."
 CLAUDE_OLD="$HOME/.claude/projects/-home-jasper-Repositories-MasterThesisCode"
 CLAUDE_NEW="$HOME/.claude/projects/-home-jasper-Repositories-darksiren-emri"
 if [ -d "$CLAUDE_OLD" ] && [ -d "$CLAUDE_NEW" ]; then
@@ -132,7 +132,7 @@ echo
 # revision of this script pointed at $GARDEN/registry.md, which does not exist —
 # it would have taken the "skipping" branch and produced exactly the silent
 # no-briefing failure described above.)
-echo "[4/8] Updating garden registry..."
+echo "[4/9] Updating garden registry..."
 GARDEN="$HOME/Repositories/garden"
 REGISTRY="$GARDEN/wiki/meta/registry.md"
 if [ ! -f "$REGISTRY" ]; then
@@ -175,7 +175,7 @@ echo "        optional migration — see the garden's rename plan."
 echo
 
 # --- Step 5: §3 reference fixes inside the renamed repo -----------------
-echo "[5/8] Applying §3 reference fixes inside $NEW_DIR..."
+echo "[5/9] Applying §3 reference fixes inside $NEW_DIR..."
 cd "$NEW_DIR"
 
 TOUCHED=()
@@ -213,7 +213,7 @@ done
 # .claude/settings.local.json carries the repo path in Bash allow-rules.
 # It is GITIGNORED (~/.config/git/ignore), so it is fixed in place but never
 # staged — `git add` on an ignored path fails, and under `set -e` that would
-# take down the whole run at step 7.
+# take down the whole run at step 8.
 SETTINGS=".claude/settings.local.json"
 if [ -f "$SETTINGS" ]; then
     if grep -q "$OLD_DIR" "$SETTINGS"; then
@@ -250,7 +250,49 @@ echo "        and other dated snapshots per checklist §4, and §2's three"
 echo "        scripts/bias_investigation cluster-path lines (cluster-rename script)."
 echo
 
-# --- Step 6: relocate the venv ------------------------------------------
+# --- Step 6: repo linkage — remote URL and linked worktrees --------------
+#
+# Two more things `mv` does not fix, both of which fail quietly:
+#
+#   (a) `origin` still points at github.com:JasperSeehofer/MasterThesisCode.
+#       GitHub redirects a renamed repo, so push/fetch keep WORKING and only
+#       print a "This repository moved" notice — which is easy to miss in a
+#       scripted push. RUNBOOK-9 §3.1(c): redirects are a grace period, not a
+#       permanent alias. Repoint it now rather than discover it when the
+#       grace period ends.
+#   (b) A linked worktree stores an ABSOLUTE path back to the main repo in
+#       its `.git` file, so the sibling `-book` worktree points into the old
+#       directory and every git command inside it dies with
+#       `fatal: not a git repository: (null)`. `git worktree repair` is the
+#       supported fix and is a no-op when nothing is broken.
+echo "[6/9] Repairing repo linkage (remote URL, linked worktrees)..."
+OLD_REMOTE_RE="[:/]JasperSeehofer/$OLD_NAME(\.git)?\$"
+NEW_REMOTE="git@github.com:JasperSeehofer/$NEW_NAME.git"
+CUR_REMOTE="$(git remote get-url origin 2>/dev/null || true)"
+if [ -z "$CUR_REMOTE" ]; then
+    echo "  WARNING: no 'origin' remote — skipping."
+elif printf '%s' "$CUR_REMOTE" | grep -qE "$OLD_REMOTE_RE"; then
+    git remote set-url origin "$NEW_REMOTE"
+    echo "  remote origin: $CUR_REMOTE -> $NEW_REMOTE"
+    echo "  (was riding GitHub's rename redirect — see RUNBOOK-9 §3.1(c))"
+else
+    echo "  SKIP: origin already at $CUR_REMOTE"
+fi
+if git worktree list --porcelain 2>/dev/null | grep -q '^worktree '; then
+    git worktree repair 2>&1 | sed 's/^/  worktree repair: /' || true
+    BROKEN=0
+    while read -r _ wt; do
+        [ -n "$wt" ] || continue
+        [ "$wt" = "$NEW_DIR" ] && continue
+        git -C "$wt" rev-parse --git-dir >/dev/null 2>&1 || { echo "  WARNING: still broken: $wt"; BROKEN=1; }
+    done < <(git worktree list --porcelain | grep '^worktree ')
+    [ "$BROKEN" -eq 0 ] && echo "  verified: all linked worktrees resolve."
+else
+    echo "  SKIP: no linked worktrees."
+fi
+echo
+
+# --- Step 7: relocate the venv ------------------------------------------
 #
 # `mv` does not fix a venv. Every .venv/bin console script has the absolute
 # interpreter path baked into its shebang, and the activate* scripts hardcode
@@ -259,7 +301,7 @@ echo
 # directory on PATH — while `.venv/bin/python` itself keeps working, which makes
 # the failure look like a missing dependency rather than a stale path.
 # `uv sync --reinstall` rewrites the shebangs; the activate* scripts need sed.
-echo "[6/8] Relocating the venv..."
+echo "[7/9] Relocating the venv..."
 if [ ! -d ".venv" ]; then
     echo "  SKIP: no .venv on this box."
 elif ! grep -rlq "$OLD_DIR" .venv/bin/ .venv/pyvenv.cfg 2>/dev/null; then
@@ -288,8 +330,8 @@ else
 fi
 echo
 
-# --- Step 7: commit ------------------------------------------------------
-echo "[7/8] Committing §1/§3 reference fixes..."
+# --- Step 8: commit ------------------------------------------------------
+echo "[8/9] Committing §1/§3 reference fixes..."
 if [ "${#TOUCHED[@]}" -eq 0 ]; then
     echo "  No files were touched — nothing to commit."
 else
@@ -325,8 +367,8 @@ EOF
 fi
 echo
 
-# --- Step 8: final verification instructions -----------------------------
-echo "[8/8] Local rename complete. To verify and close out §1 on this box:"
+# --- Step 9: final verification instructions -----------------------------
+echo "[9/9] Local rename complete. To verify and close out §1 on this box:"
 echo "  1. Open a FRESH Claude Code session in $NEW_DIR."
 echo "  2. Confirm it retrieves prior project memory (MEMORY.md index entries"
 echo "     from before the rename should be visible/loadable) AND that the"
@@ -334,7 +376,9 @@ echo "     garden session-start briefing fires — the briefing is the live proo
 echo "     that the registry Path column resolves."
 echo "  3. Confirm the toolchain: 'uv run mypy --version' and 'uv run pytest --version'"
 echo "     both answer (they are the two that break on a stale venv)."
-echo "  4. docs/REBRAND_MIGRATION_CHECKLIST.md §6 tracks §1 as [~] until EVERY"
+echo "  4. Confirm 'git fetch' prints NO 'This repository moved' notice, and that"
+echo "     git commands work inside each linked worktree."
+echo "  5. docs/REBRAND_MIGRATION_CHECKLIST.md §6 tracks §1 as [~] until EVERY"
 echo "     dev box has run this. Note this box against it, and flip to [x] on"
 echo "     the last one."
 echo
