@@ -74,6 +74,49 @@ selection/injection-pool estimate. Source:
 
 ---
 
+## Gray et al. 2020 — arXiv:1908.06050 (PRD 101, 122001), "Cosmological Inference using
+Gravitational-Wave Standard Sirens: A Mock Data Challenge" (our partition-norm template)
+
+Task L0-LIT (ledger row #105) full-text read of main text §II and the full Appendix (2020's
+detailed derivation lives in the appendix, not §2). Full transcription, equation numbers, and
+answers: `results/mechanism_study_20260813/L0_LIT_FULLTEXT_20260815.md` §1.
+
+| # | warning/condition (location) | what it requires | our status | evidence |
+|---|---|---|---|---|
+| G20-a | **App. 2, Eq. A.10** — the equation that would carry a `\|dD_L/dz\|` Jacobian if the paper's z-marginalization needed one | none stated: no Jacobian appears anywhere in the derivation (Eqs. A.5–A.19); the GW term is used as an unnormalized likelihood function of z throughout, not a density converted from D_L | `N-A` — this paper's own math does not carry the condition at all, so it cannot warrant a Jacobian requirement on our pipeline one way or the other | L0_LIT_FULLTEXT_20260815.md §1, Eq. A.10 transcription |
+| G20-b | **Footnote 3 / App. 1** — per-galaxy redshift kernel `p(zi)` | no closed form given (Gaussian only suggested in a footnote, never equationed); no truncation/renormalization discussed anywhere (`grep` for "truncat"/"renormali" returns zero hits) | `UNCHECKED` — paper supplies no convention to check against; this equation is **derived but never exercised** (paper's own MDAs run at σ_z = 0, "ignore these crucial redshift uncertainties altogether") | L0_LIT_FULLTEXT_20260815.md §1, footnote 3 quote |
+| G20-c | **App. 5, Eq. A.9/A.10 denominator** — selection-normalization placement | in this paper the selection term is the *same per-galaxy-summed fraction* as the numerator (`p(DGW\|·)` in place of `p(xGW\|·)`), not a separate global log-subtracted term | our venue's `N ln α(h)` global term is a **structural departure** from this paper's shared-object design, per the task brief's description (not independently re-checked against our own code in this pass) | L0_LIT_FULLTEXT_20260815.md §1, Eq. A.9/A.10 |
+
+**Absence recorded as a negative result:** no `|dD_L/dz|` Jacobian anywhere in the full paper text
+except one unrelated detector-frame mass-Jacobian hit — do not attribute a Jacobian requirement to
+this paper's derivation.
+
+---
+
+## Gray et al. 2023 — arXiv:2308.02281 (v2), "Joint cosmological and gravitational-wave population
+inference using dark sirens and galaxy catalogues" (gwcosmo update)
+
+Task L0-LIT (ledger row #105) full-text read of §2 in full (§2.1.1–§2.1.5, §2.2). Full
+transcription, equation numbers, and answers: `results/mechanism_study_20260813/L0_LIT_FULLTEXT_20260815.md` §2.
+
+| # | warning/condition (location) | what it requires | our status | evidence |
+|---|---|---|---|---|
+| G23-a | **§2.1, Eq. 2.4/2.9/2.10** — LOS-prior event-term z-marginalization | no `\|dD_L/dz\|` Jacobian anywhere in §2.1 (same likelihood-not-density usage as Gray 2020). The one explicit `∂dL/∂z` Jacobian in the whole paper is in **§2.2 Eq. 2.24**, the injection-reweighting step of the selection-effect (Pdet) Monte-Carlo estimator — a different use-case, not the event-term redshift marginalization | `N-A` for the event term — this paper's event-term math does not carry a distance-to-redshift Jacobian requirement either; **`CHECKED` that a Jacobian is used, but only in the selection/Pdet term**, structurally distinct from our venue's per-candidate event kernel | L0_LIT_FULLTEXT_20260815.md §2, Eqs. 2.4, 2.9–2.10, 2.24 |
+| G23-b | **§2.1.3, after Eq. 2.18** — truncation/renormalization of the out-of-catalogue prior `p(z,M\|Λ,I)` | explicit, **conditional** escape clause (quoted verbatim in the L0 report): skipping renormalization after truncating the range is harmless **only if the identical truncated expression is used consistently in both the numerator (Eq. 2.14) and the normalizing object (Eq. 2.18) that propagates into the selection side** | `UNCHECKED` against our own code — our per-candidate truncation window (`±4σ_d, ±5σ_z`, varying per candidate's own z_obs/σ_z) is not obviously the same shared, identically-used object this condition describes; whether it satisfies Gray 2023's condition is a structural question about our selection-term (`α(h)`) code, not decided by this literature-only pass | L0_LIT_FULLTEXT_20260815.md §2, §2.1.3 quote |
+| G23-c | **§2.1.4** — comoving-volume LOS-prior H₀-dependence cancellation between numerator and selection denominator | requires the **same LOS prior object** to be used to evaluate both the GW likelihood and the GW selection effect, so the H0-dependent normalization constant cancels | `UNCHECKED` against our own code — condition confirmed to exist and be load-bearing in Gray 2023's own derivation (quoted verbatim in the L0 report), but whether our venue's event term and `α(h)` selection term share the same object the way Gray's do is not checked here | L0_LIT_FULLTEXT_20260815.md §2, §2.1.4 quote |
+| G23-d | **§2.1.1, Eq. 2.9** — per-galaxy redshift kernel `p(z\|ẑk) = G(z−ẑk; σ̂k)` | plain Gaussian, footnote 9 notes no strict requirement it be Gaussian; **no truncation of this specific kernel discussed** | `UNCHECKED` — matches our venue's Gaussian-kernel choice at the functional-form level; truncation convention for *this* kernel specifically (as opposed to the out-of-catalogue prior, G23-b) is not addressed by the paper either way | L0_LIT_FULLTEXT_20260815.md §2, Eq. 2.9 |
+
+**Novelty-claims verdict** (mechanism-study thread's Jacobian/truncation claims, per Stage-L
+Q1/Q4): see the verdict table in `L0_LIT_FULLTEXT_20260815.md` §4 — **presented, not adjudicated**.
+Summary: the "missing Jacobian is standard-and-implicit" framing from the report-level Stage-L pass
+is **refuted as literally stated** (neither template paper's event term carries this Jacobian at
+all, implicit or explicit); the truncation-renormalization claim is **sharpened, not settled** —
+Gray 2023 supplies a named conditional escape clause our venue's per-candidate (non-shared)
+truncation window does not obviously satisfy, but confirming that requires a code-level check not
+performed in this literature-only pass.
+
+---
+
 ## Other sources — rows to be opened
 
 Named here so the gaps are visible; each becomes its own section when a Stage L ring-R0
@@ -81,7 +124,5 @@ pass reads it for warnings rather than for equations.
 
 | source | why it needs a section | status |
 |---|---|---|
-| Gray et al. 2020, arXiv:1908.06050 (our partition-norm template) | its photo-z handling is an *unexercised* equation — validated at σ_z = 0 ("ignore these crucial redshift uncertainties altogether"); under flat p_det the same-kernel denominator degenerates to a constant N | `UNCHECKED` as a register section; partial note at `docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md:170-174` |
-| Gray et al. 2023, arXiv:2308.02281 (GWcosmo) | states the comoving-volume LOS-prior H₀-dependence **cancels** between numerator and denominator (§2.1.4) — a validity condition on our normalisation choice | `UNCHECKED` |
 | Barausse 2012, arXiv:1201.5888 (M1 population) | the fiducial cosmology import; its stated regime of validity is what makes the WMAP-era constants a design choice rather than a bug (G11) | partially covered by `docs/gates/G7_systematics_budget.md` row 6 |
 | Vallisneri 2008, arXiv:gr-qc/0703086 (Fisher validity) | the Fisher/Cramér-Rao high-SNR validity conditions behind our error bars | `UNCHECKED` |
