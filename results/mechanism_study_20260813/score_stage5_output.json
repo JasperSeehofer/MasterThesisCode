@@ -1,0 +1,101 @@
+{
+ "inputs": {
+  "input_path": "/home/jasper/Repositories/darksiren-emri/results/mechanism_study_20260813/AFULL_h0p730_results_seeds0_25.json",
+  "input_present": true
+ },
+ "ds_f1": {
+  "band_lo": -131.5,
+  "band_hi": 192.7,
+  "1d": {
+   "mean": 22.01906248064186,
+   "se": 29.221357762240064,
+   "n": 25
+  },
+  "pass": true,
+  "2d": {
+   "mean": 157.74221761943758,
+   "se": 29.21538493406025,
+   "n": 25
+  }
+ },
+ "ds_f2": {
+  "expect_abs_bias_1d_le": 0.003,
+  "1d": {
+   "mean": 0.0010000000000000009,
+   "se": 0.0011180339887498958,
+   "n": 25
+  },
+  "2d": {
+   "mean": 0.007600000000000007,
+   "se": 0.0011944315244779289,
+   "n": 25
+  },
+  "met": true,
+  "status": "WEAK, non-branch-carrying (report-only)"
+ },
+ "ds_f3": {
+  "bands": {
+   "50": [
+    0.2,
+    0.8
+   ],
+   "68": [
+    0.4,
+    0.96
+   ],
+   "90": [
+    0.72,
+    1.0
+   ]
+  },
+  "1d": {
+   "hpd50": 0.64,
+   "hpd68": 0.76,
+   "hpd90": 0.96,
+   "n": 25
+  },
+  "2d": {
+   "hpd50": 0.36,
+   "hpd68": 0.48,
+   "hpd90": 0.76,
+   "n": 25
+  },
+  "restored": true
+ },
+ "ds_f4": {
+  "n": 25,
+  "mean": 135.72315513879573,
+  "se": 0.048017895441583074,
+  "reference": {
+   "center": 129.0,
+   "half_width": 24.0
+  },
+  "status": "descriptive, no band"
+ },
+ "ds_f5": {
+  "1d": {
+   "T_min": -323.44695587671566,
+   "T_max": 327.0529603749307,
+   "T_sd": 146.10678881120032,
+   "railed_low_n": 0,
+   "railed_high_n": 0,
+   "nonfinite_n": 0,
+   "nonfinite_seeds": []
+  },
+  "2d": {
+   "T_min": -187.91232506409852,
+   "T_max": 462.7349379552466,
+   "T_sd": 146.07692467030125,
+   "railed_low_n": 0,
+   "railed_high_n": 0,
+   "nonfinite_n": 0,
+   "nonfinite_seeds": []
+  },
+  "stop": false
+ },
+ "branch": {
+  "status": "PRESENTED, NOT ADJUDICATED \u2014 the author rules",
+  "branch": "1. DS-F1 PASS + DS-F3 RESTORED (M-OWNED-CLOSED candidate)",
+  "fired_by": "T(1D)=+22.0 in band, coverage restored on all three HPD levels"
+ }
+}
