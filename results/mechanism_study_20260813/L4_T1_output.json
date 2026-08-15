@@ -1,0 +1,94 @@
+{
+  "note": "results/mechanism_study_20260813/L4_T1_TILT_COMPOSITION_20260815.md",
+  "parent": "results/mechanism_study_20260813/STAGE3_READOUT.md",
+  "prereg_source": "results/mechanism_study_20260813/PROPOSAL_STAGE4_20260815.md item L4-T1",
+  "data_source": "AJREN_h0p730_results_seeds0_25.json + AM2P_h0p730_results_seeds0_25.json, both committed under results/mechanism_study_20260813/; L0-REN-B toy and L0-SB reference numbers taken from L0_REN_B_TOY_RESULTS_20260815.md / L0_SB_DIAGNOSTIC_20260815.md (committed, not recomputed here).",
+  "method_note": "All quantities recomputed from raw per-seed ln_post_1d/ln_post_2d vectors and per-seed map_*/post_sd_* fields; the per-file 'aggregate' block was never read. T is the grid-neighbour central difference at h_true (verbatim venue_transfer._slope_at_truth / m6r_l0_decomposition geometry); the displacement-law closure additionally uses the local quadratic-fit score/curvature at h_true (verbatim l0_sb_diagnostic._local_quadratic_fit geometry, half_window=2).",
+  "constants": {
+    "ALPHA_N": 982,
+    "ALPHA_H": 0.73,
+    "ALPHA_SLOPE_COEFF": 1.036,
+    "ALPHA_TILT_NATS_PER_H": 1393.6328767123289,
+    "TOY_REN_TILT_MEAN": 99.52,
+    "TOY_REN_TILT_SEED_STD": 52.13,
+    "TOY_REN_TILT_SE": 18.43,
+    "L0_SB_RATIO_1D_MEAN": 1.147,
+    "L0_SB_RATIO_1D_SE": 0.132,
+    "L0_SB_RATIO_2D_MEAN": 1.164,
+    "L0_SB_RATIO_2D_SE": 0.134,
+    "STAGE3_2D_SUBADDITIVE_NATS": 0.0027
+  },
+  "section1_tilt_vs_alpha": {
+    "n_seeds": 25,
+    "T1_mean": 514.5198832773599,
+    "T1_se": 16.760933600606272,
+    "T2_mean": 643.1729385306093,
+    "T2_se": 16.767667781062794,
+    "alpha_tilt_nats_per_h": 1393.6328767123289,
+    "residual_1d_T_minus_alpha": -879.112993434969,
+    "residual_1d_se": 16.760933600606272,
+    "residual_1d_sigma": 52.45012088128372,
+    "residual_2d_T_minus_alpha": -750.4599381817196,
+    "residual_2d_se": 16.767667781062794,
+    "residual_2d_sigma": 44.75636969795407
+  },
+  "section2_ren_tilt_vs_toy": {
+    "AJREN": {
+      "T1_mean": 514.5198832773599,
+      "T1_se": 16.760933600606272,
+      "T2_mean": 643.1729385306093,
+      "T2_se": 16.767667781062794,
+      "n": 25
+    },
+    "AM2P": {
+      "T1_mean": 1492.007128830605,
+      "T1_se": 30.666835943904488,
+      "T2_mean": 1623.5135268672154,
+      "T2_se": 30.688251744491545,
+      "n": 25
+    },
+    "instrument_ren_tilt_1d_nats_per_h": -977.4872455532452,
+    "instrument_ren_tilt_1d_se": 34.94830070224137,
+    "instrument_ren_tilt_2d_nats_per_h": -980.3405883366062,
+    "instrument_ren_tilt_2d_se": 34.970322817345846,
+    "toy_ren_tilt_full_dose_mean": 99.52,
+    "toy_ren_tilt_full_dose_seed_std": 52.13,
+    "toy_ren_tilt_full_dose_se": 18.43,
+    "toy_ren_tilt_n_seeds": 8,
+    "toy_caveat": "L0-REN-B is a 500-event toy at the toy's own z_median, not the production n(z); production-population transfer check only, per L0_REN_B_TOY_RESULTS_20260815.md on-record caveat.",
+    "instrument_minus_toy_1d_using_toy_se": 27.25903077159108,
+    "instrument_minus_toy_2d_using_toy_se": 27.317779555080918,
+    "instrument_minus_toy_1d_using_toy_seed_std": 17.16050288346896,
+    "instrument_minus_toy_2d_using_toy_seed_std": 17.202604651512207
+  },
+  "section3_displacement_law": {
+    "channel_1d": {
+      "bias_mean": 0.017800000000000017,
+      "bias_se": 0.000711805216802088,
+      "T_qfit_mean_at_truth": 514.2759273322451,
+      "Abar_mean_at_truth": 28578.26540265916,
+      "Abar_median_at_truth": 28381.563853815256,
+      "n_valid_seeds": 25,
+      "predicted_bias_T_over_Abar": 0.017995351365320888,
+      "ratio_measured_over_predicted": 0.9891443428163712,
+      "reference_headline_ratio_mean": 1.147,
+      "reference_headline_ratio_se": 0.132,
+      "ratio_minus_reference": -0.15785565718362882,
+      "within_reference_se": false
+    },
+    "channel_2d": {
+      "bias_mean": 0.02220000000000002,
+      "bias_se": 0.000711805216802088,
+      "T_qfit_mean_at_truth": 642.929191791347,
+      "Abar_mean_at_truth": 28690.14585136371,
+      "Abar_median_at_truth": 28498.35762439806,
+      "n_valid_seeds": 25,
+      "predicted_bias_T_over_Abar": 0.02240940827286826,
+      "ratio_measured_over_predicted": 0.9906553412603143,
+      "reference_headline_ratio_mean": 1.164,
+      "reference_headline_ratio_se": 0.134,
+      "ratio_minus_reference": -0.17334465873968563,
+      "within_reference_se": false
+    }
+  }
+}
