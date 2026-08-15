@@ -672,3 +672,17 @@ Provenance: prereg `092b121b` · scorer frozen pre-data `191b0db7` · data + rea
 1. **[DO — granted]** L4-DER (derive the correct estimator p(data|h) from the generator code and diff term-by-term against the coded estimator), L4-T1 (measure T(AJREN) from committed ln_post; composition of the remaining tilt vs the α-tilt +1393.6), L4-T2 (validate every diff term against the committed constraint set incl. the T_res dose curve and the 2D-only sub-additivity). Derivation + committed data only; no instrument time.
 2. **[DO — granted]** Drafting (NOT registering) the A-FULL registration in parallel.
 3. Items 3–4 (A-FULL registration/run; whether the validated derivation opens the `/physics-change` new-formula slot) remain **deferred to the author by design**.
+
+---
+
+## Row #109 — 2026-08-15 — L4-DER Part 2 ratified (as amended); A-FULL draft to proceed
+
+**Author's verbatim ruling (2026-08-15):** "all approved"
+
+**Orchestrator-derived itemization** (referencing `results/mechanism_study_20260813/L4_DER_PART2_20260815.md` §4 **as amended by its verifier addendum A1/A2**, commits `9f2e6c1a` + `8de28637`):
+1. **[RULE — granted]** The Part-2 account is ratified: the coded tilt = α (+1400.6 numeric) + **GW z-mass growth +1059.6** (G_e = (1/h)(1 − D·D″/D′²); identity ΣG = N/h − Σx/h; retro-explains A-M2′ at 98.7% mass-kill) + exponent-scale (+175.8) + window motion (−31.1) + leftover (drift + interactions; +867/+344/+39 across f_i = 0.25/0.5/1.0), each measured by exact single-switch A/B on the bit-validated mirror; **T_res ≡ the leftover (drift + interactions)** with the §2 drift formula's direct evaluation registered as the next targeted recompute (amendment A2's hedge is part of the ratified record).
+2. **[RULE — granted]** The Part-1 D1–D6 ledger AS COMPOSED is superseded (isolated-term composition invalid inside the log-integral; the T2 audit's D3 sign-convention erratum is of record — D3 exact-weighted −176 vs isolated −342, same sign ~2× attenuated, NOT a sign flip; D4-as-M1-quadratic already refuted; window motion −31 nats/h, 1D local tilt at truth only).
+3. **[DO — granted]** Compose the A-FULL candidate estimator draft (correct d_obs-density form: density prefactor + Jacobian measure + p_pop numerator + renormalized kernel; predicted tilt ≈ 0) as a reviewable artifact with a fresh xhigh verifier. **Registration and running remain separate author gates (A8-v2), not granted here.**
+4. **[RULE — granted, branch reading orchestrator-derived]** Decision 4 was an either/or (residuals carried vs priced-first); "all approved" is read as the branch **coherent with the granted item 3**: the +39 full-dose leftover and the 2D-only +129 excess are **carried as stated residuals in the A-FULL draft** (with the drift-term direct evaluation still running as the hardening recompute). *This branch inference is flagged for author veto; a one-word correction re-opens it.*
+
+Not covered (inputs listed but not in the decision table): the Gray-convention paper-scope ruling (row #106 item 3 deferral has lapsed) — re-presented separately.
