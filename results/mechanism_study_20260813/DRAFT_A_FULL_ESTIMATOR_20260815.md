@@ -149,3 +149,62 @@ finalized at registration per decision 3; SEs from the §2 pre-measurement):
 | 3 | Whether §2's pre-measured tilt (committed-data mirror) may seed the registered bands directly, or bands must be re-derived independently | **[RULE]** |
 
 *Append-only from its commit. No production code is touched by this draft.*
+
+---
+
+## Addendum — xhigh verifier amendments + the FULL-F completion (2026-08-15, pre-presentation)
+
+The registered adversarial verifier returned **NO-GO as written** with three required amendments;
+all are applied here (append-only; this addendum supersedes the body where they conflict), and
+its central finding was promoted to a measurement that **completes the candidate**:
+
+**A1 — the §1 derivation was incomplete: the leave-one-out impostor weight (verifier C1,
+MAJOR).** Marginalizing host identity over the actual generative model gives
+L ∝ Σ_k host_k(h)/imp_k — the common impostor product normalizes out (F1's true content), but the
+h-independent per-candidate weight 1/imp_k (imp_k = the window-truncated catalog density convolved
+with the σ_k kernel) reshapes responsibilities and therefore the tilt. Part 1 F1's "impostor
+factors normalize out entirely" holds only for the overall constant. The corrected §1 form is
+
+    L_e^full(h) = (1/K) Σ_k (1/imp_k) ∫ dz π_host(z; h) · N(z_obs,k ; z, σ_k)
+                                          · N(d_obs ; d_L(z,h), σ_d·d_L(z,h))
+
+**Measured as FULL-F** (= FULL-D × 1/imp_k, verifier's construction verbatim, floor 1e-3,
+15 seeds, 4/4 cross-check pins passed):
+
+| candidate | paired T, f_i = 1.0 | paired T, f_i = 0.25 |
+|---|---:|---:|
+| coded base | +2644.0 ± 46.5 | +3535.5 ± 75.8 |
+| FULL-D | +183.4 ± 47.0 | +998.0 ± 76.0 |
+| **FULL-F (the completed candidate)** | **+30.6 ± 42.7 — consistent with zero (0.7σ)** | +168.9 ± 58.8 |
+
+The completed candidate's full-dose venue tilt is statistically zero on 15 seeds — an ~86×
+reduction from the coded base; implied bias ≈ +0.0004 vs the original +0.0373. The low-dose
+residual (+169, 2.9σ) is the remaining stated residual; its natural owners are the pool-vs-model
+population mismatch (verifier: KS D = 0.085 vs 0.043 critical between the pinned z_true and the
+normalized α-integrand; prior-score scale ≈ −152 nats/h) and residual drift/LOO-model error.
+**§6 decision 1's candidate definition is FULL-F, not FULL-D**; §4's predictions re-seed
+accordingly (P1: +31 ± 43·√(15/N) at full dose; P4: +169 ± 59·√(15/N) at f_i = 0.25; P5 gains a
+third kill test: removing the LOO weight shifts T by ≈ +135 ± 4).
+
+**A2 — the calibration-gate claim is corrected (verifier C7, MAJOR).** The gate does NOT run the
+S̄_φ numerator: `numerator_pdet="off"` is the pinned default (`closed_loop_gfrac.py:188`,
+`calibration_gate.py:347,363`); the S̄_φ branch is the non-registered GATEB N-2 diagnostic. The
+§1 sentence is amended to: the gate estimator carries the **w_pop pairing** (FULL-B level); the
+full pairing exists in code only as a pinned-off diagnostic branch.
+
+**A3 — provenance (verifier, MAJOR).** `l4_afull_premeasure.py` now carries a `--stage {abc,de,f}`
+switch reproducing each committed output file (the interim committed version could not regenerate
+the A/B/C output); docstring updated to variants A–F.
+
+**A4 — minor wordings (verifier).** §2 item 4's "tracks": the dose-*increments* match (815 vs
+828 nats/h); the decay *ratios* do not (5.5× vs 22×) — the increment reading is the intended one.
+P3: on the draft's own numbers |bias|/post_sd is 0.60–0.69 (not "~0.5"), putting "within ~10
+points" at the boundary; and the post_sd/displacement-law carry-over to the new form is an
+assumption to be tested by the registered arm, not a derivation. Finally, the candidate's
+ingredient list deviates from row #109 item 3's granted wording ("Jacobian measure + renormalized
+kernel") — the deviations (no Jacobian: F3 density form; no renorm: refuted §2 item 3; + S̄_φ +
+LOO) are evidence-driven and flagged here explicitly for the author.
+
+**Verifier verdict after amendments: GO** ("what survives untouched: all §2 numbers, the 14–25×
+pairing collapse, the renorm refutation, and the falsifier structure" — now strengthened by the
+zero-consistent FULL-F).

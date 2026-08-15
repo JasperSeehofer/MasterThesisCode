@@ -1,7 +1,7 @@
 """A-FULL candidate pre-measurement (ledger row #109 item 3 — draft support, committed data only).
 
 Measures, on the same bit-validated mirror geometry as the switch decomposition (15 MN0X
-seed replays, grid-neighbour tilt at h_true), the venue tilt of three CORRECT-FORM
+seed replays, grid-neighbour tilt at h_true), the venue tilt of the CORRECT-FORM
 estimator candidates, so the A-FULL draft's central prediction ("tilt ~= 0") is a
 measured number instead of an assertion:
 
@@ -17,14 +17,33 @@ measured number instead of an assertion:
 - FULL-C  : FULL-B + per-candidate kernel renormalisation (divide by the retained kernel
             mass W_k(h), the A-REN switch verbatim) — the complete candidate: density
             form + population weight + renormalised kernel.
+- FULL-D  : FULL-B + the selection-function factor ``S(phi(z))`` (survival-estimator
+            detection probability along the population measure), WITHOUT kernel
+            renormalisation.
+- FULL-E  : FULL-D + per-candidate kernel renormalisation (the FULL-C renormalisation,
+            applied on top of FULL-D).
+- FULL-F  : FULL-D's integrand (i.e. same construction as full_d in every membership
+            test) times a per-candidate leave-one-out (LOO) impostor-density weight
+            ``1/imp_k`` — the host-identity marginalization's per-candidate weight the
+            draft's Part 1 §1 initially dropped (verifier C1 finding). ``imp_k`` is the
+            h-independent, per-seed impostor number-density at each candidate's observed
+            z, built from the gate's impostor CDF/window tables (the same construction
+            ``draw_ball`` uses to sample impostors) convolved with the sigma_z kernel.
 
-Dose levels: full (1.0) for all variants; 0.25 additionally for FULL-C (dose structure of
-the residual tilt).  Output: ``L4_AFULL_PREMEASURE_output.json``.
+Dose levels: full (1.0) for all variants; 0.25 additionally for FULL-C/FULL-F (dose
+structure of the residual tilt). Three reproduction stages (``--stage``):
+
+- ``abc`` : dose 1.0 -> (full_a, full_b, full_c); dose 0.25 -> (full_c,).
+            Output ``L4_AFULL_PREMEASURE_output.json``.
+- ``de``  : both doses -> (full_d, full_e). Output ``L4_AFULL_PREMEASURE_D_output.json``.
+- ``f``   : both doses -> (full_f,). Output ``L4_AFULL_PREMEASURE_F_output.json`` (default).
+
 Status: PRESENTED, NOT ADJUDICATED — numbers for the draft; the author adjudicates.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import multiprocessing as mp
 import sys
@@ -54,6 +73,61 @@ from darksiren_emri.validation import venue_transfer as vt  # noqa: E402
 VARIANTS = ("full_a", "full_b", "full_c")
 _W_K_FLOOR = vt._W_K_FLOOR if hasattr(vt, "_W_K_FLOOR") else 1e-12
 
+STAGE_VARIANTS: dict[str, dict[str, tuple[str, ...]]] = {
+    "abc": {"1.0": ("full_a", "full_b", "full_c"), "0.25": ("full_c",)},
+    "de": {"1.0": ("full_d", "full_e"), "0.25": ("full_d", "full_e")},
+    "f": {"1.0": ("full_f",), "0.25": ("full_f",)},
+}
+STAGE_OUTPUT: dict[str, str] = {
+    "abc": "L4_AFULL_PREMEASURE_output.json",
+    "de": "L4_AFULL_PREMEASURE_D_output.json",
+    "f": "L4_AFULL_PREMEASURE_F_output.json",
+}
+_STAGE = "f"  # set by main() from --stage; read by _seed_task via the pool fork
+
+
+def loo_weights(
+    vctx: vt.VenueContext,
+    universe: cl.SyntheticUniverse,
+    ball: cg.HostBall,
+    sig_z: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Leave-one-out impostor-density weight 1/imp_k (h-independent, per seed)."""
+    gctx = vctx.gctx
+    zn, zc = gctx.imp_z_nodes, gctx.imp_z_cdf
+    pcat = np.gradient(zc, zn)
+    d_lo = universe.d_L_obs * (1.0 - cl._SIGMA_WINDOW * universe.sigma_dL)
+    d_hi = universe.d_L_obs * (1.0 + cl._SIGMA_WINDOW * universe.sigma_dL)
+    zlo = np.interp(np.maximum(d_lo, 0.0), gctx.imp_dl_nodes, gctx.imp_z_nodes)
+    zhi = np.interp(d_hi, gctx.imp_dl_nodes, gctx.imp_z_nodes)
+    Flo = np.interp(zlo, zn, zc)
+    Fhi = np.interp(zhi, zn, zc)
+    mass = np.maximum(Fhi - Flo, 1e-12)
+    ev = ball.event_idx
+    zo = ball.z_obs
+    n_pairs = int(zo.size)
+    imp = np.zeros(n_pairs, dtype=np.float64)
+    gr = np.linspace(0.0, 1.0, 64)
+    chunk = 200_000
+    for i0 in range(0, n_pairs, chunk):
+        i1 = min(i0 + chunk, n_pairs)
+        sl = slice(i0, i1)
+        ev_c = ev[sl]
+        zo_c = zo[sl]
+        sig_c = sig_z[sl]
+        a = np.maximum(zlo[ev_c], zo_c - 8 * np.maximum(sig_c, 1e-6))
+        b = np.minimum(zhi[ev_c], zo_c + 8 * np.maximum(sig_c, 1e-6))
+        ok = b > a
+        zz = a[:, None] + (b - a)[:, None] * gr[None, :]
+        pc = np.interp(zz, zn, pcat) / mass[ev_c][:, None]
+        s = np.where(sig_c > 0, sig_c, 1e-6)
+        kern = norm.pdf(zz, loc=zo_c[:, None], scale=s[:, None])
+        imp_c = np.trapezoid(pc * kern, zz, axis=1)
+        q0 = sig_c <= 0
+        imp_c[q0] = np.interp(zo_c[q0], zn, pcat) / mass[ev_c][q0]
+        imp[sl] = np.where(ok | q0, imp_c, 0.0)
+    return 1.0 / np.maximum(imp, 1e-3)
+
 
 def full_ln1(
     vctx: vt.VenueContext,
@@ -63,6 +137,7 @@ def full_ln1(
     k: int,
     *,
     variant: str,
+    loo_w: npt.NDArray[np.float64] | None = None,
 ) -> float:
     """c1/1D mirror with the correct-form (d_obs-density) GW factor and options.
 
@@ -118,11 +193,11 @@ def full_ln1(
             p_gw = norm.pdf(ratio, loc=1.0, scale=sig_p[rows_q][:, None]) / d_L_n
             kern = norm.pdf(z_nodes, loc=zo[:, None], scale=so[:, None])
             integ = kern * p_gw
-            if variant in ("full_b", "full_c", "full_d", "full_e"):
+            if variant in ("full_b", "full_c", "full_d", "full_e", "full_f"):
                 integ = integ * np.asarray(cl._w_pop(z_flat, h), dtype=np.float64).reshape(
                     z_nodes.shape
                 )
-            if variant in ("full_d", "full_e"):
+            if variant in ("full_d", "full_e", "full_f"):
                 z_s, s_phi = gctx.cl_ctx.s_phi_tables[k]
                 integ = integ * np.interp(z_nodes, z_s, s_phi)
             if variant in ("full_c", "full_e"):
@@ -137,12 +212,16 @@ def full_ln1(
             d_pt = np.asarray(dist_vectorized(np.maximum(zo, 1e-8), h=h), dtype=np.float64)
             ratio_p = d_obs_p[rows_p] / d_pt
             p_gw_p = norm.pdf(ratio_p, loc=1.0, scale=sig_p[rows_p]) / d_pt
-            if variant in ("full_b", "full_c", "full_d", "full_e"):
+            if variant in ("full_b", "full_c", "full_d", "full_e", "full_f"):
                 p_gw_p = p_gw_p * np.asarray(cl._w_pop(np.maximum(zo, 1e-8), h), dtype=np.float64)
-            if variant in ("full_d", "full_e"):
+            if variant in ("full_d", "full_e", "full_f"):
                 z_s, s_phi = gctx.cl_ctx.s_phi_tables[k]
                 p_gw_p = p_gw_p * np.interp(np.maximum(zo, 1e-8), z_s, s_phi)
             c1[rows_p] = np.where(valid_p, p_gw_p, 0.0)
+
+    if variant == "full_f":
+        assert loo_w is not None
+        c1 = c1 * loo_w
 
     L1 = np.bincount(ev, weights=c1, minlength=n) / K
     ok1 = (L1 > 0.0) & np.isfinite(L1)
@@ -157,17 +236,29 @@ def _seed_task(args: tuple[str, int]) -> dict[str, Any]:
     dose, seed = args
     vctx, i_lo, i_hi = _CTXS[dose]
     universe, ball, sigma_pairs = vt._draw_seed_realization(seed, vctx)
-    variants = ("full_d", "full_e")
+    variants = STAGE_VARIANTS[_STAGE][dose]
+    lw = loo_weights(vctx, universe, ball, sigma_pairs) if "full_f" in variants else None
     dh = float(vctx.gctx.cl_ctx.config.h_grid[i_hi] - vctx.gctx.cl_ctx.config.h_grid[i_lo])
     out: dict[str, Any] = {"dose": dose, "seed": seed}
     for v in variants:
-        lo = full_ln1(vctx, universe, ball, sigma_pairs, i_lo, variant=v)
-        hi = full_ln1(vctx, universe, ball, sigma_pairs, i_hi, variant=v)
+        lo = full_ln1(vctx, universe, ball, sigma_pairs, i_lo, variant=v, loo_w=lw)
+        hi = full_ln1(vctx, universe, ball, sigma_pairs, i_hi, variant=v, loo_w=lw)
         out[f"T_cand_{v}"] = (hi - lo) / dh
     return out
 
 
 def main() -> None:
+    global _STAGE
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--stage",
+        choices=sorted(STAGE_VARIANTS),
+        default="f",
+        help="Which committed output to reproduce (abc/de/f).",
+    )
+    args = parser.parse_args()
+    _STAGE = args.stage
+
     mn0x = _load_json(RESULTS_DIR / "MN0X_h0p730_results_seeds0_100.json")
     seeds = [int(r["seed"]) for r in mn0x["per_seed"][:N_SEEDS]]
     h_grid = np.asarray(mn0x["config"]["h_grid"], dtype=np.float64)
@@ -208,7 +299,7 @@ def main() -> None:
     }
     for dose in ("1.0", "0.25"):
         drows = [r for r in rows if r["dose"] == dose]
-        variants = ("full_d", "full_e")
+        variants = STAGE_VARIANTS[_STAGE][dose]
         blk: dict[str, Any] = {}
         for v in variants:
             cand = _stats([r[f"T_cand_{v}"] for r in drows])
@@ -225,7 +316,7 @@ def main() -> None:
                 flush=True,
             )
 
-    out = RESULTS_DIR / "L4_AFULL_PREMEASURE_D_output.json"
+    out = RESULTS_DIR / STAGE_OUTPUT[_STAGE]
     with open(out, "w") as fh:
         json.dump(results, fh, indent=2)
     print(f"wrote {out}")
