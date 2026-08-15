@@ -219,6 +219,9 @@ M2P_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_M2PRIME_ABLA
 # registered 2026-08-15, disjoint +54100 decade for A-JREN and +54000 for
 # A-REN — see REN_CELL_SPECS below.
 REN_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_A_JREN_STAGE3.md"
+# A-FULL (FULL-F) correct-form arm, registered 2026-08-15 (stage-5), disjoint
+# +54200 decade — see AFULL_CELL_SPECS below.
+AFULL_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_A_FULL_STAGE5.md"
 DEFAULT_OUT_DIR = "results/venue_transfer_20260811"
 VT_BASE_SEED = cg.GATE_BASE_SEED  # 20260808 — the gate's base, v3 offsets +40000 decade (VT-D7)
 PARENT_CALGATE_CODE_COMMIT = "065e7f58"
@@ -304,12 +307,21 @@ ESTIMATOR_VARIANT_NULL_SCALE = "null_scale_1p7"
 # branch untouched by construction (constraint (a), unit-tested).
 ESTIMATOR_VARIANT_KERNEL_RENORM = "kernel_renorm"
 ESTIMATOR_VARIANT_JOINT_JREN = "jacobian_and_kernel_renorm"
+# A-FULL (FULL-F) — ledger row #110, DRAFT_A_FULL_ESTIMATOR_20260815.md §1 + §3 +
+# addendum A1. The correct-form estimator: d_obs-density GW factor
+# N(d_obs; d_L, sigma_d*d_L), the selected-population prior w_pop(z;h)*S_phi(z;h)
+# as the numerator node weight (the existing -n*log_alpha term is its
+# normalization), and the per-candidate leave-one-out impostor weight 1/imp_k;
+# NO Jacobian (F3: density form already carries the mu-scale exponent), NO
+# kernel renormalization (refuted by the pre-measurement, addendum §2 item 3).
+ESTIMATOR_VARIANT_A_FULL = "a_full"
 ESTIMATOR_VARIANTS: tuple[str, ...] = (
     ESTIMATOR_VARIANT_BASE,
     ESTIMATOR_VARIANT_M2P_JACOBIAN,
     ESTIMATOR_VARIANT_NULL_SCALE,
     ESTIMATOR_VARIANT_KERNEL_RENORM,
     ESTIMATOR_VARIANT_JOINT_JREN,
+    ESTIMATOR_VARIANT_A_FULL,
 )
 # A-M2' registered step (prereg §3): central difference of dist_vectorized in
 # z, deterministic, no RNG. physical_relations.dist_derivative is analytic
@@ -511,12 +523,31 @@ REN_CELL_SPECS: dict[str, VenueCellSpec] = {
     ),
 }
 
+# ── A-FULL correct-form arm (registered 2026-08-15, stage-5) ────────────────
+# results/mechanism_study_20260813/PREREGISTRATION_A_FULL_STAGE5.md §2. Same
+# decision cell as MN0X/AM2P/AJREN in every respect except
+# VenueConfig.estimator_variant; fresh disjoint block +54200..+54224.
+AFULL_CELL_SPECS: dict[str, VenueCellSpec] = {
+    "AFULL": VenueCellSpec(
+        "AFULL",
+        "A-FULL",
+        "real_k",
+        "glade",
+        (0.730,),
+        (25,),
+        (54200,),
+        "all",
+        estimator_variant=ESTIMATOR_VARIANT_A_FULL,
+    ),
+}
+
 ALL_CELL_SPECS: dict[str, VenueCellSpec] = {
     **CELL_SPECS,
     **MECH_CELL_SPECS,
     **SCAN_CELL_SPECS,
     **M2P_CELL_SPECS,
     **REN_CELL_SPECS,
+    **AFULL_CELL_SPECS,
 }
 
 
@@ -526,11 +557,12 @@ def preregistration_path_for_cell(cell: str) -> str:
     Registry-level mapping, not a per-spec field: the mechanism-isolation
     arms (:data:`MECH_CELL_SPECS`), the 2-D dose-scan cells
     (:data:`SCAN_CELL_SPECS`), the stage-2 estimator-variant arms
-    (:data:`M2P_CELL_SPECS`), and the stage-3 estimator-variant arms
-    (:data:`REN_CELL_SPECS`) are registered under their own prereg
-    documents (2026-08-13 / 2026-08-14 / 2026-08-15), disjoint from the
-    venue-transfer prereg that governs :data:`CELL_SPECS`. Any cell id
-    outside all five registries (e.g. ``"custom"``) falls back to
+    (:data:`M2P_CELL_SPECS`), the stage-3 estimator-variant arms
+    (:data:`REN_CELL_SPECS`), and the stage-5 A-FULL arm
+    (:data:`AFULL_CELL_SPECS`) are registered under their own prereg
+    documents (2026-08-13 / 2026-08-14 / 2026-08-15 / 2026-08-15), disjoint
+    from the venue-transfer prereg that governs :data:`CELL_SPECS`. Any cell
+    id outside all six registries (e.g. ``"custom"``) falls back to
     :data:`PREREG_PATH`, matching prior behaviour byte-for-byte.
 
     Args:
@@ -539,6 +571,8 @@ def preregistration_path_for_cell(cell: str) -> str:
     Returns:
         The governing preregistration path.
     """
+    if cell in AFULL_CELL_SPECS:
+        return AFULL_PREREG_PATH
     if cell in REN_CELL_SPECS:
         return REN_PREREG_PATH
     if cell in M2P_CELL_SPECS:
@@ -594,12 +628,19 @@ class VenueConfig:
             rows), ``"null_scale_1p7"`` (A-NULL, the specificity control),
             ``"kernel_renorm"`` (A-REN, the missing division by the retained
             kernel mass ``W_k(h)`` restored) or ``"jacobian_and_kernel_renorm"``
-            (A-JREN, A-M2' and A-REN applied jointly). Stage-2 prereg
-            (``PREREGISTRATION_M2PRIME_ABLATION.md``, §3, 2026-08-14) and
+            (A-JREN, A-M2' and A-REN applied jointly) or ``"a_full"`` (A-FULL,
+            FULL-F, ledger row #110: the d_obs-density GW factor
+            ``N(d_obs; d_L, sigma_d*d_L)``, the selected-population prior
+            ``w_pop(z;h)*S_phi(z;h)`` as numerator node weight — the existing
+            ``-n*log_alpha`` term is its normalization — and the
+            per-candidate leave-one-out impostor weight ``1/imp_k``; NO
+            Jacobian, NO kernel renormalization). Stage-2 prereg
+            (``PREREGISTRATION_M2PRIME_ABLATION.md``, §3, 2026-08-14),
             stage-3 prereg (``PREREGISTRATION_A_JREN_STAGE3.md``, §3,
-            2026-08-15); applied inside :func:`_channel_terms_at_h` on
-            kernel-branch (σ_z > 0) rows only — the point branch is untouched
-            by construction.
+            2026-08-15), A-FULL draft (``DRAFT_A_FULL_ESTIMATOR_20260815.md``
+            §1 + §3 + addendum A1); applied inside :func:`_channel_terms_at_h`
+            on kernel-branch (σ_z > 0) rows only — the point branch is
+            untouched by construction.
     """
 
     cell: str
@@ -1361,6 +1402,77 @@ def _slope_at_truth(
     return np.asarray([slope], dtype=np.float64)
 
 
+def _loo_impostor_weights(
+    gctx: cg.GateContext,
+    universe: cl.SyntheticUniverse,
+    ball: cg.HostBall,
+    sig_z: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Per-candidate leave-one-out impostor-density weight ``1/imp_k``.
+
+    A-FULL (FULL-F) ingredient (``DRAFT_A_FULL_ESTIMATOR_20260815.md``
+    addendum A1, verifier C1): marginalizing host identity over the actual
+    generative model gives ``L propto sum_k host_k(h) / imp_k`` — the common
+    impostor product normalizes out (Part 1 F1's true content), but this
+    h-independent per-candidate weight reshapes responsibilities and
+    therefore the tilt. ``imp_k`` is the window-truncated catalog density
+    (built from the gate's impostor CDF/window tables — the same
+    construction :func:`calibration_gate.draw_ball` uses to sample
+    impostors) convolved with the σ_z kernel at each candidate's observed
+    redshift; h-independent and computed once per seed realization.
+
+    Ported verbatim in substance from ``loo_weights`` in
+    ``results/mechanism_study_20260813/l4_afull_premeasure.py``.
+
+    Args:
+        gctx: The gate context (impostor CDF/window tables).
+        universe: The event set (per-event ``d_L_obs``, ``sigma_dL``).
+        ball: The candidate balls (``event_idx``, ``z_obs``).
+        sig_z: Per-candidate σ_z, aligned with ``ball.z_obs``.
+
+    Returns:
+        ``1/imp_k`` per candidate pair, floored at ``imp_k <= 1e-3`` (the
+        registered floor, matching the reference implementation) to prevent
+        blow-up for candidates whose impostor density is vanishingly small.
+
+    References:
+        DRAFT_A_FULL_ESTIMATOR_20260815.md, addendum A1.
+    """
+    zn, zc = gctx.imp_z_nodes, gctx.imp_z_cdf
+    pcat = np.gradient(zc, zn)
+    d_lo = universe.d_L_obs * (1.0 - cl._SIGMA_WINDOW * universe.sigma_dL)
+    d_hi = universe.d_L_obs * (1.0 + cl._SIGMA_WINDOW * universe.sigma_dL)
+    zlo = np.interp(np.maximum(d_lo, 0.0), gctx.imp_dl_nodes, gctx.imp_z_nodes)
+    zhi = np.interp(d_hi, gctx.imp_dl_nodes, gctx.imp_z_nodes)
+    Flo = np.interp(zlo, zn, zc)
+    Fhi = np.interp(zhi, zn, zc)
+    mass = np.maximum(Fhi - Flo, 1e-12)
+    ev = ball.event_idx
+    zo = ball.z_obs
+    n_pairs = int(zo.size)
+    imp = np.zeros(n_pairs, dtype=np.float64)
+    gr = np.linspace(0.0, 1.0, 64)
+    chunk = 200_000
+    for i0 in range(0, n_pairs, chunk):
+        i1 = min(i0 + chunk, n_pairs)
+        sl = slice(i0, i1)
+        ev_c = ev[sl]
+        zo_c = zo[sl]
+        sig_c = sig_z[sl]
+        a = np.maximum(zlo[ev_c], zo_c - 8 * np.maximum(sig_c, 1e-6))
+        b = np.minimum(zhi[ev_c], zo_c + 8 * np.maximum(sig_c, 1e-6))
+        ok = b > a
+        zz = a[:, None] + (b - a)[:, None] * gr[None, :]
+        pc = np.interp(zz, zn, pcat) / mass[ev_c][:, None]
+        s = np.where(sig_c > 0, sig_c, 1e-6)
+        kern = norm.pdf(zz, loc=zo_c[:, None], scale=s[:, None])
+        imp_c = np.trapezoid(pc * kern, zz, axis=1)
+        q0 = sig_c <= 0
+        imp_c[q0] = np.interp(zo_c[q0], zn, pcat) / mass[ev_c][q0]
+        imp[sl] = np.where(ok | q0, imp_c, 0.0)
+    return 1.0 / np.maximum(imp, 1e-3)
+
+
 def _channel_terms_at_h(
     gctx: cg.GateContext,
     universe: cl.SyntheticUniverse,
@@ -1410,7 +1522,19 @@ def _channel_terms_at_h(
             A-M2' Jacobian and the A-REN renormalization jointly on the same
             kernel-branch integrand (Jacobian multiply, then renormalization
             divide); the point branch is untouched by construction (both
-            sub-terms vanish there).
+            sub-terms vanish there). ``"a_full"`` (A-FULL, FULL-F, ledger row
+            #110: ``DRAFT_A_FULL_ESTIMATOR_20260815.md`` §1 + §3 + addendum
+            A1) is the correct-form candidate derived from the generator: the
+            d_obs-density GW factor ``N(d_obs; d_L, sigma_d*d_L)`` replaces
+            the coded ratio-density form, the selected-population prior
+            ``w_pop(z;h)*S_phi(z;h)`` is applied as the numerator node weight
+            (the existing ``-n*log_alpha`` term is its normalization, not a
+            separate defect), and the per-candidate leave-one-out impostor
+            weight ``1/imp_k`` (:func:`_loo_impostor_weights`) accounts for
+            the host-identity marginalization; NO Jacobian (the density form
+            already carries the μ-scale exponent) and NO kernel
+            renormalization (refuted by the pre-measurement). The point
+            branch takes the same three factors evaluated at ``z_obs``.
 
     Returns:
         ``(ln1[k], ln2[k], ln_gfrac[k])`` for this h.
@@ -1438,6 +1562,14 @@ def _channel_terms_at_h(
     z_hi_e = np.minimum(z_hi_e, z_tab[-1])
     z_lo_p = z_lo_e[ev]
     z_hi_p = z_hi_e[ev]
+
+    if estimator_variant == ESTIMATOR_VARIANT_A_FULL:
+        # A-FULL (FULL-F, ledger row #110): h-independent per-candidate LOO
+        # impostor weight and the h-indexed selection-function table, both
+        # looked up once per h-point (outside the chunk loop) — see
+        # DRAFT_A_FULL_ESTIMATOR_20260815.md addendum A1.
+        loo_w = _loo_impostor_weights(gctx, universe, ball, sig_z)
+        z_s_tab, s_phi_tab = gctx.cl_ctx.s_phi_tables[k]
 
     c1 = np.zeros(n_pairs, dtype=np.float64)
     c2 = np.zeros(n_pairs, dtype=np.float64)
@@ -1506,6 +1638,20 @@ def _channel_terms_at_h(
                 jac = dd_dz / d_obs_p[rows_q][:, None]
                 w_k = norm.cdf((b - zo) / so) - norm.cdf((a - zo) / so)
                 integ = (kern * p_gw * jac) / np.maximum(w_k, _W_K_FLOOR)[:, None]
+            elif estimator_variant == ESTIMATOR_VARIANT_A_FULL:
+                # A-FULL (FULL-F, ledger row #110, DRAFT_A_FULL_ESTIMATOR_
+                # 20260815.md §1 + §3 + addendum A1): d_obs-density GW factor
+                # (note d_obs/d_L, not d_L/d_obs — density in d_obs, not a
+                # ratio density), selected-population prior w_pop*S_phi as
+                # the numerator node weight, and the per-candidate LOO
+                # impostor weight 1/imp_k. NO Jacobian, NO kernel renorm.
+                ratio = d_obs_p[rows_q][:, None] / d_L_n
+                p_gw_full = norm.pdf(ratio, loc=1.0, scale=sig_p[rows_q][:, None]) / d_L_n
+                z_flat_a = np.maximum(z_nodes.reshape(-1), 1e-8)
+                w_sel = np.asarray(cl._w_pop(z_flat_a, h), dtype=np.float64).reshape(
+                    z_nodes.shape
+                ) * np.interp(z_nodes, z_s_tab, s_phi_tab)
+                integ = kern * p_gw_full * w_sel * loo_w[rows_q][:, None]
             else:
                 raise ValueError(f"unknown estimator_variant '{estimator_variant}'")
             c1q = half * (integ @ w_gl)
@@ -1522,6 +1668,19 @@ def _channel_terms_at_h(
             d_pt = np.asarray(dist_vectorized(np.maximum(zo, 1e-8), h=h), dtype=np.float64)
             frac = d_pt / d_obs_p[rows_p]
             p_gw_p = norm.pdf(frac, loc=1.0, scale=sig_p[rows_p])
+            if estimator_variant == ESTIMATOR_VARIANT_A_FULL:
+                # A-FULL point branch (sig_z = 0 rows): the same d_obs-density
+                # GW factor evaluated at z_obs (frac = d_pt/d_obs, so
+                # N(d_obs; d_pt, sigma*d_pt) = pdf(1/frac; 1, sigma)/d_pt),
+                # times the selected-population prior and the LOO weight.
+                zo_floor = np.maximum(zo, 1e-8)
+                p_gw_p = norm.pdf(1.0 / frac, loc=1.0, scale=sig_p[rows_p]) / d_pt
+                p_gw_p = (
+                    p_gw_p
+                    * np.asarray(cl._w_pop(zo_floor, h), dtype=np.float64)
+                    * np.interp(zo_floor, z_s_tab, s_phi_tab)
+                    * loo_w[rows_p]
+                )
             g_pt = _g_ball_capped(
                 gctx,
                 universe,
@@ -2473,6 +2632,7 @@ def build_parser() -> argparse.ArgumentParser:
             *sorted(SCAN_CELL_SPECS),
             *sorted(M2P_CELL_SPECS),
             *sorted(REN_CELL_SPECS),
+            *sorted(AFULL_CELL_SPECS),
         ),
         help=(
             "prereg §5 cell to run (W1/O2 are reserved, NOT built); "
@@ -2482,7 +2642,8 @@ def build_parser() -> argparse.ArgumentParser:
             "(PREREGISTRATION_M2PRIME_ABLATION.md); AJREN/AREN are the "
             "stage-3 estimator-variant arms (PREREGISTRATION_A_JREN_STAGE3.md; "
             "AREN is conditional, registered but not enabled by default in "
-            "the cluster sbatch)"
+            "the cluster sbatch); AFULL is the stage-5 A-FULL correct-form "
+            "arm (PREREGISTRATION_A_FULL_STAGE5.md)"
         ),
     )
     p.add_argument("--truth", type=float, default=None, help="h_true (must be in the cell's set)")

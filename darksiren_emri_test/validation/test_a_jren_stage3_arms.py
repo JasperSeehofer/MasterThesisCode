@@ -444,12 +444,14 @@ def test_aren_ajren_are_registered_with_correct_variant_and_dose() -> None:
     assert not (set(vt.REN_CELL_SPECS) & set(vt.MECH_CELL_SPECS))
     assert not (set(vt.REN_CELL_SPECS) & set(vt.SCAN_CELL_SPECS))
     assert not (set(vt.REN_CELL_SPECS) & set(vt.M2P_CELL_SPECS))
+    assert not (set(vt.REN_CELL_SPECS) & set(vt.AFULL_CELL_SPECS))
     assert set(vt.ALL_CELL_SPECS) == (
         set(vt.CELL_SPECS)
         | set(vt.MECH_CELL_SPECS)
         | set(vt.SCAN_CELL_SPECS)
         | set(vt.M2P_CELL_SPECS)
         | set(vt.REN_CELL_SPECS)
+        | set(vt.AFULL_CELL_SPECS)
     )
 
 

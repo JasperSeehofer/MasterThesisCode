@@ -45,6 +45,13 @@ def _real_ladder_context(sigma_z: float, lambda_ball: float, n_events: int) -> c
     z_max = 1.5
     tables = [cl._z_of_dl_table(h, z_max) for h in cl_cfg.h_grid]
     gl_nodes, gl_weights = roots_legendre(cl_cfg.n_quad)
+    # Trivial (S_phi == 1 everywhere) selection-function tables — unused by
+    # every registered variant except "a_full" (ESTIMATOR_VARIANT_A_FULL),
+    # populated here so the all-variants loop in
+    # test_estimator_variant_forwarded_through_hgrain_path does not IndexError
+    # on an empty list now that a_full is a member of ESTIMATOR_VARIANTS.
+    s_phi_z = np.linspace(1e-6, 5.0, 2000)
+    s_phi_tables = [(s_phi_z, np.ones_like(s_phi_z)) for _ in cl_cfg.h_grid]
     cl_ctx = cl.ClosedLoopContext(
         config=cl_cfg,
         detection=None,  # type: ignore[arg-type]  # not used by the ball path
@@ -56,7 +63,7 @@ def _real_ladder_context(sigma_z: float, lambda_ball: float, n_events: int) -> c
         gen_M_cdf=np.linspace(0.0, 1.0, 100),
         z_of_dl_tables=tables,
         log_alpha=np.zeros(len(cl_cfg.h_grid)),
-        s_phi_tables=[],
+        s_phi_tables=s_phi_tables,
         gl_nodes=np.asarray(gl_nodes, dtype=np.float64),
         gl_weights=np.asarray(gl_weights, dtype=np.float64),
     )
