@@ -686,3 +686,15 @@ Provenance: prereg `092b121b` · scorer frozen pre-data `191b0db7` · data + rea
 4. **[RULE — granted, branch reading orchestrator-derived]** Decision 4 was an either/or (residuals carried vs priced-first); "all approved" is read as the branch **coherent with the granted item 3**: the +39 full-dose leftover and the 2D-only +129 excess are **carried as stated residuals in the A-FULL draft** (with the drift-term direct evaluation still running as the hardening recompute). *This branch inference is flagged for author veto; a one-word correction re-opens it.*
 
 Not covered (inputs listed but not in the decision table): the Gray-convention paper-scope ruling (row #106 item 3 deferral has lapsed) — re-presented separately.
+
+---
+
+## Row #110 — 2026-08-15 — A-FULL draft ratified (FULL-F); registration + run authorized; Gray-convention in paper scope
+
+**Author's verbatim ruling (2026-08-15):** "all approved"
+
+**Orchestrator-derived itemization** (referencing `results/mechanism_study_20260813/DRAFT_A_FULL_ESTIMATOR_20260815.md` §6 **as amended by its verifier addendum**, commits `fe172d6f` + `860b9d3f`):
+1. **[RULE — granted]** The A-FULL candidate definition is **FULL-F**: d_obs-density GW factor × selected-population prior w_pop·S̄_φ/α (α retained as the prior's normalization) × leave-one-out impostor weight 1/imp_k; **no Jacobian measure, no kernel renormalization** (deviations from row #109 item 3's wording are evidence-driven and were flagged). Pre-measured venue tilt +30.6 ± 42.7 nats/h at full dose (zero-consistent), +168.9 ± 58.8 at f_i = 0.25 (stated residual).
+2. **[DO — granted]** Register (A8-v2: fresh seeds, scorer pre-committed, xhigh pre-registration verifier — mandatory precedent) and run the A-FULL arm on the cluster (~25 CPU-h, N = 25, full dose, both channels).
+3. **[RULE — granted]** The registered bands may seed directly from the §2/addendum mirror pre-measurement (with the N-scaling and an execution-completeness cross-check of the installed instrument variant against the pre-measurement mirror before submission).
+4. **[RULE — granted, branch reading orchestrator-derived]** The Gray-convention finding **enters the paper's scope**, with the FULL-B/D/F chain as its quantitative backbone (what the published convention costs at σ_z > 0). *Reading flagged for author veto; concrete paper integration is a paper-thread task.*
