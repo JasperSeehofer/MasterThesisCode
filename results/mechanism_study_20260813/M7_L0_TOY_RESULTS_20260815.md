@@ -100,3 +100,11 @@ negative quadratic among them) and any remaining structure the M6R decomposition
 identity between the M6-residual and M7 is asserted; none is supported by this result.
 
 *No repair proposed; no instrument arm requested, per the note's closing line.*
+
+---
+
+## Addendum (2026-08-15) — adversarial-verification corrections
+
+1. **Margin arithmetic corrected:** the closure band sits 16.7× above the derivation's §2 lower bracket (1e-3/6e-5), not "≥30×"; the §2 upper bracket (6e-4) is only 1.67× below the band edge.
+2. **Production-curvature conversion (the M3-note definition, production σ_post = 0.004386):** implied shift −3.79e-4 ± 1.65e-4 — the toy's own-curvature conversion understates the venue-relevant magnitude by ~3.1×. **M7-CLOSED survives**: 2.6× inside the band, 3.8σ from the +1e-3 edge on the mean. The N and (to first order) K dependences cancel in the slope/curvature ratio, so no further production rescale is expected.
+3. Arm-B isolation confirmed at code level (edges frozen, everything else bit-identical). The freezing evidence for derivation-before-toy is commit-order only (15-minute gap); disclosed. The sign remains NOT ESTABLISHED at 8 seeds.
