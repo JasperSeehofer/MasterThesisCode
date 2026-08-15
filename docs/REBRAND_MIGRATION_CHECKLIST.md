@@ -11,8 +11,30 @@ separate sign-off. Source plan: `docs/REBRAND_PROPOSAL.md` §5 (operational rena
 
 ## 1. Local directory rename (dev box)
 
-**Not done.** The local checkout stays at `/home/jasper/Repositories/MasterThesisCode` until this
-is scripted and verified — renaming it first silently orphans two dependent systems:
+**Done on this dev box 2026-08-15** — `/home/jasper/Repositories/MasterThesisCode` ->
+`/home/jasper/Repositories/darksiren-emri`, Claude project state re-keyed, registry Path
+confirmed, §3 references fixed. Executed as `scripts/migrate_local_rename.sh` steps 1–3 plus a
+by-hand steps 4–7 (the script aborted at step 4; see below). **Per-machine, not once-and-for-all:**
+every dev box needs its own run. Three things the first execution surfaced, all now fixed in the
+script:
+
+- **Step 4 could never pass on a second box.** The garden registry is a *shared, synced* file, and
+  its Path column was migrated by a garden-side commit (`6caf391`, 2026-08-13) before any box ran
+  this script. Step 4's "the old path must be present" precondition therefore fails as an ABORT on
+  every box, including the first. It now treats "already migrated" as success.
+- **The venv does not survive the `mv`.** Every `.venv/bin/*` console-script shebang and the
+  `activate*` scripts hardcode the absolute venv path, so `uv run mypy`, `uv run pytest` and
+  `source .venv/bin/activate` all break after the rename with an opaque
+  `Failed to spawn: <tool>` / `ModuleNotFoundError`. The interpreter and site-packages are fine —
+  only the entry points are stale. Fix: `uv sync --reinstall --extra cpu --extra dev` (rewrites the
+  shebangs) plus a path rewrite of `.venv/bin/activate*`. This is the local mirror of §2's
+  "rebuild the venv" step, and it was missing from §1.
+- **`-book` is a prefix collision.** `/home/jasper/Repositories/MasterThesisCode` is a strict prefix
+  of the sibling worktree `.../MasterThesisCode-book`, which is **not** being renamed. Any
+  find-replace over the old path must be guarded (`(?!-book)`), or it silently repoints live
+  references at a directory that does not exist.
+
+The original reason for deferring — renaming first silently orphans two dependent systems:
 
 - **Claude memory / session state**, keyed by
   `~/.claude/projects/-home-jasper-Repositories-MasterThesisCode`. A local `mv` of the repo
@@ -22,9 +44,9 @@ is scripted and verified — renaming it first silently orphans two dependent sy
   cross-repo tracking keys this project by its filesystem path. Needs an explicit registry update
   in the same step as the directory rename, not after.
 
-**Plan:** script the directory rename + memory re-key + registry update as one atomic step
-(candidate: extend `/project-init` or a one-off migration script), run it, then verify a fresh
-Claude Code session in the renamed directory picks up prior memory before treating this as done.
+Both were re-keyed correctly on 2026-08-15 and verified: the renamed project directory carries all
+44 memory files and the session transcripts back to 2026-07-17, and the vault's session-start hook
+fired in a fresh session — which it only does when a registry Path column matches `$CWD`.
 
 ## 2. Cluster repo rename (bwUniCluster)
 
@@ -78,10 +100,20 @@ stale `~/MasterThesisCode` pointing at a now-redirected GitHub URL is exactly th
    filesystem, not in git. Audit these by hand during the cluster-rename window; a blind
    find-replace across git-tracked files won't reach them.
 
-## 3. Local-path references kept as-is (deferred with §1)
+## 3. Local-path references — fixed 2026-08-15 (commit `acd1528`)
 
-These git-tracked files intentionally still read `/home/jasper/Repositories/MasterThesisCode` —
-they'll be mechanically fixed in the same pass as §1, once the local directory rename is scripted:
+**Done.** These git-tracked files read `/home/jasper/Repositories/MasterThesisCode` until the §1
+pass; all of them now read `darksiren-emri`. Two additions to the list below were folded into the
+same commit: `book/README.md:39` (same `.venv/bin/python` invocation class) and, from the last
+bullet, `test_30`/`test_31` — those two are *local* dev-box paths in a functional
+`REPO = Path(...)`, so only `run_multi_truth_sweep.sh`'s three lines were cluster-path references
+deferred to §2. Deliberately **not** rewritten: the `-book` worktree paths (see §1), the
+`github.io/MasterThesisCode/` Pages URLs and the line-wrapped path at `BOOK_TECH_DESIGN.md:252`
+(dated snapshots, per §4), `docs/H0_BIAS_RESOLUTION.md` (a dated record — its `cd` lines at
+1724/2000/2029 are stale by design), and `.claude/settings.local.json`, which is fixed in the
+working tree on each box but is globally gitignored and so cannot be committed.
+
+The list as it stood:
 
 - `.claude/skills/known-bugs/SKILL.md:13,16`
 - `.claude/skills/physics-change/SKILL.md:68`
@@ -144,7 +176,13 @@ or redirected once taken.
 
 ## 6. Verification gate for calling this checklist done
 
-- [ ] §1: fresh Claude Code session in the renamed local directory retrieves prior project memory
+- [~] §1: **verified on this dev box 2026-08-15** — a fresh Claude Code session in
+      `/home/jasper/Repositories/darksiren-emri` retrieves prior project memory (44 memory files,
+      transcripts back to 2026-07-17) and the vault session-start hook briefs the project, so the
+      registry Path resolves. §3 references fixed in `acd1528`; venv relocated
+      (`uv sync --reinstall` + `activate*` path rewrite). **Box stays `[~]` until every dev box has
+      run `scripts/migrate_local_rename.sh`** — the rename is per-machine, and a box still sitting
+      at the old path has a live, broken checkout, not merely a stale one.
 - [~] §2: cluster migration EXECUTED 2026-08-13 — `~/MasterThesisCode` -> `~/darksiren-emri`,
       remote repointed, pulled to `e83ed0b9`, venv rebuilt from scratch (`uv sync --extra gpu`),
       stale `master_thesis_code/` removed. Preflight reads **VERDICT: READY ✓** and V-T3
