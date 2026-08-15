@@ -650,3 +650,14 @@ Provenance: prereg `092b121b` · scorer frozen pre-data `191b0db7` · data + rea
 1. **[RULE — granted]** The stage-3 L0 synthesis is the wave's record: displacement law bias = T/Ā confirmed parameter-free (1.15 ± 0.13, 16 distinct cells, zero counterexamples); posterior width correctly calibrated to local curvature (the 8.5× overconfidence is displacement over correct width, not a second anomaly); T's ledger = α +1393.6 + measured missing-J +1133 ± 36 + dose-decaying unlocated residual; H-REN real-but-not-owner (R1 LIVE order 1e-3 sign +, R2 WRONG-SHAPE, R3 BUDGET-TENSION); non-additivity of ablations live; Gray 2020/2023 full-text: no event-term Jacobian in published practice, truncation escape-clause conditional not obviously met by a per-candidate window.
 2. **[DO — granted]** Fill the draft registration's bands from the L0 wave, REGISTER, and RUN: **A-JREN first** (its registered trigger R3 = BUDGET-TENSION has fired; seeds +54100…+54124, N = 25), **A-REN converted to conditional** (runs only if the joint result leaves single-term attribution needed — a post-readout author [RULE]). ~25–50 CPU-h, new-stage L1 ≤ 2 budget. One xhigh pre-registration verifier gates the registering commit.
 3. **[RULE — deferred by default]** The Gray-convention finding's entry into the paper's scope: no recommendation was attached; recorded as deferred until after A-JREN's readout, author may override at any time.
+
+---
+
+## Row #107 — 2026-08-15 — Stage-3 readout ratified; A-REN withdrawn; stage-4 authorized
+
+**Author's verbatim ruling (2026-08-15):** "all approved, please continue"
+
+**Orchestrator-derived itemization** (referencing `results/mechanism_study_20260813/STAGE3_READOUT.md` §4, commit `14b0d110`):
+1. **[RULE — granted]** The stage-3 readout and the branch-5 record are ratified: A-JREN TERM-PARTIAL both channels at +0.017800 ± 0.000712 (1D); **additivity of the located repairs confirmed** (0.6σ from the additive prediction; the non-commuting-ablations reading is dead); **coverage NOT restored** (joint repair necessary, not sufficient); bias/post_sd 8.49 → 3.00; the 2D-only sub-additive +0.0027 (≈3.8σ) recorded as the new lead. **T_res is promoted to a first-class target.**
+2. **[RULE — granted] A-REN is WITHDRAWN** (registered conditional arm, seeds +54000…+54024 released back to reserved-unconsumed status; its single-term effect is confirmed inside the joint arm by additivity). The execution-completeness clause is thereby discharged for stage 3.
+3. **[DO — granted]** Stage-4: the L0-first T_res hunt under the readout's §3 constraint set — proposal to be drafted as a reviewable artifact (`PROPOSAL_STAGE4_*`), decisions therein returning to the author.

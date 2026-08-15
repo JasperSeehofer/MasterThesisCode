@@ -59,3 +59,9 @@ per the registered F3 note the outcome adjudicates through **branch 5** (author 
 
 *Bands locked at registration; scorer pre-committed; raw vectors rescored; append-only from its
 registering commit.*
+
+---
+
+## Addendum (2026-08-15) — RATIFIED
+
+Ledger row #107: readout and branch-5 record ratified; A-REN withdrawn by [RULE] (seeds +54000…+54024 released to reserved-unconsumed); stage-4 proposal authorized. No repair licensed; the `/physics-change` slot remains empty.
