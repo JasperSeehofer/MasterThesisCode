@@ -1,0 +1,128 @@
+{
+  "config": {
+    "H_TRUE": 0.73,
+    "N_EV": 500,
+    "K": 400,
+    "NQ": 50,
+    "SEEDS": [
+      101,
+      102,
+      103,
+      104,
+      105,
+      106,
+      107,
+      108
+    ],
+    "DOSES": [
+      0.25,
+      0.5,
+      1.0
+    ],
+    "DH": 0.005,
+    "N_PRODUCTION": 982,
+    "SIGMA_POST_PRODUCTION": 0.004386,
+    "sigma_z_mix": "GLADE-empirical (VT-D3 z-decile sampler, venue_transfer.py)",
+    "dose_convention": "scales sigma_z for ALL candidates, host included (full-dose venue)"
+  },
+  "per_dose": {
+    "f0.25": {
+      "dose": 0.25,
+      "n_seeds": 8,
+      "t_ren_982_mean": -13.898134494745186,
+      "t_ren_982_std": 40.392858428476124,
+      "curvature_982_mean": 279306.1300135432,
+      "curvature_982_std": 65788.33500423092,
+      "sigma_post_toy_mean": 0.001926650371736156,
+      "sigma_post_toy_std": 0.0002247982318111539,
+      "implied_shift_toy_curvature_mean": -7.102971181397526e-05,
+      "implied_shift_toy_curvature_std": 0.00015969719395754714,
+      "implied_shift_production_curvature_mean": -0.00026735835768287516,
+      "implied_shift_production_curvature_std": 0.0007770372560171615,
+      "frac_double_clip_mean": 0.056010625,
+      "frac_double_clip_std": 0.011063679134092006,
+      "frac_single_clip_mean": 0.361339375,
+      "frac_single_clip_std": 0.010976991663572622,
+      "frac_unclipped_mean": 0.58265,
+      "frac_unclipped_std": 0.012087781611433689
+    },
+    "f0.50": {
+      "dose": 0.5,
+      "n_seeds": 8,
+      "t_ren_982_mean": 7.345532751304054,
+      "t_ren_982_std": 39.50552455893816,
+      "curvature_982_mean": 204937.2349888642,
+      "curvature_982_std": 22674.703995946078,
+      "sigma_post_toy_mean": 0.0022176471129921205,
+      "sigma_post_toy_std": 0.0001199870178844654,
+      "implied_shift_toy_curvature_mean": 3.135307962727363e-05,
+      "implied_shift_toy_curvature_std": 0.0001911859011571633,
+      "implied_shift_production_curvature_mean": 0.00014130598415470512,
+      "implied_shift_production_curvature_std": 0.0007599676179181952,
+      "frac_double_clip_mean": 0.15594625,
+      "frac_double_clip_std": 0.015688389189370048,
+      "frac_single_clip_mean": 0.518069375,
+      "frac_single_clip_std": 0.011053391670013069,
+      "frac_unclipped_mean": 0.325984375,
+      "frac_unclipped_std": 0.010033214282536075
+    },
+    "f1.00": {
+      "dose": 1.0,
+      "n_seeds": 8,
+      "t_ren_982_mean": 99.52269373213193,
+      "t_ren_982_std": 52.128649500989845,
+      "curvature_982_mean": 163357.7559860468,
+      "curvature_982_std": 12140.92758632885,
+      "sigma_post_toy_mean": 0.0024784563460014232,
+      "sigma_post_toy_std": 8.82536515882207e-05,
+      "implied_shift_toy_curvature_mean": 0.000618191330472205,
+      "implied_shift_toy_curvature_std": 0.000343612747027283,
+      "implied_shift_production_curvature_mean": 0.0019145176612342472,
+      "implied_shift_production_curvature_std": 0.0010027986219359438,
+      "frac_double_clip_mean": 0.41910125,
+      "frac_double_clip_std": 0.018990537822445003,
+      "frac_single_clip_mean": 0.49585375,
+      "frac_single_clip_std": 0.020475538672488486,
+      "frac_unclipped_mean": 0.08504500000000001,
+      "frac_unclipped_std": 0.005236844742508878
+    }
+  },
+  "reads": {
+    "R1_magnitude": {
+      "read": "LIVE",
+      "implied_shift_full_dose_production": 0.0019145176612342472,
+      "band": [
+        -0.001,
+        0.001
+      ]
+    },
+    "R2_dose_shape": {
+      "read": "WRONG-SHAPE",
+      "step_0.25_to_0.5": 21.24366724604924,
+      "step_0.5_to_1.0": 92.17716098082788,
+      "target_steps": [
+        -550.0,
+        -212.0
+      ],
+      "diff_step1": 571.2436672460492,
+      "diff_step2": 304.17716098082786,
+      "tight_tol": 150.0,
+      "wrong_tol": 300.0
+    },
+    "R3_budget": {
+      "read": "BUDGET-TENSION",
+      "t_ren_full_dose": 99.52269373213193,
+      "target": -62.0,
+      "band": 150.0
+    },
+    "R_sign": {
+      "note": "reported only, not read (net sign not pre-stated, Sec 2)",
+      "t_ren_by_dose": {
+        "0.25": -13.898134494745186,
+        "0.50": 7.345532751304054,
+        "1.00": 99.52269373213193
+      },
+      "sign": "positive"
+    }
+  }
+}
