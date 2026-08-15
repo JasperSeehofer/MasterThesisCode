@@ -628,3 +628,14 @@ Provenance: prereg `092b121b` · scorer frozen pre-data `191b0db7` · data + rea
 1. **[RULE — granted]** Candidate-register state of record: **M2′ measured PARTIAL and on-prediction** (J-tilt −1132.9 ± 36.0 vs corrected prediction ≈ −1090…−1130 including the ln D′ re-weighting term, +212.3 ± 36 measured vs +254 predicted); **M6′ PROPOSED** with corrected kill tests (KT-M6′-2/3 relabeled one-sided) and **T_res genuinely UNLOCATED** (~⅔ of the ±760 nats/h dose swing; the M1-quadratic account REFUTED — wrong sign at f_i = 0.25/0.5, ~16× overshoot at f_i = 1.0, inverted shape); **M7 CLOSED at L0** (−3.79e-4 ± 1.65e-4 under the production-curvature conversion, 2.6× inside the registered band); the 0.749 ± 0.046 tilt×curvature closure established within-grid.
 2. Standing bars unchanged: no repair from a partial read; `/physics-change` new-formula slot EMPTY; both stage-2 L1 slots spent — any further instrument arm requires a fresh registration.
 3. Next step (orchestrator-proposed at ruling time, drafting authorized by the ratification context, registration NOT yet authorized): a stage-3 preregistration PROPOSAL targeting T_res and the score-balance/overconfidence question (measured post-J tilt T(AM2P) = 1492 ± 31 ≈ the α tilt +1393.6, which is correct physics — an uncancelled correct-term tilt at truth indicates the defect may live in the curvature/score balance), preceded by a Stage-L literature sweep (R0 ring minimum).
+
+---
+
+## Row #105 — 2026-08-15 — Stage-3 proposal items 1–2 approved
+
+**Author's verbatim ruling (2026-08-15):** "approved"
+
+**Orchestrator-derived itemization** (referencing `results/mechanism_study_20260813/PROPOSAL_STAGE3_20260815.md` §3, commit `c10fddbc`):
+1. **[DO — granted]** The four L0 items: L0-REN-A (analytic derivation of the unrenormalized-truncated-kernel tilt), L0-REN-B (A/B renormalization toy), L0-SB (sandwich/score-balance diagnostic on stored posteriors), L0-LIT (full-text reads of the two UNCHECKED literature rows). Committed data, toys, and reading only.
+2. **[DO — granted]** Drafting (NOT registering) the A-REN registration in parallel.
+3. Items 3–4 of the table (arm registration/run; `/physics-change` gate timing) remain **deferred to the author by design** — they return as fresh [RULE]/[DO] with the L0 evidence.
