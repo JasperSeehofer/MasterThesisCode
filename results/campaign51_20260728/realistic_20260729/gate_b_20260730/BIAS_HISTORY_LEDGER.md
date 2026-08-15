@@ -639,3 +639,14 @@ Provenance: prereg `092b121b` · scorer frozen pre-data `191b0db7` · data + rea
 1. **[DO — granted]** The four L0 items: L0-REN-A (analytic derivation of the unrenormalized-truncated-kernel tilt), L0-REN-B (A/B renormalization toy), L0-SB (sandwich/score-balance diagnostic on stored posteriors), L0-LIT (full-text reads of the two UNCHECKED literature rows). Committed data, toys, and reading only.
 2. **[DO — granted]** Drafting (NOT registering) the A-REN registration in parallel.
 3. Items 3–4 of the table (arm registration/run; `/physics-change` gate timing) remain **deferred to the author by design** — they return as fresh [RULE]/[DO] with the L0 evidence.
+
+---
+
+## Row #106 — 2026-08-15 — Stage-3 L0 synthesis adopted; A-JREN registration and run authorized
+
+**Author's verbatim ruling (2026-08-15):** "approved, please go ahead"
+
+**Orchestrator-derived itemization** (referencing `results/mechanism_study_20260813/L0_SYNTHESIS_STAGE3_20260815.md` §4, commit `9e7ce3ba`, with the verifier amendments `f8cf27a2`):
+1. **[RULE — granted]** The stage-3 L0 synthesis is the wave's record: displacement law bias = T/Ā confirmed parameter-free (1.15 ± 0.13, 16 distinct cells, zero counterexamples); posterior width correctly calibrated to local curvature (the 8.5× overconfidence is displacement over correct width, not a second anomaly); T's ledger = α +1393.6 + measured missing-J +1133 ± 36 + dose-decaying unlocated residual; H-REN real-but-not-owner (R1 LIVE order 1e-3 sign +, R2 WRONG-SHAPE, R3 BUDGET-TENSION); non-additivity of ablations live; Gray 2020/2023 full-text: no event-term Jacobian in published practice, truncation escape-clause conditional not obviously met by a per-candidate window.
+2. **[DO — granted]** Fill the draft registration's bands from the L0 wave, REGISTER, and RUN: **A-JREN first** (its registered trigger R3 = BUDGET-TENSION has fired; seeds +54100…+54124, N = 25), **A-REN converted to conditional** (runs only if the joint result leaves single-term attribution needed — a post-readout author [RULE]). ~25–50 CPU-h, new-stage L1 ≤ 2 budget. One xhigh pre-registration verifier gates the registering commit.
+3. **[RULE — deferred by default]** The Gray-convention finding's entry into the paper's scope: no recommendation was attached; recorded as deferred until after A-JREN's readout, author may override at any time.
