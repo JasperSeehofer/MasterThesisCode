@@ -661,3 +661,14 @@ Provenance: prereg `092b121b` · scorer frozen pre-data `191b0db7` · data + rea
 1. **[RULE — granted]** The stage-3 readout and the branch-5 record are ratified: A-JREN TERM-PARTIAL both channels at +0.017800 ± 0.000712 (1D); **additivity of the located repairs confirmed** (0.6σ from the additive prediction; the non-commuting-ablations reading is dead); **coverage NOT restored** (joint repair necessary, not sufficient); bias/post_sd 8.49 → 3.00; the 2D-only sub-additive +0.0027 (≈3.8σ) recorded as the new lead. **T_res is promoted to a first-class target.**
 2. **[RULE — granted] A-REN is WITHDRAWN** (registered conditional arm, seeds +54000…+54024 released back to reserved-unconsumed status; its single-term effect is confirmed inside the joint arm by additivity). The execution-completeness clause is thereby discharged for stage 3.
 3. **[DO — granted]** Stage-4: the L0-first T_res hunt under the readout's §3 constraint set — proposal to be drafted as a reviewable artifact (`PROPOSAL_STAGE4_*`), decisions therein returning to the author.
+
+---
+
+## Row #108 — 2026-08-15 — Stage-4 items 1–2 approved
+
+**Author's verbatim ruling (2026-08-15):** "approved"
+
+**Orchestrator-derived itemization** (referencing `results/mechanism_study_20260813/PROPOSAL_STAGE4_20260815.md` §3, commit `d75b4c99`):
+1. **[DO — granted]** L4-DER (derive the correct estimator p(data|h) from the generator code and diff term-by-term against the coded estimator), L4-T1 (measure T(AJREN) from committed ln_post; composition of the remaining tilt vs the α-tilt +1393.6), L4-T2 (validate every diff term against the committed constraint set incl. the T_res dose curve and the 2D-only sub-additivity). Derivation + committed data only; no instrument time.
+2. **[DO — granted]** Drafting (NOT registering) the A-FULL registration in parallel.
+3. Items 3–4 (A-FULL registration/run; whether the validated derivation opens the `/physics-change` new-formula slot) remain **deferred to the author by design**.
