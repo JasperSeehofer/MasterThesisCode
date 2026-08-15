@@ -215,6 +215,10 @@ SCAN_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_2D_DOSE_SCA
 # disjoint +53000 decade for A-M2' and a DELIBERATE +50000..+50014 seed-block
 # PAIRING with MN0X for A-NULL — see M2P_CELL_SPECS below.
 M2P_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_M2PRIME_ABLATION.md"
+# Stage-3 estimator-variant arms (A-JREN primary, A-REN conditional),
+# registered 2026-08-15, disjoint +54100 decade for A-JREN and +54000 for
+# A-REN — see REN_CELL_SPECS below.
+REN_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_A_JREN_STAGE3.md"
 DEFAULT_OUT_DIR = "results/venue_transfer_20260811"
 VT_BASE_SEED = cg.GATE_BASE_SEED  # 20260808 — the gate's base, v3 offsets +40000 decade (VT-D7)
 PARENT_CALGATE_CODE_COMMIT = "065e7f58"
@@ -293,10 +297,19 @@ _VT1_RAIL_MAX = 0.05
 ESTIMATOR_VARIANT_BASE = "base"
 ESTIMATOR_VARIANT_M2P_JACOBIAN = "m2prime_jacobian"
 ESTIMATOR_VARIANT_NULL_SCALE = "null_scale_1p7"
+# Stage-3 estimator-variant arms (registered 2026-08-15, PREREGISTRATION_A_JREN_STAGE3.md
+# §3): A-REN restores the per-candidate kernel-mass renormalization W_k(h);
+# A-JREN composes A-REN's renormalization WITH A-M2''s Jacobian on the same
+# kernel-branch integrand. Both are default-off, kernel-branch only, point
+# branch untouched by construction (constraint (a), unit-tested).
+ESTIMATOR_VARIANT_KERNEL_RENORM = "kernel_renorm"
+ESTIMATOR_VARIANT_JOINT_JREN = "jacobian_and_kernel_renorm"
 ESTIMATOR_VARIANTS: tuple[str, ...] = (
     ESTIMATOR_VARIANT_BASE,
     ESTIMATOR_VARIANT_M2P_JACOBIAN,
     ESTIMATOR_VARIANT_NULL_SCALE,
+    ESTIMATOR_VARIANT_KERNEL_RENORM,
+    ESTIMATOR_VARIANT_JOINT_JREN,
 )
 # A-M2' registered step (prereg §3): central difference of dist_vectorized in
 # z, deterministic, no RNG. physical_relations.dist_derivative is analytic
@@ -308,6 +321,13 @@ M2P_JACOBIAN_EPS_Z = 1e-6
 # A-NULL registered constant (prereg §3): z- and h-independent multiplier on
 # the kernel-branch integrand.
 NULL_SCALE_FACTOR = 1.7
+# A-REN/A-JREN registered numeric guard (stage-3 prereg §3, fixed at
+# registration: 1e-12, matched to the existing _LN_ZERO_EVENT floor
+# convention). Prevents division blow-up for candidates whose entire kernel
+# mass falls outside the clip window; such rows are already vanishingly
+# weighted by kern*p_gw in the numerator, so the floor's effect on any
+# candidate that matters is sub-machine-epsilon (unit-tested).
+_W_K_FLOOR = 1e-12
 
 
 # ── Cell registry (prereg §5, verbatim) ──────────────────────────────────────
@@ -457,11 +477,46 @@ M2P_CELL_SPECS: dict[str, VenueCellSpec] = {
     ),
 }
 
+# ── Stage-3 estimator-variant arms (registered 2026-08-15) ──────────────────
+# results/mechanism_study_20260813/PREREGISTRATION_A_JREN_STAGE3.md §2/§3 +
+# the corresponding ARMS.md section. Same decision cell as MN0X/AM2P/ANULL in
+# every respect except VenueConfig.estimator_variant. Per the registration
+# finalization block (F1), A-JREN is this stage's PRIMARY arm (its trigger
+# fired) and A-REN is CONDITIONAL — both cell specs are registered here (an
+# arm's code form and seed block are fixed at registration regardless of
+# whether the conditional arm is ultimately submitted), but only AJREN is
+# wired into the cluster sbatch script without a manual override.
+REN_CELL_SPECS: dict[str, VenueCellSpec] = {
+    "AJREN": VenueCellSpec(
+        "AJREN",
+        "A-JREN",
+        "real_k",
+        "glade",
+        (0.730,),
+        (25,),
+        (54100,),
+        "all",
+        estimator_variant=ESTIMATOR_VARIANT_JOINT_JREN,
+    ),
+    "AREN": VenueCellSpec(
+        "AREN",
+        "A-REN",
+        "real_k",
+        "glade",
+        (0.730,),
+        (25,),
+        (54000,),
+        "all",
+        estimator_variant=ESTIMATOR_VARIANT_KERNEL_RENORM,
+    ),
+}
+
 ALL_CELL_SPECS: dict[str, VenueCellSpec] = {
     **CELL_SPECS,
     **MECH_CELL_SPECS,
     **SCAN_CELL_SPECS,
     **M2P_CELL_SPECS,
+    **REN_CELL_SPECS,
 }
 
 
@@ -470,12 +525,13 @@ def preregistration_path_for_cell(cell: str) -> str:
 
     Registry-level mapping, not a per-spec field: the mechanism-isolation
     arms (:data:`MECH_CELL_SPECS`), the 2-D dose-scan cells
-    (:data:`SCAN_CELL_SPECS`) and the stage-2 estimator-variant arms
-    (:data:`M2P_CELL_SPECS`) are registered under their own prereg
-    documents (2026-08-13 / 2026-08-14), disjoint from the venue-transfer
-    prereg that governs :data:`CELL_SPECS`. Any cell id outside all four
-    registries (e.g. ``"custom"``) falls back to :data:`PREREG_PATH`,
-    matching prior behaviour byte-for-byte.
+    (:data:`SCAN_CELL_SPECS`), the stage-2 estimator-variant arms
+    (:data:`M2P_CELL_SPECS`), and the stage-3 estimator-variant arms
+    (:data:`REN_CELL_SPECS`) are registered under their own prereg
+    documents (2026-08-13 / 2026-08-14 / 2026-08-15), disjoint from the
+    venue-transfer prereg that governs :data:`CELL_SPECS`. Any cell id
+    outside all five registries (e.g. ``"custom"``) falls back to
+    :data:`PREREG_PATH`, matching prior behaviour byte-for-byte.
 
     Args:
         cell: The ``VenueConfig.cell`` / ``VenueCellSpec.name`` id.
@@ -483,6 +539,8 @@ def preregistration_path_for_cell(cell: str) -> str:
     Returns:
         The governing preregistration path.
     """
+    if cell in REN_CELL_SPECS:
+        return REN_PREREG_PATH
     if cell in M2P_CELL_SPECS:
         return M2P_PREREG_PATH
     if cell in MECH_CELL_SPECS:
@@ -533,9 +591,13 @@ class VenueConfig:
             (the registered default and every prior cell's behaviour,
             byte-identical to the pre-switch estimator), ``"m2prime_jacobian"``
             (A-M2', the missing z-integral measure restored on kernel-branch
-            rows) or ``"null_scale_1p7"`` (A-NULL, the specificity control).
-            Stage-2 prereg (``PREREGISTRATION_M2PRIME_ABLATION.md``, §3,
-            2026-08-14); applied inside :func:`_channel_terms_at_h` on
+            rows), ``"null_scale_1p7"`` (A-NULL, the specificity control),
+            ``"kernel_renorm"`` (A-REN, the missing division by the retained
+            kernel mass ``W_k(h)`` restored) or ``"jacobian_and_kernel_renorm"``
+            (A-JREN, A-M2' and A-REN applied jointly). Stage-2 prereg
+            (``PREREGISTRATION_M2PRIME_ABLATION.md``, §3, 2026-08-14) and
+            stage-3 prereg (``PREREGISTRATION_A_JREN_STAGE3.md``, §3,
+            2026-08-15); applied inside :func:`_channel_terms_at_h` on
             kernel-branch (σ_z > 0) rows only — the point branch is untouched
             by construction.
     """
@@ -1329,7 +1391,8 @@ def _channel_terms_at_h(
         chunk_pairs: Pair-row chunk target (divergence 2; ``0`` = exact
             gate-shape mode).
         estimator_variant: One of :data:`ESTIMATOR_VARIANTS` (stage-2 prereg
-            ``PREREGISTRATION_M2PRIME_ABLATION.md`` §3, 2026-08-14).
+            ``PREREGISTRATION_M2PRIME_ABLATION.md`` §3, 2026-08-14; stage-3
+            prereg ``PREREGISTRATION_A_JREN_STAGE3.md`` §3, 2026-08-15).
             ``"base"`` (default) performs the exact same float operations in
             the exact same order as before the switch existed — byte-
             identical, unit-tested. ``"m2prime_jacobian"`` (A-M2') multiplies
@@ -1338,7 +1401,16 @@ def _channel_terms_at_h(
             formed; the point branch (``sig_z = 0`` rows) is untouched by
             construction — it has no such integral. ``"null_scale_1p7"``
             (A-NULL) multiplies the kernel-branch integrand by the literal
-            constant 1.7; the point branch is untouched.
+            constant 1.7; the point branch is untouched. ``"kernel_renorm"``
+            (A-REN) divides the kernel-branch integrand by the retained
+            kernel mass ``W_k(h) = Phi((b-z_obs)/sigma) - Phi((a-z_obs)/sigma)``,
+            using the SAME clip limits ``a``, ``b`` the numerator integral
+            already uses (floored at :data:`_W_K_FLOOR`); the point branch is
+            untouched. ``"jacobian_and_kernel_renorm"`` (A-JREN) applies the
+            A-M2' Jacobian and the A-REN renormalization jointly on the same
+            kernel-branch integrand (Jacobian multiply, then renormalization
+            divide); the point branch is untouched by construction (both
+            sub-terms vanish there).
 
     Returns:
         ``(ln1[k], ln2[k], ln_gfrac[k])`` for this h.
@@ -1410,6 +1482,30 @@ def _channel_terms_at_h(
             elif estimator_variant == ESTIMATOR_VARIANT_NULL_SCALE:
                 # A-NULL (prereg §3): z- and h-independent literal constant.
                 integ = (kern * p_gw) * NULL_SCALE_FACTOR
+            elif estimator_variant == ESTIMATOR_VARIANT_KERNEL_RENORM:
+                # A-REN (stage-3 prereg §3): divide by the retained kernel
+                # mass W_k(h), reusing `a`, `b` computed just above — the
+                # SAME clip limits the numerator integral already uses
+                # (max(z_lo(h), z_obs-5sigma), min(z_hi(h), z_obs+5sigma)),
+                # not a re-derivation.
+                w_k = norm.cdf((b - zo) / so) - norm.cdf((a - zo) / so)
+                integ = (kern * p_gw) / np.maximum(w_k, _W_K_FLOOR)[:, None]
+            elif estimator_variant == ESTIMATOR_VARIANT_JOINT_JREN:
+                # A-JREN (stage-3 prereg §3): A-M2' Jacobian AND A-REN
+                # renormalization composed on the same integrand (order:
+                # Jacobian multiply, then renormalization divide — both act
+                # on rows_q, commute under floating-point only up to the
+                # registered w_k floor).
+                eps = M2P_JACOBIAN_EPS_Z
+                z_flat = np.maximum(z_nodes.reshape(-1), 1e-8)
+                d_hi = np.asarray(dist_vectorized(z_flat + eps, h=h), dtype=np.float64)
+                d_lo = np.asarray(
+                    dist_vectorized(np.maximum(z_flat - eps, 1e-8), h=h), dtype=np.float64
+                )
+                dd_dz = ((d_hi - d_lo) / (2.0 * eps)).reshape(z_nodes.shape)
+                jac = dd_dz / d_obs_p[rows_q][:, None]
+                w_k = norm.cdf((b - zo) / so) - norm.cdf((a - zo) / so)
+                integ = (kern * p_gw * jac) / np.maximum(w_k, _W_K_FLOOR)[:, None]
             else:
                 raise ValueError(f"unknown estimator_variant '{estimator_variant}'")
             c1q = half * (integ @ w_gl)
@@ -2376,13 +2472,17 @@ def build_parser() -> argparse.ArgumentParser:
             "MN0X",
             *sorted(SCAN_CELL_SPECS),
             *sorted(M2P_CELL_SPECS),
+            *sorted(REN_CELL_SPECS),
         ),
         help=(
             "prereg §5 cell to run (W1/O2 are reserved, NOT built); "
             "MN0/MEH/MEI are the mechanism-isolation split-dose arms "
             "(separate prereg, results/mechanism_study_20260813/); "
             "AM2P/ANULL are the stage-2 estimator-variant arms "
-            "(PREREGISTRATION_M2PRIME_ABLATION.md)"
+            "(PREREGISTRATION_M2PRIME_ABLATION.md); AJREN/AREN are the "
+            "stage-3 estimator-variant arms (PREREGISTRATION_A_JREN_STAGE3.md; "
+            "AREN is conditional, registered but not enabled by default in "
+            "the cluster sbatch)"
         ),
     )
     p.add_argument("--truth", type=float, default=None, help="h_true (must be in the cell's set)")

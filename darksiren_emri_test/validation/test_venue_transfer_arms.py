@@ -84,14 +84,16 @@ def test_mech_arm_registry_is_separate_and_disjoint() -> None:
     assert set(vt.MECH_CELL_SPECS) == {"MN0", "MEH", "MEI", "MN0X"}
     # the venue-transfer registry must NOT have been widened
     assert not (set(vt.CELL_SPECS) & set(vt.MECH_CELL_SPECS))
-    # ALL_CELL_SPECS is the union of all four registries (the stage-2
-    # estimator-variant arms, M2P_CELL_SPECS, are a fourth disjoint family —
-    # see test_m2prime_ablation_arms.py for their own registration tests).
+    # ALL_CELL_SPECS is the union of all five registries (the stage-2
+    # estimator-variant arms, M2P_CELL_SPECS, and the stage-3 arms,
+    # REN_CELL_SPECS, are disjoint families — see test_m2prime_ablation_arms.py
+    # and test_a_jren_stage3_arms.py for their own registration tests).
     assert set(vt.ALL_CELL_SPECS) == (
         set(vt.CELL_SPECS)
         | set(vt.MECH_CELL_SPECS)
         | set(vt.SCAN_CELL_SPECS)
         | set(vt.M2P_CELL_SPECS)
+        | set(vt.REN_CELL_SPECS)
     )
 
     v3_hi = vt.VT_BASE_SEED + vt.V3_SEED_OFFSET_ENVELOPE[1]
@@ -255,13 +257,15 @@ def test_scan_cell_specs_seed_blocks_are_disjoint_from_everything() -> None:
 
 
 def test_registry_separation_and_union() -> None:
-    """CELL_SPECS, MECH_CELL_SPECS, SCAN_CELL_SPECS, M2P_CELL_SPECS are pairwise key-disjoint."""
+    """CELL_SPECS, MECH_CELL_SPECS, SCAN_CELL_SPECS, M2P_CELL_SPECS, REN_CELL_SPECS
+    are pairwise key-disjoint."""
     from darksiren_emri.validation import venue_transfer as vt
 
     cell_keys = set(vt.CELL_SPECS)
     mech_keys = set(vt.MECH_CELL_SPECS)
     scan_keys = set(vt.SCAN_CELL_SPECS)
     m2p_keys = set(vt.M2P_CELL_SPECS)
+    ren_keys = set(vt.REN_CELL_SPECS)
 
     assert not (cell_keys & mech_keys)
     assert not (cell_keys & scan_keys)
@@ -269,9 +273,13 @@ def test_registry_separation_and_union() -> None:
     assert not (cell_keys & m2p_keys)
     assert not (mech_keys & m2p_keys)
     assert not (scan_keys & m2p_keys)
-    assert set(vt.ALL_CELL_SPECS) == cell_keys | mech_keys | scan_keys | m2p_keys
+    assert not (cell_keys & ren_keys)
+    assert not (mech_keys & ren_keys)
+    assert not (scan_keys & ren_keys)
+    assert not (m2p_keys & ren_keys)
+    assert set(vt.ALL_CELL_SPECS) == cell_keys | mech_keys | scan_keys | m2p_keys | ren_keys
     assert len(vt.ALL_CELL_SPECS) == (
-        len(cell_keys) + len(mech_keys) + len(scan_keys) + len(m2p_keys)
+        len(cell_keys) + len(mech_keys) + len(scan_keys) + len(m2p_keys) + len(ren_keys)
     )
 
 

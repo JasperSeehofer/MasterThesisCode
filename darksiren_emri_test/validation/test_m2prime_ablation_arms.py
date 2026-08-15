@@ -466,12 +466,16 @@ def test_am2p_and_anull_are_registered_with_correct_variant_and_dose() -> None:
     assert not (set(vt.M2P_CELL_SPECS) & set(vt.CELL_SPECS))
     assert not (set(vt.M2P_CELL_SPECS) & set(vt.MECH_CELL_SPECS))
     assert not (set(vt.M2P_CELL_SPECS) & set(vt.SCAN_CELL_SPECS))
-    assert set(vt.ALL_CELL_SPECS) == (
+    # ALL_CELL_SPECS also carries the stage-3 REN_CELL_SPECS (registered
+    # 2026-08-15, PREREGISTRATION_A_JREN_STAGE3.md) on top of these four —
+    # this assertion only checks stage-2's contribution is present and
+    # correctly scoped, not that these four alone form the union.
+    assert (
         set(vt.CELL_SPECS)
         | set(vt.MECH_CELL_SPECS)
         | set(vt.SCAN_CELL_SPECS)
         | set(vt.M2P_CELL_SPECS)
-    )
+    ) <= set(vt.ALL_CELL_SPECS)
 
 
 # ── (e) prereg stamping ─────────────────────────────────────────────────────────

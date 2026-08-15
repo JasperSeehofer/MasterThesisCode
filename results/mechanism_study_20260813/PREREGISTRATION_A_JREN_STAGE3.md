@@ -1,7 +1,10 @@
-> **DRAFT — NOT REGISTERED. Bands marked TBD-pending-L0 are placeholders; the document registers
-> ONLY when committed with a REGISTER commit after author approval (proposal §3 item 3).**
+> **REGISTERED at the commit that carries this header** (author [DO], ledger row #106: "approved,
+> please go ahead" on `L0_SYNTHESIS_STAGE3_20260815.md` §4 item 2). The finalization block at the
+> end of this document fills every TBD from the completed L0 wave and records the ordering change
+> (A-JREN first — its registered trigger fired; A-REN converted to conditional). Append-only from
+> this commit.
 
-# PRE-REGISTRATION (DRAFT) — A-REN kernel renormalization + conditional A-JREN (thread 17, stage 3)
+# PRE-REGISTRATION — A-JREN joint repair + conditional A-REN (thread 17, stage 3)
 
 **Date:** 2026-08-15 · **Status: DRAFT.** Drafting authorized (ledger row #105 item 2, `[DO —
 granted]`, author "approved" on `PROPOSAL_STAGE3_20260815.md` §3 item 2). **Registration —
@@ -162,7 +165,7 @@ patch (point branch, `c1[rows_p]`/`c2[rows_p]`, untouched by construction — di
 +                a_edge = np.maximum(z_lo_h, zo - 5.0 * so)
 +                b_edge = np.minimum(z_hi_h, zo + 5.0 * so)
 +                w_k = norm.cdf((b_edge - zo) / so) - norm.cdf((a_edge - zo) / so)
-+                integ = (kern * p_gw) / np.maximum(w_k, _W_K_FLOOR)
++                integ = (kern * p_gw) / np.maximum(w_k, _W_K_FLOOR)[:, None]
 +            elif estimator_variant == ESTIMATOR_VARIANT_JOINT_JREN:
 +                # A-JREN: A-M2' Jacobian AND A-REN renormalization, composed
 +                # on the same integrand (order: Jacobian multiply, then
@@ -179,14 +182,14 @@ patch (point branch, `c1[rows_p]`/`c2[rows_p]`, untouched by construction — di
 +                a_edge = np.maximum(z_lo_h, zo - 5.0 * so)
 +                b_edge = np.minimum(z_hi_h, zo + 5.0 * so)
 +                w_k = norm.cdf((b_edge - zo) / so) - norm.cdf((a_edge - zo) / so)
-+                integ = (kern * p_gw * jac) / np.maximum(w_k, _W_K_FLOOR)
++                integ = (kern * p_gw * jac) / np.maximum(w_k, _W_K_FLOOR)[:, None]
              else:
                  raise ValueError(f"unknown estimator_variant '{estimator_variant}'")
              c1q = half * (integ @ w_gl)
              ...
 ```
 
-`_W_K_FLOOR` (registered numeric guard, TBD exact value at registration — candidate `1e-12`,
+`_W_K_FLOOR` (registered numeric guard, **fixed at registration: `1e-12`**,
 matched to the existing `_LN_ZERO_EVENT` floor convention) prevents division blow-up for candidates
 whose entire kernel mass falls outside the clip window; such rows are already vanishingly weighted
 by `kern*p_gw` in the numerator, so the floor's effect on any candidate that matters is
@@ -238,7 +241,7 @@ attributed, exactly as `AMENDMENT_A1_VM1_NULL_AT_N100.md` amended the parent) to
 implied-MAP-shift expectation window, derived by:
 
 1. Taking L0-REN-B's stacked tilt `T_REN(f=1.0)` (full dose) from the toy, in its **production
-   conversion** (per the M7 correction, using production `σ²_post = 0.004386`, not the toy's own
+   conversion** (per the M7 correction, using production `σ_post = 0.004386`, not the toy's own
    curvature — `L0_REN_A_DERIVATION_20260815.md` §4 names both conversions explicitly and requires
    the production one for any instrument-facing band).
 2. Converting via the same MAP-displacement account the stage-2 registration used for A-M2′'s weak
@@ -395,3 +398,51 @@ anchor 0.969 CPU-h/seed (runbook §4) · seed-block verification performed again
 `results/campaign51_20260728/PILOT3_READOUT.md` (cross-namespace disclosure, §2). **This document
 is a DRAFT.** It carries no registering commit, reserves no seed, and authorizes no run. Registered
 documents are append-only from their registering commit onward; this one has none yet.
+
+
+---
+
+## REGISTRATION FINALIZATION (2026-08-15, at the registering commit — fills every TBD; ledger row #106)
+
+### F1. Ordering change: A-JREN runs FIRST; A-REN becomes conditional
+
+A-JREN's registered trigger (a) — L0-REN-B read **R3 = BUDGET-TENSION** — has FIRED
+(`L0_REN_B_TOY_RESULTS_20260815.md`, commit `fc519c2b`; standing primarily on the sign mismatch
+plus R2's decisive WRONG-SHAPE, per the verifier addendum). Per the adopted synthesis
+(`L0_SYNTHESIS_STAGE3_20260815.md` §4 item 2, author-granted row #106): **A-JREN is the stage's
+first and primary arm** (seeds +54100…+54124, N = 25, unchanged); **A-REN converts to
+conditional** — it runs only if A-JREN's readout leaves single-term attribution needed (A-JREN
+lands TERM-PARTIAL or OTHER and the interaction decomposition requires the single-REN datum), a
+post-readout author **[RULE]**; otherwise A-REN is withdrawn by that same [RULE], never silently.
+The §2 arms-table triggers are superseded by this block to exactly that extent and no further; all
+seeds, code forms, DS-M1 edges, validity checks and branch structure are unchanged.
+
+### F2. The §4 TBD expectation windows, filled (WEAK, non-branch-carrying, two-sided)
+
+Derivation per §4's own registered method (production conversion σ_post = 0.004386², the
+L0-REN-B stacked tilts, and the stage-2 local-Gaussian scale caveat; the toy-population caveat of
+the verifier addendum — toy z_median 1.66 vs venue 0.44 — widens both windows):
+
+- **A-REN (if it runs):** Δb ≈ −T_REN(1.0)·σ²_post = −99.5 × 1.924e-5 = **−0.0019** ⇒ expectation
+  **b ≈ +0.0353, window ± 0.006 — DISCLOSED: this window CONTAINS b_ref (+0.03725), so an INSIDE read on A-REN is uninformative about the shift; only the DS-M1 class carries meaning** (≈3× the combined SE, further widened for the population-transfer
+  caveat). Misses on either side are equally reportable; the branch reads DS-M1 only.
+- **A-JREN:** the additive prediction is b ≈ b_ref − 0.01805 (measured J) − 0.0019 (toy REN) =
+  **+0.0173, window ± 0.012** (wide by design — non-additivity is the very question). A landing
+  **below** the window supports super-additive joint repair; **above** supports sub-additivity or a
+  genuine third term; **inside** supports additivity and promotes T_res to a first-class target.
+  None of these readings is a branch — **DS-J1 (DS-M1 classes + the coverage-restoration check
+  HPD90 ≥ 0.60) carries all branch weight**, exactly as §4 states.
+
+### F3. Run order and budget as registered
+
+1. **A-JREN** (+54100…+54124, N = 25, ≈25–37 CPU-h with the Jacobian-cost margin) — submit on
+   registration.
+2. **A-REN** (+54000…+54024) — conditional per F1; no submission without the post-readout [RULE].
+   L1 ≤ 2 for this stage; no L2 arm; the L0 ladder for this stage is complete
+   (`L0_REN_A/B`, `L0_SB`, `L0_LIT`, synthesis `9e7ce3ba`, all committed).
+
+**F3 note (verifier-disclosed, pre-registration):** because F1 deliberately leaves the §5 branch
+table (written A-REN-keyed) unchanged, **most A-JREN outcomes — including full success (TERM-OWNS +
+DS-J1 coverage restored) — adjudicate through branch 5 (OTHER / no branch forced, author call)**;
+the scorer states this on its output. This is the registered reading, disclosed here so the
+branch-5 landing is expected, not surprising.
