@@ -64,3 +64,28 @@ self-adjudicated.
 1. `git log --oneline -3` — expect the A-FULL addendum commit at HEAD or a descendant.
 2. Read the draft + addendum. 3. If the author has ruled on §6: registration flow (A8-v2, fresh
 seeds, xhigh prereg verifier) then `/cluster`. 4. If not: the §6 decision table is the ask.
+
+---
+
+## Addendum (2026-08-15, same session) — REGISTERED AND SUBMITTED
+
+Row #110 granted §1's items ("all approved"): FULL-F definition ratified, registration + run
+authorized, bands seeded from the mirror, Gray-convention **in paper scope** (branch reading
+flagged for veto in row #110 item 4). Executed:
+
+- **Registered** at `dec62032`: `PREREGISTRATION_A_FULL_STAGE5.md` (DS-F1 band [−131.5, +192.7],
+  0.27% false-fail; binomial coverage bands; branch table), `estimator_variant="a_full"` installed
+  (bit-exact vs the premeasure mirror: diff 0.0, T = +29.998 vs pin +30.0), `score_stage5.py`
+  (AJREN dry-run reproduces all references), seed block +54200…+54224 (disjointness unit-tested),
+  `cluster/stage5_afull.sbatch`. Pre-registration xhigh verifier: **GO, zero CRITICAL/MAJOR**
+  (floor probe clean at grid extremes; MINOR-1 remedied in §8 of the prereg).
+- **Submitted:** job **6327889** (cpu_il, 15 workers, 05:00:00 wall), preflight READY ✓,
+  probe-vs-actual logged per EXP-61. Output lands at
+  `results/mechanism_study_20260813/AFULL_h0p730_results_seeds0_25.json` on the cluster.
+- **Next session (or later this one): retrieve + score + present.** Recipe:
+  `ssh bwunicluster 'sacct -j 6327889 --format=JobID,State,Elapsed,ExitCode'`; on COMPLETED 0:0,
+  `rsync -avz bwunicluster:darksiren-emri/results/mechanism_study_20260813/AFULL_h0p730_results_seeds0_25.json results/mechanism_study_20260813/`,
+  then from repo root `uv run python results/mechanism_study_20260813/score_stage5.py`, commit the
+  JSON + scorer output, write `STAGE5_READOUT.md` (PRESENTED, NOT ADJUDICATED, §5 branch table),
+  present to the author. Venv note: the dev-box venv was repaired this session
+  (`uv sync --extra cpu --extra dev --reinstall`) — mypy hook works again.
