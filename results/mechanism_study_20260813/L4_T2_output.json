@@ -1,0 +1,210 @@
+{
+  "note": "results/mechanism_study_20260813/L4_T2_AUDIT_20260815.md",
+  "parent": "results/mechanism_study_20260813/L4_DER_PART1_20260815.md (commit 5e77e196)",
+  "l4_t1_input": "results/mechanism_study_20260813/L4_T1_output.json",
+  "population": {
+    "n_events": 982,
+    "h_true": 0.73
+  },
+  "constants": {
+    "ALPHA_N": 982,
+    "ALPHA_H": 0.73,
+    "ALPHA_SLOPE_COEFF": 1.036,
+    "ALPHA_TILT_NATS_PER_H": 1393.6328767123289,
+    "D2_NAIVE_NATS_PER_H": 1345.2054794520548,
+    "J_FULL_DOSE_NATS_PER_H": -1345.2054794520548,
+    "J_DPRIME_FULL_TRACKING": 291.0,
+    "J_DPRIME_ATTENUATED": 254.0,
+    "D4_PREDICTED_NATS": {
+      "0.25": -111.0,
+      "0.5": -384.0,
+      "1.0": -990.0
+    },
+    "D4_STATUS": "REFUTED quantitatively by the M6R adversarial verifier (addendum item 3): wrong sign at the two lower doses, ~16x too negative at full dose, inverted shape (measured T_res decelerates -550 -> -212 across sub-levels the note tracked; the quadratic account accelerates). Restated here as the registered D4 value, not re-derived, and not treated as validated.",
+    "T_RES_MEASURED": {
+      "0.25": 699.0,
+      "0.5": 149.0,
+      "1.0": -62.0
+    },
+    "T_RES_TOLERANCE_NATS": 150.0
+  },
+  "D1_alpha": {
+    "analytic_tilt_nats_per_h": 1393.6328767123289,
+    "analytic_exponent": 1.036,
+    "numeric_tilt_nats_per_h": 1400.5632792018937,
+    "numeric_exponent_at_h_true": 1.0411519285309394,
+    "exponent_relative_diff": 0.00497290398739322,
+    "method": "central difference of the estimator's OWN log_alpha(h) table (closed_loop_gfrac.build_context, alpha(h) = INTEGRAL w_pop*S_phi dz) at the h=0.725/0.735 grid neighbours; exponent read off alpha(h) ~ h^{-p} => p = -h*d(ln alpha)/dh at h_true."
+  },
+  "D2_prefactor": {
+    "naive_tilt_nats_per_h": -1345.2054794520548,
+    "exact_z_limit_tilt_nats_per_h": -1345.2265159714902,
+    "exact_z_matches_naive": true,
+    "glade_mix_zstar_tracking_tilt_nats_per_h_with_ppop": -134.320067118069,
+    "glade_mix_zstar_mean_shift_with_ppop": 0.004242741889090432,
+    "glade_mix_zstar_tracking_tilt_nats_per_h_without_ppop": -132.76357563294766,
+    "glade_mix_zstar_mean_shift_without_ppop": 0.004245590030773998,
+    "method": "z*(h) found per event by a 161-point grid search + local parabolic refine over [z_true - 5*sigma_rep, z_true + 5*sigma_rep] (matches the estimator's own +-5 sigma_z kernel window), maximizing the correct-form integrand (kernel x GW-density, with and without p_pop); the prefactor piece -ln(sigma_d * mu(z*(h))/h) is then evaluated at the MOVING z*(h) and central-differenced at the h=0.725/0.735 grid neighbours, summed over events. sigma_rep = per-event decile-median GLADE sigma_z (deterministic, no RNG)."
+  },
+  "D3_exact_z": {
+    "tilt_nats_per_h": -541.4879074834091,
+    "mean_abs_per_event_diff_at_h_hi": 0.0027357540104069582,
+    "note": "Analytically, the correct-minus-coded exponent diff is O((1-u)^3) in u = h_true/h near u=1, so its h-derivative at h_true vanishes to leading order; expect this tilt to be small (verified numerically, not assumed)."
+  },
+  "D3_smeared": {
+    "doses": {
+      "0.25": {
+        "tilt_nats_per_h": -734.7468600614139
+      },
+      "0.5": {
+        "tilt_nats_per_h": -657.5001085435997
+      },
+      "1.0": {
+        "tilt_nats_per_h": -342.4398227290703
+      }
+    },
+    "method": "Per event, 50-node Gauss-Legendre quadrature over z in [z_true - w, z_true + w], w = 5*min(f*sigma_rep, GW-peak-width) (node placement resolves whichever of the dosed kernel or the GW-density term is narrower -- see _effective_half_width; the kernel SHAPE itself always uses the full dosed f*sigma_rep) of kernel(z) x exp(exponent), for the correct exponent -(d_obs-mu)^2/(2 sigma_d^2 mu^2) and the coded exponent -(mu-d_obs)^2/(2 sigma_d^2 d_obs^2), holding everything else (kernel, no prefactor) identical between the two so the diff isolates purely the exponent-scale term; central-differenced at the h=0.725/0.735 grid neighbours, summed over events. Dose f scales sigma_rep, matching how _apply_dose_mask scales sigma_z on the real instrument."
+  },
+  "D5": {
+    "ren_measured_bias_b": -0.0019,
+    "m3_bias_ceiling_b": 1e-06,
+    "ren_tilt_nats_per_h_1d": -54.2987042650524,
+    "ren_tilt_nats_per_h_2d": -54.51127711759105,
+    "m3_tilt_ceiling_nats_per_h_1d": 0.028578265402659158,
+    "note": "D5 is measured in MAP-bias units (b), not nats/h; converted via the displacement-law geometry T ~= bias * Abar using AJREN's OWN local curvature (same object L4-T1 section 3 used), NOT a refit. This describes the BASELINE window truncation + its stage-3 renormalization diagnostic, not the AJREN repair's own W_k-division mechanics (which is measured directly as the 'instrument REN tilt' in L4-T1 and used as-is in the T(AJREN) ledger line below)."
+  },
+  "ledger_closure": {
+    "d2_naive__j_full_tracking": {
+      "predicted_T_MN0X": -1338.3111297338487,
+      "measured_T_MN0X": 2624.9,
+      "measured_T_MN0X_se": 18.8,
+      "pull_MN0X_sigma": -210.80910264541748,
+      "predicted_T_AM2P": -2392.5166091859037,
+      "measured_T_AM2P": 1492.0,
+      "measured_T_AM2P_se": 30.7,
+      "pull_AM2P_sigma": -126.53148564123465,
+      "predicted_T_AJREN": -3370.0038547391487,
+      "measured_T_AJREN": 514.5198832773599,
+      "measured_T_AJREN_se": 16.760933600606272,
+      "instrument_ren_tilt_used": -977.4872455532452,
+      "instrument_ren_tilt_se": 34.94830070224137,
+      "pull_AJREN_sigma": -100.22074398671903
+    },
+    "d2_naive__j_attenuated": {
+      "predicted_T_MN0X": -1338.3111297338487,
+      "measured_T_MN0X": 2624.9,
+      "measured_T_MN0X_se": 18.8,
+      "pull_MN0X_sigma": -210.80910264541748,
+      "predicted_T_AM2P": -2429.5166091859037,
+      "measured_T_AM2P": 1492.0,
+      "measured_T_AM2P_se": 30.7,
+      "pull_AM2P_sigma": -127.73669736761902,
+      "predicted_T_AJREN": -3407.0038547391487,
+      "measured_T_AJREN": 514.5198832773599,
+      "measured_T_AJREN_se": 16.760933600606272,
+      "instrument_ren_tilt_used": -977.4872455532452,
+      "instrument_ren_tilt_se": 34.94830070224137,
+      "pull_AJREN_sigma": -101.17534428719294
+    },
+    "d2_zstar_with_ppop__j_full_tracking": {
+      "predicted_T_MN0X": -127.42571739986298,
+      "measured_T_MN0X": 2624.9,
+      "measured_T_MN0X_se": 18.8,
+      "pull_MN0X_sigma": -146.400304117014,
+      "predicted_T_AM2P": -1181.6311968519178,
+      "measured_T_AM2P": 1492.0,
+      "measured_T_AM2P_se": 30.7,
+      "pull_AM2P_sigma": -87.0889640668377,
+      "predicted_T_AJREN": -2159.118442405163,
+      "measured_T_AJREN": 514.5198832773599,
+      "measured_T_AJREN_se": 16.760933600606272,
+      "instrument_ren_tilt_used": -977.4872455532452,
+      "instrument_ren_tilt_se": 34.94830070224137,
+      "pull_AJREN_sigma": -68.97989051500282
+    },
+    "d2_zstar_with_ppop__j_attenuated": {
+      "predicted_T_MN0X": -127.42571739986298,
+      "measured_T_MN0X": 2624.9,
+      "measured_T_MN0X_se": 18.8,
+      "pull_MN0X_sigma": -146.400304117014,
+      "predicted_T_AM2P": -1218.6311968519178,
+      "measured_T_AM2P": 1492.0,
+      "measured_T_AM2P_se": 30.7,
+      "pull_AM2P_sigma": -88.29417579322207,
+      "predicted_T_AJREN": -2196.118442405163,
+      "measured_T_AJREN": 514.5198832773599,
+      "measured_T_AJREN_se": 16.760933600606272,
+      "instrument_ren_tilt_used": -977.4872455532452,
+      "instrument_ren_tilt_se": 34.94830070224137,
+      "pull_AJREN_sigma": -69.93449081547674
+    },
+    "d2_zstar_without_ppop__j_full_tracking": {
+      "predicted_T_MN0X": -125.8692259147414,
+      "measured_T_MN0X": 2624.9,
+      "measured_T_MN0X_se": 18.8,
+      "pull_MN0X_sigma": -146.31751201674157,
+      "predicted_T_AM2P": -1180.0747053667963,
+      "measured_T_AM2P": 1492.0,
+      "measured_T_AM2P_se": 30.7,
+      "pull_AM2P_sigma": -87.03826401846243,
+      "predicted_T_AJREN": -2157.5619509200415,
+      "measured_T_AJREN": 514.5198832773599,
+      "measured_T_AJREN_se": 16.760933600606272,
+      "instrument_ren_tilt_used": -977.4872455532452,
+      "instrument_ren_tilt_se": 34.94830070224137,
+      "pull_AJREN_sigma": -68.93973302204654
+    },
+    "d2_zstar_without_ppop__j_attenuated": {
+      "predicted_T_MN0X": -125.8692259147414,
+      "measured_T_MN0X": 2624.9,
+      "measured_T_MN0X_se": 18.8,
+      "pull_MN0X_sigma": -146.31751201674157,
+      "predicted_T_AM2P": -1217.0747053667963,
+      "measured_T_AM2P": 1492.0,
+      "measured_T_AM2P_se": 30.7,
+      "pull_AM2P_sigma": -88.24347574484679,
+      "predicted_T_AJREN": -2194.5619509200415,
+      "measured_T_AJREN": 514.5198832773599,
+      "measured_T_AJREN_se": 16.760933600606272,
+      "instrument_ren_tilt_used": -977.4872455532452,
+      "instrument_ren_tilt_se": 34.94830070224137,
+      "pull_AJREN_sigma": -69.89433332252045
+    }
+  },
+  "dose_structure_test": {
+    "0.25": {
+      "T_D3": -734.7468600614139,
+      "D4_predicted": -111.0,
+      "T_res_predicted": -845.7468600614139,
+      "T_res_measured": 699.0,
+      "diff": -1544.7468600614138,
+      "within_3x_level_se_tolerance": false
+    },
+    "0.5": {
+      "T_D3": -657.5001085435997,
+      "D4_predicted": -384.0,
+      "T_res_predicted": -1041.5001085435997,
+      "T_res_measured": 149.0,
+      "diff": -1190.5001085435997,
+      "within_3x_level_se_tolerance": false
+    },
+    "1.0": {
+      "T_D3": -342.4398227290703,
+      "D4_predicted": -990.0,
+      "T_res_predicted": -1332.4398227290703,
+      "T_res_measured": -62.0,
+      "diff": -1270.4398227290703,
+      "within_3x_level_se_tolerance": false
+    }
+  },
+  "estimate_2d_channel": {
+    "t_d3_unweighted_full_dose": -342.4398227290703,
+    "t_d3_mass_precision_weighted_full_dose": -342.0533859710416,
+    "excess_nats_per_h": 0.3864367580286512,
+    "excess_in_bias_units_via_abar_1d": 1.352205085171803e-05,
+    "excess_in_bias_units_via_abar_2d": 1.3469320094456157e-05,
+    "stage3_2d_only_subadditivity_reference": 0.0027,
+    "order_of_magnitude_match": false,
+    "method": "ROUGH proxy only (task item 4 explicitly permits this): per-event T_D3 at full dose (GLADE-mix sigma_rep), reweighted by 1/sigma_Mz (normalized to preserve the event count) as a crude stand-in for the 2D channel's g_i mass-precision weighting, vs the plain unweighted sum. NOT a recomputation of the actual g_i factor (completion_mass_factor_g), which would require the full per-event host-mass CRB machinery -- flagged as an order-of-magnitude estimate, not a point prediction."
+  }
+}
