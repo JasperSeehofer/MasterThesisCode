@@ -59,3 +59,16 @@ gate); branch calls presented, never self-adjudicated; results scripts run from 
 1. `git log --oneline -3` — expect the L6 addendum-2 commit at HEAD or a descendant.
 2. Read §0's two documents. 3. If item 1 is ratified: execute item 2 (derivation first, always).
 4. Nothing runs on the cluster until a 2D repair candidate passes its own registration gate.
+
+---
+
+## Addendum (2026-08-16, same session) — row #114 ratified; L6-DER2 derivation BANKED
+
+Item 1 is done ("ratified", row #114). Item 2's derivation is **written**:
+`L6_DER2_CORRECT_FORM_2D_20260816.md` — the coded 2D structure's **S̄_φ×g factorization error**
+(two ∫dM where the selected joint prior demands one ∫dM φ·p_det·N) is the channel-B owner
+candidate, with the fused `g_sel` as the A-FULL-2D code form. Next session starts at L6-DER2 §4:
+(1) mirror pre-measurement of the fused candidate (sonnet-class; the l6 c2 mirror is the base;
+needs per-node unmarginalized S(M,z,h) from the S̄_φ tables' integrand); (2) xhigh verifier on
+derivation+measurement; (3) if confirmed, the A-FULL-2D arm gate + the production completion-leg
+counterpart → the reopened /physics-change proposal.
