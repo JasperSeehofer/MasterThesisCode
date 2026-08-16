@@ -54,3 +54,18 @@ never self-adjudicated; scripts under `results/mechanism_study_20260813/` run fr
 1. `git log --oneline -3` — expect `8b112b9e` (recon + L6 plan) at HEAD or a descendant.
 2. Read §0's three documents. 3. The §1 item-1 fork is the ask; if ruled A, execute L6 per the
 plan. 4. Do not draft any production physics-change on the old premise — the recon supersedes it.
+
+---
+
+## Addendum (2026-08-16, same session) — fork ruled A (row #112); L6 derivation LANDED
+
+- **Row #112:** option A granted ("A approved") — 2D-first; the production proposal waits on L6.
+- **L6-DER done** (`L6_DER_2D_CHANNEL_20260816.md`): the 2D excess is **derived** — channel B
+  (mass-factor node tracking against the φ slope) predicts **+139.0 nats/h** parameter-free vs
+  measured +129…+136 (≤8% from every arm); channel A null. Variant-independence explained.
+- **Next executable steps (specs in the note §4 + plan §2):** (1) c2 mirror bit-exact vs stored
+  `ln_post_2d` + freeze-switches S-A/S-B/S-AB (sonnet-implementable; prediction registered:
+  S-B removes ≈ +139, S-A ≈ 0); (2) the correct-form 2D derivation (the M-side cancellation-
+  partner question — orchestrator, top-tier); (3) xhigh verifier before any claim returns to the
+  author; then, if a repair falls out, an A-FULL-2D arm and the production proposal reopens with
+  g as its subject.
