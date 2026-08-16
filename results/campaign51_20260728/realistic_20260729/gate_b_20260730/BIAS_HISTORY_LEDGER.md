@@ -735,3 +735,17 @@ z-argument de-drifted to the h_true peak frame) / S-AB, on the 15 MN0X seed repl
 asserted untouched. Registered predictions (pre-stated in the L6-DER note, committed `718128d1`
 BEFORE this measurement): ΔT2(S-B) ≈ −139, ΔT2(S-A) ≈ 0. The xhigh verifier (item 3) gates any
 claim before it returns to the author.
+
+---
+
+## Row #114 — 2026-08-16 — L6 findings ratified (as amended)
+
+**Author's verbatim ruling (2026-08-16):** "ratified"
+
+**Scope** (referencing `L6_DER_2D_CHANNEL_20260816.md` + both addenda, commit `55e73222`): the
+L6 findings are ratified as amended — channel B (h-moving evaluation of
+`completion_mass_factor_g`'s z-argument against the φ slope) **owns the 2D−1D excess to within
+~6%** (ΔT2(S-B) = −139.0 measured vs +139.0 pre-registered prediction; residual −7.489 ± 0.065
+nonzero, origin undetermined); channel A null at f = 1; the production transfer is scoped to the
+`absolute_marginal` completion leg (channel existence transfers, venue magnitudes do not).
+Next per runbook 15 item 2 (standing grant of row #112/A): the correct-form 2D derivation.

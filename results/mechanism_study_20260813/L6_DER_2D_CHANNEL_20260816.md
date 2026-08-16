@@ -120,3 +120,10 @@ bias gap is recorded as open, unattributed.
 **Verifier verdict: GO as amended** — "the core scientific claim — the 2D−1D excess is dominantly
 produced by h-moving evaluation of `completion_mass_factor_g`'s z-argument against the φ slope,
 channel A is null at f=1, and the derivation's +139.0 is structural — stands."
+
+---
+
+## Addendum 3 (2026-08-16) — RATIFIED
+
+Ledger row #114: the L6 findings as amended by addendum 2 are ratified. Author's verbatim
+ruling: "ratified".
