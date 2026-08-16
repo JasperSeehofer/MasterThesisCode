@@ -58,3 +58,22 @@ width/coverage channel, unpriced here).
 Script: `scratchpad/quick_gi_channels.py` logic to be promoted into the committed L6 scorer with
 the mirror. Host-dominated approximation disclosed: derivatives at z_true, f=1, M_z at truth —
 the mirror switches supersede these approximations.
+
+---
+
+## Addendum (2026-08-16) — §4 item 1 EXECUTED: switch confirmation, on-prediction to the nat
+
+Row #113. Script `l6_c2_switch_decomposition.py`, output `L6_C2_SWITCH_output.json` (15 MN0X
+seeds, mirror validated **bit-exactly** on BOTH channels: ln1 and ln2 max-abs-diff 0.0; c1
+bit-identical across all switches):
+
+| quantity | measured | registered prediction (committed `718128d1`, pre-run) |
+|---|---:|---:|
+| T2 − T1 (excess, base) | +131.5 ± 0.1 | — |
+| **ΔT2(S-B)** (node tracking frozen) | **−139.0 ± 0.0** | **−139** |
+| ΔT2(S-A) (μ_cond frozen) | −0.0 ± 0.0 | ≈ 0 |
+| ΔT2(S-AB) | −139.0 ± 0.0 | (no interaction) |
+
+**The 2D excess is fully owned by channel B**, deterministic across seeds at this precision;
+post-switch residual excess ≈ −7.5 nats/h. The §3 correct-form question (the M-side
+cancellation partner) is now the only open item before an A-FULL-2D candidate.
