@@ -77,3 +77,46 @@ bit-identical across all switches):
 **The 2D excess is fully owned by channel B**, deterministic across seeds at this precision;
 post-switch residual excess ≈ −7.5 nats/h. The §3 correct-form question (the M-side
 cancellation partner) is now the only open item before an A-FULL-2D candidate.
+
+---
+
+## Addendum 2 (2026-08-16) — xhigh verifier amendments (GO conditional on these; they supersede above where they conflict)
+
+The verifier independently reproduced the +139.0 prediction from scratch (+139.01), confirmed the
+timeline (prediction in-tree 35 min before the switch script existed; parameter-free though not
+target-blind — the excess band was already committed), confirmed all aggregates, and confirmed
+the switch isolation at the g-argument level. Four amendments of record:
+
+**A1 — "fully owned" is withdrawn.** The post-switch residual excess is **−7.489 ± 0.065** —
+decisively nonzero (all 15 seeds negative), 5.7% of the effect. Amended claim: **channel B owns
+the excess to within ~6%**; the residual's origin is undetermined — most plausibly rigid-shift
+over-subtraction of kern-anchored responsibility (the S-B counter-shift subtracts the linearized
+tracking term for ALL responsibility, including any that does not actually move with h), possibly
+a small third channel.
+
+**A2 — what each agreement demonstrates.** ΔT2(S-B) equals the responsibility-weighted linearized
+B-functional by construction, whatever the base mechanism; so "on-prediction to the nat" is the
+DERIVATION's validation (the z_true/f=1 approximations are structural — verifier fragility test:
+±0.03 z-shifts move the prediction only ±2%). The OWNERSHIP evidence is |ΔT2(S-B)| = 139.0 vs
+base excess 131.5 — agreement to 5.7%. Also: the script's c1-bit-identity "assertion" is
+tautological (compares ln1 to itself); the true 1D-untouched fact rests on code construction plus
+the genuine bit-exact mirror-vs-stored validation on both channels.
+
+**A3 — the production clause is corrected (supersedes §3's "direct").** g's only production call
+site is the **completion (dark) leg** integrand (`bayesian_statistics.py:4344`), **mode-gated to
+`normalization_mode="absolute_marginal"`** (`:3178`) — the realistic-campaign configuration, NOT
+the `generator_marginal` default (which never calls g). The completion leg has h-moving windows
+(`:4368-4384`), so **the channel's existence transfers to the campaign path**; its geometry
+(no host kernels; (1−f)·dVc weighting) differs from the venue ball, and the catalogue leg's 2D
+factor is a different function (`mz_integral`, `:5239`, without the φ-slope structure). **The
+venue magnitudes (+131.5 nats/h; +0.0020 displacement share) do NOT transfer** — production's
+expression of the channel needs its own derivation on the completion leg, folded into the §3
+correct-form question.
+
+**A4 — the "width channel" attribution is withdrawn** (it was speculative and unreconciled with
+the committed displacement-law-neutrality of the excess); the unexplained remainder of the 2D−1D
+bias gap is recorded as open, unattributed.
+
+**Verifier verdict: GO as amended** — "the core scientific claim — the 2D−1D excess is dominantly
+produced by h-moving evaluation of `completion_mass_factor_g`'s z-argument against the φ slope,
+channel A is null at f=1, and the derivation's +139.0 is structural — stands."
