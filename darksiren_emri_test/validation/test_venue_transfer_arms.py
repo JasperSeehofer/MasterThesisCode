@@ -84,11 +84,12 @@ def test_mech_arm_registry_is_separate_and_disjoint() -> None:
     assert set(vt.MECH_CELL_SPECS) == {"MN0", "MEH", "MEI", "MN0X"}
     # the venue-transfer registry must NOT have been widened
     assert not (set(vt.CELL_SPECS) & set(vt.MECH_CELL_SPECS))
-    # ALL_CELL_SPECS is the union of all six registries (the stage-2
+    # ALL_CELL_SPECS is the union of all seven registries (the stage-2
     # estimator-variant arms, M2P_CELL_SPECS, the stage-3 arms,
-    # REN_CELL_SPECS, and the stage-5 A-FULL arm, AFULL_CELL_SPECS, are
-    # disjoint families — see test_m2prime_ablation_arms.py,
-    # test_a_jren_stage3_arms.py, and test_a_full_estimator.py for their own
+    # REN_CELL_SPECS, the stage-5 A-FULL arm, AFULL_CELL_SPECS, and the
+    # A-FULL-2D arm, AFULL2D_CELL_SPECS, are disjoint families — see
+    # test_m2prime_ablation_arms.py, test_a_jren_stage3_arms.py,
+    # test_a_full_estimator.py, and test_a_full_2d_estimator.py for their own
     # registration tests).
     assert set(vt.ALL_CELL_SPECS) == (
         set(vt.CELL_SPECS)
@@ -97,6 +98,7 @@ def test_mech_arm_registry_is_separate_and_disjoint() -> None:
         | set(vt.M2P_CELL_SPECS)
         | set(vt.REN_CELL_SPECS)
         | set(vt.AFULL_CELL_SPECS)
+        | set(vt.AFULL2D_CELL_SPECS)
     )
 
     v3_hi = vt.VT_BASE_SEED + vt.V3_SEED_OFFSET_ENVELOPE[1]
@@ -261,7 +263,7 @@ def test_scan_cell_specs_seed_blocks_are_disjoint_from_everything() -> None:
 
 def test_registry_separation_and_union() -> None:
     """CELL_SPECS, MECH_CELL_SPECS, SCAN_CELL_SPECS, M2P_CELL_SPECS, REN_CELL_SPECS,
-    AFULL_CELL_SPECS are pairwise key-disjoint."""
+    AFULL_CELL_SPECS, AFULL2D_CELL_SPECS are pairwise key-disjoint."""
     from darksiren_emri.validation import venue_transfer as vt
 
     cell_keys = set(vt.CELL_SPECS)
@@ -270,6 +272,7 @@ def test_registry_separation_and_union() -> None:
     m2p_keys = set(vt.M2P_CELL_SPECS)
     ren_keys = set(vt.REN_CELL_SPECS)
     afull_keys = set(vt.AFULL_CELL_SPECS)
+    afull2d_keys = set(vt.AFULL2D_CELL_SPECS)
 
     assert not (cell_keys & mech_keys)
     assert not (cell_keys & scan_keys)
@@ -286,8 +289,14 @@ def test_registry_separation_and_union() -> None:
     assert not (scan_keys & afull_keys)
     assert not (m2p_keys & afull_keys)
     assert not (ren_keys & afull_keys)
+    assert not (cell_keys & afull2d_keys)
+    assert not (mech_keys & afull2d_keys)
+    assert not (scan_keys & afull2d_keys)
+    assert not (m2p_keys & afull2d_keys)
+    assert not (ren_keys & afull2d_keys)
+    assert not (afull_keys & afull2d_keys)
     assert set(vt.ALL_CELL_SPECS) == (
-        cell_keys | mech_keys | scan_keys | m2p_keys | ren_keys | afull_keys
+        cell_keys | mech_keys | scan_keys | m2p_keys | ren_keys | afull_keys | afull2d_keys
     )
     assert len(vt.ALL_CELL_SPECS) == (
         len(cell_keys)
@@ -296,6 +305,7 @@ def test_registry_separation_and_union() -> None:
         + len(m2p_keys)
         + len(ren_keys)
         + len(afull_keys)
+        + len(afull2d_keys)
     )
 
 

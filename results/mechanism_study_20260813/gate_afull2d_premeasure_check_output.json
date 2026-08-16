@@ -1,0 +1,39 @@
+{
+  "seed": 20310808,
+  "k_lo": 20,
+  "k_hi": 22,
+  "ln1_installed_afull": {
+    "lo": -1492.7283459544997,
+    "hi": -1492.4283637535445
+  },
+  "ln1_installed_gsel": {
+    "lo": -1492.7283459544997,
+    "hi": -1492.4283637535445
+  },
+  "ln1_premeasure_mirror_afull": {
+    "lo": -1492.7283459544997,
+    "hi": -1492.4283637535445
+  },
+  "ln2_installed_gsel": {
+    "lo": -2921.2299067721688,
+    "hi": -2921.054296443759
+  },
+  "ln2_premeasure_mirror_gsel": {
+    "lo": -2921.2299067721688,
+    "hi": -2921.054296443759
+  },
+  "gate_1_ln1_bit_identity_installed_gsel_vs_installed_afull": {
+    "max_abs_diff": 0.0,
+    "pass": true
+  },
+  "gate_1b_ln1_installed_gsel_vs_premeasure_mirror_afull": {
+    "max_abs_diff": 0.0,
+    "pass": true
+  },
+  "gate_2_ln2_installed_gsel_vs_premeasure_mirror_gsel": {
+    "max_abs_diff": 0.0,
+    "threshold": 1e-06,
+    "pass": true
+  },
+  "overall_pass": true
+}

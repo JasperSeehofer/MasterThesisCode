@@ -185,6 +185,7 @@ import argparse
 import hashlib
 import json
 import logging
+import math
 import multiprocessing as mp
 import os
 import time
@@ -193,10 +194,13 @@ from typing import Any, Literal, overload
 
 import numpy as np
 import numpy.typing as npt
+from scipy.special import roots_hermite
 from scipy.stats import norm
 
 from darksiren_emri.bayesian_inference.bayesian_statistics import (
+    _wbh_z_kwargs,
     completion_mass_factor_g,
+    dark_mass_density_per_mass,
 )
 from darksiren_emri.physical_relations import dist_vectorized
 from darksiren_emri.validation import calibration_gate as cg
@@ -222,6 +226,9 @@ REN_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_A_JREN_STAGE
 # A-FULL (FULL-F) correct-form arm, registered 2026-08-15 (stage-5), disjoint
 # +54200 decade — see AFULL_CELL_SPECS below.
 AFULL_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_A_FULL_STAGE5.md"
+# A-FULL-2D (fused g_sel) arm, registered 2026-08-16 (ledger row #115 item 2),
+# disjoint +54300 decade — see AFULL2D_CELL_SPECS below.
+AFULL2D_PREREG_PATH = "results/mechanism_study_20260813/PREREGISTRATION_A_FULL_2D.md"
 DEFAULT_OUT_DIR = "results/venue_transfer_20260811"
 VT_BASE_SEED = cg.GATE_BASE_SEED  # 20260808 — the gate's base, v3 offsets +40000 decade (VT-D7)
 PARENT_CALGATE_CODE_COMMIT = "065e7f58"
@@ -315,6 +322,19 @@ ESTIMATOR_VARIANT_JOINT_JREN = "jacobian_and_kernel_renorm"
 # NO Jacobian (F3: density form already carries the mu-scale exponent), NO
 # kernel renormalization (refuted by the pre-measurement, addendum §2 item 3).
 ESTIMATOR_VARIANT_A_FULL = "a_full"
+# A-FULL-2D (fused g_sel) — ledger row #115 item 2,
+# PREREGISTRATION_A_FULL_2D.md §3. Same 1D channel as A-FULL (byte-identical,
+# DS-G4). The 2D channel replaces the (S_bar_phi(z) node-weight x coded g)
+# pair by the single fused object g_sel(z,f;h) = INTEGRAL dx_M
+# N(x_M; mu_cond(f), sigma_cond) * phi_x(x_M;z) * S(x_M*M_z_obs_i; z, h), with
+# S the UNmarginalized with-BH detection survival queried the same way
+# precompute_phi_marginal_survival queries it. Non-adaptive pinned
+# n_hermite=64 (registered convention, prereg §3 — the Route-1 adaptive
+# order's error bound is derived for the smooth phi_x integrand alone and
+# does not cover the sharp S(x_M) factor). See _g_sel_mass_factor /
+# _g_sel_ball_capped below (verbatim port of
+# results/mechanism_study_20260813/l6_der2_gsel_premeasure.py).
+ESTIMATOR_VARIANT_A_FULL_GSEL = "a_full_gsel"
 ESTIMATOR_VARIANTS: tuple[str, ...] = (
     ESTIMATOR_VARIANT_BASE,
     ESTIMATOR_VARIANT_M2P_JACOBIAN,
@@ -322,6 +342,7 @@ ESTIMATOR_VARIANTS: tuple[str, ...] = (
     ESTIMATOR_VARIANT_KERNEL_RENORM,
     ESTIMATOR_VARIANT_JOINT_JREN,
     ESTIMATOR_VARIANT_A_FULL,
+    ESTIMATOR_VARIANT_A_FULL_GSEL,
 )
 # A-M2' registered step (prereg §3): central difference of dist_vectorized in
 # z, deterministic, no RNG. physical_relations.dist_derivative is analytic
@@ -541,6 +562,24 @@ AFULL_CELL_SPECS: dict[str, VenueCellSpec] = {
     ),
 }
 
+# ── A-FULL-2D correct-form arm (registered 2026-08-16, ledger row #115) ─────
+# results/mechanism_study_20260813/PREREGISTRATION_A_FULL_2D.md §2. Same
+# decision cell as AFULL in every respect except
+# VenueConfig.estimator_variant; fresh disjoint block +54300..+54324.
+AFULL2D_CELL_SPECS: dict[str, VenueCellSpec] = {
+    "AFULL2D": VenueCellSpec(
+        "AFULL2D",
+        "A-FULL-2D",
+        "real_k",
+        "glade",
+        (0.730,),
+        (25,),
+        (54300,),
+        "all",
+        estimator_variant=ESTIMATOR_VARIANT_A_FULL_GSEL,
+    ),
+}
+
 ALL_CELL_SPECS: dict[str, VenueCellSpec] = {
     **CELL_SPECS,
     **MECH_CELL_SPECS,
@@ -548,6 +587,7 @@ ALL_CELL_SPECS: dict[str, VenueCellSpec] = {
     **M2P_CELL_SPECS,
     **REN_CELL_SPECS,
     **AFULL_CELL_SPECS,
+    **AFULL2D_CELL_SPECS,
 }
 
 
@@ -558,12 +598,13 @@ def preregistration_path_for_cell(cell: str) -> str:
     arms (:data:`MECH_CELL_SPECS`), the 2-D dose-scan cells
     (:data:`SCAN_CELL_SPECS`), the stage-2 estimator-variant arms
     (:data:`M2P_CELL_SPECS`), the stage-3 estimator-variant arms
-    (:data:`REN_CELL_SPECS`), and the stage-5 A-FULL arm
-    (:data:`AFULL_CELL_SPECS`) are registered under their own prereg
-    documents (2026-08-13 / 2026-08-14 / 2026-08-15 / 2026-08-15), disjoint
-    from the venue-transfer prereg that governs :data:`CELL_SPECS`. Any cell
-    id outside all six registries (e.g. ``"custom"``) falls back to
-    :data:`PREREG_PATH`, matching prior behaviour byte-for-byte.
+    (:data:`REN_CELL_SPECS`), the stage-5 A-FULL arm
+    (:data:`AFULL_CELL_SPECS`), and the A-FULL-2D arm (:data:`AFULL2D_CELL_SPECS`)
+    are registered under their own prereg documents (2026-08-13 / 2026-08-14 /
+    2026-08-15 / 2026-08-15 / 2026-08-16), disjoint from the venue-transfer
+    prereg that governs :data:`CELL_SPECS`. Any cell id outside all seven
+    registries (e.g. ``"custom"``) falls back to :data:`PREREG_PATH`, matching
+    prior behaviour byte-for-byte.
 
     Args:
         cell: The ``VenueConfig.cell`` / ``VenueCellSpec.name`` id.
@@ -571,6 +612,8 @@ def preregistration_path_for_cell(cell: str) -> str:
     Returns:
         The governing preregistration path.
     """
+    if cell in AFULL2D_CELL_SPECS:
+        return AFULL2D_PREREG_PATH
     if cell in AFULL_CELL_SPECS:
         return AFULL_PREREG_PATH
     if cell in REN_CELL_SPECS:
@@ -1311,6 +1354,139 @@ def _g_ball_capped(
     return out
 
 
+# ── A-FULL-2D fused g_sel (registered 2026-08-16, PREREGISTRATION_A_FULL_2D.md
+# §3). Verbatim port of results/mechanism_study_20260813/
+# l6_der2_gsel_premeasure.py's ``g_sel_mass_factor`` / ``_g_sel_ball_capped``
+# (the mirror pre-measurement's reference implementation) — no creativity,
+# port only. ────────────────────────────────────────────────────────────────
+
+
+def _g_sel_mass_factor(
+    z_nodes: npt.NDArray[np.float64],
+    d_L_fraction: npt.NDArray[np.float64],
+    d_L_abs: npt.NDArray[np.float64],
+    det_M_z: float,
+    proj_d_L_to_M: float,
+    sigma_cond_M: float,
+    h: float,
+    detection_obj: Any,
+    *,
+    n_hermite: int,
+) -> npt.NDArray[np.float64]:
+    """The fused L6-DER2 §3 object, one event, flattened 1D node arrays.
+
+    Verbatim-conventions mirror of :func:`completion_mass_factor_g`'s
+    non-adaptive contraction with the UNmarginalized with-BH survival ``S``
+    folded into the same Gauss-Hermite contraction, queried the same way
+    :func:`~darksiren_emri.bayesian_inference.bayesian_statistics.precompute_phi_marginal_survival`
+    queries it: detector-frame mass ``M_z = x_M * M_z,obs,i``, the node's
+    ``d_L(z;h)``, isotropic sky (phi=theta=0), FIX-3 z pass-through via
+    :func:`~darksiren_emri.bayesian_inference.bayesian_statistics._wbh_z_kwargs`.
+
+    Args:
+        z_nodes: Quadrature redshifts, shape ``(k,)``.
+        d_L_fraction: ``d_L(z;h)/d_L,obs,i`` at the same nodes, shape ``(k,)``.
+        d_L_abs: ``d_L(z;h)`` (Gpc, absolute) at the same nodes, shape ``(k,)``.
+        det_M_z: The event's measured detector-frame BH mass ``M_z,obs,i``.
+        proj_d_L_to_M: ``cov_4d[3,2]/cov_4d[2,2]``.
+        sigma_cond_M: ``sqrt(cov_4d[3,3] - cov_4d[3,2]^2/cov_4d[2,2])``.
+        h: Hubble parameter (survival query + record-keeping only; ``z_nodes``
+            and ``d_L_abs`` already encode it).
+        detection_obj: The gate's ``SimulationDetectionProbability``.
+        n_hermite: Gauss-Hermite order (pinned, non-adaptive — prereg §3).
+
+    Returns:
+        ``g_sel`` at the nodes, shape ``(k,)``, same units as
+        :func:`completion_mass_factor_g` (density in ``x_M``).
+    """
+    x_nodes, x_weights = roots_hermite(n_hermite)
+    z_arr = np.asarray(z_nodes, dtype=np.float64)
+    scale = det_M_z / (1.0 + z_arr)  # (k,)
+    mu_cond = 1.0 + proj_d_L_to_M * (np.asarray(d_L_fraction, dtype=np.float64) - 1.0)  # (k,)
+    x_M = mu_cond[:, None] + math.sqrt(2.0) * sigma_cond_M * x_nodes[None, :]  # (k, n_h)
+    M_source = x_M * scale[:, None]
+    phi_x = dark_mass_density_per_mass(M_source) * scale[:, None]
+
+    M_z_query = x_M * det_M_z  # (k, n_h) -- x_M = M_z / M_z_obs_i (coded convention)
+    d_L_query = np.broadcast_to(np.asarray(d_L_abs, dtype=np.float64)[:, None], M_z_query.shape)
+    z_query = np.broadcast_to(z_arr[:, None], M_z_query.shape)
+    zeros = np.zeros(M_z_query.size, dtype=np.float64)
+    S = np.asarray(
+        detection_obj.detection_probability_with_bh_mass_interpolated(
+            d_L_query.reshape(-1),
+            M_z_query.reshape(-1),
+            zeros,
+            zeros,
+            h=h,
+            **_wbh_z_kwargs(detection_obj, z_query.reshape(-1)),
+        ),
+        dtype=np.float64,
+    ).reshape(M_z_query.shape)
+    integrand = phi_x * S
+
+    return np.asarray((integrand @ x_weights) / math.sqrt(math.pi), dtype=np.float64)
+
+
+def _g_sel_ball_capped(
+    gctx: cg.GateContext,
+    universe: cl.SyntheticUniverse,
+    event_idx: npt.NDArray[np.int64],
+    z_nodes: npt.NDArray[np.float64],
+    d_L_frac: npt.NDArray[np.float64],
+    d_L_abs: npt.NDArray[np.float64],
+    valid: npt.NDArray[np.bool_],
+    h: float,
+    detection_obj: Any,
+    *,
+    node_chunk: int = _G_NODE_CHUNK,
+) -> npt.NDArray[np.float64]:
+    """Per-event-loop, memory-capped mirror producing ``g_sel`` at nodes.
+
+    Structurally identical to :func:`_g_ball_capped` (same per-event loop,
+    same ``node_chunk`` splitting convention) with the extra ``d_L_abs``
+    array threaded through and :func:`_g_sel_mass_factor` in place of
+    :func:`completion_mass_factor_g`.
+    """
+    s_dd = universe.sigma_dL**2
+    s_dm = universe.rho * universe.sigma_dL * universe.sigma_Mz
+    s_mm = universe.sigma_Mz**2
+    proj = np.where(s_dd > 0.0, s_dm / np.maximum(s_dd, 1e-300), 0.0)
+    sigma_cond = np.sqrt(np.maximum(s_mm - proj * s_dm, 1e-30))
+
+    out = np.zeros_like(z_nodes)
+    n_hermite = gctx.cl_ctx.config.n_hermite
+    n_quad = z_nodes.shape[1]
+    if node_chunk <= 0:
+        max_rows_per_call = int(z_nodes.shape[0]) + 1
+    else:
+        max_rows_per_call = max(node_chunk // max(n_quad, 1), 1)
+    present = np.unique(event_idx)
+    starts = np.searchsorted(event_idx, present, side="left")
+    stops = np.searchsorted(event_idx, present, side="right")
+    for i, s, e in zip(present.tolist(), starts.tolist(), stops.tolist(), strict=True):
+        rows = np.arange(s, e)
+        rows = rows[valid[rows]]
+        if rows.size == 0:
+            continue
+        for r0 in range(0, rows.size, max_rows_per_call):
+            rr = rows[r0 : r0 + max_rows_per_call]
+            zz = z_nodes[rr].reshape(-1)
+            ff = d_L_frac[rr].reshape(-1)
+            dd = d_L_abs[rr].reshape(-1)
+            out[rr] = _g_sel_mass_factor(
+                zz,
+                ff,
+                dd,
+                float(universe.M_z_obs[i]),
+                float(proj[i]),
+                float(sigma_cond[i]),
+                h,
+                detection_obj,
+                n_hermite=n_hermite,
+            ).reshape(rr.size, n_quad)
+    return out
+
+
 def log_channel_posteriors_ball_sigma_vector(
     gctx: cg.GateContext,
     universe: cl.SyntheticUniverse,
@@ -1535,6 +1711,16 @@ def _channel_terms_at_h(
             already carries the μ-scale exponent) and NO kernel
             renormalization (refuted by the pre-measurement). The point
             branch takes the same three factors evaluated at ``z_obs``.
+            ``"a_full_gsel"`` (A-FULL-2D, ledger row #115 item 2,
+            ``PREREGISTRATION_A_FULL_2D.md`` §3) shares A-FULL's 1D channel
+            byte-for-byte (DS-G4); its 2D channel replaces the
+            ``S_bar_phi(z)`` node-weight x coded ``g`` pair by the node
+            weight WITHOUT ``S_bar_phi`` times the fused
+            :func:`_g_sel_mass_factor`/:func:`_g_sel_ball_capped` object
+            (non-adaptive pinned ``n_hermite = 64``, the unmarginalized
+            with-BH survival queried the same way
+            ``precompute_phi_marginal_survival`` queries it). Point branch:
+            same split, S queried at ``z_obs``.
 
     Returns:
         ``(ln1[k], ln2[k], ln_gfrac[k])`` for this h.
@@ -1563,13 +1749,19 @@ def _channel_terms_at_h(
     z_lo_p = z_lo_e[ev]
     z_hi_p = z_hi_e[ev]
 
-    if estimator_variant == ESTIMATOR_VARIANT_A_FULL:
+    if estimator_variant in (ESTIMATOR_VARIANT_A_FULL, ESTIMATOR_VARIANT_A_FULL_GSEL):
         # A-FULL (FULL-F, ledger row #110): h-independent per-candidate LOO
         # impostor weight and the h-indexed selection-function table, both
         # looked up once per h-point (outside the chunk loop) — see
-        # DRAFT_A_FULL_ESTIMATOR_20260815.md addendum A1.
+        # DRAFT_A_FULL_ESTIMATOR_20260815.md addendum A1. A-FULL-2D's 1D
+        # channel is byte-identical to A-FULL's (DS-G4), so it reads the
+        # same tables here.
         loo_w = _loo_impostor_weights(gctx, universe, ball, sig_z)
         z_s_tab, s_phi_tab = gctx.cl_ctx.s_phi_tables[k]
+    if estimator_variant == ESTIMATOR_VARIANT_A_FULL_GSEL:
+        # A-FULL-2D 2D channel (prereg §3): the g_sel with-BH survival query
+        # needs the detection object, unused by every other variant.
+        detection = gctx.cl_ctx.detection
 
     c1 = np.zeros(n_pairs, dtype=np.float64)
     c2 = np.zeros(n_pairs, dtype=np.float64)
@@ -1638,27 +1830,50 @@ def _channel_terms_at_h(
                 jac = dd_dz / d_obs_p[rows_q][:, None]
                 w_k = norm.cdf((b - zo) / so) - norm.cdf((a - zo) / so)
                 integ = (kern * p_gw * jac) / np.maximum(w_k, _W_K_FLOOR)[:, None]
-            elif estimator_variant == ESTIMATOR_VARIANT_A_FULL:
+            elif estimator_variant in (ESTIMATOR_VARIANT_A_FULL, ESTIMATOR_VARIANT_A_FULL_GSEL):
                 # A-FULL (FULL-F, ledger row #110, DRAFT_A_FULL_ESTIMATOR_
                 # 20260815.md §1 + §3 + addendum A1): d_obs-density GW factor
                 # (note d_obs/d_L, not d_L/d_obs — density in d_obs, not a
                 # ratio density), selected-population prior w_pop*S_phi as
                 # the numerator node weight, and the per-candidate LOO
                 # impostor weight 1/imp_k. NO Jacobian, NO kernel renorm.
+                # A-FULL-2D's 1D channel (this ``integ``, hence ``c1q`` below)
+                # is byte-identical to A-FULL's (prereg §3, DS-G4) — only the
+                # 2D-channel weight/g_sel construction below diverges.
                 ratio = d_obs_p[rows_q][:, None] / d_L_n
                 p_gw_full = norm.pdf(ratio, loc=1.0, scale=sig_p[rows_q][:, None]) / d_L_n
                 z_flat_a = np.maximum(z_nodes.reshape(-1), 1e-8)
-                w_sel = np.asarray(cl._w_pop(z_flat_a, h), dtype=np.float64).reshape(
+                w_pop_z = np.asarray(cl._w_pop(z_flat_a, h), dtype=np.float64).reshape(
                     z_nodes.shape
-                ) * np.interp(z_nodes, z_s_tab, s_phi_tab)
+                )
+                w_sel = w_pop_z * np.interp(z_nodes, z_s_tab, s_phi_tab)
                 integ = kern * p_gw_full * w_sel * loo_w[rows_q][:, None]
             else:
                 raise ValueError(f"unknown estimator_variant '{estimator_variant}'")
             c1q = half * (integ @ w_gl)
-            g = _g_ball_capped(
-                gctx, universe, ev[rows_q], z_nodes, d_L_frac, valid, node_chunk=g_node_chunk
-            )
-            c2q = half * ((integ * g) @ w_gl)
+            if estimator_variant == ESTIMATOR_VARIANT_A_FULL_GSEL:
+                # A-FULL-2D 2D channel (prereg §3): node weight WITHOUT the
+                # S_bar_phi factor (absorbed into g_sel), times the fused
+                # g_sel — NOT the coded g.
+                integ_2d_weight = kern * p_gw_full * w_pop_z * loo_w[rows_q][:, None]
+                g_sel = _g_sel_ball_capped(
+                    gctx,
+                    universe,
+                    ev[rows_q],
+                    z_nodes,
+                    d_L_frac,
+                    d_L_n,
+                    valid,
+                    h,
+                    detection,
+                    node_chunk=g_node_chunk,
+                )
+                c2q = half * ((integ_2d_weight * g_sel) @ w_gl)
+            else:
+                g = _g_ball_capped(
+                    gctx, universe, ev[rows_q], z_nodes, d_L_frac, valid, node_chunk=g_node_chunk
+                )
+                c2q = half * ((integ * g) @ w_gl)
             c1[rows_q] = np.where(valid, c1q, 0.0)
             c2[rows_q] = np.where(valid, c2q, 0.0)
         if not np.all(q):
@@ -1668,30 +1883,48 @@ def _channel_terms_at_h(
             d_pt = np.asarray(dist_vectorized(np.maximum(zo, 1e-8), h=h), dtype=np.float64)
             frac = d_pt / d_obs_p[rows_p]
             p_gw_p = norm.pdf(frac, loc=1.0, scale=sig_p[rows_p])
-            if estimator_variant == ESTIMATOR_VARIANT_A_FULL:
+            if estimator_variant in (ESTIMATOR_VARIANT_A_FULL, ESTIMATOR_VARIANT_A_FULL_GSEL):
                 # A-FULL point branch (sig_z = 0 rows): the same d_obs-density
                 # GW factor evaluated at z_obs (frac = d_pt/d_obs, so
                 # N(d_obs; d_pt, sigma*d_pt) = pdf(1/frac; 1, sigma)/d_pt),
                 # times the selected-population prior and the LOO weight.
+                # A-FULL-2D's 1D channel (this ``p_gw_p``) is byte-identical
+                # to A-FULL's (DS-G4).
                 zo_floor = np.maximum(zo, 1e-8)
-                p_gw_p = norm.pdf(1.0 / frac, loc=1.0, scale=sig_p[rows_p]) / d_pt
-                p_gw_p = (
-                    p_gw_p
-                    * np.asarray(cl._w_pop(zo_floor, h), dtype=np.float64)
-                    * np.interp(zo_floor, z_s_tab, s_phi_tab)
-                    * loo_w[rows_p]
-                )
-            g_pt = _g_ball_capped(
-                gctx,
-                universe,
-                ev[rows_p],
-                zo[:, None],
-                frac[:, None],
-                valid_p,
-                node_chunk=g_node_chunk,
-            )[:, 0]
-            c1[rows_p] = np.where(valid_p, p_gw_p, 0.0)
-            c2[rows_p] = np.where(valid_p, p_gw_p * g_pt, 0.0)
+                p_gw_p_full = norm.pdf(1.0 / frac, loc=1.0, scale=sig_p[rows_p]) / d_pt
+                w_pop_p = np.asarray(cl._w_pop(zo_floor, h), dtype=np.float64)
+                s_phi_p = np.interp(zo_floor, z_s_tab, s_phi_tab)
+                p_gw_p = p_gw_p_full * w_pop_p * s_phi_p * loo_w[rows_p]
+            if estimator_variant == ESTIMATOR_VARIANT_A_FULL_GSEL:
+                # A-FULL-2D 2D channel point branch: weight WITHOUT S_bar_phi
+                # times the fused g_sel evaluated at z_obs.
+                weight_gsel_p_2d = p_gw_p_full * w_pop_p * loo_w[rows_p]
+                g_sel_pt = _g_sel_ball_capped(
+                    gctx,
+                    universe,
+                    ev[rows_p],
+                    zo[:, None],
+                    frac[:, None],
+                    d_pt[:, None],
+                    valid_p,
+                    h,
+                    detection,
+                    node_chunk=g_node_chunk,
+                )[:, 0]
+                c1[rows_p] = np.where(valid_p, p_gw_p, 0.0)
+                c2[rows_p] = np.where(valid_p, weight_gsel_p_2d * g_sel_pt, 0.0)
+            else:
+                g_pt = _g_ball_capped(
+                    gctx,
+                    universe,
+                    ev[rows_p],
+                    zo[:, None],
+                    frac[:, None],
+                    valid_p,
+                    node_chunk=g_node_chunk,
+                )[:, 0]
+                c1[rows_p] = np.where(valid_p, p_gw_p, 0.0)
+                c2[rows_p] = np.where(valid_p, p_gw_p * g_pt, 0.0)
 
     L1 = np.bincount(ev, weights=c1, minlength=n) / K
     L2 = np.bincount(ev, weights=c2, minlength=n) / K
@@ -2633,6 +2866,7 @@ def build_parser() -> argparse.ArgumentParser:
             *sorted(M2P_CELL_SPECS),
             *sorted(REN_CELL_SPECS),
             *sorted(AFULL_CELL_SPECS),
+            *sorted(AFULL2D_CELL_SPECS),
         ),
         help=(
             "prereg §5 cell to run (W1/O2 are reserved, NOT built); "
@@ -2643,7 +2877,8 @@ def build_parser() -> argparse.ArgumentParser:
             "stage-3 estimator-variant arms (PREREGISTRATION_A_JREN_STAGE3.md; "
             "AREN is conditional, registered but not enabled by default in "
             "the cluster sbatch); AFULL is the stage-5 A-FULL correct-form "
-            "arm (PREREGISTRATION_A_FULL_STAGE5.md)"
+            "arm (PREREGISTRATION_A_FULL_STAGE5.md); AFULL2D is the fused "
+            "g_sel 2D-channel arm (PREREGISTRATION_A_FULL_2D.md)"
         ),
     )
     p.add_argument("--truth", type=float, default=None, help="h_true (must be in the cell's set)")

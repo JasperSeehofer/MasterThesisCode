@@ -16,6 +16,8 @@ auditable form of the registered A-M2'/A-NULL code-form claims:
   preregistration document.
 """
 
+from typing import Any
+
 import numpy as np
 import pytest
 from scipy.special import roots_legendre
@@ -24,6 +26,33 @@ from darksiren_emri.physical_relations import dist_vectorized
 from darksiren_emri.validation import calibration_gate as cg
 from darksiren_emri.validation import closed_loop_gfrac as cl
 from darksiren_emri.validation import venue_transfer as vt
+
+
+class _FakeDetection:
+    """Minimal with-BH survival stand-in: constant, finite, in [0, 1].
+
+    Populated here (rather than ``detection=None``) so the all-variants loop
+    in ``test_estimator_variant_forwarded_through_hgrain_path`` does not
+    ``AttributeError`` now that ``"a_full_gsel"``
+    (:data:`vt.ESTIMATOR_VARIANT_A_FULL_GSEL`) is a member of
+    :data:`vt.ESTIMATOR_VARIANTS` and its ``g_sel`` queries the detection
+    object directly (unlike ``"a_full"``, which only reads
+    ``s_phi_tables``). No ``wbh_z_resolved`` attribute, so
+    ``_wbh_z_kwargs`` passes no ``z`` kwarg.
+    """
+
+    def detection_probability_with_bh_mass_interpolated(
+        self,
+        d_L: Any,
+        M_z: Any,
+        phi: Any,
+        theta: Any,
+        *,
+        h: float,
+        z: Any = None,
+    ) -> np.ndarray:
+        d_L_arr = np.broadcast_to(np.asarray(d_L, dtype=np.float64), np.shape(M_z))
+        return np.full_like(np.asarray(d_L_arr, dtype=np.float64), 0.8)
 
 
 def _real_ladder_context(sigma_z: float, lambda_ball: float, n_events: int) -> cg.GateContext:
@@ -46,15 +75,16 @@ def _real_ladder_context(sigma_z: float, lambda_ball: float, n_events: int) -> c
     tables = [cl._z_of_dl_table(h, z_max) for h in cl_cfg.h_grid]
     gl_nodes, gl_weights = roots_legendre(cl_cfg.n_quad)
     # Trivial (S_phi == 1 everywhere) selection-function tables — unused by
-    # every registered variant except "a_full" (ESTIMATOR_VARIANT_A_FULL),
-    # populated here so the all-variants loop in
+    # every registered variant except "a_full"/"a_full_gsel"
+    # (ESTIMATOR_VARIANT_A_FULL / ESTIMATOR_VARIANT_A_FULL_GSEL), populated
+    # here so the all-variants loop in
     # test_estimator_variant_forwarded_through_hgrain_path does not IndexError
     # on an empty list now that a_full is a member of ESTIMATOR_VARIANTS.
     s_phi_z = np.linspace(1e-6, 5.0, 2000)
     s_phi_tables = [(s_phi_z, np.ones_like(s_phi_z)) for _ in cl_cfg.h_grid]
     cl_ctx = cl.ClosedLoopContext(
         config=cl_cfg,
-        detection=None,  # type: ignore[arg-type]  # not used by the ball path
+        detection=_FakeDetection(),  # type: ignore[arg-type]
         sigma_triples=np.asarray([[0.02, 1e-8, 0.0]]),
         z_max_true=z_max,
         gen_z_nodes=np.linspace(1e-6, z_max, 100),
