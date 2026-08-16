@@ -1,0 +1,40 @@
+{
+  "check": "DS-G4 1D-channel bit-identity: arm's ln_post_1d (a_full_gsel) vs local a_full, full 41-point grid",
+  "seeds_checked": [
+    20315108,
+    20315120
+  ],
+  "results": {
+    "20315108": {
+      "n_points": 41,
+      "max_abs_diff": 0.0,
+      "all_zero": true,
+      "arm_ln1_sample": [
+        -2500.6280153696644,
+        -2460.792853206247,
+        -2425.442470366692
+      ],
+      "local_a_full_ln1_sample": [
+        -2500.6280153696644,
+        -2460.792853206247,
+        -2425.442470366692
+      ]
+    },
+    "20315120": {
+      "n_points": 41,
+      "max_abs_diff": 0.0,
+      "all_zero": true,
+      "arm_ln1_sample": [
+        -1693.7426461886462,
+        -1658.0645590399727,
+        -1627.0974754706003
+      ],
+      "local_a_full_ln1_sample": [
+        -1693.7426461886462,
+        -1658.0645590399727,
+        -1627.0974754706003
+      ]
+    }
+  },
+  "overall_pass": true
+}

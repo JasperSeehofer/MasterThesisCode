@@ -1,0 +1,102 @@
+{
+ "inputs": {
+  "input_path": "results/mechanism_study_20260813/AFULL2D_h0p730_results_seeds0_25.json",
+  "input_present": true
+ },
+ "ds_g1": {
+  "band_lo": -15.7,
+  "band_hi": -7.8,
+  "mirror_reference": {
+   "mean": -11.74,
+   "se": 1.038,
+   "per_seed_sd": 4.019,
+   "n_mirror": 15
+  },
+  "n": 25,
+  "mean": -11.805030490228082,
+  "sd": 3.03813872798815,
+  "se": 0.60762774559763,
+  "pass": true
+ },
+ "ds_g2": {
+  "band_2d": [
+   -143.8,
+   181.6
+  ],
+  "band_1d": [
+   -131.5,
+   192.7
+  ],
+  "status": "secondary, non-branch-carrying (report-only)",
+  "2d": {
+   "mean": 2.414845923325627,
+   "se": 30.0735967171597,
+   "n": 25
+  },
+  "pass_2d": true,
+  "1d": {
+   "mean": 14.21987641355371,
+   "se": 30.133685034318688,
+   "n": 25
+  },
+  "pass_1d": true
+ },
+ "ds_g3": {
+  "bands": {
+   "50": [
+    0.2,
+    0.8
+   ],
+   "68": [
+    0.4,
+    0.96
+   ],
+   "90": [
+    0.72,
+    1.0
+   ]
+  },
+  "2d": {
+   "hpd50": 0.52,
+   "hpd68": 0.76,
+   "hpd90": 0.96,
+   "n": 25
+  },
+  "restored": true
+ },
+ "ds_g4": {
+  "status": "checked separately post-run (prereg \u00a76 item 1 pre-submission gate + DS-G4 note); this scorer does not recompute c1 bit-identity from the arm JSON alone (no a_full comparison column in the schema)",
+  "max_diff": null,
+  "pass": null
+ },
+ "ds_g5": {
+  "1d": {
+   "T_min": -264.8748039558993,
+   "T_max": 286.24662501715625,
+   "T_sd": 150.66842517159344,
+   "bias_mean": 0.0008000000000000007,
+   "bias_se": 0.0013747727084867532,
+   "railed_low_n": 0,
+   "railed_high_n": 0,
+   "nonfinite_n": 0,
+   "nonfinite_seeds": []
+  },
+  "2d": {
+   "T_min": -276.5038365148937,
+   "T_max": 277.25881885198737,
+   "T_sd": 150.3679835857985,
+   "bias_mean": 0.0006000000000000005,
+   "bias_se": 0.0013012814197295435,
+   "railed_low_n": 0,
+   "railed_high_n": 0,
+   "nonfinite_n": 0,
+   "nonfinite_seeds": []
+  },
+  "stop": false
+ },
+ "branch": {
+  "status": "PRESENTED, NOT ADJUDICATED \u2014 the author rules",
+  "branch": "1. DS-G1 PASS + DS-G3 RESTORED (M-OWNED-CLOSED candidate)",
+  "fired_by": "excess(2D-1D)=-11.8 in band, 2D coverage restored"
+ }
+}
