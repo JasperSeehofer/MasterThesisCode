@@ -698,3 +698,14 @@ Not covered (inputs listed but not in the decision table): the Gray-convention p
 2. **[DO — granted]** Register (A8-v2: fresh seeds, scorer pre-committed, xhigh pre-registration verifier — mandatory precedent) and run the A-FULL arm on the cluster (~25 CPU-h, N = 25, full dose, both channels).
 3. **[RULE — granted]** The registered bands may seed directly from the §2/addendum mirror pre-measurement (with the N-scaling and an execution-completeness cross-check of the installed instrument variant against the pre-measurement mirror before submission).
 4. **[RULE — granted, branch reading orchestrator-derived]** The Gray-convention finding **enters the paper's scope**, with the FULL-B/D/F chain as its quantitative backbone (what the published convention costs at σ_z > 0). *Reading flagged for author veto; concrete paper integration is a paper-thread task.*
+
+---
+
+## Row #111 — 2026-08-16 — Stage-5 readout ratified: 1D venue thread CLOSED (M-OWNED); production physics-change proposal + 2D investigation authorized
+
+**Author's verbatim ruling (2026-08-16):** "all approved"
+
+**Orchestrator-derived itemization** (referencing `results/mechanism_study_20260813/STAGE5_READOUT.md` §3, commit `715943ca`):
+1. **[RULE — granted]** The stage-5 readout and branch-1 record are ratified: **the 1D venue mechanism thread CLOSES, M-OWNED** by the correct-form account. A-FULL (FULL-F): T(1D) = +22.0 ± 29.2 (DS-F1 PASS, 0.16σ from the mirror prediction), bias +0.0010 ± 0.0011 (from +0.0373), **1D coverage RESTORED** (0.64/0.76/0.96 vs nominal 0.50/0.68/0.90; every prior arm 0/25). Stated residuals honored (low-dose not probed; pool-vs-model mismatch stands).
+2. **[DO — granted]** Open the **production `/physics-change` proposal** for `bayesian_statistics.py` — the venue-validated correct form (α-pairing, density-form event term, LOO weight; no Jacobian, no renorm) mapped onto the production estimator; full 5-step gate; reviewable artifact; the A-FULL arm is the evidence base. The `/physics-change` slot is now OCCUPIED by this authorized proposal-in-preparation (no production code changes until the gate passes and the author ratifies the proposal itself).
+3. **[RULE — granted, branch reading orchestrator-derived]** The 2D mass-channel defect (+135.7 excess tilt, bias +0.0076 ± 0.0012, coverage not restored, surviving the full 1D repair): **the targeted investigation OPENS** (L0-first: g_i term derived in the convolution frame, then mirror pre-measurement — the stage-4/5 method). *Branch reading flagged for author veto (the alternative was carry-as-residual, which needs no authorization — approval is read as authorizing the work).*

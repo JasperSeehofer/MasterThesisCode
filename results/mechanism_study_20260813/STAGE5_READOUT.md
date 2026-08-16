@@ -51,3 +51,12 @@ coverage 0.360/0.480/0.760 — **not restored in 2D**.
 
 *Bands locked at registration; scorer pre-committed; raw vectors rescored; append-only from its
 registering commit.*
+
+---
+
+## Addendum (2026-08-16) — RATIFIED
+
+Ledger row #111: readout + branch-1 record ratified (the 1D venue mechanism thread closes,
+M-OWNED); the production `/physics-change` proposal is authorized (slot now occupied by the
+proposal-in-preparation); the 2D mass-channel investigation opens (branch reading flagged for
+veto). Author's verbatim ruling: "all approved".
