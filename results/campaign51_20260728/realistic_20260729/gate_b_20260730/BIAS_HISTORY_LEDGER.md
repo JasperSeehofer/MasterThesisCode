@@ -722,3 +722,16 @@ measurement; bit-exact c2 mirror; freeze-switches S-A/S-B/S-AB; xhigh verifier b
 presentation). The production `/physics-change` proposal waits on L6's result (option B's
 correspondence mirror and option C's narrow D-ii fix fold in afterwards as L6's outcome
 dictates, each returning to the author). The slot remains occupied-paused.
+
+---
+
+## Row #113 — 2026-08-16 — L6 step 1 confirmed: c2-mirror switch measurement
+
+**Author's verbatim ruling (2026-08-16):** "1 confirmed"
+
+**Scope:** execute `L6_DER_2D_CHANNEL_20260816.md` §4 item 1 — the c2 mirror (bit-exact vs
+stored `ln_post_2d`) with freeze-switches S-A (g's d_L_frac frozen at h_true) / S-B (g's
+z-argument de-drifted to the h_true peak frame) / S-AB, on the 15 MN0X seed replays, 1D channel
+asserted untouched. Registered predictions (pre-stated in the L6-DER note, committed `718128d1`
+BEFORE this measurement): ΔT2(S-B) ≈ −139, ΔT2(S-A) ≈ 0. The xhigh verifier (item 3) gates any
+claim before it returns to the author.
