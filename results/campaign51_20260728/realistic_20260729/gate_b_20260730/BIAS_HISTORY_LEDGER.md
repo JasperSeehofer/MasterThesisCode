@@ -749,3 +749,30 @@ L6 findings are ratified as amended — channel B (h-moving evaluation of
 nonzero, origin undetermined); channel A null at f = 1; the production transfer is scoped to the
 `absolute_marginal` completion leg (channel existence transfers, venue magnitudes do not).
 Next per runbook 15 item 2 (standing grant of row #112/A): the correct-form 2D derivation.
+
+---
+
+## Row #115 — 2026-08-16 — L6-DER2 ratified; A-FULL-2D arm + production derivation authorized
+
+**Author's verbatim ruling (2026-08-16):** "all approved"
+
+**Scope** (orchestrator-derived itemisation of the three tagged items presented, referencing
+`L6_DER2_GSEL_PREMEASURE_20260816.md` + `L6_DER2_VERIFIER_ADDENDUM_20260816.md`, commits
+`fbc60b3a`/`453d1b29`):
+
+1. **[RULE — ratified]** The L6-DER2 findings as amended: the S̄_φ×g factorization error (two
+   ∫dM where the selected joint prior demands one ∫dM φ·p_det·N) owns channel B; the fused
+   `g_sel` is the verified A-FULL-2D candidate (excess +135.8 ± 0.1 → −11.7 ± 1.0 nats/h,
+   91.4% of channel B, 1D bit-untouched, all 4 gates bit-exact); the −11.7 ± 1.0 residual is
+   assigned to the known realization-coupled residual class (r = 0.847 vs the c2 switch's
+   −7.489 ± 0.065), amendments V1/V2/V4 of record.
+2. **[DO — approved]** Register the A-FULL-2D arm (A8-v2, fresh seeds), candidate in the
+   **as-measured** §3 form (V2 prefactor NOT added for the venue arm — orchestrator
+   recommendation accepted within the approved item; V2 remains live for production).
+3. **[DO — approved]** The production completion-leg derivation: whether
+   `completion_mass_factor_g` must fuse the with-BH survival in the `absolute_marginal` leg
+   and what paired D̃^φ denominator change follows — the reopened `/physics-change` proposal's
+   subject. A3 (venue magnitudes do not transfer) stands.
+
+Binding default honored: the arm's own outcome branches and the production proposal return to
+the author as fresh rulings.
