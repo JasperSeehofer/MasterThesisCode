@@ -75,6 +75,14 @@ Only proceed when it says `VERDICT: READY ✓`. Paths/expectations live in
    against the *contended* anchor (gotcha 6); `scontrol` walltime extensions are denied
    for regular users, so a job sized too tight has no recovery path but resubmitting
    from scratch.
+10. **Realization sidecars record ABSOLUTE paths that go stale when the repo moves.**
+   `observed_catalogue_seed*.meta.json` stores `parent_csv` as an absolute path; the
+   2026-08-17 fusion counterfactual lost both joint_r1 arrays (~2 CPU-h) to the
+   pre-rename `MasterThesisCode/` path. Safe repair: verify the file at the new path
+   hashes to the sidecar's `parent_csv_sha256`, then rewrite `parent_csv` (keep a
+   `.bak` copy). The observed-CSV hash check is separate and unaffected. Prefer
+   checking sidecar paths in any run that passes `OBSERVED_CATALOGUE` after a repo
+   move.
 
 ### The pipeline & where artifacts land
 ```

@@ -131,3 +131,45 @@ observed_catalogue_seed900001.csv`, `EVAL_SEED` default 777000+task — seed-ide
 across cells) with only `EXTRA_EVAL_ARGS="--selection_in_completion_numerator {off|fused}"`
 varying. Smoke first: 1 task (h=0.730, array index 21) on the fused iiib cell before the
 four full arrays.
+
+---
+
+## VERDICT — appended by the readout session (2026-08-17)
+
+Jobs 6343495/6343496 (iiib off/fused) + 6343678/6343679 (joint_r1 off/fused, resubmitted
+after the sidecar path repair below), 164/164 tasks COMPLETED, code commit `ac24b632`
+(docs-only descendant of the gate commit `2b10b8b8`). Realized ~170.4 CPU-h (167.4 arrays
++ ~1.0 smoke + ~2.0 failed first joint_r1 submission) vs ceiling 270 — IN BUDGET.
+Evidence: `readout.{py,json}`; report: `CAMPAIGN_REPORT_20260817.md`.
+
+| read | iiib | joint_r1 |
+|---|---|---|
+| M-1 [P1] 2D-channel Σ Δln tilt (chord / central@0.73) | **+1.245 / +1.158** nats/h | **−3.268 / −2.893** nats/h |
+| M-2 [P2] 1D-channel Σ Δln tilt (chord / central@0.73) | **+24.588 / +30.901** | **+22.736 / +32.315** |
+| M-3 1D MAP (off → fused) | 0.600 → 0.600 (railed; σ 0.0068→0.0053) | 0.600 → 0.600 (railed; σ 0.0086→0.0065) |
+| M-3 2D MAP (off → fused) | 0.780 → 0.780 (σ 0.0177→0.0178) | 0.800 → 0.800 (σ 0.0216→0.0217) |
+| M-4 mixture skew @0.73 | mean Δshare_cat +6.1e-3; movers 161/1588, median +0.034, max +0.204 | mean +5.7e-3; movers 159/1588, median +0.022, max +0.203 |
+| NULL-1 metadata | PASS (41+41 tasks, cells correct, freeze null, one commit) | PASS (41+41) |
+| NULL-2 off-twin drift vs run of record | 1D BIT-IDENTICAL (0.0); 2D ≤ 2.5e-13 (inside the ratified 1e-8 class) | 1D 0.0; 2D ≤ 1.6e-13 |
+| selection-side leak (w_G, w̃_G, α_G^φ, r_Malm, D̃^φ) | 0 differing cells of 65108 | 0 differing cells |
+
+**Reading (presented, not adjudicated).** The MAJOR-1 regime prediction is confirmed: the
+pair's production action is 1D-dominated — M-2 reproduces the N-2 run of record to 3
+decimals in both venues (the 1D leg is bit-stable across the 08-12 code drift, per NULL-2),
+while M-1 is |tilt| ≤ 3.3 nats/h, inside the N-2 §3.1 prior bracket (|Σ| ≤ 20), with a
+venue-dependent sign. No MAP moves in any channel/venue; the 1D rail keeps its standing
+owner (photo-z, ledger #36). The M-4 skew is structurally concentrated: only the ~10% of
+events carrying a catalogue leg can skew, and their catalogue share rises by median
++0.02–0.03 (max +0.20) under the fused completion — the MAJOR-3 corrected direction.
+**M-4 returns to the author as the fresh [RULE] input for row #117 item 2's
+defer-unless-material condition. M-3 (no MAP/width motion at the 41-point grid resolution)
+returns to the author for the campaign-re-run scope decision. Neither is ruled here.**
+
+**Operational deviation of record:** both joint_r1 arrays initially failed (40+1 tasks,
+~2 CPU-h) on a stale absolute `parent_csv` path in the realization sidecars
+(`realizations_20260729/observed_catalogue_seed90000{0,1}.meta.json` recorded the
+pre-rename repo path). Repaired by rewriting `parent_csv` to the current path after
+verifying the file at the new path hashes EXACTLY to the sidecar's recorded
+`parent_csv_sha256` (7af3f4f4a2d5…) — content-identical, path-only edit; backups kept as
+`.bak_pathfix_20260817`. The pre-registered smoke (1 task, fused iiib, h=0.730, job
+6343451) preceded the fleet and passed.
