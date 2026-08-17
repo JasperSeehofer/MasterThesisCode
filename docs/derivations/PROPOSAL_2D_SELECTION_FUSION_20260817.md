@@ -114,3 +114,31 @@ item 4's result); nothing here touches the paper's existing claims; the −11.7-
 and pool-vs-model mismatch remain open residuals of record.
 
 *Append-only from its commit.*
+
+---
+
+## 3. Verifier amendments (2026-08-17, appended per append-only convention)
+
+The row #117 item-5 adversarial verifier returned **GO-WITH-AMENDMENTS**
+(`PROPOSAL_2D_SELECTION_FUSION_VERIFIER_ADDENDUM_20260817.md`). Corrections of record to the
+text above — the body is preserved unedited; where this section conflicts with it, this
+section governs:
+
+1. **[P1] regime statement (MAJOR-1):** "Production exercises the broad-σ_cond regime" is
+   WRONG. Measured d_L-conditional σ_cond on the production CRB reference: p50 = 8.8e-8
+   (p95 = 3.0e-7). The broad-σ_M figure belongs to the catalogue leg's host-mass Gaussian.
+   Production's completion leg operates in the sharp-likelihood limit; expected action of the
+   pair is 1D-dominated ([P2]), with [P1] correct-form but possibly near-inert. A3 unchanged.
+2. **[P3] skew direction (MAJOR-3):** with [P2] on, the S̄-free catalogue leg is
+   **OVER-weighted** relative to completion wherever S̄_φ < 1 — the body's "DOWN-weighted" is
+   inverted. The defer-unless-material structure survives.
+3. **[P1] quadrature rider (MAJOR-2):** the pinned n_hermite=64 choice is a substantive flip
+   of the ratified Route-1 adaptive default on the hot path, not a rider — it returns to the
+   author as its own line in the presentation gate.
+4. **[P4] scope (MAJOR-4):** V2 is provably immaterial (≲1e-6) at completion-leg σ_cond and
+   material only in the deferred catalogue leg — the ruling cannot be silently folded into
+   item 1; the presentation gate carries it explicitly.
+5. **[P5] additions:** S≡1 bit-exactness restated against `adaptive=False, n=64`; the [P5-3]
+   counterfactual must decompose 1D and 2D contributions separately; freeze-ref-h,
+   φ-support-warning, and external-caller byte-identity tests added (MINOR-1..3); DRAFT status
+   of the N-2 production measurement and the #66/#67 calibration caveat carried (MINOR-4).
