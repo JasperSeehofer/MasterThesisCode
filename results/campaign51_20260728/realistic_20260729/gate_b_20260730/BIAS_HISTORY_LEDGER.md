@@ -797,3 +797,19 @@ items + stated next step, referencing `AFULL2D_ARM_READOUT_20260817.md`, commit 
 3. **Proceed:** author the production `/physics-change` proposal ([P1]–[P5] per
    `L6_DER3_PRODUCTION_COMPLETION_LEG_20260816.md`) with this arm as evidence base. The
    proposal itself returns to the author; no production code changes under this ruling.
+
+---
+
+## Row #117 — 2026-08-17 — Selection-fusion proposal: all five decision-table items ratified
+
+**Author's verbatim ruling (2026-08-17):** "please note all as ratified"
+
+**Scope** (referencing `docs/derivations/PROPOSAL_2D_SELECTION_FUSION_20260817.md`, commit
+`298c4963`; itemisation is the proposal's own table): item 1 [P1]+[P2] paired fusion approved
+for implementation behind the full `/physics-change` gate; item 2 [P3] catalogue-leg fork
+deferred to the Gray-convention paper task unless the counterfactual shows material mixture
+skew; item 3 [P4] measure ruling settled inside item 1's presentation gate; item 4 [P5-3]
+production counterfactual cell approved as the next measurement after item 1 lands (campaign
+re-run NOT authorized — returns with the counterfactual's result); item 5 xhigh verifier on
+the proposal runs BEFORE item 1's implementation begins. Sequencing next session: verifier →
+gate presentation → implementation → counterfactual.
