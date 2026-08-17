@@ -876,3 +876,69 @@ analysis carries and the option ordering presented — itemised below.
    part of this bundle. Carried open: #66/#67 production calibration (pp_coverage mass
    channel, TO-BUILD) remains the stated disappointment path; −11.7-class residual and
    pool-vs-model mismatch unchanged.
+
+---
+
+## Row #120 — 2026-08-17 — Production-calibration-harness front OPENED (stage-0 intake ratified)
+
+**Author's verbatim ruling (2026-08-17):** "ratified, please continue"
+
+**Ruling target:** the §8 decision table of
+`results/campaign51_20260728/realistic_20260729/CLAIM_PRODUCTION_CALIBRATION_HARNESS_20260817.md`
+(the stage-0 claim intake for runbook 18 §1.2(a), presented this session). **Orchestrator-derived
+itemization** — "ratified" read as granting D-3 [RULE]; "please continue" read as granting the
+[DO]s D-1/D-2/D-4/D-5. The Gray-convention paper proposal's §5 [RULE]s (the [P3] presentation
+option pick, the σ_z→0 wording) are NOT covered by this ruling and remain pending.
+
+**Scope:**
+
+1. **[DO — granted, D-1]** Front opened. Pre-stage-1 cheap checks authorized as bounded
+   read-only code audits: Q-0 (does production's distance-error treatment constitute the
+   model-σ half that #67 requires as the pairing for the landed selection-inside half?),
+   Q-1 (G23-c same-LOS-prior-object check against `2b10b8b8`), Q-2 (G5b P3 re-check against
+   the fused production code).
+2. **[DO — granted, D-2]** Harness build to the [A3] spec authorized: mass channel with
+   completion-leg g recomputed per h + production-N capability, on top of the existing
+   `catalogue_mode`; instrumentation-tagged (plain GSD); any formula change that emerges
+   routes to `/physics-change`.
+3. **[RULE — ratified, D-3]** Exoneration reconciliation of record: this front calibrates
+   the landed estimator and does NOT re-open #66/#67; ledger §2 item 6 and the claim file's
+   "p_det inside/outside" entry remain binding as venue-scoped bias-mechanism verdicts
+   (four-axis reconciliation per the intake §3; CC-3's blanket-reading ambiguity resolved).
+4. **[DO — granted, D-4]** The five `docs/LITERATURE_WARNINGS.md` row updates (G23-c-check,
+   Essick & Fishbach 2024 section, Talts/CGR section, G5b staleness flag, H-d
+   promotion-on-instrument) authorized.
+5. **[DO — granted, D-5]** Stage-1 sizing and stage-2 pre-registration to be authored next;
+   each returns to the author before any run; [R-3] CPU budget filled at submission per
+   row #116 discipline. Any verdict-dependent branch (e.g. implications of a failed [R-1]
+   cell for the landed fusion) returns as a fresh [RULE].
+
+---
+
+## Row #121 — 2026-08-18 — Prodcal ladder freeze+execute ratified; paper-grounding measurements to be collected
+
+**Author's verbatim ruling (2026-08-18):** "all ratified and is for the paper (b) the most
+explicit one? if we need one final measurement to really ground it, we should consider doing
+that or at least collect all measurements we can do once the full pipeline ist settled for the
+paper"
+
+**Orchestrator-derived itemization:**
+
+1. **[DO — granted]** Freeze-and-execute the prodcal ladder: one freezing commit (prereg v3 +
+   pre-committed scorer + verifier addendum, final gate GO + the [A3] harness extension and its
+   tests), then the registered §7 pretuning fill-in (seed 20270999, fixed sweep), then the
+   ladder (≈14.6 CPU-h, ceiling 18, local). Readout returns with the registered branch calls.
+2. **[DO — granted]** Ch15 ("The Slot Gets Filled") slot and title ratified; chapter +
+   generator + manifest wiring committed.
+3. **[RULE — deferred by the author's own framing]** The [P3] presentation pick is NOT made:
+   the author asked whether (b) resolved-in-paper is the most explicit option (orchestrator
+   answer: yes, and it is the one option lacking its grounding measurement). Per the author's
+   directive, the grounding measurements are **collected once the full pipeline is settled**
+   (= after the ladder verdict): (i) the catalogue-leg fusion counterfactual (the item-4 analog
+   with survival fused into the catalogue leg — [P3]'s direct H0-impact measurement); (ii) the
+   spec-z-kernel σ_z→0 cell (grounds the no-cost-limit wording). The (a)/(b) pick returns to
+   the author with those measurements in hand. Registered in the Gray-convention proposal §6
+   (paper-grounding measurement list, added this session before commit).
+4. Remaining paper [DO]s of proposal §5 (scope, TO-MAKE figures, discussion.tex:235 rewrite)
+   are granted under this ruling; execution sequenced after the measurement collection so the
+   figures/text carry final numbers.

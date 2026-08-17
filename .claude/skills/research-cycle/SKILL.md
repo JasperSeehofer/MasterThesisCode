@@ -8,7 +8,6 @@ description: >
   onto the assets that already exist in this repo. Invoke before opening any
   new bias/mechanism hypothesis, before pre-registering a run, and at every
   keep-digging vs stop-and-report-bound decision point.
-disable-model-invocation: true
 argument-hint: <investigation name or claim to assess> [--stage N]
 ---
 
