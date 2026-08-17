@@ -845,3 +845,34 @@ created three fresh [RULE]s presented in
 **Consequence:** item 1 implementation begins under the full `/physics-change` gate with the
 amended verification plan (gate presentation §4), including the MAJOR-1 requirement that the
 item-4 counterfactual decompose 1D-only / 2D-only / paired cells.
+
+---
+
+## Row #119 — 2026-08-17 — Fusion counterfactual banked: skew not material, no campaign re-run
+
+**Author's verbatim ruling (2026-08-17):** "as recommended please"
+
+**Interpretation basis (orchestrator-derived, per the attribution convention):** the ruling
+was given against `CAMPAIGN_REPORT_20260817.md` §10 (commit `7b512877`) and the session
+summary presenting the same three items; "recommended" maps to the readings the report's
+analysis carries and the option ordering presented — itemised below.
+
+**Scope:**
+
+1. **[RULE] M-4 materiality — NOT MATERIAL.** The measured mixture skew (median +0.02–0.03,
+   max +0.204 catalogue-share gain, confined to the 161/159 of 1588 catalogue-bearing
+   events) does not trigger row #117 item 2's "unless material" condition. **The [P3]
+   catalogue-leg fork stays deferred to the Gray-convention paper task (row #110)**, which
+   now holds the M-4 numbers as its quantitative input.
+2. **[RULE] Campaign-re-run scope — option (a), NO RE-RUN.** With zero MAP/width motion in
+   the 2D channel of record (M-3), the fused estimator reproduces the campaign posteriors
+   within their quoted widths; `results/run_20260817_fusion_counterfactual/` is the
+   recorded bridge between pre- and post-fusion results. Campaign CPU budget saved; any
+   future re-run request returns as a fresh [DO].
+3. **[DO] Measurement banked.** The fusion-magnitude numbers are of record as MEASUREMENTS
+   (M-1: 2D +1.245/−3.268 chord nats/h; M-2: 1D +24.588/+22.736 chord, ≡ N-2 of record;
+   M-3: no MAP motion; M-4 as above), per the prereg VERDICT (`ac24b632`+`7b512877`
+   chain). The sidecar path-repair compliance deviation (report §9 flag 1) is ratified as
+   part of this bundle. Carried open: #66/#67 production calibration (pp_coverage mass
+   channel, TO-BUILD) remains the stated disappointment path; −11.7-class residual and
+   pool-vs-model mismatch unchanged.

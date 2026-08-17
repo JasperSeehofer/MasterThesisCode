@@ -22,9 +22,14 @@ VERDICT section in the same directory.
 
 ## 1. Next tasks
 
-1. Author rules on report §10 items 1–2 → ledger row #119 quoting the ruling; then the
-   flagged claim status for the fusion-magnitude numbers.
-2. If re-run scope granted: its own prereg (A8-v2) before anything runs.
+1. ~~Author rules on report §10~~ **DONE same session (row #119, "as recommended please"):
+   M-4 not material → [P3] stays deferred to row #110 (now holding the M-4 numbers);
+   NO campaign re-run — the counterfactual is the recorded pre/post-fusion bridge;
+   measurement banked incl. the sidecar-repair deviation.**
+2. The selection-fusion thread is CLOSED through item 4. Next fronts, in the order the
+   record suggests: (a) the #66/#67 production calibration harness (pp_coverage mass
+   channel, TO-BUILD — the stated disappointment path for the landed [P2] factor);
+   (b) the Gray-convention paper task (row #110, M-4 input attached); (c) book ch14.
 3. Carried: #66/#67 production calibration harness (pp_coverage mass channel, TO-BUILD —
    the likeliest disappointment path, flagged in report §9); book ch14 (the whole
    L4→L6→fusion→counterfactual arc); Gray-convention paper task (row #110) now holding
