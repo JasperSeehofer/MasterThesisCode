@@ -18,7 +18,7 @@ import multiprocessing as mp
 import os
 import time
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any
 
 import numpy as np
@@ -1712,6 +1712,16 @@ _G_I_HERMITE_NODES_FAST = 8
 _G_I_ADAPT_T = 6.0
 _G_I_ADAPT_MAX_RELWIDTH = 0.02
 
+# [PHYSICS] G1 guard (ledger row #118, 2026-08-17): the fused g_sel keeps the
+# Route-1 adaptive order, but the polynomial-exactness bound does not cover the
+# S_4D factor. A fast-path row is escalated to the pinned order whenever the
+# RELATIVE variation of S_4D across the +-_G_I_ADAPT_T-sigma Hermite window
+# exceeds this tolerance: |S(hi) - S(lo)| > tol * max(S(hi), S(lo)). Within the
+# tolerance the S-induced departure from the Route-1 error class is bounded by
+# tol itself (S piecewise-linear in the interpolated grid; a within-cell window
+# contributes a polynomial factor the fast order already integrates exactly).
+_G_SEL_S_VAR_TOL = 1e-6
+
 # [PHYSICS] D1 remedy (ii), monitoring half (author decision 2026-08-04):
 # the campaign-#51 detections were selected by SNR >= 20 AND p0 in
 # [10.002, 15.998] (the stale snapshot-era `ParameterSpace.p0` bound guard in
@@ -2139,6 +2149,179 @@ def completion_mass_factor_g(
     out = np.empty_like(mu_cond)
     out[fallback] = _contract_group(_G_I_HERMITE_NODES, mu_cond[fallback], scale[fallback])
     out[~fallback] = _contract_group(_G_I_HERMITE_NODES_FAST, mu_cond[~fallback], scale[~fallback])
+    return out
+
+
+def completion_mass_factor_g_sel(
+    z_nodes: npt.NDArray[np.float64],
+    d_L_gpc: npt.NDArray[np.float64],
+    d_L_fraction: npt.NDArray[np.float64],
+    det_M_z: float,
+    proj_d_L_to_M: float,
+    sigma_cond_M: float,
+    *,
+    s_query: Callable[
+        [npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        npt.NDArray[np.float64],
+    ],
+    n_hermite: int = _G_I_HERMITE_NODES,
+    adaptive: bool = True,
+) -> npt.NDArray[np.float64]:
+    r"""The FUSED 2D completion mass density ``g_sel,prod(z;h)`` at quadrature nodes.
+
+    [PHYSICS] selection fusion [P1] (ledger rows #117-#118, 2026-08-17;
+    ``docs/derivations/GATE_PRESENTATION_SELECTION_FUSION_20260817.md`` §1):
+
+    .. math::
+
+        g_{\mathrm{sel,prod}}(z;h) = \int \mathrm{d}x_M\,
+            \mathcal{N}\bigl(x_M;\mu_\mathrm{cond}(z),\sigma_\mathrm{cond}\bigr)\,
+            \phi_x(x_M;z)\,
+            S_\mathrm{4D}\bigl(d_L(z;h),\, x_M\,M_{z,\mathrm{det},i}\bigr)
+
+    — :func:`completion_mass_factor_g` with the detection survival integrated
+    against the observed-mass likelihood in the SAME single ``dx_M``
+    (Mandel, Farr & Gair 2019, arXiv:1809.02063, Eqs. (5)-(7): the selected
+    population prior of a latent-thresholded detection model; L6-DER2 §2-§3,
+    L6-DER3 §3). ``S_4D`` is dimensionless, so ``g_sel,prod`` remains a
+    density in ``x_M`` — the same measure as ``mz_integral`` — and the 2D
+    catalogue/completion addability (gate (i)) is preserved by construction.
+
+    Quadrature (G1 ruling, row #118): Route-1 adaptive is KEPT, with ``S_4D``
+    evaluated per Hermite node, plus a guard that escalates a fast-path row to
+    the pinned order when the relative S-variation across the node window
+    exceeds ``_G_SEL_S_VAR_TOL`` (the Route-1 polynomial bound does not cover
+    ``S``; within the tolerance the S-induced error is bounded by the
+    tolerance itself). ``s_query(d_L_gpc, M_z, z) -> S_4D`` must query the
+    SAME with-BH survival object :func:`precompute_phi_marginal_survival`
+    queries (detector-frame mass, absolute d_L in Gpc, isotropic sky,
+    ``_wbh_z_kwargs`` rider) — the caller owns that closure so this function
+    stays detection-model-agnostic and CPU-testable.
+
+    Limiting cases: ``S ≡ 1`` recovers :func:`completion_mass_factor_g`
+    bit-exactly on BOTH the ``adaptive=False`` and the adaptive path (the
+    guard adds no escalations when the S-variation is zero, so the group
+    partition is identical); ``sigma_cond -> 0`` gives
+    ``g_i * S(mu_cond M_z,det)`` — per row #118/MAJOR-1 this is effectively
+    the production operating point (measured d_L-conditional sigma_cond
+    p50 = 8.8e-8).
+
+    Args:
+        z_nodes: Quadrature redshift nodes, shape ``(k,)``.
+        d_L_gpc: Absolute ``d_L(z;h)`` at the nodes in Gpc, shape ``(k,)``.
+        d_L_fraction: ``d_L(z;h)/d_L,det,i`` at the same nodes, shape ``(k,)``.
+        det_M_z: The event's measured detector-frame BH mass ``M_z,det,i``.
+        proj_d_L_to_M: ``cov_4d[3,2]/cov_4d[2,2]`` (2x2 block projection).
+        sigma_cond_M: ``sqrt(cov_4d[3,3] - cov_4d[3,2]^2/cov_4d[2,2])``.
+        s_query: Flat survival accessor ``(d_L_gpc, M_z, z) -> S_4D`` on
+            equal-shape 1-D arrays; values in ``[0, 1]``.
+        n_hermite: Pinned Gauss-Hermite order (default 64).
+        adaptive: Route-1 adaptive order (G1: kept, with the S-variation
+            guard). ``False`` restores the pinned single-group convention.
+
+    Returns:
+        ``g_sel,prod`` at the nodes, shape ``(k,)``, in units of ``1/x_M``.
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7).
+        Gray et al. (2020), arXiv:1908.06050, Eq. (A.19).
+        Babak et al. (2017), arXiv:1703.09722 — ``phi``.
+    """
+
+    def _contract_group_sel(
+        order: int,
+        mu_cond_group: npt.NDArray[np.float64],
+        scale_group: npt.NDArray[np.float64],
+        d_L_group: npt.NDArray[np.float64],
+        z_group: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
+        x_nodes, x_weights = roots_hermite(order)
+        # Gauss-Hermite for E_{x~N(mu,sigma)}[phi_x S]: nodes mu + sqrt(2) sigma t_j.
+        x_M = mu_cond_group[:, None] + math.sqrt(2.0) * sigma_cond_M * x_nodes[None, :]  # (k, n_h)
+        M_source = x_M * scale_group[:, None]
+        phi_x = dark_mass_density_per_mass(M_source) * scale_group[:, None]
+        M_z = x_M * det_M_z  # detector-frame query mass, exactly S_bar_phi's pair
+        # MINOR-6 guard (row #118): a non-positive Hermite node mass must not
+        # reach the survival interpolator (log10 under wbh_z_resolved); phi is
+        # already zero there, and S is forced to 0 so NaN cannot poison the row.
+        pos = M_z > 0.0
+        s = np.zeros_like(M_z)
+        if bool(np.any(pos)):
+            s[pos] = np.asarray(
+                s_query(
+                    np.repeat(d_L_group[:, None], order, axis=1)[pos],
+                    M_z[pos],
+                    np.repeat(z_group[:, None], order, axis=1)[pos],
+                ),
+                dtype=np.float64,
+            )
+        return np.asarray(((phi_x * s) @ x_weights) / math.sqrt(math.pi), dtype=np.float64)
+
+    z_arr = np.asarray(z_nodes, dtype=np.float64)
+    d_L_arr = np.asarray(d_L_gpc, dtype=np.float64)
+    # dM/dx_M at each z: the mass scale the dimensionless coordinate rides on.
+    scale = det_M_z / (1.0 + z_arr)  # (k,)
+    mu_cond = 1.0 + proj_d_L_to_M * (np.asarray(d_L_fraction, dtype=np.float64) - 1.0)  # (k,)
+
+    if not adaptive or n_hermite != _G_I_HERMITE_NODES:
+        return _contract_group_sel(n_hermite, mu_cond, scale, d_L_arr, z_arr)
+
+    # Identical fallback criteria to completion_mass_factor_g (Route 1) ...
+    w = math.sqrt(2.0) * sigma_cond_M * _G_I_ADAPT_T  # scalar half-width
+    lo_bound = (mu_cond - w) * scale  # (k,) — scale > 0 always
+    hi_bound = (mu_cond + w) * scale  # (k,)
+    breakpoints = (
+        M_SOURCE_FRAME_MIN,
+        1.0e5,  # emri_rate.kappa_cap M_turn (Eq. 30 surrogate)
+        M_SOURCE_FRAME_MAX,
+    )
+    straddles = np.zeros_like(mu_cond, dtype=np.bool_)
+    for b in breakpoints:
+        straddles |= (lo_bound < b) & (b < hi_bound)
+    fallback = (w > _G_I_ADAPT_MAX_RELWIDTH * mu_cond) | (mu_cond <= 0.0) | straddles
+
+    # ... plus the G1 S-variation guard on the would-be-fast rows.
+    fast = ~fallback
+    if bool(np.any(fast)):
+        m_lo = (mu_cond[fast] - w) * det_M_z
+        m_hi = (mu_cond[fast] + w) * det_M_z
+        s_lo = np.where(
+            m_lo > 0.0,
+            np.asarray(
+                s_query(d_L_arr[fast], np.where(m_lo > 0.0, m_lo, 1.0), z_arr[fast]),
+                dtype=np.float64,
+            ),
+            0.0,
+        )
+        s_hi = np.where(
+            m_hi > 0.0,
+            np.asarray(
+                s_query(d_L_arr[fast], np.where(m_hi > 0.0, m_hi, 1.0), z_arr[fast]),
+                dtype=np.float64,
+            ),
+            0.0,
+        )
+        s_var_exceeds = np.abs(s_hi - s_lo) > _G_SEL_S_VAR_TOL * np.maximum(s_hi, s_lo)
+        if bool(np.any(s_var_exceeds)):
+            fast_idx = np.flatnonzero(fast)
+            fallback[fast_idx[s_var_exceeds]] = True
+
+    if bool(np.all(fallback)):
+        return _contract_group_sel(_G_I_HERMITE_NODES, mu_cond, scale, d_L_arr, z_arr)
+    if bool(np.all(~fallback)):
+        return _contract_group_sel(_G_I_HERMITE_NODES_FAST, mu_cond, scale, d_L_arr, z_arr)
+
+    out = np.empty_like(mu_cond)
+    out[fallback] = _contract_group_sel(
+        _G_I_HERMITE_NODES, mu_cond[fallback], scale[fallback], d_L_arr[fallback], z_arr[fallback]
+    )
+    out[~fallback] = _contract_group_sel(
+        _G_I_HERMITE_NODES_FAST,
+        mu_cond[~fallback],
+        scale[~fallback],
+        d_L_arr[~fallback],
+        z_arr[~fallback],
+    )
     return out
 
 
@@ -2816,12 +2999,15 @@ class BayesianStatistics:
         # g_ref = B_num_wbh(h_ref)/B_num(h_ref) — see p_Di. Not a physics
         # change; the 1D channel and both catalogue legs are untouched.
         freeze_g_frac_ref_h: float | None = None,
-        # INSTRUMENTATION (default "off" = OFF, byte-identical): the N-2
-        # selection-in-numerator counterfactual. "1d" multiplies the 1D
-        # completion-leg z-integrand by S_bar_phi(z;h) inside the quadrature
-        # (the same table D~^phi uses); the 2D leg and the whole selection
-        # stack are untouched. Not a physics change.
-        selection_in_completion_numerator: str = "off",
+        # [PHYSICS] selection fusion (ledger rows #117-#118, 2026-08-17;
+        # GATE_PRESENTATION_SELECTION_FUSION_20260817.md). "auto" resolves to
+        # "fused" under absolute_marginal (the production default: [P1]+[P2]
+        # paired — S_bar_phi in the 1D completion numerator AND the fused
+        # g_sel,prod in the 2D leg) and to "off" otherwise (generator_marginal
+        # and legacy paths stay byte-identical, gate (iii-a)). Explicit
+        # "off"/"1d"/"2d" are the item-4 counterfactual decomposition cells
+        # (pre-#118 estimator / [P2]-only / [P1]-only).
+        selection_in_completion_numerator: str = "auto",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -2849,26 +3035,44 @@ class BayesianStatistics:
                 self._freeze_g_frac_ref_h,
             )
         _sel_cell = str(selection_in_completion_numerator)
-        if _sel_cell not in ("off", "1d"):
+        if _sel_cell not in ("auto", "off", "1d", "2d", "fused"):
             raise ValueError(
-                "selection_in_completion_numerator must be 'off' or '1d', "
-                f"got {selection_in_completion_numerator!r}"
+                "selection_in_completion_numerator must be 'auto', 'off', '1d', '2d' "
+                f"or 'fused', got {selection_in_completion_numerator!r}"
             )
+        if _sel_cell == "auto":
+            # [PHYSICS] rows #117-#118: fused survival is the absolute_marginal
+            # default; every other normalization mode stays byte-identical.
+            _sel_cell = "fused" if normalization_mode == "absolute_marginal" else "off"
         self._selection_in_completion_numerator = _sel_cell
         if _sel_cell != "off":
             if normalization_mode != "absolute_marginal":
                 raise ValueError(
-                    "selection_in_completion_numerator='1d' requires "
+                    f"selection_in_completion_numerator={_sel_cell!r} requires "
                     "normalization_mode='absolute_marginal' (the S_bar_phi table it "
                     f"reuses is only built there); got {normalization_mode!r}"
                 )
+            if _sel_cell == "fused":
+                _LOGGER.info(
+                    "[PHYSICS] selection fusion ACTIVE (rows #117-#118): the 1D "
+                    "completion numerator carries S_bar_phi(z;h) and the 2D leg "
+                    "uses the fused g_sel,prod (S_4D inside the mass quadrature). "
+                    "This is the production absolute_marginal estimator."
+                )
+            else:
+                _LOGGER.warning(
+                    "INSTRUMENTATION ACTIVE: --selection_in_completion_numerator=%s — "
+                    "a single-leg selection cell ('1d' = [P2]-only, '2d' = "
+                    "[P1]-only). The paired production form is 'fused'; this run "
+                    "is a COUNTERFACTUAL decomposition cell, not a production "
+                    "posterior.",
+                    _sel_cell,
+                )
+        elif normalization_mode == "absolute_marginal":
             _LOGGER.warning(
-                "INSTRUMENTATION ACTIVE: --selection_in_completion_numerator=%s — the "
-                "1D completion numerator carries S_bar_phi(z;h) inside the "
-                "z-quadrature. The 2D leg, both catalogue legs and the D~^phi "
-                "denominator are the production objects. This run is a "
-                "COUNTERFACTUAL, not a production posterior.",
-                _sel_cell,
+                "COUNTERFACTUAL: selection_in_completion_numerator='off' under "
+                "absolute_marginal — the legacy pre-#118 estimator (no survival "
+                "factor in either completion leg). Not a production posterior."
             )
         # G4: deterministic seed for the with-BH-mass MC denominator (threaded to
         # single_host_likelihood workers; per-call streams derived per host).
@@ -3177,8 +3381,18 @@ class BayesianStatistics:
         _global_cat_selection_phi: dict[float, float] = {}
         _use_phi_selection = normalization_mode == "absolute_marginal"
         if _use_phi_selection:
+            # MINOR-1 (row #118): the frozen-g_frac counterfactual re-enters the
+            # 1D integrand at h_ref; with the S_bar_phi factor on (fused/'1d')
+            # an off-grid h_ref would ValueError in the table lookup, so the
+            # reference h is tabulated alongside the evaluation grid.
+            _phi_h_list = list(_h_list)
+            if (
+                self._freeze_g_frac_ref_h is not None
+                and self._freeze_g_frac_ref_h not in _phi_h_list
+            ):
+                _phi_h_list.append(self._freeze_g_frac_ref_h)
             _phi_survival_table = precompute_phi_marginal_survival(
-                h_values=_h_list,
+                h_values=_phi_h_list,
                 detection_probability_obj=detection_probability,
                 z_max_cap=REDSHIFT_UPPER_LIMIT,
             )
@@ -4278,8 +4492,9 @@ class BayesianStatistics:
                 )
                 return (1.0 - f_z) * p_gw * dVc / (1.0 + z)
 
-            # INSTRUMENTATION ONLY (N-2 counterfactual, --selection_in_completion
-            # _numerator 1d; default "off" never constructs or calls this). The
+            # [PHYSICS] the [P2] leg of the selection fusion (rows #117-#118;
+            # production default under absolute_marginal via the 'fused' cell,
+            # promoted from the N-2 '1d' instrumentation branch, T3'). The
             # 1D channel discards M_z^obs, so under a latent-thresholded
             # detection model the MFG numerator's P(det|theta) survives the
             # z-quadrature as the phi-marginal survival S_bar_phi(z;h):
@@ -4290,7 +4505,13 @@ class BayesianStatistics:
             # the same np.interp accessor precompute_global_catalog_selection
             # uses for Sigma^phi. Outside the table's [1e-6, z_max(h)] domain
             # np.interp clamps to the endpoints, matching that accessor exactly.
-            _sel_1d = getattr(self, "_selection_in_completion_numerator", "off") == "1d"
+            # [PHYSICS] rows #117-#118: 'fused' (the absolute_marginal
+            # production cell) = [P1]+[P2] paired; '1d'/'2d' are the item-4
+            # counterfactual decomposition cells; 'off' (and legacy instances
+            # without the attribute) is the pre-#118 estimator.
+            _sel_cell = getattr(self, "_selection_in_completion_numerator", "off")
+            _sel_1d = _sel_cell in ("1d", "fused")
+            _sel_2d = _sel_cell in ("2d", "fused")
 
             def completion_numerator_integrand_sel_1d(
                 z: npt.NDArray[np.float64],
@@ -4337,27 +4558,87 @@ class BayesianStatistics:
                 d_L_mass: npt.NDArray[np.float64] = np.asarray(
                     dist_vectorized(z, h=h_eval), dtype=np.float64
                 )
-                # g_i is a density in x_M = M_z/M_z,det,i — the SAME measure as
-                # the 2D catalogue leg's mz_integral, so the two legs are
-                # addable and the 2D MAP stays invariant under a rescaling of
-                # that measure (gate (i)).
-                g_i = completion_mass_factor_g(
-                    np.asarray(z, dtype=np.float64),
-                    d_L_mass / _comp_det_d_L,
-                    _g_det_M_z,
-                    _g_proj,
-                    _g_sigma,
-                )
-                _n_support_exit = int(np.count_nonzero((g_i <= 0.0) & (base > 0.0)))
-                if _n_support_exit:
-                    _LOGGER.warning(
-                        "Detection %d: g_i left the phi support (%d/%d quadrature "
-                        "nodes with zero mass density) — the completion leg's "
-                        "population mass prior has no weight there.",
-                        detection_index,
-                        _n_support_exit,
-                        g_i.size,
+                z_arr = np.asarray(z, dtype=np.float64)
+
+                def _s_query(
+                    dl_q: npt.NDArray[np.float64],
+                    m_z_q: npt.NDArray[np.float64],
+                    z_q: npt.NDArray[np.float64],
+                ) -> npt.NDArray[np.float64]:
+                    # The SAME with-BH survival query S_bar_phi is built from
+                    # (precompute_phi_marginal_survival): detector-frame mass,
+                    # absolute node d_L, isotropic sky, _wbh_z_kwargs rider.
+                    _zeros = np.zeros(dl_q.size, dtype=np.float64)
+                    return np.asarray(
+                        detection_probability_obj.detection_probability_with_bh_mass_interpolated(
+                            dl_q,
+                            m_z_q,
+                            _zeros,
+                            _zeros,
+                            h=h_eval,
+                            **_wbh_z_kwargs(detection_probability_obj, z_q),
+                        ),
+                        dtype=np.float64,
                     )
+
+                # g_i / g_sel,prod is a density in x_M = M_z/M_z,det,i — the
+                # SAME measure as the 2D catalogue leg's mz_integral, so the
+                # two legs are addable and the 2D MAP stays invariant under a
+                # rescaling of that measure (gate (i)). Under the fused cell
+                # ([PHYSICS] rows #117-#118, MFG 2019 arXiv:1809.02063 Eqs.
+                # (5)-(7)) the detection survival S_4D sits INSIDE the same
+                # dx_M — the selected-prior form of the latent-thresholded
+                # detection model (L6-DER3 §3).
+                if _sel_2d:
+                    g_i = completion_mass_factor_g_sel(
+                        z_arr,
+                        d_L_mass,
+                        d_L_mass / _comp_det_d_L,
+                        _g_det_M_z,
+                        _g_proj,
+                        _g_sigma,
+                        s_query=_s_query,
+                    )
+                else:
+                    g_i = completion_mass_factor_g(
+                        z_arr,
+                        d_L_mass / _comp_det_d_L,
+                        _g_det_M_z,
+                        _g_proj,
+                        _g_sigma,
+                    )
+                _support_exit = (g_i <= 0.0) & (base > 0.0)
+                _n_support_exit = int(np.count_nonzero(_support_exit))
+                if _n_support_exit:
+                    if _sel_2d:
+                        # MINOR-2 (row #118): distinguish beyond-horizon zeros
+                        # (S_4D = 0) from genuine phi-support exits — the two
+                        # have opposite physical readings.
+                        _mu_bad = 1.0 + _g_proj * (d_L_mass[_support_exit] / _comp_det_d_L - 1.0)
+                        _m_bad = np.where(_mu_bad > 0.0, _mu_bad, 1.0) * _g_det_M_z
+                        _s_bad = _s_query(d_L_mass[_support_exit], _m_bad, z_arr[_support_exit]) * (
+                            _mu_bad > 0.0
+                        )
+                        _n_horizon = int(np.count_nonzero(_s_bad <= 0.0))
+                        _LOGGER.warning(
+                            "Detection %d: fused completion mass factor zero at "
+                            "%d/%d quadrature nodes (%d beyond the detection "
+                            "horizon, S_4D=0; %d off the phi support).",
+                            detection_index,
+                            _n_support_exit,
+                            g_i.size,
+                            _n_horizon,
+                            _n_support_exit - _n_horizon,
+                        )
+                    else:
+                        _LOGGER.warning(
+                            "Detection %d: g_i left the phi support (%d/%d quadrature "
+                            "nodes with zero mass density) — the completion leg's "
+                            "population mass prior has no weight there.",
+                            detection_index,
+                            _n_support_exit,
+                            g_i.size,
+                        )
                 return base * g_i
 
             def _completion_numerators(h_eval: float) -> tuple[float, float]:
@@ -4398,9 +4679,11 @@ class BayesianStatistics:
                     # negative fixed_quad result, not 0).
                     return 0.0, 0.0
                 if _sel_1d:
-                    # INSTRUMENTATION branch (N-2 '1d' cell). Never taken on the
-                    # default path — the `else` below is the verbatim production
-                    # expression, unreordered.
+                    # [PHYSICS] S_bar_phi-weighted 1D numerator — the PRODUCTION
+                    # absolute_marginal path since rows #117-#118 ('fused'; also
+                    # the '1d' decomposition cell). The `else` below is the
+                    # pre-#118 expression, kept verbatim for the 'off'/'2d'
+                    # counterfactual cells and every other normalization mode.
                     b_num = float(
                         fixed_quad(
                             lambda z: completion_numerator_integrand_sel_1d(z, h_eval),

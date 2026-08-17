@@ -74,6 +74,9 @@ def _run_p_Di(
     s_phi_fn: Callable[[npt.NDArray[np.float64]], npt.NDArray[np.float64]] = _s_phi_affine,
     f_const: float = 0.5,
     table_h: float | None = None,
+    p_det_obj: Any | None = None,
+    freeze_ref_h: float | None = None,
+    extra_table_h: list[float] | None = None,
 ) -> dict[str, Any]:
     """Run ``p_Di``'s path-(A) branch at ``h``; return its diagnostic row.
 
@@ -96,8 +99,11 @@ def _run_p_Di(
     instance._diagnostic_rows = []
     if selection_cell is not None:
         instance._selection_in_completion_numerator = selection_cell
+    if freeze_ref_h is not None:
+        instance._freeze_g_frac_ref_h = freeze_ref_h
     _key = h if table_h is None else table_h
-    instance._phi_survival_table = {_key: (_Z_TABLE, s_phi_fn(_Z_TABLE))}
+    _keys = [_key, *(extra_table_h or [])]
+    instance._phi_survival_table = {k: (_Z_TABLE, s_phi_fn(_Z_TABLE)) for k in _keys}
 
     mock_detection = MagicMock()
     mock_detection.d_L = 1.0
@@ -138,8 +144,11 @@ def _run_p_Di(
         np.asarray(z, dtype=np.float64), f_const
     )
 
-    mock_p_det = MagicMock()
-    mock_p_det.get_dl_max.return_value = 10.0
+    if p_det_obj is not None:
+        mock_p_det = p_det_obj
+    else:
+        mock_p_det = MagicMock()
+        mock_p_det.get_dl_max.return_value = 10.0
 
     host = MagicMock()
     host.M, host.z, host.catalog_index = 1e6, 0.1, 0
@@ -265,7 +274,7 @@ def test_sel_1d_raises_when_the_table_lacks_the_evaluated_h() -> None:
 def test_evaluate_rejects_an_unknown_cell() -> None:
     """``BayesianStatistics.evaluate`` validates the cell name itself."""
     instance = object.__new__(BayesianStatistics)
-    with pytest.raises(ValueError, match="must be 'off' or '1d'"):
+    with pytest.raises(ValueError, match="must be 'auto', 'off', '1d', '2d' or 'fused'"):
         BayesianStatistics.evaluate(
             instance,
             galaxy_catalog=MagicMock(),
@@ -329,11 +338,13 @@ def test_diagnostics_schema_is_unchanged(h: float) -> None:
 # ===========================================================================
 # CLI plumbing
 # ===========================================================================
-def test_cli_flag_defaults_to_off() -> None:
-    """Default-off: absent flag -> 'off' (production path)."""
+def test_cli_flag_defaults_to_auto() -> None:
+    """Default 'auto' ([PHYSICS] rows #117-#118): resolves per normalization
+    mode inside ``evaluate`` ('fused' under absolute_marginal, 'off' otherwise).
+    """
     args = Arguments.create([".", "--evaluate"])
-    assert args.selection_in_completion_numerator == "off"
-    assert args.to_dict()["selection_in_completion_numerator"] == "off"
+    assert args.selection_in_completion_numerator == "auto"
+    assert args.to_dict()["selection_in_completion_numerator"] == "auto"
 
 
 def test_cli_flag_parses_and_lands_in_run_metadata_dict() -> None:
@@ -348,5 +359,10 @@ def test_cli_flag_rejects_unknown_cells() -> None:
     """The deleted 'both' arm (measurement M2) is not a selectable cell."""
     with pytest.raises(SystemExit):
         Arguments.create([".", "--evaluate", "--selection_in_completion_numerator", "both"])
-    with pytest.raises(SystemExit):
-        Arguments.create([".", "--evaluate", "--selection_in_completion_numerator", "2d"])
+
+
+def test_cli_flag_accepts_the_fusion_cells() -> None:
+    """'2d' and 'fused' are selectable since rows #117-#118."""
+    for cell in ("2d", "fused"):
+        args = Arguments.create([".", "--evaluate", "--selection_in_completion_numerator", cell])
+        assert args.selection_in_completion_numerator == cell

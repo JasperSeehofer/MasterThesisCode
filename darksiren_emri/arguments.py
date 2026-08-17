@@ -281,16 +281,17 @@ class Arguments:
 
     @property
     def selection_in_completion_numerator(self) -> str:
-        """N-2 selection-in-numerator counterfactual cell (INSTRUMENTATION).
+        """Selection-fusion cell ([PHYSICS], ledger rows #117-#118).
 
-        ``"off"`` (default) is the production path and is BYTE-IDENTICAL to
-        pre-flag behaviour. ``"1d"`` multiplies the **1D** completion-leg
-        z-integrand by the phi-marginal survival ``S_bar_phi(z;h)`` — the same
-        table (and the same ``np.interp`` accessor) the ``D~^phi``
-        normalisation already uses — leaving the 2D channel, both catalogue
-        legs and the whole selection stack untouched. Diagnostic only
-        (N-2 counterfactual); NOT a physics change and never a production
-        posterior.
+        ``"auto"`` (default) resolves to ``"fused"`` under
+        ``absolute_marginal`` — the production paired form [P1]+[P2]: the
+        phi-marginal survival ``S_bar_phi(z;h)`` in the 1D completion
+        numerator AND the fused ``g_sel,prod`` (``S_4D`` inside the
+        observed-mass quadrature) in the 2D leg — and to ``"off"`` under every
+        other normalization mode (byte-identical legacy path). Explicit
+        ``"off"``/``"1d"``/``"2d"`` are the item-4 counterfactual
+        decomposition cells (pre-#118 estimator / [P2]-only / [P1]-only),
+        never production posteriors.
         """
         val: str = self._parsed_arguments.selection_in_completion_numerator
         return val
@@ -762,24 +763,22 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--selection_in_completion_numerator",
         type=str,
-        choices=["off", "1d"],
-        default="off",
+        choices=["auto", "off", "1d", "2d", "fused"],
+        default="auto",
         help=(
-            "INSTRUMENTATION (default 'off' = byte-identical production path): "
-            "the N-2 selection-in-numerator counterfactual. Under '1d' the 1D "
-            "completion-leg z-integrand is multiplied by the phi-marginal "
-            "survival S_bar_phi(z;h) INSIDE the quadrature, i.e. B_num = "
-            "INTEGRAL (1-f_k) p_gw dVc/(1+z) S_bar_phi(z;h) dz — the SAME "
-            "table and the SAME np.interp accessor the D~^phi normalisation "
-            "uses (precompute_phi_marginal_survival). The 2D (with-BH-mass) "
-            "leg, both catalogue legs, w~_G, r_Malm, beta^phi and D~^phi are "
-            "untouched; the D~^phi denominator deliberately stays the "
-            "PRODUCTION object so the run is a pure numerator contrast. The "
-            "'both' cell of the derivation draft is DELETED: measurement M2 "
-            "found the 2D arm inert at |Sum| <= 7.2 nats over the grid, 200x "
-            "under the 20 nats/h tolerance. Diagnostic counterfactual only -- "
-            "NOT a physics change and never a production posterior. Requires "
-            "--normalization_mode absolute_marginal. See "
+            "[PHYSICS] selection fusion (ledger rows #117-#118, 2026-08-17; "
+            "docs/derivations/GATE_PRESENTATION_SELECTION_FUSION_20260817.md). "
+            "'auto' (default) resolves to 'fused' under --normalization_mode "
+            "absolute_marginal and to 'off' otherwise. 'fused' is the paired "
+            "production form: the 1D completion numerator carries the "
+            "phi-marginal survival S_bar_phi(z;h) inside the z-quadrature "
+            "([P2], the promoted N-2 '1d' branch) AND the 2D completion leg "
+            "uses g_sel,prod with S_4D inside the SAME dx_M as the observed- "
+            "mass likelihood ([P1], MFG 2019 arXiv:1809.02063 Eqs. (5)-(7)). "
+            "'off' (legacy pre-#118 estimator), '1d' ([P2]-only) and '2d' "
+            "([P1]-only) are the item-4 counterfactual decomposition cells — "
+            "never production posteriors. Non-'off' cells require "
+            "--normalization_mode absolute_marginal. See also "
             "results/run_20260804_postfix/gate_vii/PREREGISTRATION_N2_SEL1D.md."
         ),
     )

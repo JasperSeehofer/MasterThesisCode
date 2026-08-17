@@ -23,6 +23,7 @@ the Phase-2 production campaign.
 | 14 | wCDM parameters silently ignored in `dist()` | none for the ΛCDM paper (w₀ = −1, w_a = 0 self-consistent) | **QUOTED** as scope limit; fix before any dark-energy extension | known-bug 6 |
 | 15 | GLADE completeness at z ≳ 0.3 (binding after dt²) | forecast-defining, not a bug: completion term dominates the deep population | **CAMPAIGN**/paper: report w_G(z) split; F5 σ_z×σ_M frontier covers the information content | G5 notes; F5 forecast |
 | 16 | M1 population-shape approximation (dN/dz extracted at h = 0.704, injected truth 0.73) | population-model choice; affects rates/shape, not estimator calibration (P–P closes at injected truth) | **QUOTED** as forecast assumption | Barausse 2012; `M1_model_extracted_data/` |
+| 17 | V2 measure prefactor (M_z-obs density-vs-ratio, 1/(σ_M·M(1+z)) class, incl. D-ii ratio-form GW factor) | completion leg: ≲1e-6 tilt-neutral deviation at measured σ_cond p50 = 8.8e-8 (immaterial); catalogue leg (σ_M ~ 60–200%): unquantified, deferred with [P3] | **QUOTED** (G2 ruling, ledger row #118: ratio convention retained in BOTH legs; re-opens with the Gray-convention paper task, row #110) | `PROPOSAL_2D_SELECTION_FUSION_VERIFIER_ADDENDUM_20260817.md` MAJOR-4; L6-DER2 addendum bound |
 
 ## Reading of the table
 

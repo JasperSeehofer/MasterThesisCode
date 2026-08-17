@@ -7,6 +7,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (`[PHYSICS]` selection fusion — production completion legs, 2026-08-17)
+- **`darksiren_emri/bayesian_inference/bayesian_statistics.py` — fused detection survival
+  in BOTH `absolute_marginal` completion legs** (ledger rows #117–#118; gate artifact
+  `docs/derivations/GATE_PRESENTATION_SELECTION_FUSION_20260817.md`; verifier
+  GO-WITH-AMENDMENTS `PROPOSAL_2D_SELECTION_FUSION_VERIFIER_ADDENDUM_20260817.md`):
+  the 1D completion numerator carries `S̄_φ(z;h)` inside the z-quadrature ([P2], the
+  promoted N-2 `'1d'` branch, T3′) and the 2D leg uses the new
+  `completion_mass_factor_g_sel` — `S_4D(d_L(z;h), x_M·M_z,det)` integrated inside the
+  SAME `dx_M` as the observed-mass likelihood ([P1], MFG 2019 arXiv:1809.02063
+  Eqs. (5)–(7), selected-prior form of the latent-thresholded detection model).
+  `--selection_in_completion_numerator` gains `auto` (new default → `fused` under
+  `absolute_marginal`, `off` otherwise) plus the item-4 counterfactual decomposition
+  cells `off`/`1d`/`2d`. G1 ruling: Route-1 adaptive quadrature KEPT with S per node +
+  an S-variation guard (`_G_SEL_S_VAR_TOL`) escalating to pinned n=64. G2 ruling: ratio
+  measure convention retained in both legs; V2 recorded as G7 systematics row 17.
+  Every non-`absolute_marginal` path is byte-identical; `completion_mass_factor_g`
+  itself is untouched (external validation-suite callers unaffected). MINOR-1 (S̄_φ
+  tabulated at `freeze_g_frac_ref_h`), MINOR-2 (horizon-vs-φ-support zero
+  classification in the completion warning), MINOR-6 (non-positive Hermite node mass
+  guard) included.
+- **`darksiren_emri_test/test_selection_fusion.py`** — the amended [P5]-1 suite:
+  S≡1 bit-exact recovery (both quadrature paths), constant-S closed-form scaling,
+  G1 guard escalation + fast-path preservation, recorded adaptive-vs-pinned bound,
+  pre-change regression pins (recorded at `4ab5da0e` BEFORE the fusion landed;
+  `off`/`1d` cells byte-frozen), fused/2d cell pins with closed-form cross-checks,
+  pairing identity (fused = 1d-leg ⊕ 2d-leg), freeze-ref-h under fused, warning
+  classification, `auto` resolution, cell validation.
+
 ### Added (orchestration guard-rail + mechanism-study stage 2, 2026-08-14)
 - **`.claude/hooks/workflow-tier-lint.py` + `.claude/settings.json` PreToolUse hook** —
   author mandate after a commission workflow fanned out ~40 inherit-model judges: hard

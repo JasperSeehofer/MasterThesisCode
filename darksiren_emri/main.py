@@ -1374,9 +1374,9 @@ def evaluate(
     host_mass_kernel: str = "auto",
     # INSTRUMENTATION (default OFF, byte-identical): frozen-g_frac counterfactual.
     freeze_g_frac_ref_h: float | None = None,
-    # INSTRUMENTATION (default OFF, byte-identical): N-2 selection-in-numerator
-    # counterfactual ("off" | "1d").
-    selection_in_completion_numerator: str = "off",
+    # [PHYSICS] selection fusion (rows #117-#118): "auto" -> "fused" under
+    # absolute_marginal, "off" otherwise; explicit cells are counterfactuals.
+    selection_in_completion_numerator: str = "auto",
 ) -> None:
     from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
 
