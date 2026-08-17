@@ -813,3 +813,35 @@ production counterfactual cell approved as the next measurement after item 1 lan
 re-run NOT authorized — returns with the counterfactual's result); item 5 xhigh verifier on
 the proposal runs BEFORE item 1's implementation begins. Sequencing next session: verifier →
 gate presentation → implementation → counterfactual.
+
+---
+
+## Row #118 — 2026-08-17 — Verifier amendments adjudicated: G1/G2/G3 ruled; implementation unblocked
+
+**Author's ruling (2026-08-17, via structured question — option labels are the author's
+selections, phrasing orchestrator-derived):** G1 = "Keep adaptive + guard"; G2 = "Retain
+ratio + track"; G3 = "Confirm deferral". All three were the presented recommendations.
+
+**Context:** row #117 item 5's adversarial verifier returned GO-WITH-AMENDMENTS
+(`PROPOSAL_2D_SELECTION_FUSION_VERIFIER_ADDENDUM_20260817.md`, commit `44aa239e`); MAJOR-1..4
+created three fresh [RULE]s presented in
+`GATE_PRESENTATION_SELECTION_FUSION_20260817.md` §5 per the binding default.
+
+**Scope of the rulings:**
+
+1. **G1 [RULE]:** the fused `g_sel,prod` keeps the ratified Route-1 adaptive quadrature with
+   `S_4D` evaluated per node, plus (a) a recorded pinned-vs-adaptive regression bound
+   (~1e-15 class) and (b) a guard assertion escalating to non-adaptive n_hermite=64 when the
+   S-variation across the Hermite node window exceeds tolerance. The proposal's pinned-n=64
+   rider is superseded.
+2. **G2 [RULE]:** the ratio measure convention is retained in BOTH legs; the V2 prefactor is
+   recorded as a tracked systematic (G7 budget row, with the measured completion-leg
+   immateriality bound ≲1e-6 at σ_cond p50 = 8.8e-8) and re-opens with [P3]/row #110 where it
+   is material. No measure change ships with item 1.
+3. **G3 [RULE]:** row #117 item 2's catalogue-leg deferral is CONFIRMED on the corrected
+   basis (MAJOR-3: catalogue leg OVER-weighted under [P2], not down-weighted; structure
+   sign-independent — the [P5-3] counterfactual measures the skew either way).
+
+**Consequence:** item 1 implementation begins under the full `/physics-change` gate with the
+amended verification plan (gate presentation §4), including the MAJOR-1 requirement that the
+item-4 counterfactual decompose 1D-only / 2D-only / paired cells.
