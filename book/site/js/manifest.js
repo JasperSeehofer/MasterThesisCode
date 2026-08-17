@@ -38,6 +38,7 @@ window.BOOK_CHAPTERS = [
   { file: "ch12-bias-resolution.html", short: "Ch. 12",   title: "The Bias Resolution, a Live Thread",          status: "live" },
   { file: "ch13-unowned-residual.html", short: "Ch. 13",  title: "The Unowned Residual: Measured and Closed",   status: "live" },
   { file: "ch14-mechanism-isolation.html", short: "Ch. 14", title: "Six Candidates, One Structure",             status: "live" },
+  { file: "ch15-fusion-thread.html", short: "Ch. 15",     title: "The Slot Gets Filled",                        status: "live" },
   { file: "museum.html",             short: "Museum",     title: "The Defect Museum",                           status: "live" },
   { file: "atlas.html",              short: "Atlas",      title: "The Atlas — the Pipeline as One Map",         status: "live" },
 ];

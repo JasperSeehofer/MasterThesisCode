@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  Doctype + charset are deliberate: without the doctype browsers enter quirks
+  mode and KaTeX refuses to render. See ch11/ch12/ch13/ch14's identical note;
+  _template.html is frozen and omits both (filed R-ch07-3).
+
+  ch15 continues ch12/13/14's living-thread family: it is a narrative report
+  of a completed measurement arc (the L4->L6->fusion->counterfactual arc that
+  filled the new-formula slot ch14 left empty), not a discovery chapter with
+  predict-then-reveal widgets. Hand-authored (no gen_ch15.py in the ch00-ch11
+  sense -- but see below): the prose, structure, and figures follow
+  ch12/13/14's convention of a static inline SVG plus HTML tables, no new
+  binary/Plotly assets, per the no-new-binary-assets rule those chapters
+  established.
+
+  LIKE ch14, this chapter's numbers ARE machine-checked: a real generator,
+  book/generators/gen_ch15.py, re-reads the campaign's own scored JSON twins
+  (L4_DER_PART2_output.json, score_stage5_output.json, L6_C2_SWITCH_output.json,
+  L6_DER2_GSEL_PREMEASURE_output.json, score_afull2d_output.json,
+  results/run_20260817_fusion_counterfactual/readout.json) and gates every
+  headline figure quoted below to float precision (32/32 gates pass),
+  emitting book/site/data/ch15_*.json as the machine-readable provenance
+  record for this page (not fetched client-side -- the figures here are
+  static, transcribed by hand from the generator's own printed summary,
+  exactly as ch14's tables transcribe its JSON twins).
+
+  This chapter reports a landed physics change and a banked measurement. It
+  does not propose anything new -- see §9 for what stays open (the -11.7-class
+  residual, the #66/#67 calibration harness that is the stated disappointment
+  path).
+-->
+<title>Ch. 15 — The Slot Gets Filled | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Chapter 14 ended with the mechanism study's new-formula slot empty. This chapter is the derivation that filled it: the L4 correct-form estimator that closes the 1D venue thread, the 2D mass-channel excess that survived the repair, the L6 channel-B mechanism that owns ~94-106% of it, the fused correct-form fix that closes the 2D thread too, the production physics-change proposal built on that evidence, its landing as a PHYSICS commit, and the pre-registered counterfactual that measured what actually moved in production: 1D-dominated, 2D near-inert, zero MAP motion, a small mixture skew ruled not material." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only. css/book.css is FROZEN; nothing here restyles a shared
+     class -- these are elements this chapter introduces, mirroring
+     ch12/13/14's chNN-* page-local class naming with ch15-* of its own. */
+  .ch15-status {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 0.9rem;
+    margin: 0 0 0.3rem;
+  }
+  .ch15-status .badge { font-size: 0.72rem; }
+  .ch15-status .ch15-updated { font-size: 0.82rem; color: var(--muted); }
+  .ch15-table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 0.6rem 0; }
+  .ch15-table th, .ch15-table td { border: 1px solid var(--border); padding: 0.3rem 0.55rem; text-align: right; }
+  .ch15-table th:first-child, .ch15-table td:first-child { text-align: left; }
+  .ch15-table thead th { background: var(--paper-raised); font-weight: 600; }
+  .ch15-table td.ch15-dim { color: var(--muted); }
+  .ch15-table tr.ch15-decision td { font-weight: 700; }
+  .ch15-table-scroll { overflow-x: auto; }
+  .ch15-svg-wrap { margin: 0.7rem 0; }
+  .ch15-svg-wrap svg { max-width: 100%; height: auto; }
+  .ch15-svg-caption { font-size: 0.78rem; color: var(--muted); margin: 0.3rem 0 0; }
+  .ch15-hyp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.7rem; margin: 0.7rem 0; }
+  .ch15-hyp {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--paper-raised);
+    padding: 0.6rem 0.75rem; font-size: 0.88rem;
+  }
+  .ch15-hyp .ch15-hyp-name { font-weight: 700; display: block; margin-bottom: 0.25rem; }
+  .ch15-hyp .ch15-hyp-route { display: block; color: var(--muted); font-size: 0.8rem; margin-top: 0.35rem; }
+  .ch15-hyp .badge { margin-left: 0.35rem; }
+  .ch15-quote {
+    border-left: 3px solid #009E73; background: var(--paper-raised);
+    padding: 0.55rem 0.85rem; margin: 0.7rem 0; font-size: 0.92rem; font-style: italic;
+  }
+  .ch15-quote .ch15-quote-src { display: block; font-style: normal; color: var(--muted);
+    font-size: 0.8rem; margin-top: 0.3rem; }
+  .ch15-stat-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.6rem 0; }
+  .ch15-stat {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--paper-raised);
+    padding: 0.5rem 0.8rem; min-width: 9rem; text-align: center;
+  }
+  .ch15-stat .ch15-stat-value { font-size: 1.25rem; font-weight: 700; display: block; }
+  .ch15-stat .ch15-stat-label { font-size: 0.76rem; color: var(--muted); }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 15 &mdash; The Slot Gets Filled</h1>
+    <p class="subtitle">Chapter&nbsp;14 ended with a characterised structure and an empty
+      new-formula slot: &ldquo;there is nothing to derive to, yet.&rdquo; Two sessions
+      later there was. This chapter follows the derivation that filled the slot, the
+      second defect it uncovered on the way, the fix for that one too, the production
+      change built on both, and the pre-registered measurement that checked what the
+      change actually did to the campaign of record &mdash; not what it did in the
+      venue, which A3 forbids assuming transfers.</p>
+
+    <div class="ch15-status">
+      <span class="badge ratified">LANDED: [PHYSICS] 2b10b8b8</span>
+      <span class="badge finding">COUNTERFACTUAL BANKED</span>
+      <span class="ch15-updated">2026-08-15 &ndash; 2026-08-17 &middot; ledger rows
+        #109&ndash;#119, <code>BIAS_HISTORY_LEDGER.md</code></span>
+    </div>
+    <div class="callout without">
+      <span class="callout-label">What this chapter is &mdash; and is not</span>
+      This is a narrative report of a completed derivation-to-production arc: a
+      correct-form estimator derived, registered, measured on the venue, landed in
+      production behind the full <code>/physics-change</code> gate, and then measured
+      again on the production venue itself before any campaign re-run was authorised.
+      <strong>Every number below is a re-read of an already-ratified record.</strong>
+      The chapter proposes nothing new. Where the record itself is still open &mdash;
+      an unattributed residual, a calibration harness that does not yet exist &mdash;
+      &sect;9 says so plainly.
+    </div>
+
+    <!-- =================================================================== -->
+    <h2>1. Where Chapter 14 left off</h2>
+    <p>Chapter&nbsp;13 closed the unowned-residual thread as a ratified dissolution;
+      Chapter&nbsp;14 told the mechanism-isolation study that followed the
+      venue-transfer campaign&rsquo;s <strong>TRANSFER-CONFIRMED</strong> ruling &mdash;
+      six candidate mechanisms for the &sigma;<sub>z</sub>-dosed coverage collapse,
+      narrowed to a characterised but unowned structure: a host <em>gate</em>
+      multiplying a graded impostor-sea <em>amplifier</em>. Both registered functional
+      forms for that structure were refuted by the scan&rsquo;s own statistics. Chapter
+      14 ended, deliberately, without a repair:</p>
+
+    <div class="ch15-quote">
+      Stated plainly: the new-formula slot is empty. Filling it is a derivation
+      &mdash; an author-gated step this readout does not take.
+      <span class="ch15-quote-src">PHYSICS_CHANGE_INTAKE_DOSSIER.md &sect;2/&sect;3, quoted in Chapter 14 &sect;9</span>
+    </div>
+
+    <p>This chapter is that derivation, and everything that followed once it landed.
+      The story runs through five ratified stages: a correct-form estimator that
+      closes the <strong>1D</strong> venue thread; a second, independent defect on
+      the <strong>2D</strong> mass channel that survived the first repair intact; a
+      mechanism (&ldquo;channel B&rdquo;) that owns most of that second defect; a
+      correct-form fix for it that closes the <strong>2D</strong> thread too; and a
+      production landing followed by a measurement of what the landing actually did
+      to the campaign &mdash; which turned out to be less dramatic than the venue work
+      might have suggested, and the record says so without softening it.</p>
+
+    <!-- =================================================================== -->
+    <h2>2. L4: the correct-form derivation, and why it explains an old result too</h2>
+    <p>L4-DER Part&nbsp;2 (ledger row&nbsp;#109) decomposed the coded venue tilt into
+      named terms by exact single-switch A/B tests on a bit-validated mirror. The
+      standout term was not new bookkeeping &mdash; it was a piece of physics the
+      estimator had been silently doing wrong: the <strong>GW z-mass growth</strong>
+      term, +1059.5&nbsp;nats/h, derived from the identity
+      &Sigma;G&nbsp;=&nbsp;N/h&nbsp;&minus;&nbsp;&Sigma;x/h with
+      G<sub>e</sub>&nbsp;=&nbsp;(1/h)(1&nbsp;&minus;&nbsp;D&middot;D&Prime;/D&prime;&sup2;).
+      This single term <strong>retro-explains an earlier finding at 98.7% mass-kill</strong>
+      (the A-M2&prime; candidate from the mechanism study) &mdash; a coincidence
+      striking enough that the author&rsquo;s ruling on the whole Part&nbsp;2 account
+      was simply <em>&ldquo;all approved.&rdquo;</em></p>
+
+    <div class="ch15-table-scroll">
+      <table class="ch15-table">
+        <thead><tr><th>Term</th><th>Tilt (nats/h, full dose)</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>&alpha; (selection normalisation)</td><td>+1400.6</td>
+            <td class="ch15-dim">numeric, matches the analytic estimate 1393.6 closely</td></tr>
+          <tr><td>GW z-mass growth</td><td>+1059.5</td>
+            <td class="ch15-dim">&Sigma;G identity; retro-explains A-M2&prime; at 98.7%</td></tr>
+          <tr><td>Exponent-scale</td><td>+175.8</td><td class="ch15-dim">&mdash;</td></tr>
+          <tr><td>Window motion</td><td>&minus;31.1</td><td class="ch15-dim">&mdash;</td></tr>
+          <tr><td>Leftover (drift + interactions), T<sub>res</sub></td><td>+39.1</td>
+            <td class="ch15-dim">the direct-evaluation recompute; not a separately-fitted residual</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="ch15-svg-caption">Source: <code>results/mechanism_study_20260813/L4_DER_PART2_output.json</code>
+      (<code>alpha_tilt_numeric</code>, <code>identity_block.P_sum_G</code>, <code>by_dose[&quot;1.0&quot;]</code>);
+      ledger row #109. Leftover at partial dose: +866.7 (f=0.25), +344.1 (f=0.5), +39.1 (f=1.0) &mdash;
+      shrinking toward zero as the dose completes, evidence the named terms carry the bulk of the effect
+      at full dose.</p>
+
+    <p>The A-FULL candidate this analysis motivated &mdash; ratified as <strong>FULL-F</strong>
+      (row&nbsp;#110): a density-form GW factor &times; the selected-population prior
+      w<sub>pop</sub>&middot;S&#772;<sub>&phi;</sub>/&alpha; &times; a leave-one-out impostor
+      weight, with <strong>no Jacobian measure and no kernel renormalisation</strong> &mdash;
+      was registered and run on the cluster (N&nbsp;=&nbsp;25, full dose, both channels).</p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The 1D venue thread closes
+        <span class="badge finding">RATIFIED 2026-08-16</span>
+        <span class="prov-chip">score_stage5_output.json; ledger row #111, BIAS_HISTORY_LEDGER.md</span></span>
+      Stage-5 registered arm, 1D channel: tilt <strong>T(1D)&nbsp;=&nbsp;+22.0&nbsp;&plusmn;&nbsp;29.2</strong>
+      nats/h (DS-F1 PASS, in the registered band [&minus;131.5, 192.7]); bias
+      <strong>+0.0010&nbsp;&plusmn;&nbsp;0.0011</strong> (from +0.0373 uncorrected); <strong>1D coverage
+      RESTORED</strong> at 0.64/0.76/0.96 against nominal 0.50/0.68/0.90 (every prior arm scored 0/25).
+      Branch: <strong>1D venue mechanism thread CLOSES, M-OWNED</strong>.
+    </div>
+
+    <p>But the same registered arm carried a second number that the 1D repair does
+      not touch: at full dose, the 2D channel&rsquo;s own excess over the 1D
+      channel &mdash; the gap between the two channels&rsquo; coded tilts &mdash;
+      measured <strong>+135.7&nbsp;&plusmn;&nbsp;0.05</strong> nats/h (DS-F4, descriptive,
+      no band; reference centre 129.0&nbsp;&plusmn;&nbsp;24.0 from the earlier venue-transfer
+      work). The 2D channel&rsquo;s own bias sits at <strong>+0.0076&nbsp;&plusmn;&nbsp;0.0012</strong>,
+      and its coverage is <strong>not restored</strong> (0.36/0.48/0.76 against nominal
+      0.50/0.68/0.90). <strong>The 2D mass-channel defect survives the full 1D repair.</strong>
+      A second, independent investigation opens here (row&nbsp;#111, item 3).</p>
+
+    <!-- =================================================================== -->
+    <h2>3. L6: channel B owns the 2D excess, to within ~6%</h2>
+    <p>The production-transfer fork was ruled 2D-first (row&nbsp;#112). L6&rsquo;s
+      protocol was the same discipline as L4: derive in the convolution frame first,
+      then measure with a bit-exact mirror and pre-registered freeze-switches, before
+      any claim reaches the author. Two switches were tested against the stored
+      posterior on 15 seed replays &mdash; S-A (the GW distance factor&rsquo;s
+      d<sub>L,frac</sub> frozen at h<sub>true</sub>) and S-B (the mass-completion
+      factor&rsquo;s z-argument de-drifted to the h<sub>true</sub> peak frame), both
+      pre-registered <em>before</em> the switch measurement ran (row&nbsp;#113).</p>
+
+    <div class="ch15-stat-row">
+      <div class="ch15-stat"><span class="ch15-stat-value">&minus;139.0</span>
+        <span class="ch15-stat-label">channel B (S-B), measured<br/>vs +139.0 predicted</span></div>
+      <div class="ch15-stat"><span class="ch15-stat-value">&minus;6.8&times;10<sup>&minus;5</sup></span>
+        <span class="ch15-stat-label">channel A (S-A), measured<br/>&mdash; null, as predicted</span></div>
+      <div class="ch15-stat"><span class="ch15-stat-value">&minus;7.489<br/>&plusmn;&nbsp;0.065</span>
+        <span class="ch15-stat-label">unattributed residual<br/>(base excess + channel B)</span></div>
+    </div>
+    <p class="ch15-svg-caption">Source: <code>results/mechanism_study_20260813/L6_C2_SWITCH_output.json</code>
+      (<code>aggregates.dT2_sb</code>, <code>aggregates.dT2_sa</code>, <code>registered_prediction</code>);
+      ledger rows #113&ndash;#114.</p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">L6 findings ratified
+        <span class="badge finding">RATIFIED 2026-08-16 (as amended)</span>
+        <span class="prov-chip">L6_DER_2D_CHANNEL_20260816.md + addenda; ledger row #114</span></span>
+      <strong>Channel B</strong> &mdash; an h-moving evaluation of
+      <code>completion_mass_factor_g</code>&rsquo;s z-argument against the &phi; slope &mdash;
+      <strong>owns the 2D&minus;1D excess to within ~6%</strong> (&Delta;T2(S-B) = &minus;139.0
+      measured vs +139.0 pre-registered; a nonzero &minus;7.489&nbsp;&plusmn;&nbsp;0.065 residual of
+      unattributed origin). <strong>Channel A is null at f=1.</strong> Production transfer is scoped
+      to the <code>absolute_marginal</code> completion leg: the channel exists in production, but
+      venue magnitudes do not transfer (A3).
+    </div>
+
+    <!-- =================================================================== -->
+    <h2>4. L6-DER2: the correct-form 2D fix, and the second thread closes</h2>
+    <p>L6-DER2 diagnosed channel B&rsquo;s own root cause: a
+      <strong>S&#772;<sub>&phi;</sub>&times;g factorisation error</strong> &mdash; the coded
+      form integrates two separate &int;dM factors where the selected joint prior
+      demands <em>one</em> &int;dM&nbsp;&phi;&middot;p<sub>det</sub>&middot;N. The fix is a
+      <strong>fused</strong> mass kernel, <code>g_sel</code>, that folds the survival factor
+      directly inside the mass quadrature rather than applying it as a separate multiplier.
+      A bit-exact mirror pre-measurement (15 seeds, all four validation gates bit-exact,
+      including the S&equiv;1 unit-recovery check) predicted the fused form would collapse
+      the excess to <strong>&minus;11.74&nbsp;&plusmn;&nbsp;1.04</strong> nats/h &mdash; already
+      <strong>91.4%</strong> of channel B&rsquo;s own magnitude.</p>
+
+    <p>The registered <strong>A-FULL-2D</strong> arm (row&nbsp;#115, N=25 fresh seeds,
+      full dose) reproduced the mirror to within its own uncertainty:</p>
+
+    <div class="ch15-table-scroll">
+      <table class="ch15-table">
+        <thead><tr><th>Statistic</th><th>Mirror prediction</th><th>Registered arm (measured)</th></tr></thead>
+        <tbody>
+          <tr><td>DS-G1 tilt (band [&minus;15.7, &minus;7.8])</td><td>&minus;11.74 &plusmn; 1.04</td>
+            <td>&minus;11.805 &plusmn; 0.608 &mdash; PASS</td></tr>
+          <tr><td>DS-G3 2D coverage (50/68/90%)</td><td class="ch15-dim">&mdash;</td>
+            <td>0.52 / 0.76 / 0.96 vs nominal 0.50/0.68/0.90 &mdash; restored (necessary-but-weak, MAJOR-1)</td></tr>
+          <tr><td>DS-G5 2D bias</td><td class="ch15-dim">&mdash;</td>
+            <td>+0.0006 &plusmn; 0.0013 &mdash; zero-consistent, 0 rails</td></tr>
+          <tr><td>DS-G4 1D channel</td><td class="ch15-dim">&mdash;</td>
+            <td>bit-identical &mdash; untouched by the 2D fix</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="ch15-svg-caption">Source: <code>results/mechanism_study_20260813/L6_DER2_GSEL_PREMEASURE_output.json</code>,
+      <code>gate_afull2d_premeasure_check_output.json</code>, <code>score_afull2d_output.json</code>
+      (<code>ds_g1</code>, <code>ds_g3</code>, <code>ds_g5</code>); ledger rows #115&ndash;#116. Budget: 406.5
+      CPU-h realized against a 300 CPU-h ceiling (499 allocated) &mdash; overrun accepted as a recorded
+      deviation; the pessimistic-rate discipline this taught carried forward into every later budget in
+      this arc.</p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The 2D venue thread closes
+        <span class="badge finding">RATIFIED 2026-08-17</span>
+        <span class="prov-chip">AFULL2D_ARM_READOUT_20260817.md; ledger row #116, BIAS_HISTORY_LEDGER.md</span></span>
+      DS-G1 PASS + DS-G3 restored + DS-G5 zero-consistent + DS-G4 bit-identical 1D &rarr; the 2D channel
+      has a validated correct-form estimator. <strong>The 2D venue thread is M-OWNED-CLOSED.</strong> The
+      &minus;11.7-class residual (r&nbsp;=&nbsp;0.847 correlated with the c2-switch&rsquo;s
+      &minus;7.489 residual) and the pool-vs-model prior mismatch remain stated open residuals, exactly
+      as pre-registered &mdash; not silently dropped.
+    </div>
+
+    <!-- =================================================================== -->
+    <h2>5. The production proposal, and what the adversarial verifier changed</h2>
+    <p>With both venue threads closed, the production
+      <code>/physics-change</code> proposal (row&nbsp;#116, item 3) authored the transfer:
+      fused survival in <em>both</em> completion legs, paired, because fixing only one
+      channel manufactures a spurious selection term in the 2D&minus;1D comparison.</p>
+
+    <div class="ch15-hyp-grid">
+      <div class="ch15-hyp">
+        <span class="ch15-hyp-name">[P1] 2D leg <span class="badge finding">DO</span></span>
+        <code>g_i</code> &rarr; <code>g_sel,prod</code>: the fused survival factor
+        S<sub>4D</sub> queried exactly as the estimator&rsquo;s own survival table already
+        queries it, folded inside the mass quadrature. S&rarr;1 recovers the old term
+        bit-exactly (the unit test).
+        <span class="ch15-hyp-route">bayesian_statistics.py:4334-4363</span>
+      </div>
+      <div class="ch15-hyp">
+        <span class="ch15-hyp-name">[P2] 1D leg <span class="badge finding">DO</span></span>
+        the existing S&#772;<sub>&phi;</sub>(z;h) numerator branch (already instrumented,
+        default <code>&quot;off&quot;</code>) promoted to the <code>absolute_marginal</code>
+        default. Must ship paired with [P1] &mdash; the hard constraint.
+        <span class="ch15-hyp-route">T3′ (N2_SELECTION_NUMERATOR_DERIVATION_20260805)</span>
+      </div>
+      <div class="ch15-hyp">
+        <span class="ch15-hyp-name">[P3] Catalogue leg <span class="badge open">RULE, deferred</span></span>
+        the Gray-convention fork: with [P2] on, the S&#772;-free catalogue leg is skewed
+        relative to completion. Deferred to the Gray-convention paper task <strong>unless</strong>
+        the counterfactual shows the skew is material.
+        <span class="ch15-hyp-route">row #110</span>
+      </div>
+      <div class="ch15-hyp">
+        <span class="ch15-hyp-name">[P4] Measure ruling <span class="badge finding">DO</span></span>
+        the V2 prefactor + D-ii ratio-form question, folded into item 1&rsquo;s presentation
+        gate with dimensional analysis shown explicitly.
+        <span class="ch15-hyp-route">verifier MAJOR-4 forced this out of a silent fold-in</span>
+      </div>
+    </div>
+
+    <p>The row&nbsp;#117 adversarial verifier returned
+      <strong>GO&ndash;WITH&ndash;AMENDMENTS</strong>, and three of its four MAJOR findings
+      directly corrected the proposal&rsquo;s own physics reasoning &mdash; not just its
+      wording:</p>
+
+    <div class="ch15-table-scroll">
+      <table class="ch15-table">
+        <thead><tr><th>Finding</th><th>What the proposal said</th><th>What the verifier found</th></tr></thead>
+        <tbody>
+          <tr><td>MAJOR-1 (regime)</td><td class="ch15-dim">&ldquo;production exercises the broad-&sigma;<sub>cond</sub> regime&rdquo;</td>
+            <td><strong>Wrong.</strong> Measured p50 &sigma;<sub>cond</sub> = 8.8&times;10<sup>&minus;8</sup>
+              &mdash; the sharp-likelihood limit. Expected action is 1D-dominated; [P1] possibly near-inert.</td></tr>
+          <tr><td>MAJOR-2 (quadrature)</td><td class="ch15-dim">pinned n<sub>hermite</sub>=64 as a &ldquo;rider&rdquo;</td>
+            <td>A substantive flip of the ratified adaptive default on the hot path &mdash; returned to
+              the author as its own ruling (G1).</td></tr>
+          <tr><td>MAJOR-3 (skew sign)</td><td class="ch15-dim">catalogue leg &ldquo;DOWN-weighted&rdquo;</td>
+            <td><strong>Inverted.</strong> The catalogue leg is <strong>OVER-weighted</strong> wherever
+              S&#772;<sub>&phi;</sub>&nbsp;&lt;&nbsp;1.</td></tr>
+          <tr><td>MAJOR-4 (V2 scope)</td><td class="ch15-dim">fold V2 silently into item 1</td>
+            <td>V2 is immaterial (&lesssim;10<sup>&minus;6</sup>) in the completion leg but material in
+              the catalogue leg &mdash; the ruling must be explicit, not folded.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="ch15-svg-caption">Source: <code>docs/derivations/PROPOSAL_2D_SELECTION_FUSION_20260817.md</code>
+      &sect;3 and <code>PROPOSAL_2D_SELECTION_FUSION_VERIFIER_ADDENDUM_20260817.md</code>; ledger row #117.</p>
+
+    <p>The author ruled all three MAJOR-forced questions in one pass (row&nbsp;#118):
+      <strong>G1</strong> keep the adaptive quadrature plus a guard assertion;
+      <strong>G2</strong> retain the ratio measure convention, track V2 as a systematics-budget
+      row; <strong>G3</strong> confirm the [P3] deferral on the corrected (over-weighting) basis.
+      Implementation proceeded under the full gate and landed the same day:</p>
+
+    <div class="ch15-quote">
+      Selection fusion IS LANDED IN PRODUCTION (<code>[PHYSICS]</code> commit
+      <code>2b10b8b8</code>): fused survival in both <code>absolute_marginal</code> completion
+      legs &mdash; [P2] S&#772;<sub>&phi;</sub> in the 1D numerator, [P1]
+      <code>completion_mass_factor_g_sel</code> (S<sub>4D</sub> inside the mass quadrature) in
+      the 2D leg. <code>--selection_in_completion_numerator</code> default <code>auto</code>
+      &rarr; <code>fused</code> under <code>absolute_marginal</code>; cells <code>off</code>/
+      <code>1d</code>/<code>2d</code> are counterfactual decompositions. 1506 tests pass;
+      off/1d cells byte-frozen against pre-change pins.
+      <span class="ch15-quote-src">RUNBOOK_NEXT_SESSION_17.md &sect;0; ledger rows #117&ndash;#118</span>
+    </div>
+
+    <!-- =================================================================== -->
+    <h2>6. The pre-registered production counterfactual</h2>
+    <p>A landed physics change is not yet a measured production effect. The
+      proposal&rsquo;s own item&nbsp;4 required a paired counterfactual &mdash;
+      <code>off</code> (the pre-#118 estimator, run fresh at the new commit) against
+      <code>fused</code> (the production default) &mdash; on the campaign venue itself,
+      <strong>before</strong> any campaign re-run could even be discussed. A3 governs
+      throughout: <em>venue magnitudes never transfer</em>, so this prereg registers
+      <strong>no bands</strong>. It is a measurement seeded from nothing, not a
+      pass/fail test.</p>
+
+    <div class="ch15-stat-row">
+      <div class="ch15-stat"><span class="ch15-stat-value">2&times;2</span>
+        <span class="ch15-stat-label">cells &times; venues<br/>(off/fused &times; iiib/joint_r1)</span></div>
+      <div class="ch15-stat"><span class="ch15-stat-value">1588</span>
+        <span class="ch15-stat-label">events, 41 h-points,<br/>164 array tasks</span></div>
+      <div class="ch15-stat"><span class="ch15-stat-value">170.4</span>
+        <span class="ch15-stat-label">CPU-h realized<br/>(ceiling 270)</span></div>
+    </div>
+    <p>The single-leg channels were recovered from the paired run at zero extra cost
+      &mdash; the 1D mixture never reads the 2D completion term and vice versa, proven
+      bit-exact by a dedicated unit test before launch. This halved the fleet and made
+      the channel decomposition free.</p>
+
+    <div class="ch15-table-scroll">
+      <table class="ch15-table">
+        <thead><tr><th>Read</th><th>iiib</th><th>joint_r1</th></tr></thead>
+        <tbody>
+          <tr><td>M-1 [P1] 2D tilt, chord / central@0.73</td><td>+1.245 / +1.158</td><td>&minus;3.268 / &minus;2.893</td></tr>
+          <tr><td>M-2 [P2] 1D tilt, chord / central@0.73</td><td>+24.588 / +30.901</td><td>+22.736 / +32.315</td></tr>
+          <tr><td>M-3 1D MAP, off &rarr; fused</td><td>0.600 &rarr; 0.600 (railed; &sigma; 0.0068&rarr;0.0053)</td>
+            <td>0.600 &rarr; 0.600 (railed; &sigma; 0.0086&rarr;0.0065)</td></tr>
+          <tr><td>M-3 2D MAP, off &rarr; fused</td><td>0.780 &rarr; 0.780 (&sigma; &asymp; unchanged)</td>
+            <td>0.800 &rarr; 0.800 (&sigma; &asymp; unchanged)</td></tr>
+          <tr><td>M-4 mixture skew @0.73 (mean; movers/1588; median; max)</td>
+            <td>+0.0061; 161; +0.034; +0.204</td><td>+0.0057; 159; +0.022; +0.203</td></tr>
+          <tr class="ch15-decision"><td>NULL-2 off-twin drift vs run of record</td>
+            <td>1D bit-identical (0.0); 2D &le;2.5&times;10<sup>&minus;13</sup></td>
+            <td>1D bit-identical (0.0); 2D &le;1.6&times;10<sup>&minus;13</sup></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="ch15-svg-caption">Source: <code>results/run_20260817_fusion_counterfactual/readout.json</code>
+      (both venues, gated to float precision), <code>PREREGISTRATION_FUSION_COUNTERFACTUAL.md</code>
+      VERDICT table; ledger rows #117&ndash;#119. NULL-2&rsquo;s bit-identical 1D reproduction is why M-2
+      agrees with the independent N-2 measurement of record (+24.6/+22.7 chord) to three decimals &mdash;
+      an end-to-end cross-check, not a coincidence.</p>
+
+    <p>The reading matches the regime call the verifier forced in &sect;5, exactly, and
+      the record is explicit that this was the <em>predicted</em> outcome, not a
+      disappointment discovered after the fact:</p>
+
+    <div class="ch15-quote">
+      Read this before anything else: the shape is <em>suppression-without-motion</em>.
+      Both S factors are &lt; 1, so every per-event likelihood LEVEL drops&hellip; what
+      matters for H&#8320; is only the h-slope of that suppression, and it is carried
+      almost entirely by the 1D channel &mdash; where the MAP was already hard-railed
+      at 0.600&hellip; +25 nats/h of counter-tilt narrows the 1D posterior but cannot
+      un-rail it, and the 2D channel&rsquo;s &plusmn;3 nats/h does not graze its
+      &sigma;<sub>h</sub>&nbsp;&asymp;&nbsp;0.018&ndash;0.022 posterior.
+      <span class="ch15-quote-src">CAMPAIGN_REPORT_20260817.md &sect;4</span>
+    </div>
+
+    <p>Two production facts made the outcome legible: the 2D channel&rsquo;s tilt sits
+      inside the only prior bracket that existed (|&Sigma;|&nbsp;&le;&nbsp;20, from N-2
+      &sect;3.1) in both venues, with a sign that flips between iiib and joint_r1 &mdash;
+      inside the catalogue-bearing subset where the two venues genuinely differ, not
+      evidence of a defect. And the 1D channel&rsquo;s magnitude is <strong>identical to
+      three decimals</strong> to the N-2 measurement made in a different session, on a
+      different code commit, by a different pipeline path &mdash; the strongest
+      cross-check the report has.</p>
+
+    <!-- =================================================================== -->
+    <h2>7. The mixture skew, and what &ldquo;not material&rdquo; means here</h2>
+    <p>The [P3] deferral (row&nbsp;#117, item&nbsp;2) carried a condition: it holds
+      <em>unless</em> the counterfactual shows the catalogue leg&rsquo;s exemption from
+      fusion skews the G/G&#772; mixture materially. M-4 measured exactly that skew,
+      corrected to the verifier&rsquo;s MAJOR-3 direction (over-weighting, not
+      under-):</p>
+
+    <div class="ch15-hyp-grid">
+      <div class="ch15-hyp">
+        <span class="ch15-hyp-name">Who can skew at all</span>
+        Only the <strong>~10%</strong> of events that carry a catalogue leg in the
+        first place (161/1588 iiib, 159/1588 joint_r1) &mdash; most events are
+        completion-dominated and cannot skew by construction.
+        <span class="ch15-hyp-route">share_cat median 0; movers median 0.62</span>
+      </div>
+      <div class="ch15-hyp">
+        <span class="ch15-hyp-name">How much, among those</span>
+        Median <strong>+0.02&ndash;0.03</strong> catalogue-share gain, max
+        <strong>+0.20</strong>, both venues consistent.
+        <span class="ch15-hyp-route">M4_mixture_skew.delta_share_cat_at_073</span>
+      </div>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Row #119: M-4 not material
+        <span class="badge finding">RULED 2026-08-17, &ldquo;as recommended please&rdquo;</span>
+        <span class="prov-chip">CAMPAIGN_REPORT_20260817.md &sect;10; ledger row #119</span></span>
+      A skew this small, confined this tightly to a minority subset, does not trigger
+      the deferral&rsquo;s materiality condition. <strong>[P3] stays deferred</strong> to
+      the Gray-convention paper task (row #110), which now holds the M-4 numbers as its
+      quantitative input.
+    </div>
+
+    <!-- =================================================================== -->
+    <h2>8. No campaign re-run</h2>
+    <p>The second decision on the table followed directly from M-3: zero MAP motion in
+      every channel and venue, at the canonical 41-point grid, means a full campaign
+      re-run under the fused estimator would reproduce the campaign posteriors within
+      their already-quoted widths. The author&rsquo;s ruling banked the counterfactual
+      itself as the record of what changed:</p>
+
+    <div class="ch15-quote">
+      With zero MAP/width motion in the 2D channel of record (M-3), the fused
+      estimator reproduces the campaign posteriors within their quoted widths.
+      Campaign CPU budget saved; any future re-run request returns as a fresh [DO].
+      <span class="ch15-quote-src">BIAS_HISTORY_LEDGER.md row #119, item 2</span>
+    </div>
+
+    <p>This is the arc&rsquo;s quiet payoff, easy to miss next to the derivation work:
+      a correctly-scoped counterfactual, run for ~170 CPU-hours, closed a question
+      that a full campaign re-run would otherwise have had to answer at a much larger
+      cost &mdash; and closed it with a number (zero motion, quoted widths), not an
+      assumption.</p>
+
+    <!-- =================================================================== -->
+    <h2>9. What is still open</h2>
+    <p>The thread is closed through item&nbsp;4 (row&nbsp;#119). That is not the same
+      as finished. Five things carry forward, unchanged and unresolved, exactly as the
+      record states them:</p>
+
+    <div class="ch15-hyp-grid">
+      <div class="ch15-hyp">
+        <span class="ch15-hyp-name">The &minus;11.7-class residual</span>
+        The correct-form 2D fix does not land at exactly zero excess &mdash; it lands
+        at &minus;11.7&nbsp;&plusmn;&nbsp;1.0, correlated (r&nbsp;=&nbsp;0.847) with the
+        earlier c2-switch residual of &minus;7.489&nbsp;&plusmn;&nbsp;0.065. Assigned to
+        the known realization-coupled residual class; its origin decomposition is not
+        attempted here.
+      </div>
+      <div class="ch15-hyp">
+        <span class="ch15-hyp-name">#66/#67: the calibration harness <span class="badge open">TO-BUILD</span></span>
+        This arc measured <em>magnitude</em>, not calibration. In the venue harness, the
+        selection-inside factor only calibrated when paired with its noise-model
+        companion. A production calibration read needs the pp_coverage mass-channel
+        harness &mdash; not yet built &mdash; and is stated as the
+        <strong>likeliest way this correction disappoints</strong>.
+      </div>
+      <div class="ch15-hyp">
+        <span class="ch15-hyp-name">Pool-vs-model prior mismatch</span>
+        Open since the venue-transfer campaign; the fused numerator extends the
+        existing prior-marginal survival approximation into the numerator, which is
+        part of this same open residual class.
+      </div>
+      <div class="ch15-hyp">
+        <span class="ch15-hyp-name">Gray-convention paper task <span class="badge open">row #110</span></span>
+        Now holds the M-4 mixture-skew numbers as its quantitative input &mdash; the
+        [P3] catalogue-leg question is a paper-facing convention decision, not a
+        production bug, and stays there.
+      </div>
+    </div>
+
+    <p>The rail at h&nbsp;=&nbsp;0.600 in the 1D channel is still owned by photo-z
+      (ledger&nbsp;#36), not by anything this arc touched &mdash; the fusion narrows
+      the posterior around it but does not move it. Nothing in this chapter changes
+      that ownership.</p>
+
+    <!-- =================================================================== -->
+    <div class="provenance-panel">
+      <h4>Provenance panel &mdash; every source cited in this chapter</h4>
+      <ul>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/mechanism_study_20260813/L4_DER_PART2_20260815.md</code> +
+          <code>.._output.json</code> &mdash; the tilt decomposition, GW z-mass growth
+          identity, ledger row #109</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/mechanism_study_20260813/DRAFT_A_FULL_ESTIMATOR_20260815.md</code>
+          &mdash; the FULL-F candidate definition, ledger row #110</li>
+        <li><span class="badge ratified">RATIFIED</span>
+          <code>results/mechanism_study_20260813/STAGE5_READOUT.md</code> +
+          <code>score_stage5_output.json</code> &mdash; the 1D venue thread closure and
+          the surviving 2D excess, ledger row #111</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/mechanism_study_20260813/L6_DER_2D_CHANNEL_20260816.md</code> +
+          <code>L6_C2_SWITCH_output.json</code> &mdash; channel B/A decomposition,
+          ledger rows #112&ndash;#114</li>
+        <li><span class="badge ratified">RATIFIED</span>
+          <code>results/mechanism_study_20260813/L6_DER2_CORRECT_FORM_2D_20260816.md</code> +
+          <code>L6_DER2_GSEL_PREMEASURE_output.json</code>,
+          <code>AFULL2D_ARM_READOUT_20260817.md</code> +
+          <code>score_afull2d_output.json</code> &mdash; the fused g_sel fix and the
+          2D venue thread closure, ledger rows #115&ndash;#116</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/mechanism_study_20260813/L6_DER3_PRODUCTION_COMPLETION_LEG_20260816.md</code>
+          &mdash; the production-transfer derivation</li>
+        <li><span class="badge ratified">RATIFIED</span>
+          <code>docs/derivations/PROPOSAL_2D_SELECTION_FUSION_20260817.md</code> +
+          <code>PROPOSAL_2D_SELECTION_FUSION_VERIFIER_ADDENDUM_20260817.md</code>,
+          <code>GATE_PRESENTATION_SELECTION_FUSION_20260817.md</code> &mdash; the
+          production proposal, verifier amendments, gate presentation, ledger rows
+          #117&ndash;#118</li>
+        <li><span class="badge ratified">RATIFIED</span>
+          <code>docs/gates/PHYSICS-GATE-LEDGER.md</code> row at commit
+          <code>2b10b8b8</code> &mdash; the landed [PHYSICS] change</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/run_20260817_fusion_counterfactual/PREREGISTRATION_FUSION_COUNTERFACTUAL.md</code>,
+          <code>CAMPAIGN_REPORT_20260817.md</code>, <code>readout.json</code> &mdash;
+          the production counterfactual, M-1&ndash;M-4, ledger rows #117&ndash;#119</li>
+        <li><span class="badge open">OPEN</span>
+          <code>results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md</code>
+          rows #109&ndash;#119 &mdash; author ratifications, attribution-precise</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Hand-authored, not generated in the ch00&ndash;ch11 sense: this chapter follows
+      ch12/13/14&rsquo;s narrative convention (no predict-then-reveal widgets, static
+      tables, no new binary assets). Its headline numbers ARE machine-checked,
+      however &mdash; <code>book/generators/gen_ch15.py</code> re-reads the
+      campaign&rsquo;s own scored JSON twins and gates 32/32 figures quoted above to
+      float precision, emitting <code>book/site/data/ch15_l4_closure.json</code>,
+      <code>ch15_channel_b.json</code>, <code>ch15_fusion_proposal.json</code>, and
+      <code>ch15_counterfactual.json</code> as this page&rsquo;s machine-readable
+      provenance record. This page renders fully offline &mdash; Plotly and KaTeX are
+      vendored under <code>vendor/</code> (unused on this page: no figures require
+      either).
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    // Bias Ledger Rail: this chapter reports a landed physics change and a
+    // banked measurement, not a new open finding, so it adds one closed pip
+    // for continuity and updates the sigma_z-dosed thread's status from
+    // ch14's "characterised, unowned" to "repaired, magnitude measured" --
+    // while being explicit that the calibration question is still open.
+    Book.biasRail({
+      entries: [],
+      pips: [
+        { label: "sigma_z-dosed 1D venue defect (+0.037, 8.5x posterior width) — REPAIRED: A-FULL/FULL-F closes 1D M-OWNED (T=+22.0±29.2, bias +0.0010±0.0011, coverage restored)", tone: "grey",
+          note: "score_stage5_output.json; ledger row #111" },
+        { label: "2D mass-channel excess (+135.7 nats/h, surviving the 1D repair) — REPAIRED: fused g_sel closes 2D M-OWNED (DS-G1 -11.8±0.61 in band, coverage restored); -11.7-class residual open", tone: "amber",
+          note: "score_afull2d_output.json; ledger row #116" },
+        { label: "Production fusion landed ([PHYSICS] 2b10b8b8) — counterfactual banked: 1D-dominated, 2D near-inert, zero MAP motion, M-4 skew not material, no campaign re-run", tone: "grey",
+          note: "results/run_20260817_fusion_counterfactual/readout.json; ledger row #119" },
+        { label: "#66/#67 production calibration harness (pp_coverage mass channel) — TO-BUILD, stated likeliest disappointment path", tone: "amber",
+          note: "CAMPAIGN_REPORT_20260817.md §9 flag 4; PREREGISTRATION_FUSION_COUNTERFACTUAL.md carried caveat 1" },
+      ],
+    });
+  })();
+</script>
