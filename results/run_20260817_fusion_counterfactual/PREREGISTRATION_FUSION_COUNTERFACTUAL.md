@@ -115,3 +115,19 @@ predictions for these cells.
 
 **Append-only.** Verdict appended below by the readout session; no edits above this line
 after the registering commit.
+
+---
+
+## BUDGET — filled at submission (2026-08-17, before sbatch, per the formula above)
+
+`sacct` realized cost of the N-2 pair: job 6152554 (iiib) = 38.1 CPU-h, job 6152556
+(joint_r1) = 44.9 CPU-h (41 tasks × 16 CPUs each). Pessimistic per-array anchor = 44.9.
+
+**Ceiling = 4 × 44.9 × 1.15 × 1.3 = 268.5 → 270 CPU-h.** Overrun pauses and returns to
+the author. Submission env mirrors the N-2 twins exactly (`NORMALIZATION_MODE=
+absolute_marginal`, `PDET_Z_RESOLVED=yes`, `HOST_Z_KERNEL=volume_deconv`,
+`HOST_MASS_KERNEL=auto`, joint_r1 adds `OBSERVED_CATALOGUE=realizations_20260729/
+observed_catalogue_seed900001.csv`, `EVAL_SEED` default 777000+task — seed-identical
+across cells) with only `EXTRA_EVAL_ARGS="--selection_in_completion_numerator {off|fused}"`
+varying. Smoke first: 1 task (h=0.730, array index 21) on the fused iiib cell before the
+four full arrays.
