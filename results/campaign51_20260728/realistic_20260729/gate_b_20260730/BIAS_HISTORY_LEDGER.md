@@ -776,3 +776,24 @@ Next per runbook 15 item 2 (standing grant of row #112/A): the correct-form 2D d
 
 Binding default honored: the arm's own outcome branches and the production proposal return to
 the author as fresh rulings.
+
+---
+
+## Row #116 — 2026-08-17 — A-FULL-2D arm branch 1 ratified; 2D venue thread M-OWNED-CLOSED; production proposal authorized
+
+**Author's verbatim ruling (2026-08-17):** "please hook ahead"
+
+**Scope (orchestrator-derived interpretation of the ruling against the two presented [RULE]
+items + stated next step, referencing `AFULL2D_ARM_READOUT_20260817.md`, commit `bcd66529`):**
+
+1. **Branch 1 ratified:** DS-G1 PASS (−11.8 ± 0.61 nats/h in the registered band [−15.7, −7.8],
+   on the mirror prediction −11.74 ± 1.04) + DS-G3 RESTORED (0.520/0.760/0.960; read
+   necessary-but-weak per verifier MAJOR-1) + DS-G5 zero-consistent 2D bias (+0.0006 ± 0.0013,
+   0 rails) + DS-G4 bit-identical 1D → the 2D channel has a validated correct-form estimator;
+   **the 2D venue thread is M-OWNED-CLOSED** (the −11.7-class residual and pool-vs-model
+   mismatch remain stated open residuals, as pre-registered).
+2. **Budget overrun accepted as recorded deviation:** 406.5 CPU-h realized (499 allocated) vs
+   the 300 ceiling; MINOR-4's pessimistic rate was correct; no scientific consequence.
+3. **Proceed:** author the production `/physics-change` proposal ([P1]–[P5] per
+   `L6_DER3_PRODUCTION_COMPLETION_LEG_20260816.md`) with this arm as evidence base. The
+   proposal itself returns to the author; no production code changes under this ruling.
