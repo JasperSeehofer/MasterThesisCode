@@ -167,11 +167,96 @@ the harness measures inference-prior *misspecification* against a fixed
 truth. The gate is strict (``gamma == 0.0`` returns the untilted weight
 object unchanged), keeping the default path bit-identical.
 
+Mass channel (``PPCoverageConfig.mass_channel``, 2026-08-17; ledger row #120
+item 2 / D-2, built to the ``[A3]`` acceptance criteria of
+``results/campaign51_20260728/realistic_20260729/
+CLAIM_PRODUCTION_CALIBRATION_HARNESS_20260817.md`` §4). Every mode above is
+mass-free: production's SECOND observable — the detector-frame BH mass — and
+therefore the whole 2D leg that the selection fusion ([PHYSICS] commit
+``2b10b8b8``, ledger rows #117-#118) touches could not be exercised.
+``mass_channel=True`` (requires ``catalogue_mode``) adds:
+
+* **A mass observable.** Every galaxy carries a source-frame BH mass drawn
+  from ``phi(M)`` (:func:`dark_mass_density_per_mass`, a single power law on
+  ``[M_SOURCE_MIN, M_SOURCE_MAX]`` — the harness's analog of production's
+  piecewise Babak et al. 2017 ``phi``); catalogued galaxies carry a noisy
+  fractional mass measurement (``sigma_m_gal_frac``). Each detected event
+  carries a measured detector-frame mass ``M_z,det,i`` drawn jointly with
+  ``d_L_obs`` from a 2x2 fractional covariance
+  ``(sigma_dl_frac, sigma_mz_frac, rho_dl_mz)`` — the harness's ``cov_4d``
+  ``(d_L, M_z)`` block, from which ``proj`` and ``sigma_cond`` follow exactly
+  as production reads them off ``cov_4d`` (Bishop 2006 PRML Eqs. 2.81-2.82).
+* **Mass-dependent selection.** ``S_4D(d_L, M_z)``
+  (:func:`survival_with_mass`) rescales the detection horizon as
+  ``d50 (M_z/1e6)^mass_horizon_index``; ``mass_horizon_index = 0`` recovers
+  the mass-blind :func:`detection_probability` EXACTLY, so a mass-BEARING cell
+  must set it ``> 0``. Its phi-marginal ``S_bar_phi(z;h)``
+  (:func:`phi_marginal_survival_table`, the analog of production's
+  ``precompute_phi_marginal_survival``) replaces ``p_det`` in EVERY selection
+  integral (``D(h)``, ``beta_G``, ``Sigma_glob``) — the harness analog of
+  production's phi-convention legs ``precompute_phi_selection_integrals``.
+* **Two channels per realization**, sharing one generative universe and one
+  denominator, exactly as production's per-event both-channel diagnostics: the
+  **1D** channel discards the mass observable from the likelihood (it still
+  drives selection) and is reported in the usual top-level result block; the
+  **2D** channel adds a per-candidate Gaussian mass overlap to the catalogue
+  leg (production's analytic ``mz_integral``) and the completion-leg mass
+  factor to the completion leg, and is reported under the nested
+  ``"mass_channel_2d"`` key.
+* **The completion-leg mass factor** :func:`completion_mass_factor_g` and its
+  fused form :func:`completion_mass_factor_g_sel` (``S_4D`` inside the SAME
+  ``dx_M``), the harness analogs of production's ``completion_mass_factor_g``
+  (``bayesian_statistics.py:2022``) and ``completion_mass_factor_g_sel``
+  (``:2155``). The h grid is an ARRAY AXIS of the node block, so ``g`` is
+  recomputed at every h-grid point by construction — never frozen, never
+  elided.
+
+Selection cell (``PPCoverageConfig.selection_cell``) mirrors production's
+``selection_in_completion_numerator`` (``bayesian_statistics.py:3010``,
+``:3037-3047``): ``"off"`` = the pre-#118 estimator, ``"1d"`` = [P2] only
+(``S_bar_phi(z;h)`` inside the 1D completion numerator, ``:4495-4514``),
+``"2d"`` = [P1] only (``g_sel`` in the 2D completion leg, ``:4592-4609``),
+``"fused"`` = the landed production pairing. The two legs are channel-local by
+construction, so ``off``/``2d`` share their 1D result bit-for-bit and
+``off``/``1d`` share their 2D result (pinned by a test).
+
+Noise-model cells (``--noise-model``; Q-0 audit, 2026-08-17). The committed
+"const-sigma" convention conflates two error sub-terms: **(a)** sigma
+evaluated at a SCATTERED ``d_L_obs`` instead of ``d_L_true``, and **(b)** the
+width not varying across the z-integral (the dropped ``1/sigma(z)``).
+Production carries **only (b)**: its per-event sigma is the Fisher CRB frozen
+at the injected truth and there is NO measurement scatter — ``d_L_obs`` is
+identically ``d_L_true`` on the production path
+(``bayesian_statistics.py:3543``, ``:3613``, ``:4442-4443``;
+``detection.py:133-136``). The three cells are therefore
+``const`` = (a)+(b) (the committed convention, ``gw_measurement_scatter=True``
++ ``sigma_dl_model_in_likelihood=False``), ``model`` = neither
+(``sigma_dl_model_in_likelihood=True``), and ``production`` = **(b) only**
+(``gw_measurement_scatter=False`` + const sigma) — the production-faithful
+cell. The discarded-not-skipped RNG draw keeps every scatter/no-scatter pair
+on the same random stream, so the A/B is paired.
+
+Runtime (measured 2026-08-17, single CPU core, dev machine; nh = 66 h-grid
+nodes, ``n_z_quad=160``, ``n_hermite=24``, ``n_galaxies=200000``,
+``sky_frac=1e-4``, ``mixture_mode="absolute"``): a production-N realization
+(``n_events=1600``, both channels, ``selection_cell="fused"``,
+``mass_horizon_index=0.25``) takes **~8.5 s**; ``selection_cell="off"``
+(no ``S_4D`` per Hermite node) **~3.1 s**; the pre-existing mass-free
+catalogue realization at the same N is **~0.4 s** and is untouched by this
+extension (its code path is unchanged, and byte-identity is pinned by
+``darksiren_emri_test/validation/test_pp_coverage_mass.py``). A full
+mass-bearing [R-3]-scale cell (3 truths x 120 realizations at N=1600) is
+therefore ~50 CPU-min per truth, embarrassingly parallel over truths. Tune
+``event_chunk`` (events per vectorized block, default 16) for the memory /
+speed trade-off; it never changes results.
+
 Units: ``h`` in [100 km/s/Mpc]; distances in Gpc. Cosmology: flat LambdaCDM.
 """
 
 import argparse
 import json
+import math
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -584,6 +669,45 @@ class PPCoverageConfig:
     # unclamped photo-z), isolating whether the shallow-venue high bias is driven
     # by the boundary clamp on the measurement rather than the kernel itself.
     clamp_zgal: bool = True
+    # --- GW measurement scatter (Q-0 audit, 2026-08-17) -------------------
+    # The existing "const-sigma" convention conflates two error sub-terms:
+    # (a) sigma evaluated at a SCATTERED d_L_obs instead of d_L_true, and
+    # (b) the width not varying across the z-integral (the dropped 1/sigma(z)).
+    # Production carries ONLY (b): its per-event sigma is the Fisher CRB frozen
+    # at the injected truth and there is NO measurement scatter — d_L_obs is
+    # identically d_L_true on the production path (bayesian_statistics.py:3543,
+    # :3613, :4442-4443; detection.py:133-136). Setting
+    # gw_measurement_scatter=False removes the (d_L, M_z) measurement draw
+    # (the RNG draw is still made and DISCARDED so paired A/B cells stay on the
+    # same random stream), leaving the production-faithful cell
+    # (no scatter + const sigma). Default True is bit-identical to every
+    # committed run.
+    gw_measurement_scatter: bool = True
+    # --- Mass channel ([A3] criterion (i), 2026-08-17) --------------------
+    # mass_channel=True adds a genuine second (mass) observable on top of
+    # catalogue_mode: galaxies carry BH masses, detection becomes
+    # S_4D(d_L, M_z), the catalogue leg carries a per-candidate Gaussian mass
+    # overlap and the completion leg the mass factor g / g_sel recomputed at
+    # every h. Requires catalogue_mode. Default False keeps every pre-existing
+    # mode and golden pin bit-identical.
+    mass_channel: bool = False
+    mass_slope: float = 0.0
+    # S_4D horizon index alpha_M; 0.0 reduces the survival EXACTLY to the
+    # mass-blind p_det (limiting case). A mass-BEARING cell must set > 0.
+    mass_horizon_index: float = 0.0
+    sigma_mz_frac: float = 0.10
+    rho_dl_mz: float = 0.0
+    sigma_m_gal_frac: float = 0.30
+    mass_rate_index: float = 0.0
+    n_hermite: int = 24
+    n_mass_quad: int = 400
+    n_z_survival: int = 1500
+    # Selection cell, mirroring production's
+    # selection_in_completion_numerator ('off' = pre-#118 estimator, '1d' =
+    # [P2] only, '2d' = [P1] only, 'fused' = the landed production pairing).
+    selection_cell: Literal["off", "1d", "2d", "fused"] = "off"
+    # Events processed per vectorized block (memory/speed trade-off).
+    event_chunk: int = 16
 
     def h_grid(self) -> npt.NDArray[np.float64]:
         """Return the H0 evaluation grid."""
@@ -760,7 +884,11 @@ def _run_realization(
         h_true, config.n_events, rng, d50=config.d50_gpc, w_pdet=config.w_pdet_gpc
     )
     dL_host = comoving_amplitude_of_z(z_host) / h_true
-    dL_obs = np.clip(dL_host + rng.normal(0.0, config.sigma_dl_frac * dL_host), 1e-3, None)
+    _dl_draw = rng.normal(0.0, config.sigma_dl_frac * dL_host)
+    # Q-0 (2026-08-17): production has NO GW measurement scatter — d_L_obs is
+    # identically d_L_true there. The draw is made and discarded so a paired
+    # scatter/no-scatter A/B stays on the same random stream.
+    dL_obs = np.clip(dL_host + (_dl_draw if config.gw_measurement_scatter else 0.0), 1e-3, None)
     sig_dl = config.sigma_dl_frac * dL_obs
     z_gal_raw = z_host + rng.normal(0.0, sigma_z, config.n_events)
     # H1 clamp-isolation diagnostic: default clamps z_gal at Z_MIN (committed
@@ -972,6 +1100,11 @@ class SyntheticCatalogue:
         host_draw_p: Normalized host-draw probability per galaxy at the
             injected truth (rate weight times detection probability); set by
             :func:`_catalogue_host_draw_probabilities`.
+        mass_true: Source-frame BH masses of ALL galaxies [M_sun], shape
+            ``(N,)``, or None when the mass channel is off.
+        mass_obs: Observed (noisy) source-frame BH masses of the CATALOGUED
+            galaxies [M_sun], shape ``(N_cat,)``, or None when the mass
+            channel is off — the only mass information the estimator sees.
     """
 
     z_true: npt.NDArray[np.float64]
@@ -986,6 +1119,8 @@ class SyntheticCatalogue:
     v_f: float
     n_hat_w: float
     sigma_glob: npt.NDArray[np.float64]
+    mass_true: npt.NDArray[np.float64] | None = None
+    mass_obs: npt.NDArray[np.float64] | None = None
 
 
 def _sample_galaxy_redshifts(
@@ -1132,6 +1267,7 @@ def _build_catalogue(
     config: PPCoverageConfig,
     h_grid: npt.NDArray[np.float64],
     rng: np.random.Generator,
+    survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
 ) -> SyntheticCatalogue:
     """Build one frozen synthetic galaxy catalogue and its selection precomputes.
 
@@ -1139,6 +1275,12 @@ def _build_catalogue(
         config: Harness configuration (``catalogue_mode`` semantics).
         h_grid: H0 evaluation grid.
         rng: Random generator for the catalogue draw.
+        survival_table: ``(z_grid, S_bar_phi)`` from
+            :func:`phi_marginal_survival_table`, required when
+            ``config.mass_channel`` is set: the global selection precompute
+            ``Sigma_glob(h)`` then contracts ``S_bar_phi`` in place of the
+            mass-blind ``p_det`` (harness analog of production's
+            phi-convention legs).
 
     Returns:
         The catalogue with ``W_cat``, ``V_f``, ``n_hat_w`` and
@@ -1169,6 +1311,22 @@ def _build_catalogue(
         _posterior_normalizers(z_obs, sigma_z, config.inference_wpop_tilt), 1e-300, None
     )
 
+    # Mass channel: source-frame BH masses for every galaxy, plus the noisy
+    # mass observable the estimator sees for the CATALOGUED ones. Drawn after
+    # the redshift/direction/photo-z draws so the mass-free stream is unchanged.
+    mass_true: npt.NDArray[np.float64] | None = None
+    mass_obs: npt.NDArray[np.float64] | None = None
+    inv_norm_eff = inv_norm
+    if config.mass_channel:
+        mass_true = _sample_galaxy_masses(config.n_galaxies, rng, config.mass_slope)
+        mass_obs = np.clip(
+            mass_true[cat_index] * (1.0 + rng.normal(0.0, config.sigma_m_gal_frac, cat_index.size)),
+            1e-3,
+            None,
+        )
+        # Per-galaxy EMRI rate weight mass factor (production: R_eff(M_g)).
+        inv_norm_eff = inv_norm * (mass_obs / M_REF_MSUN) ** config.mass_rate_index
+
     cos_theta_c = 1.0 - 2.0 * config.sky_frac
     chord_radius = float(2.0 * np.sin(0.5 * np.arccos(np.clip(cos_theta_c, -1.0, 1.0))))
     tree = cKDTree(direction[cat_index])
@@ -1177,14 +1335,19 @@ def _build_catalogue(
     # convention so that at z_support >= Z_MAX_POP the limiting identities hold.
     zint = np.linspace(Z_MIN, Z_MAX_POP, 3000)
     wint = np.gradient(zint)
-    khat = _smeared_catalogue_density(z_obs, inv_norm, sigma_z, zint)
+    khat = _smeared_catalogue_density(z_obs, inv_norm_eff, sigma_z, zint)
     rho_cat = _inference_population_weight(zint, config.inference_wpop_tilt) * khat
     w_cat = float(np.sum(wint * rho_cat))
-    pdet_grid = detection_probability(
-        comoving_amplitude_of_z(zint)[:, None] / h_grid[None, :],
-        config.d50_gpc,
-        config.w_pdet_gpc,
-    )  # (nz, nh)
+    if config.mass_channel:
+        if survival_table is None:
+            raise ValueError("mass_channel catalogue build requires the S_bar_phi table")
+        pdet_grid = _interp_survival_table(zint, survival_table[0], survival_table[1])  # (nz, nh)
+    else:
+        pdet_grid = detection_probability(
+            comoving_amplitude_of_z(zint)[:, None] / h_grid[None, :],
+            config.d50_gpc,
+            config.w_pdet_gpc,
+        )  # (nz, nh)
     sigma_glob = np.asarray((wint * rho_cat) @ pdet_grid, dtype=np.float64)  # (nh,)
 
     zvf = np.linspace(Z_MIN, min(zs, Z_MAX_POP), 3000)
@@ -1203,6 +1366,8 @@ def _build_catalogue(
         v_f=v_f,
         n_hat_w=w_cat / max(v_f, 1e-300),
         sigma_glob=sigma_glob,
+        mass_true=mass_true,
+        mass_obs=mass_obs,
     )
 
 
@@ -1270,7 +1435,10 @@ def _run_realization_catalogue(
     host_idx = rng.choice(catalogue.z_true.size, size=config.n_events, p=p_draw)
     z_host = catalogue.z_true[host_idx]
     dL_host = comoving_amplitude_of_z(z_host) / h_true
-    dL_obs = np.clip(dL_host + rng.normal(0.0, config.sigma_dl_frac * dL_host), 1e-3, None)
+    # Q-0 (2026-08-17): see _run_realization — the draw is discarded, not
+    # skipped, when gw_measurement_scatter is off.
+    _dl_draw = rng.normal(0.0, config.sigma_dl_frac * dL_host)
+    dL_obs = np.clip(dL_host + (_dl_draw if config.gw_measurement_scatter else 0.0), 1e-3, None)
     sig_dl = config.sigma_dl_frac * dL_obs
     cos_theta_c = 1.0 - 2.0 * config.sky_frac
     cap_centre = _perturb_within_cap(catalogue.direction[host_idx], cos_theta_c, rng)
@@ -1376,6 +1544,813 @@ def _run_realization_catalogue(
     return logL, diagnostics
 
 
+# ----------------------------------------------------------------------------
+# Mass channel ([A3] criterion (i), 2026-08-17; ledger row #120 item 2 / D-2).
+#
+# A genuine SECOND (mass) observable on top of the catalogue/impostor-ball
+# universe, so the production estimator's 2D leg — and in particular the
+# completion-leg mass factor g / g_sel that the selection fusion (commit
+# ``2b10b8b8``, ledger rows #117-#118) touches — can be calibration-tested.
+# Nothing here imports production code: every object below is a self-contained
+# re-derivation of the production FORM, cross-referenced function by function.
+# ----------------------------------------------------------------------------
+
+# Source-frame BH mass support and reference scale [M_sun]. Harness analogs of
+# production's ``M_SOURCE_FRAME_MIN`` / ``M_SOURCE_FRAME_MAX``; the numbers are
+# the harness's own (a single power law, not production's piecewise Babak+2017
+# ``phi``), chosen only to span the same decades.
+M_SOURCE_MIN: float = 1.0e4
+M_SOURCE_MAX: float = 1.0e7
+M_REF_MSUN: float = 1.0e6
+
+SELECTION_CELLS: tuple[str, ...] = ("off", "1d", "2d", "fused")
+
+
+def dark_mass_density_per_mass(
+    M: npt.NDArray[np.float64], slope: float = 0.0
+) -> npt.NDArray[np.float64]:
+    r"""Normalized source-frame BH mass density ``phi(M)`` [1/M_sun].
+
+    Harness analog of production's
+    ``bayesian_statistics.dark_mass_density_per_mass`` (the Babak et al. 2017,
+    arXiv:1703.09722 ``phi``): a single power law
+    ``phi(M) propto M^{-(1 + slope)}`` on ``[M_SOURCE_MIN, M_SOURCE_MAX]``,
+    zero outside, normalized to unit integral in ``dM``. ``slope = 0`` is flat
+    in ``ln M``. The harness deliberately keeps ONE branch (no kink): the
+    production kink only motivates the Route-1 breakpoint-straddle escalation,
+    which is a quadrature detail, not a calibration mechanism.
+
+    Args:
+        M: Source-frame masses [M_sun].
+        slope: Power-law slope offset (0.0 = flat in ``ln M``).
+
+    Returns:
+        ``phi(M)`` with the same shape as ``M``; zero off the support.
+
+    References:
+        Babak et al. (2017), arXiv:1703.09722 — the production ``phi``.
+    """
+    m = np.asarray(M, dtype=np.float64)
+    if slope == 0.0:
+        norm = math.log(M_SOURCE_MAX / M_SOURCE_MIN)
+    else:
+        norm = (M_SOURCE_MIN**-slope - M_SOURCE_MAX**-slope) / slope
+    safe = np.where(m > 0.0, m, 1.0)
+    dens = safe ** (-(1.0 + slope)) / norm
+    inside = (m >= M_SOURCE_MIN) & (m <= M_SOURCE_MAX)
+    return np.asarray(np.where(inside, dens, 0.0), dtype=np.float64)
+
+
+def survival_with_mass(
+    d_L: npt.NDArray[np.float64],
+    M_z: npt.NDArray[np.float64],
+    d50: float = D50_GPC,
+    w_pdet: float = W_PDET_GPC,
+    mass_horizon_index: float = 0.0,
+) -> npt.NDArray[np.float64]:
+    r"""Mass-dependent detection survival ``S_4D(d_L, M_z)`` in ``[0, 1]``.
+
+    Harness analog of production's with-BH-mass survival object
+    (``SimulationDetectionProbability.detection_probability_with_bh_mass_interpolated``,
+    the ``S_4D`` that :func:`completion_mass_factor_g_sel` and
+    ``precompute_phi_marginal_survival`` query). The harness makes the mass
+    dependence a horizon rescaling — the physical content of an SNR-limited
+    survey, where a heavier detector-frame BH is louder:
+
+    .. math::
+
+        S_\mathrm{4D}(d_L, M_z) = \tfrac12
+            \mathrm{erfc}\!\left(\frac{d_L - d_{50}(M_z)}{\sqrt2\, w}\right),
+        \qquad d_{50}(M_z) = d_{50}\,(M_z / M_\mathrm{ref})^{\alpha_M}
+
+    with ``alpha_M = mass_horizon_index``. ``alpha_M = 0`` reduces this
+    EXACTLY to the mass-blind :func:`detection_probability` (limiting case,
+    pinned by a test), so a mass-bearing cell is obtained by setting
+    ``alpha_M > 0``. Unlike production the harness survival is ANALYTIC, so
+    ``g_sel``'s per-Hermite-node ``S`` queries need no interpolation and carry
+    no grid error — a deliberate simplification (production's own quadrature
+    guard ``_G_SEL_S_VAR_TOL`` guards interpolation error, not physics).
+
+    Args:
+        d_L: Luminosity distances [Gpc].
+        M_z: DETECTOR-frame BH masses [M_sun] (``M (1+z)``), exactly the pair
+            production queries.
+        d50: Mass-reference 50% detection distance [Gpc].
+        w_pdet: Roll-off width [Gpc].
+        mass_horizon_index: Horizon power-law index ``alpha_M``.
+
+    Returns:
+        Survival probability, broadcast shape of ``d_L`` and ``M_z``.
+    """
+    if mass_horizon_index == 0.0:
+        return detection_probability(np.broadcast_arrays(d_L, M_z)[0], d50, w_pdet)
+    mz = np.clip(np.asarray(M_z, dtype=np.float64), 1e-30, None)
+    d50_eff = d50 * (mz / M_REF_MSUN) ** mass_horizon_index
+    return np.asarray(
+        0.5 * erfc((np.asarray(d_L, dtype=np.float64) - d50_eff) / (np.sqrt(2.0) * w_pdet)),
+        dtype=np.float64,
+    )
+
+
+def phi_marginal_survival_table(
+    h_grid: npt.NDArray[np.float64],
+    *,
+    mass_slope: float = 0.0,
+    mass_horizon_index: float = 0.0,
+    d50: float = D50_GPC,
+    w_pdet: float = W_PDET_GPC,
+    n_z: int = 1500,
+    n_mass_quad: int = 400,
+    z_chunk: int = 150,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    r"""Tabulate the phi-marginal survival ``S_bar_phi(z; h)``.
+
+    Harness analog of production's
+    ``bayesian_statistics.precompute_phi_marginal_survival``
+    (``bayesian_statistics.py:1869``):
+
+    .. math::
+
+        \bar S_\phi(z;h) = \int \phi(M)\,
+            S_\mathrm{4D}\bigl(d_L(z;h),\, M(1+z)\bigr)\,\mathrm{d}M
+
+    — ONE contraction of the SAME survival object
+    (:func:`survival_with_mass`) that :func:`completion_mass_factor_g_sel`
+    queries per Hermite node, so the tower identity holds by construction
+    exactly as production's ``r_phi == 1``. The table is built once per run and
+    READ by ``np.interp`` afterwards, mirroring production's "read, never
+    rebuild" discipline (``bayesian_statistics.py:4503-4507``).
+
+    Args:
+        h_grid: H0 evaluation grid.
+        mass_slope: ``phi`` slope (see :func:`dark_mass_density_per_mass`).
+        mass_horizon_index: ``S_4D`` horizon index ``alpha_M``.
+        d50: 50% detection distance [Gpc].
+        w_pdet: Roll-off width [Gpc].
+        n_z: Redshift table nodes on ``[Z_MIN, Z_MAX_POP]``.
+        n_mass_quad: ``ln M`` quadrature nodes.
+        z_chunk: Redshift nodes contracted per block (memory control).
+
+    Returns:
+        ``(z_grid, S_bar_phi)`` with ``S_bar_phi`` of shape ``(n_z, nh)``.
+    """
+    z_grid = np.linspace(Z_MIN, Z_MAX_POP, n_z)
+    ln_m = np.linspace(math.log(M_SOURCE_MIN), math.log(M_SOURCE_MAX), n_mass_quad)
+    m_grid = np.exp(ln_m)
+    # phi(M) dM = phi(M) M dlnM. The weights are renormalized ON THE
+    # QUADRATURE GRID so that S == 1 gives S_bar_phi == 1 exactly: the trapezoid
+    # rule loses half a bin at each edge of the compact phi support, which would
+    # otherwise put a ~1/n_mass_quad multiplicative offset between S_bar_phi and
+    # the mass-blind p_det it must reduce to at mass_horizon_index = 0.
+    phi_m = dark_mass_density_per_mass(m_grid, mass_slope) * m_grid  # (nM,)
+    phi_m = phi_m / float(np.trapezoid(phi_m, ln_m))
+    a_z = comoving_amplitude_of_z(z_grid)  # (nz,)
+    out = np.empty((z_grid.size, h_grid.size), dtype=np.float64)
+    for start in range(0, z_grid.size, z_chunk):
+        sl = slice(start, min(start + z_chunk, z_grid.size))
+        d_l = a_z[sl][:, None, None] / h_grid[None, :, None]  # (k, nh, 1)
+        m_z = m_grid[None, None, :] * (1.0 + z_grid[sl][:, None, None])  # (k, 1, nM)
+        s_4d = survival_with_mass(d_l, m_z, d50, w_pdet, mass_horizon_index)  # (k, nh, nM)
+        out[sl] = np.trapezoid(s_4d * phi_m[None, None, :], ln_m, axis=2)
+    return z_grid, out
+
+
+def _interp_survival_table(
+    z: npt.NDArray[np.float64],
+    z_grid: npt.NDArray[np.float64],
+    s_table: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Read ``S_bar_phi`` at arbitrary redshifts, one ``np.interp`` per h column.
+
+    Mirrors production's accessor convention exactly: linear interpolation with
+    endpoint clamping outside the table domain
+    (``bayesian_statistics.py:4528``).
+
+    Args:
+        z: Query redshifts, shape ``(k,)`` (flattened by the caller).
+        z_grid: Table redshift nodes, shape ``(n_z,)``.
+        s_table: Table values, shape ``(n_z, nh)``.
+
+    Returns:
+        ``S_bar_phi`` at the query points, shape ``(k, nh)``.
+    """
+    zq = np.asarray(z, dtype=np.float64).ravel()
+    out = np.empty((zq.size, s_table.shape[1]), dtype=np.float64)
+    for j in range(s_table.shape[1]):
+        out[:, j] = np.interp(zq, z_grid, s_table[:, j])
+    return out
+
+
+def completion_mass_factor_g(
+    z_nodes: npt.NDArray[np.float64],
+    d_L_fraction: npt.NDArray[np.float64],
+    det_M_z: float,
+    proj_d_L_to_M: float,
+    sigma_cond_M: npt.NDArray[np.float64] | float,
+    *,
+    n_hermite: int = 24,
+    mass_slope: float = 0.0,
+) -> npt.NDArray[np.float64]:
+    r"""Completion-leg mass density ``g_i(z;h)`` at quadrature nodes.
+
+    Harness analog of production's
+    ``bayesian_statistics.completion_mass_factor_g``
+    (``bayesian_statistics.py:2022``), same mathematical form:
+
+    .. math::
+
+        g_i(z;h) = \int \mathrm{d}x_M\,
+            \mathcal{N}\bigl(x_M; \mu_\mathrm{cond}(z;h), \sigma_\mathrm{cond}\bigr)\,
+            \phi_x(x_M; z),\qquad
+        \phi_x(x_M;z) = \phi\Bigl(x_M \frac{M_{z,\mathrm{det},i}}{1+z}\Bigr)
+            \frac{M_{z,\mathrm{det},i}}{1+z}
+
+    with ``x_M = M_z / M_z,det,i`` the dimensionless mass coordinate the 2D
+    catalogue leg's mass overlap is a density in, and
+    ``mu_cond(z;h) = 1 + proj (d_L(z;h)/d_L,det - 1)``. Because ``mu_cond``
+    carries ``d_L(z;h)``, ``g_i`` is a function of ``h`` and is RECOMPUTED at
+    every h-grid node by construction (the last axis of the node arrays is the
+    h grid) — never frozen, never elided.
+
+    Differences from production, deliberate: Gauss-Hermite at a fixed order
+    (no Route-1 adaptive split — the harness ``phi`` has no breakpoints), and
+    ``sigma_cond_M`` may be an array so the harness's noise-model toggle can
+    make the conditional width track the MODELLED mass rather than the
+    observed one.
+
+    Args:
+        z_nodes: Redshift nodes, any shape ``S`` (typically ``(nz, nh)``).
+        d_L_fraction: ``d_L(z;h)/d_L,det,i`` at the same nodes, shape ``S``.
+        det_M_z: The event's measured detector-frame BH mass ``M_z,det,i``.
+        proj_d_L_to_M: ``rho sigma_M / sigma_D`` — the 2x2 block projection
+            (production: ``cov_4d[3,2]/cov_4d[2,2]``).
+        sigma_cond_M: ``sigma_M sqrt(1 - rho^2)`` — scalar, or an array of
+            shape ``S`` under the model-sigma noise convention.
+        n_hermite: Gauss-Hermite order.
+        mass_slope: ``phi`` slope.
+
+    Returns:
+        ``g_i`` at the nodes, shape ``S``, in units of ``1/x_M``.
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7).
+        Gray et al. (2020), arXiv:1908.06050, Eq. (A.19).
+    """
+    return _mass_factor_core(
+        z_nodes,
+        d_L_fraction,
+        det_M_z,
+        proj_d_L_to_M,
+        sigma_cond_M,
+        n_hermite=n_hermite,
+        mass_slope=mass_slope,
+        survival=None,
+    )
+
+
+def completion_mass_factor_g_sel(
+    z_nodes: npt.NDArray[np.float64],
+    d_L_gpc: npt.NDArray[np.float64],
+    d_L_fraction: npt.NDArray[np.float64],
+    det_M_z: float,
+    proj_d_L_to_M: float,
+    sigma_cond_M: npt.NDArray[np.float64] | float,
+    *,
+    n_hermite: int = 24,
+    mass_slope: float = 0.0,
+    mass_horizon_index: float = 0.0,
+    d50: float = D50_GPC,
+    w_pdet: float = W_PDET_GPC,
+) -> npt.NDArray[np.float64]:
+    r"""FUSED completion-leg mass density ``g_sel(z;h)`` — survival INSIDE ``dx_M``.
+
+    Harness analog of production's
+    ``bayesian_statistics.completion_mass_factor_g_sel``
+    (``bayesian_statistics.py:2155``), the [P1] leg of the selection fusion
+    landed in ``2b10b8b8`` (ledger rows #117-#118):
+
+    .. math::
+
+        g_\mathrm{sel}(z;h) = \int \mathrm{d}x_M\,
+            \mathcal{N}\bigl(x_M; \mu_\mathrm{cond}(z;h), \sigma_\mathrm{cond}\bigr)\,
+            \phi_x(x_M;z)\,
+            S_\mathrm{4D}\bigl(d_L(z;h),\, x_M M_{z,\mathrm{det},i}\bigr)
+
+    — :func:`completion_mass_factor_g` with the detection survival integrated
+    against the observed-mass likelihood in the SAME single ``dx_M`` (the
+    selected-population prior of a latent-thresholded detection model). The
+    survival is queried at the DETECTOR-frame Hermite-node mass
+    ``x_M M_z,det,i`` and the node's absolute ``d_L(z;h)`` — exactly the pair
+    :func:`phi_marginal_survival_table` contracts, so the two legs share one
+    survival object as production requires.
+
+    Limiting cases (both pinned by tests): ``mass_horizon_index = 0`` with the
+    ``d_L``-only survival still multiplies ``g_i`` by a mass-independent
+    factor, and ``sigma_cond -> 0`` gives ``g_i * S(mu_cond M_z,det)`` — per
+    row #118 / MAJOR-1 effectively the production operating point (measured
+    ``d_L``-conditional ``sigma_cond`` p50 = 8.8e-8).
+
+    Args:
+        z_nodes: Redshift nodes, any shape ``S``.
+        d_L_gpc: Absolute ``d_L(z;h)`` [Gpc] at the same nodes, shape ``S``.
+        d_L_fraction: ``d_L(z;h)/d_L,det,i`` at the same nodes, shape ``S``.
+        det_M_z: The event's measured detector-frame BH mass.
+        proj_d_L_to_M: 2x2 block projection ``rho sigma_M / sigma_D``.
+        sigma_cond_M: Conditional mass width (scalar or shape ``S``).
+        n_hermite: Gauss-Hermite order.
+        mass_slope: ``phi`` slope.
+        mass_horizon_index: ``S_4D`` horizon index.
+        d50: 50% detection distance [Gpc].
+        w_pdet: Roll-off width [Gpc].
+
+    Returns:
+        ``g_sel`` at the nodes, shape ``S``, in units of ``1/x_M``.
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7).
+    """
+
+    def _survival(
+        m_z: npt.NDArray[np.float64], _z: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        return survival_with_mass(
+            np.asarray(d_L_gpc, dtype=np.float64)[..., None],
+            m_z,
+            d50,
+            w_pdet,
+            mass_horizon_index,
+        )
+
+    return _mass_factor_core(
+        z_nodes,
+        d_L_fraction,
+        det_M_z,
+        proj_d_L_to_M,
+        sigma_cond_M,
+        n_hermite=n_hermite,
+        mass_slope=mass_slope,
+        survival=_survival,
+    )
+
+
+def _mass_factor_core(
+    z_nodes: npt.NDArray[np.float64],
+    d_L_fraction: npt.NDArray[np.float64],
+    det_M_z: float,
+    proj_d_L_to_M: float,
+    sigma_cond_M: npt.NDArray[np.float64] | float,
+    *,
+    n_hermite: int,
+    mass_slope: float,
+    survival: Callable[[npt.NDArray[np.float64], npt.NDArray[np.float64]], npt.NDArray[np.float64]]
+    | None,
+) -> npt.NDArray[np.float64]:
+    """Shared Gauss-Hermite contraction behind ``g`` and ``g_sel``.
+
+    Args:
+        z_nodes: Redshift nodes, shape ``S``.
+        d_L_fraction: ``d_L(z;h)/d_L,det,i``, shape ``S``.
+        det_M_z: Measured detector-frame BH mass.
+        proj_d_L_to_M: 2x2 block projection.
+        sigma_cond_M: Conditional width (scalar or shape ``S``).
+        n_hermite: Gauss-Hermite order.
+        mass_slope: ``phi`` slope.
+        survival: ``(M_z, z) -> S_4D`` on shape ``S + (n_hermite,)`` arrays, or
+            None for the unfused factor.
+
+    Returns:
+        The contracted mass factor, shape ``S``.
+    """
+    from scipy.special import roots_hermite  # local: only the mass channel needs it
+
+    z_arr = np.asarray(z_nodes, dtype=np.float64)
+    frac = np.asarray(d_L_fraction, dtype=np.float64)
+    sig = np.asarray(sigma_cond_M, dtype=np.float64)
+    x_nodes, x_weights = roots_hermite(n_hermite)
+    # dM/dx_M at each node: the mass scale the dimensionless coordinate rides on.
+    scale = det_M_z / (1.0 + z_arr)  # S
+    mu_cond = 1.0 + proj_d_L_to_M * (frac - 1.0)  # S
+    # Gauss-Hermite for E_{x~N(mu,sigma)}[.]: nodes mu + sqrt(2) sigma t_j.
+    x_M = mu_cond[..., None] + math.sqrt(2.0) * sig[..., None] * x_nodes  # S + (n_h,)
+    phi_x = dark_mass_density_per_mass(x_M * scale[..., None], mass_slope) * scale[..., None]
+    if survival is not None:
+        m_z_query = x_M * det_M_z  # detector-frame query mass (S_bar_phi's pair)
+        s_4d = np.where(m_z_query > 0.0, survival(np.clip(m_z_query, 1e-30, None), z_arr), 0.0)
+        phi_x = phi_x * s_4d
+    return np.asarray((phi_x @ x_weights) / math.sqrt(math.pi), dtype=np.float64)
+
+
+def _completion_numerator_batch(
+    dL_obs: npt.NDArray[np.float64],
+    sig_dl: npt.NDArray[np.float64],
+    z_support: float,
+    h_grid: npt.NDArray[np.float64],
+    config: PPCoverageConfig,
+    survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None,
+    det_M_z: npt.NDArray[np.float64] | None,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Vectorized completion numerators ``B_num`` (1D) and ``B_num_wbh`` (2D).
+
+    The batched, mass-aware analog of :func:`_completion_numerator`: it
+    evaluates the same integral for a whole block of events at once (the
+    [A3] criterion (ii) production-N vectorization) and adds the two
+    fusion legs of production commit ``2b10b8b8``:
+
+    * 1D ([P2], ``bayesian_statistics.py:4495-4514``): the integrand is
+      multiplied by ``S_bar_phi(z;h)`` when the selection cell is ``1d`` or
+      ``fused``.
+    * 2D ([P1], ``bayesian_statistics.py:4592-4609``): the integrand is
+      multiplied by the completion mass factor — ``g_sel`` when the cell is
+      ``2d`` or ``fused``, plain ``g`` otherwise. Both are recomputed at every
+      h-grid node (the h axis is an array axis of the node grid).
+
+    Args:
+        dL_obs: Observed GW distances [Gpc], shape ``(B,)``.
+        sig_dl: Absolute distance uncertainties [Gpc], shape ``(B,)``.
+        z_support: Completeness edge (lower limit of the completion volume).
+        h_grid: H0 evaluation grid, shape ``(nh,)``.
+        config: Harness configuration.
+        survival_table: ``(z_grid, S_bar_phi)`` or None (no mass channel).
+        det_M_z: Per-event measured detector-frame BH masses, shape ``(B,)``,
+            or None to skip the 2D leg.
+
+    Returns:
+        ``(B_num, B_num_wbh)``, each of shape ``(B, nh)``. ``B_num_wbh`` is
+        ``B_num`` when ``det_M_z`` is None.
+    """
+    nh = h_grid.size
+    nb = dL_obs.size
+    nz = config.n_z_quad
+    z_lo = np.maximum(
+        max(Z_MIN, z_support),
+        z_of_comoving_amplitude((dL_obs - 5.0 * sig_dl) * h_grid.min()),
+    )
+    z_hi = np.minimum(Z_MAX_POP, z_of_comoving_amplitude((dL_obs + 5.0 * sig_dl) * h_grid.max()))
+    empty = z_hi <= z_lo
+    z_hi_safe = np.where(empty, z_lo + 1e-9, z_hi)
+    zq = np.linspace(z_lo, z_hi_safe, nz, axis=-1)  # (B, nz)
+    wq = np.gradient(zq, axis=1)  # (B, nz)
+    a_z = comoving_amplitude_of_z(zq)  # (B, nz)
+    dLg = a_z[:, :, None] / h_grid[None, None, :]  # (B, nz, nh)
+    sig_b: npt.NDArray[np.float64] = (
+        config.sigma_dl_frac * dLg
+        if config.sigma_dl_model_in_likelihood
+        else np.broadcast_to(sig_dl[:, None, None], dLg.shape)
+    )
+    integrand = _norm_pdf(dLg, dL_obs[:, None, None], sig_b)  # (B, nz, nh)
+    if config.pdet_in_numerator:
+        integrand = integrand * detection_probability(dLg, config.d50_gpc, config.w_pdet_gpc)
+    wpop = _inference_population_weight(zq, config.inference_wpop_tilt)  # (B, nz)
+    base = integrand * (wq * wpop)[:, :, None]  # (B, nz, nh)
+
+    sel_1d = config.selection_cell in ("1d", "fused")
+    sel_2d = config.selection_cell in ("2d", "fused")
+    if sel_1d:
+        if survival_table is None:
+            raise ValueError("selection_cell '1d'/'fused' needs the S_bar_phi table")
+        s_bar = _interp_survival_table(zq, survival_table[0], survival_table[1])
+        base_1d = base * s_bar.reshape(nb, nz, nh)
+    else:
+        base_1d = base
+    b_num = np.asarray(base_1d.sum(axis=1), dtype=np.float64)  # (B, nh)
+
+    if det_M_z is None:
+        b_num_wbh = b_num
+    else:
+        proj, sigma_cond = _mass_conditional_parameters(config)
+        frac = dLg / dL_obs[:, None, None]
+        sig_cond_eff: npt.NDArray[np.float64] | float = sigma_cond
+        if config.sigma_dl_model_in_likelihood:
+            # Model-sigma convention: the conditional width tracks the MODELLED
+            # mass fraction rather than the observed one (the mass-channel
+            # counterpart of the #67 sigma(dL_true) noise model).
+            sig_cond_eff = sigma_cond * np.clip(1.0 + proj * (frac - 1.0), 1e-6, None)
+        g_all = np.empty_like(base)
+        for i in range(nb):
+            sig_i = sig_cond_eff[i] if isinstance(sig_cond_eff, np.ndarray) else sig_cond_eff
+            if sel_2d:
+                g_all[i] = completion_mass_factor_g_sel(
+                    zq[i][:, None] * np.ones((1, nh)),
+                    dLg[i],
+                    frac[i],
+                    float(det_M_z[i]),
+                    proj,
+                    sig_i,
+                    n_hermite=config.n_hermite,
+                    mass_slope=config.mass_slope,
+                    mass_horizon_index=config.mass_horizon_index,
+                    d50=config.d50_gpc,
+                    w_pdet=config.w_pdet_gpc,
+                )
+            else:
+                g_all[i] = completion_mass_factor_g(
+                    zq[i][:, None] * np.ones((1, nh)),
+                    frac[i],
+                    float(det_M_z[i]),
+                    proj,
+                    sig_i,
+                    n_hermite=config.n_hermite,
+                    mass_slope=config.mass_slope,
+                )
+        b_num_wbh = np.asarray((base * g_all).sum(axis=1), dtype=np.float64)
+
+    floor = np.full(nh, 1e-300)
+    b_num = np.where(empty[:, None], floor, b_num)
+    b_num_wbh = np.where(empty[:, None], floor, b_num_wbh)
+    return b_num, b_num_wbh
+
+
+def _mass_conditional_parameters(config: PPCoverageConfig) -> tuple[float, float]:
+    """Return ``(proj, sigma_cond)`` of the ``(d_L_frac, M_z_frac)`` 2x2 block.
+
+    Production reads these off ``cov_4d`` (``proj = cov_4d[3,2]/cov_4d[2,2]``,
+    ``sigma_cond = sqrt(cov_4d[3,3] - cov_4d[3,2]^2/cov_4d[2,2])``); the
+    harness's fractional covariance is built from
+    ``(sigma_dl_frac, sigma_mz_frac, rho_dl_mz)``, giving the same Gaussian
+    conditional (Bishop 2006, PRML Eqs. 2.81-2.82).
+
+    Args:
+        config: Harness configuration.
+
+    Returns:
+        ``(proj_d_L_to_M, sigma_cond_M)`` in fractional mass units.
+    """
+    rho = config.rho_dl_mz
+    proj = rho * config.sigma_mz_frac / config.sigma_dl_frac
+    sigma_cond = config.sigma_mz_frac * math.sqrt(max(1.0 - rho * rho, 0.0))
+    return proj, max(sigma_cond, 1e-12)
+
+
+def _sample_galaxy_masses(
+    n: int, rng: np.random.Generator, slope: float, ngrid: int = 4000
+) -> npt.NDArray[np.float64]:
+    """Draw source-frame BH masses from ``phi(M)`` by inverse CDF.
+
+    Args:
+        n: Number of galaxies.
+        rng: Random generator.
+        slope: ``phi`` slope.
+        ngrid: Inverse-CDF resolution in ``ln M``.
+
+    Returns:
+        Masses [M_sun], shape ``(n,)``.
+    """
+    ln_m = np.linspace(math.log(M_SOURCE_MIN), math.log(M_SOURCE_MAX), ngrid)
+    m = np.exp(ln_m)
+    pdf = dark_mass_density_per_mass(m, slope) * m
+    cdf = np.concatenate([np.array([0.0]), np.cumsum(0.5 * (pdf[1:] + pdf[:-1]) * np.diff(ln_m))])
+    cdf /= cdf[-1]
+    return np.asarray(np.exp(np.interp(rng.random(n), cdf, ln_m)), dtype=np.float64)
+
+
+def _run_realization_catalogue_mass(
+    h_true: float,
+    h_grid: npt.NDArray[np.float64],
+    log_Dh: npt.NDArray[np.float64],
+    config: PPCoverageConfig,
+    rng: np.random.Generator,
+    catalogue: SyntheticCatalogue,
+    beta_G: npt.NDArray[np.float64],
+    beta_Gbar: npt.NDArray[np.float64],
+    survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, float]]:
+    """Two-channel (1D + 2D mass) catalogue-mode realization, vectorized in event blocks.
+
+    The mass-bearing counterpart of :func:`_run_realization_catalogue`. Both
+    channels share ONE generative universe and ONE denominator, exactly as
+    production's per-event both-channel diagnostics do:
+
+    * **1D channel** — the mass observable is DISCARDED from the likelihood
+      (it still drives selection). Per-event
+      ``p_i = [T_i + B_num,i] / Den`` with the same ``T_i`` forms as
+      :func:`_run_realization_catalogue`, and ``B_num`` carrying
+      ``S_bar_phi(z;h)`` under selection cells ``1d``/``fused`` ([P2]).
+    * **2D channel** — every candidate's ball measure additionally carries the
+      Gaussian mass overlap
+      ``mz_g(z;h) = INTEGRAL N(x; mu_cond(z;h), sigma_cond) N(x; mu_gal,g(z), sigma_gal) dx``
+      (production's analytic ``mz_integral``, ``bayesian_statistics.py:5522``),
+      and the completion leg carries the mass factor ``g_i``/``g_sel``
+      recomputed at every h.
+
+    Selection integrals (``D``, ``beta_G``, ``Sigma_glob``) are built from
+    ``S_bar_phi`` rather than the mass-blind ``p_det`` whenever the mass
+    channel is on — the harness analog of production's phi-convention legs
+    ``precompute_phi_selection_integrals`` (``bayesian_statistics.py:1964``).
+
+    Args:
+        h_true: Injected truth (generative model only).
+        h_grid: H0 evaluation grid.
+        log_Dh: ``log D(h)`` (phi convention) on the grid.
+        config: Harness configuration.
+        rng: Realization RNG.
+        catalogue: The synthetic catalogue (mass columns required).
+        beta_G: In-catalogue selection integral (phi convention).
+        beta_Gbar: Out-of-catalogue selection integral (phi convention).
+        survival_table: ``(z_grid, S_bar_phi)``.
+
+    Returns:
+        ``(logL_1d, logL_2d, diagnostics)``.
+    """
+    if catalogue.mass_true is None or catalogue.mass_obs is None:
+        raise ValueError("mass_channel realization needs a mass-bearing catalogue")
+    sigma_z = float(np.hypot(config.sigma_z, config.sigma_z_pv))
+    zs = float(config.z_support) if config.z_support is not None else Z_MAX_POP
+    mode = config.mixture_mode
+    nh = h_grid.size
+    proj, sigma_cond = _mass_conditional_parameters(config)
+
+    # --- generative model -------------------------------------------------
+    m_true = catalogue.mass_true
+    rate_mass_all = (m_true / M_REF_MSUN) ** config.mass_rate_index
+    z_all = catalogue.z_true
+    p_draw = (
+        rate_mass_all
+        * host_rate_weight_of_z(z_all)
+        * survival_with_mass(
+            comoving_amplitude_of_z(z_all) / h_true,
+            m_true * (1.0 + z_all),
+            config.d50_gpc,
+            config.w_pdet_gpc,
+            config.mass_horizon_index,
+        )
+    )
+    p_draw = np.clip(p_draw, 0.0, None)
+    p_draw = p_draw / p_draw.sum()
+    host_idx = rng.choice(z_all.size, size=config.n_events, p=p_draw)
+    z_host = z_all[host_idx]
+    dL_host = comoving_amplitude_of_z(z_host) / h_true
+    m_z_host = m_true[host_idx] * (1.0 + z_host)
+    # Correlated fractional (d_L, M_z) measurement errors — the harness's
+    # cov_4d (2,3) block.
+    cov = np.array(
+        [
+            [
+                config.sigma_dl_frac**2,
+                config.rho_dl_mz * config.sigma_dl_frac * config.sigma_mz_frac,
+            ],
+            [
+                config.rho_dl_mz * config.sigma_dl_frac * config.sigma_mz_frac,
+                config.sigma_mz_frac**2,
+            ],
+        ]
+    )
+    eps = rng.multivariate_normal(np.zeros(2), cov, size=config.n_events)
+    if not config.gw_measurement_scatter:
+        # Q-0 (2026-08-17) production-faithful cell: no measurement scatter in
+        # EITHER observable; the draw is discarded, not skipped, so the paired
+        # scatter/no-scatter cells share the random stream.
+        eps = np.zeros_like(eps)
+    dL_obs = np.clip(dL_host * (1.0 + eps[:, 0]), 1e-3, None)
+    det_M_z = np.clip(m_z_host * (1.0 + eps[:, 1]), 1e-3, None)
+    sig_dl = config.sigma_dl_frac * dL_obs
+    cos_theta_c = 1.0 - 2.0 * config.sky_frac
+    cap_centre = _perturb_within_cap(catalogue.direction[host_idx], cos_theta_c, rng)
+    balls: list[list[int]] = catalogue.tree.query_ball_point(cap_centre, catalogue.chord_radius)
+
+    host_catalogued = catalogue.catalogued[host_idx]
+    cat_pos = np.full(z_all.size, -1, dtype=np.int64)
+    cat_pos[catalogue.cat_index] = np.arange(catalogue.cat_index.size, dtype=np.int64)
+    host_cat_pos = cat_pos[host_idx]
+
+    n_bar_w: npt.NDArray[np.float64] = catalogue.sigma_glob / np.clip(beta_G, 1e-300, None)
+    if mode == "generator_marginal":
+        d_gen = catalogue.sigma_glob / catalogue.n_hat_w + beta_Gbar
+        log_den = np.log(np.clip(d_gen, 1e-300, None))
+        scale = catalogue.n_hat_w * config.sky_frac
+    else:
+        log_den = log_Dh
+        scale = float("nan")
+
+    # Per-catalogued-galaxy rate weight mass factor (production: R_eff(M_g)).
+    cat_rate_mass = (catalogue.mass_obs / M_REF_MSUN) ** config.mass_rate_index
+
+    logL_1d = np.zeros(nh)
+    logL_2d = np.zeros(nh)
+    n_empty = 0
+    n_ball_total = 0
+    n_host_in_ball = 0
+    ball_sizes = np.asarray([len(b) for b in balls], dtype=np.int64)
+
+    chunk = max(int(config.event_chunk), 1)
+    for start in range(0, config.n_events, chunk):
+        stop = min(start + chunk, config.n_events)
+        idx = np.arange(start, stop)
+        nb = idx.size
+        b_num, b_num_wbh = _completion_numerator_batch(
+            dL_obs[idx],
+            sig_dl[idx],
+            zs,
+            h_grid,
+            config,
+            survival_table,
+            det_M_z[idx],
+        )  # (nb, nh) each
+
+        z_lo = np.maximum(
+            Z_MIN,
+            z_of_comoving_amplitude((dL_obs[idx] - 5.0 * sig_dl[idx]) * h_grid.min())
+            - 4.0 * sigma_z,
+        )
+        z_hi = np.minimum(
+            Z_MAX_POP,
+            z_of_comoving_amplitude((dL_obs[idx] + 5.0 * sig_dl[idx]) * h_grid.max())
+            + 4.0 * sigma_z,
+        )
+        bad_window = z_hi <= z_lo
+        z_hi = np.where(bad_window, z_lo + 1e-9, z_hi)
+        zq = np.linspace(z_lo, z_hi, config.n_z_quad, axis=-1)  # (nb, nz)
+        wq = np.gradient(zq, axis=1)
+        dLg = comoving_amplitude_of_z(zq)[:, :, None] / h_grid[None, None, :]  # (nb, nz, nh)
+        sig_gw: npt.NDArray[np.float64] = (
+            config.sigma_dl_frac * dLg
+            if config.sigma_dl_model_in_likelihood
+            else np.broadcast_to(sig_dl[idx][:, None, None], dLg.shape)
+        )
+        pGW = _norm_pdf(dLg, dL_obs[idx][:, None, None], sig_gw)  # (nb, nz, nh)
+        if config.pdet_in_numerator:
+            pGW = pGW * detection_probability(dLg, config.d50_gpc, config.w_pdet_gpc)
+        wpop_q = _inference_population_weight(zq, config.inference_wpop_tilt)  # (nb, nz)
+
+        # Ragged ball members flattened with their in-chunk event index.
+        mem_event = np.concatenate(
+            [np.full(len(balls[i]), k, dtype=np.int64) for k, i in enumerate(idx)]
+            + [np.zeros(0, dtype=np.int64)]
+        )
+        mem_gal = np.concatenate(
+            [np.asarray(balls[i], dtype=np.int64) for i in idx] + [np.zeros(0, dtype=np.int64)]
+        )
+        n_ball_total += int(mem_gal.size)
+        for i in idx:
+            if host_cat_pos[i] >= 0 and host_cat_pos[i] in balls[i]:
+                n_host_in_ball += 1
+            if len(balls[i]) == 0:
+                n_empty += 1
+
+        rho_1d = np.zeros((nb, config.n_z_quad))
+        rho_2d = np.zeros((nb, config.n_z_quad, nh))
+        if mem_gal.size:
+            kern = (
+                _norm_pdf(zq[mem_event], catalogue.z_obs[mem_gal][:, None], sigma_z)
+                * catalogue.inv_norm[mem_gal][:, None]
+                * cat_rate_mass[mem_gal][:, None]
+            )  # (nmem, nz)
+            np.add.at(rho_1d, mem_event, kern)
+            # 2D: Gaussian mass overlap per candidate, recomputed at every h.
+            mu_cond = 1.0 + proj * (dLg / dL_obs[idx][:, None, None] - 1.0)  # (nb, nz, nh)
+            sig_cond_eff: npt.NDArray[np.float64] = (
+                sigma_cond * np.clip(mu_cond, 1e-6, None)
+                if config.sigma_dl_model_in_likelihood
+                else np.full_like(mu_cond, sigma_cond)
+            )
+            mu_gal = (
+                catalogue.mass_obs[mem_gal][:, None]
+                * (1.0 + zq[mem_event])
+                / det_M_z[idx][mem_event][:, None]
+            )  # (nmem, nz)
+            sig_gal = config.sigma_m_gal_frac * np.clip(mu_gal, 1e-12, None)
+            s2 = sig_cond_eff[mem_event] ** 2 + (sig_gal**2)[:, :, None]  # (nmem, nz, nh)
+            mz = np.exp(-0.5 * (mu_cond[mem_event] - mu_gal[:, :, None]) ** 2 / s2) / np.sqrt(
+                2.0 * np.pi * s2
+            )
+            np.add.at(rho_2d, mem_event, kern[:, :, None] * mz)
+
+        common = (wq * wpop_q)[:, :, None] * pGW  # (nb, nz, nh)
+        sum_wN_1d = np.asarray((common * rho_1d[:, :, None]).sum(axis=1), dtype=np.float64)
+        sum_wN_2d = np.asarray((common * rho_2d).sum(axis=1), dtype=np.float64)
+        if mode == "lcat":
+            pdet_q = _interp_survival_table(zq, survival_table[0], survival_table[1]).reshape(
+                nb, config.n_z_quad, nh
+            )
+            base_d = (wq * wpop_q)[:, :, None] * pdet_q
+            sum_wD = np.asarray((base_d * rho_1d[:, :, None]).sum(axis=1), dtype=np.float64)
+            term_1d = beta_G[None, :] * (sum_wN_1d / np.clip(sum_wD, 1e-300, None))
+            term_2d = beta_G[None, :] * (sum_wN_2d / np.clip(sum_wD, 1e-300, None))
+        elif mode == "absolute":
+            denom_scale = np.clip(n_bar_w * config.sky_frac, 1e-300, None)[None, :]
+            term_1d = sum_wN_1d / denom_scale
+            term_2d = sum_wN_2d / denom_scale
+        else:  # generator_marginal
+            term_1d = sum_wN_1d / max(scale, 1e-300)
+            term_2d = sum_wN_2d / max(scale, 1e-300)
+        empty_mask = bad_window[:, None]
+        term_1d = np.where(empty_mask, 0.0, term_1d)
+        term_2d = np.where(empty_mask, 0.0, term_2d)
+        logL_1d += np.log(np.clip(term_1d + b_num, 1e-300, None)).sum(axis=0) - nb * log_den
+        logL_2d += np.log(np.clip(term_2d + b_num_wbh, 1e-300, None)).sum(axis=0) - nb * log_den
+
+    n = float(config.n_events)
+    diagnostics = {
+        "completion_fraction": float(np.sum(~host_catalogued) / n),
+        "empty_ball_fraction": n_empty / n,
+        "mean_ball_size": float(np.mean(ball_sizes)),
+        "host_in_ball_fraction": n_host_in_ball / n,
+        "impostor_fraction": (
+            (n_ball_total - n_host_in_ball) / n_ball_total if n_ball_total > 0 else 0.0
+        ),
+    }
+    return logL_1d, logL_2d, diagnostics
+
+
 def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
     """Run the P-P / coverage test for one kernel choice.
 
@@ -1403,19 +2378,50 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
             catalogue-support edge).
     """
     h_grid = config.h_grid()
-    # Selection denominator D(h) = int p_det(A(z)/h) w_pop(z) dz (shared).
-    zint = np.linspace(Z_MIN, Z_MAX_POP, 3000)
-    wpop = _inference_population_weight(zint, config.inference_wpop_tilt)
-    Dh = np.trapezoid(
-        detection_probability(
-            comoving_amplitude_of_z(zint)[:, None] / h_grid[None, :],
+    if config.selection_cell not in SELECTION_CELLS:
+        raise ValueError(
+            f"selection_cell must be one of {SELECTION_CELLS}, got {config.selection_cell!r}"
+        )
+    if config.mass_channel and not config.catalogue_mode:
+        raise ValueError(
+            "mass_channel=True requires catalogue_mode=True: the 2D catalogue leg is a "
+            "per-CANDIDATE mass overlap, which needs a discrete multi-galaxy ball."
+        )
+    if config.selection_cell != "off" and not config.mass_channel:
+        raise ValueError(
+            f"selection_cell={config.selection_cell!r} requires mass_channel=True (the "
+            "S_bar_phi / g_sel legs it switches only exist in the mass channel)."
+        )
+    # Mass channel: the phi-marginal survival table replaces the mass-blind
+    # p_det in EVERY selection integral (harness analog of production's
+    # phi-convention legs, bayesian_statistics.precompute_phi_selection_integrals).
+    survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None
+    if config.mass_channel:
+        survival_table = phi_marginal_survival_table(
+            h_grid,
+            mass_slope=config.mass_slope,
+            mass_horizon_index=config.mass_horizon_index,
+            d50=config.d50_gpc,
+            w_pdet=config.w_pdet_gpc,
+            n_z=config.n_z_survival,
+            n_mass_quad=config.n_mass_quad,
+        )
+
+    def _selection_kernel(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        """Detection weight in the selection integrals, shape ``(nz, nh)``."""
+        if survival_table is not None:
+            return _interp_survival_table(z, survival_table[0], survival_table[1])
+        return detection_probability(
+            comoving_amplitude_of_z(z)[:, None] / h_grid[None, :],
             config.d50_gpc,
             config.w_pdet_gpc,
         )
-        * wpop[:, None],
-        zint,
-        axis=0,
-    )
+
+    # Selection denominator D(h) = int p_det(A(z)/h) w_pop(z) dz (shared);
+    # with the mass channel, p_det -> S_bar_phi(z;h).
+    zint = np.linspace(Z_MIN, Z_MAX_POP, 3000)
+    wpop = _inference_population_weight(zint, config.inference_wpop_tilt)
+    Dh = np.trapezoid(_selection_kernel(zint) * wpop[:, None], zint, axis=0)
     log_Dh = np.log(Dh)
 
     # In-catalogue selection integral beta_G(h) = int_{Z_MIN}^{zs} p_det w_pop
@@ -1455,11 +2461,7 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
         zbg = np.linspace(Z_MIN, min(config.z_support, Z_MAX_POP), 3000)
         beta_G = np.asarray(
             np.trapezoid(
-                detection_probability(
-                    comoving_amplitude_of_z(zbg)[:, None] / h_grid[None, :],
-                    config.d50_gpc,
-                    config.w_pdet_gpc,
-                )
+                _selection_kernel(zbg)
                 * _inference_population_weight(zbg, config.inference_wpop_tilt)[:, None],
                 zbg,
                 axis=0,
@@ -1475,7 +2477,9 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
     # has ONE GLADE+ table), unless resample_catalogue_per_realization is set.
     catalogue: SyntheticCatalogue | None = None
     if config.catalogue_mode and not config.resample_catalogue_per_realization:
-        catalogue = _build_catalogue(config, h_grid, np.random.default_rng(config.seed + 1))
+        catalogue = _build_catalogue(
+            config, h_grid, np.random.default_rng(config.seed + 1), survival_table
+        )
 
     results: dict[str, Any] = {}
     levels = {"50": 0.50, "68": 0.68, "90": 0.90}
@@ -1487,20 +2491,46 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
         host_tilts: list[float] = []
         comp_tilts: list[float] = []
         cat_diag: list[dict[str, float]] = []
+        cov2: dict[str, int] = {name: 0 for name in levels}
+        rail2 = 0
+        maps2: list[float] = []
         it_true = int(np.argmin(np.abs(h_grid - h_true)))
         for _ in range(config.n_realizations):
             rng = np.random.default_rng(int(master.integers(1 << 62)))
             if config.catalogue_mode:
                 assert beta_G is not None and beta_Gbar is not None  # guarded above
                 cat = (
-                    _build_catalogue(config, h_grid, rng)
+                    _build_catalogue(config, h_grid, rng, survival_table)
                     if config.resample_catalogue_per_realization
                     else catalogue
                 )
                 assert cat is not None
-                logL, diag = _run_realization_catalogue(
-                    h_true, h_grid, log_Dh, config, rng, cat, beta_G, beta_Gbar
-                )
+                if config.mass_channel:
+                    assert survival_table is not None
+                    logL, logL_2d, diag = _run_realization_catalogue_mass(
+                        h_true,
+                        h_grid,
+                        log_Dh,
+                        config,
+                        rng,
+                        cat,
+                        beta_G,
+                        beta_Gbar,
+                        survival_table,
+                    )
+                    post2 = np.exp(logL_2d - logL_2d.max())
+                    post2 /= np.trapezoid(post2, h_grid)
+                    mi2 = int(np.argmax(post2))
+                    maps2.append(float(h_grid[mi2]))
+                    if mi2 == 0 or mi2 == h_grid.size - 1:
+                        rail2 += 1
+                    for name, lv in levels.items():
+                        if _hpd_contains(h_grid, post2, h_true, lv):
+                            cov2[name] += 1
+                else:
+                    logL, diag = _run_realization_catalogue(
+                        h_true, h_grid, log_Dh, config, rng, cat, beta_G, beta_Gbar
+                    )
                 cat_diag.append(diag)
                 completion_fractions.append(diag["completion_fraction"])
             else:
@@ -1530,12 +2560,29 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
             "map_std": float(np.std(maps)),
             "map_median": float(np.median(maps)),
             "map_bias": float(np.mean(maps)) - h_true,
+            # Per-realization MAPs, in seed order: the paired-read rule [A2]
+            # requires cross-cell comparisons as per-realization deltas on a
+            # shared seed stream, which aggregates alone cannot provide.
+            "maps": [float(m) for m in maps],
             "completion_fraction": float(np.mean(completion_fractions)),
             # None (JSON null) is the deliberate empty sentinel — NEVER NaN
             # (NaN != NaN would break full-dict equality comparisons).
             "dlogL_dh_host_mean": float(np.mean(host_tilts)) if host_tilts else None,
             "dlogL_dh_completion_mean": (float(np.mean(comp_tilts)) if comp_tilts else None),
         }
+        if config.mass_channel:
+            # The 2D (with-BH-mass) channel of the SAME realizations — the
+            # harness counterpart of production's per-event both-channel
+            # diagnostics. The top-level block above stays the 1D channel.
+            results[f"{h_true:.4f}"]["mass_channel_2d"] = {
+                "coverage": {name: cov2[name] / n for name in levels},
+                "rail_fraction": rail2 / n,
+                "map_mean": float(np.mean(maps2)),
+                "map_std": float(np.std(maps2)),
+                "map_median": float(np.median(maps2)),
+                "map_bias": float(np.mean(maps2)) - h_true,
+                "maps": [float(m) for m in maps2],
+            }
         if cat_diag:
             for key in (
                 "empty_ball_fraction",
@@ -1701,7 +2748,66 @@ def main(argv: list[str] | None = None) -> None:
         default=0.004,
         help="H0 grid spacing config.h_step; lower for finer floor-discriminator grids.",
     )
+    parser.add_argument(
+        "--noise-model",
+        choices=["const", "model", "production"],
+        default=None,
+        help="Three-way GW noise-model cell (Q-0 audit, 2026-08-17). 'const' = "
+        "scattered d_L_obs + constant sigma = sigma_f*d_L_obs (the committed "
+        "harness convention; carries error sub-terms (a) sigma-at-scattered-obs "
+        "AND (b) no width variation across the z-integral). 'model' = the "
+        "z-dependent width sigma_f*A(z)/h (neither sub-term). 'production' = NO "
+        "measurement scatter (d_L_obs == d_L_true) + constant sigma at the truth "
+        "— carries sub-term (b) ONLY, which is what production does. Overrides "
+        "--sigma-model-in-likelihood / --no-gw-scatter when given.",
+    )
+    parser.add_argument(
+        "--no-gw-scatter",
+        action="store_true",
+        help="Remove the GW (d_L, M_z) measurement scatter: d_L_obs == d_L_true "
+        "(production has no measurement scatter). The RNG draw is still made and "
+        "discarded so paired scatter/no-scatter cells share the random stream.",
+    )
+    parser.add_argument(
+        "--mass-channel",
+        action="store_true",
+        help="Enable the second (mass) observable: galaxies carry BH masses, "
+        "detection becomes S_4D(d_L, M_z), the catalogue leg carries a "
+        "per-candidate Gaussian mass overlap and the completion leg the mass "
+        "factor g / g_sel recomputed at every h. Requires --catalogue-mode. The "
+        "2D-channel coverage/bias block is reported under 'mass_channel_2d'.",
+    )
+    parser.add_argument("--mass-slope", type=float, default=0.0)
+    parser.add_argument(
+        "--mass-horizon-index",
+        type=float,
+        default=0.0,
+        help="S_4D horizon index alpha_M: d50(M_z) = d50 (M_z/1e6)^alpha_M. 0.0 "
+        "reduces the survival exactly to the mass-blind p_det; a mass-BEARING "
+        "cell must set it > 0 (e.g. 0.25).",
+    )
+    parser.add_argument("--sigma-mz-frac", type=float, default=0.10)
+    parser.add_argument("--rho-dl-mz", type=float, default=0.0)
+    parser.add_argument("--sigma-m-gal-frac", type=float, default=0.30)
+    parser.add_argument("--mass-rate-index", type=float, default=0.0)
+    parser.add_argument("--n-hermite", type=int, default=24)
+    parser.add_argument(
+        "--selection-cell",
+        choices=list(SELECTION_CELLS),
+        default="off",
+        help="Mirror of production's selection_in_completion_numerator: 'off' = "
+        "pre-#118 estimator, '1d' = [P2] only (S_bar_phi in the 1D completion "
+        "numerator), '2d' = [P1] only (fused g_sel in the 2D completion leg), "
+        "'fused' = the landed production pairing. Requires --mass-channel.",
+    )
+    parser.add_argument("--event-chunk", type=int, default=16)
     args = parser.parse_args(argv)
+
+    sigma_model = args.sigma_model_in_likelihood
+    gw_scatter = not args.no_gw_scatter
+    if args.noise_model is not None:
+        sigma_model = args.noise_model == "model"
+        gw_scatter = args.noise_model != "production"
 
     config = PPCoverageConfig(
         n_realizations=args.n_realizations,
@@ -1719,13 +2825,24 @@ def main(argv: list[str] | None = None) -> None:
         mixture_mode=args.mixture_mode,
         membership_on_observed=args.membership_on_observed,
         pdet_in_numerator=args.pdet_in_numerator,
-        sigma_dl_model_in_likelihood=args.sigma_model_in_likelihood,
+        sigma_dl_model_in_likelihood=sigma_model,
         d50_gpc=args.d50_gpc,
         w_pdet_gpc=args.w_pdet_gpc,
         catalogue_mode=args.catalogue_mode,
         n_galaxies=args.n_galaxies,
         sky_frac=args.sky_frac,
         resample_catalogue_per_realization=args.resample_catalogue_per_realization,
+        gw_measurement_scatter=gw_scatter,
+        mass_channel=args.mass_channel,
+        mass_slope=args.mass_slope,
+        mass_horizon_index=args.mass_horizon_index,
+        sigma_mz_frac=args.sigma_mz_frac,
+        rho_dl_mz=args.rho_dl_mz,
+        sigma_m_gal_frac=args.sigma_m_gal_frac,
+        mass_rate_index=args.mass_rate_index,
+        n_hermite=args.n_hermite,
+        selection_cell=args.selection_cell,
+        event_chunk=args.event_chunk,
     )
     out = run_coverage(config)
     args.output.write_text(json.dumps(out, indent=2))
