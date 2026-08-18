@@ -7,6 +7,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added (validation harness — catalogue-leg selection cells, 2026-08-18)
+- **`darksiren_emri/validation/pp_coverage.py` — `selection_cell` extended with `cat1d` and
+  `symmetric`** (instrumentation, [C-SYM]/[P3] front; prereg
+  `results/pp_coverage_csym_20260818/PREREGISTRATION_G1_CATLEG_SYMMETRY.md` §0, verifier
+  `VERIFIER_PRECHECK_G1G2.md` Parts I–V): `cat1d` inserts the survival factor S̄_φ(z;h) into
+  each catalogue candidate's 1D numerator term inside its z-kernel integral (no completion
+  insertion, no new normalization); `symmetric` = `fused` + `cat1d` (the [C-SYM] both-legs
+  form, 1D leg only). Pre-existing modes verified bit-identical (test t1 + run-level N-A
+  referent, cluster-vs-local maxabsdiff 0.0). New test module
+  `darksiren_emri_test/validation/test_pp_coverage_csym.py` (13 tests, t1–t5 structural
+  nulls). G-1/G-2 pre-registrations, scorers, drivers and arm-validity preflights in
+  `results/pp_coverage_csym_20260818/`.
+
 ### Changed (`[PHYSICS]` selection fusion — production completion legs, 2026-08-17)
 - **`darksiren_emri/bayesian_inference/bayesian_statistics.py` — fused detection survival
   in BOTH `absolute_marginal` completion legs** (ledger rows #117–#118; gate artifact

@@ -220,6 +220,16 @@ Selection cell (``PPCoverageConfig.selection_cell``) mirrors production's
 construction, so ``off``/``2d`` share their 1D result bit-for-bit and
 ``off``/``1d`` share their 2D result (pinned by a test).
 
+``"cat1d"``/``"symmetric"`` (G-1 [C-SYM]/[P3] catalogue-leg-symmetry
+extension, harness-only, no production change; see
+``results/pp_coverage_csym_20260818/PREREGISTRATION_G1_CATLEG_SYMMETRY.md``):
+``"cat1d"`` inserts the SAME ``S_bar_phi(z;h)`` table into the CATALOGUE
+candidates' 1D z-kernel numerator only (no completion-leg insertion, no new
+normalization); ``"symmetric"`` = ``"fused"`` PLUS the ``"cat1d"``
+catalogue-leg factor. 1D-leg only: the 2D per-candidate catalogue block is
+untouched by either, so ``"symmetric"``'s 2D channel reduces exactly to
+``"fused"``'s.
+
 Noise-model cells (``--noise-model``; Q-0 audit, 2026-08-17). The committed
 "const-sigma" convention conflates two error sub-terms: **(a)** sigma
 evaluated at a SCATTERED ``d_L_obs`` instead of ``d_L_true``, and **(b)** the
@@ -705,7 +715,13 @@ class PPCoverageConfig:
     # Selection cell, mirroring production's
     # selection_in_completion_numerator ('off' = pre-#118 estimator, '1d' =
     # [P2] only, '2d' = [P1] only, 'fused' = the landed production pairing).
-    selection_cell: Literal["off", "1d", "2d", "fused"] = "off"
+    # 'cat1d' and 'symmetric' are the G-1 [C-SYM]/[P3] catalogue-leg-symmetry
+    # extension (harness-only, no production change): 'cat1d' inserts
+    # S_bar_phi(z;h) into the CATALOGUE candidates' 1D z-kernel numerator
+    # only (no completion-leg insertion); 'symmetric' is 'fused' PLUS the
+    # 'cat1d' catalogue-leg factor (both legs symmetric under the same
+    # S_bar_phi). See PREREGISTRATION_G1_CATLEG_SYMMETRY.md Sec 0.
+    selection_cell: Literal["off", "1d", "2d", "fused", "cat1d", "symmetric"] = "off"
     # Events processed per vectorized block (memory/speed trade-off).
     event_chunk: int = 16
 
@@ -1563,7 +1579,7 @@ M_SOURCE_MIN: float = 1.0e4
 M_SOURCE_MAX: float = 1.0e7
 M_REF_MSUN: float = 1.0e6
 
-SELECTION_CELLS: tuple[str, ...] = ("off", "1d", "2d", "fused")
+SELECTION_CELLS: tuple[str, ...] = ("off", "1d", "2d", "fused", "cat1d", "symmetric")
 
 
 def dark_mass_density_per_mass(
@@ -2003,8 +2019,13 @@ def _completion_numerator_batch(
     wpop = _inference_population_weight(zq, config.inference_wpop_tilt)  # (B, nz)
     base = integrand * (wq * wpop)[:, :, None]  # (B, nz, nh)
 
-    sel_1d = config.selection_cell in ("1d", "fused")
-    sel_2d = config.selection_cell in ("2d", "fused")
+    # 'symmetric' behaves exactly as 'fused' on the completion leg (both
+    # numerator legs, [P1]+[P2]); its ADDITIONAL catalogue-leg S_bar_phi
+    # factor is inserted separately, in the catalogue candidate's z-kernel
+    # (_run_realization_catalogue_mass), not here. 'cat1d' inserts NOTHING
+    # on the completion leg (behaves exactly as 'off' here).
+    sel_1d = config.selection_cell in ("1d", "fused", "symmetric")
+    sel_2d = config.selection_cell in ("2d", "fused", "symmetric")
     if sel_1d:
         if survival_table is None:
             raise ValueError("selection_cell '1d'/'fused' needs the S_bar_phi table")
@@ -2315,7 +2336,21 @@ def _run_realization_catalogue_mass(
             np.add.at(rho_2d, mem_event, kern[:, :, None] * mz)
 
         common = (wq * wpop_q)[:, :, None] * pGW  # (nb, nz, nh)
-        sum_wN_1d = np.asarray((common * rho_1d[:, :, None]).sum(axis=1), dtype=np.float64)
+        # G-1 [C-SYM] 'cat1d'/'symmetric': the SAME S_bar_phi(z;h) table the
+        # completion leg uses ([P2]) enters the CATALOGUE candidates' 1D
+        # numerator term, INSIDE this z-kernel integral (multiplicatively,
+        # before the z-sum) -- no new normalization is introduced (mirrors
+        # the completion leg's registered form). 1D-leg only: the 2D
+        # per-candidate block (`common` / `sum_wN_2d`) is untouched, so
+        # 'symmetric' reduces exactly to 'fused' on the 2D channel.
+        if config.selection_cell in ("cat1d", "symmetric"):
+            s_bar_cat = _interp_survival_table(zq, survival_table[0], survival_table[1]).reshape(
+                nb, config.n_z_quad, nh
+            )
+            common_1d = common * s_bar_cat
+        else:
+            common_1d = common
+        sum_wN_1d = np.asarray((common_1d * rho_1d[:, :, None]).sum(axis=1), dtype=np.float64)
         sum_wN_2d = np.asarray((common * rho_2d).sum(axis=1), dtype=np.float64)
         if mode == "lcat":
             pdet_q = _interp_survival_table(zq, survival_table[0], survival_table[1]).reshape(
@@ -2798,7 +2833,9 @@ def main(argv: list[str] | None = None) -> None:
         help="Mirror of production's selection_in_completion_numerator: 'off' = "
         "pre-#118 estimator, '1d' = [P2] only (S_bar_phi in the 1D completion "
         "numerator), '2d' = [P1] only (fused g_sel in the 2D completion leg), "
-        "'fused' = the landed production pairing. Requires --mass-channel.",
+        "'fused' = the landed production pairing, 'cat1d' = S_bar_phi in the "
+        "catalogue candidates' 1D numerator only (G-1 [C-SYM] extension), "
+        "'symmetric' = 'fused' plus 'cat1d'. Requires --mass-channel.",
     )
     parser.add_argument("--event-chunk", type=int, default=16)
     args = parser.parse_args(argv)

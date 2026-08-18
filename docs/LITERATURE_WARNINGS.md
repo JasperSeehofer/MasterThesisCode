@@ -178,4 +178,18 @@ pass reads it for warnings rather than for equations.
 
 ---
 
-**Amendment log.** 2026-08-17, five rows added/updated per ledger row #120 item 4.
+## Mandel, Farr & Gair (2019), arXiv:1809.02063 — selection-consistency principle
+
+Load-bearing for the Gray-convention finding and the [C-SYM] front (the coded convention's
+`bayesian_statistics.py` comment cites it; the paper thread will cite it), but the repo's
+working quote is a paraphrase.
+
+| # | warning/condition | what it requires | our status | evidence |
+|---|---|---|---|---|
+| MFG-a | the consistency principle as quoted in `docs/derivations/fixb_pathA_phi_marginal_selection.md` §1 ("the selection normalisation must use the same population model and the same detection model as every numerator", attributed to Eqs. (5)–(7)/assumption A2) is a **repo paraphrase, not verbatim-verified** against the arXiv text | verbatim verification (section/eq. numbers) before the paper quotes or blockquotes it; until then cite as supported claim only (same treatment as the G-3 Gray gloss caveat) | `UNCHECKED` | R0 sweep 2026-08-18 ([C-SYM]/[P3] front stage 0); also confirmed: no cited paper states the data-deterministic/latent-thresholded fork or a σ_z→0 validity condition for this bias class — both are repo-internal results |
+
+---
+
+**Amendment log.** 2026-08-17, five rows added/updated per ledger row #120 item 4. 2026-08-18,
+MFG section + row MFG-a added (Stage-L R0 exit, [C-SYM]/[P3] front stage 0; autonomous-cycle
+session, flagged).
