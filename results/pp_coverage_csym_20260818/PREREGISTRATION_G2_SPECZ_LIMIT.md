@@ -221,6 +221,26 @@ Same as G-1 §5 (⅓ × 0.0053 = 0.0018 in h) for any residual small-σ_z cost q
 - **Pretuning fill-in appends below (append-only):** Q*, κ, convergence table, projected grid
   cost vs the 6 CPU-h ceiling (κ-STOP → author if exceeded, per §3/G2-6).
 
+**PRETUNING FILL-IN (2026-08-18, appended per the registered exception; wide grid per
+A-PF-4; seed 20280399, σ_z = 0.002, R = 8):**
+
+| n_z_quad | runtime (s) | bias@0.62 | bias@0.72 | bias@0.84 |
+|---|---|---|---|---|
+| 160 (default) | 23.8 | −0.0035 | −0.0035 | −0.0040 |
+| 240 | 33.6 | −0.0035 | −0.0035 | −0.0040 |
+| 480 | 66.7 | −0.0030 | −0.0030 | −0.0040 |
+| 960 | 160.0 | −0.0030 | −0.0030 | −0.0040 |
+
+- **Q\* = 160** (smallest value with per-truth |Δ| ≤ 0.0005 vs next larger: Δ ≡ 0.0000 vs
+  240); **κ = 1.00** ⇒ projected grid ≈ 2.1–2.2 CPU-h ≪ 6 CPU-h ceiling — **no κ-STOP**
+  (G2-6's likely-fire disclosure did not realize; the wide grid's z-windows are covered by
+  the default quadrature).
+- **N-c (scored gate): PASS at the edge** — 160→480 (the registered ≥2·Q\* probe) shifts
+  per-truth MAP bias by 0.0005/0.0005/0.0000 vs the ≤ 0.0005 gate; note the probe MAP means
+  at R=8 are quantized in 0.0005 steps (h_step 0.004 / 8), so the read is
+  quantization-limited — disclosed, not adjudicated away; the gate passes as registered.
+- Archived: `preflight/pretune_g2.json` (grid recorded wide, per A-PF-4).
+
 ---
 
 ## PRE-FREEZE AMENDMENT A — 2026-08-18 — grid headroom (responsive to the registered §3b
@@ -254,3 +274,44 @@ on the narrow grid is void for scoring.
 ## VERDICT
 
 *(append-only below this line after execution)*
+
+**VERDICT — 2026-08-18 — registered read (scorer `readout_g2.py --registered`, output
+`readout_g2_output.json`; all 9 cells complete, 0 missing; grid ≈ 0.85 CPU-h realized at
+κ = 1, well under the 6 CPU-h ceiling). Branch presented, not adjudicated.**
+
+Validity strip: preconditions PASS (|C_cat(0.035)| = 0.0424, |C_comp(0.035)| = 0.0300 at
+h = 0.72, both ≥ 0.010); N-a PASS (both rung-1 pairs non-degenerate, n_nonzero = 120/120);
+N-b PASS (rung-1 off vs prodcal off within 0.78·combined-SE at every truth); N-c PASS at the
+edge (fill-in above); no rail-flagged truth anywhere (rail fractions 0.0 in all 9 cells);
+2D channel exactly degenerate in every pair (registered channel-locality expectation —
+descriptive only).
+
+Paired 1D deltas (mean ± SE at h = 0.62 / 0.72 / 0.84):
+
+| rung σ_z | C_cat = cat1d − off | C_comp = 1d − off |
+|---|---|---|
+| 0.035 | +0.0437 ± 0.0012 / +0.0424 ± 0.0013 / +0.0404 ± 0.0011 | −0.0291 ± 0.0007 / −0.0300 ± 0.0007 / −0.0289 ± 0.0009 |
+| 0.010 | +0.0055 ± 0.0002 / +0.0057 ± 0.0002 / +0.0052 ± 0.0002 | −0.0027 ± 0.0002 / −0.0027 ± 0.0002 / −0.0023 ± 0.0002 |
+| 0.002 | +0.0037 ± 0.0001 / +0.0038 ± 0.0001 / +0.0034 ± 0.0001 | −0.0004 ± 0.0001 / −0.0004 ± 0.0001 / −0.0009 ± 0.0002 |
+
+- **H-Zcomp: FAIL branch fires** — |C_comp(0.002)| = 0.00043 ≤ 0.10·|C_comp(0.035)| = 0.0030
+  at h = 0.72 (sign-coherent at all truths): the completion-leg insertion cost COLLAPSES
+  (~70×) at spectroscopic precision. The registered counter-prediction (GW-width-driven
+  persistence, §1) is refuted by the measurement. Registered FAIL-meaning applies: the
+  σ_z-conditionality generalizes; the V-deep asymmetric-insertion boundary (rows #120–#124)
+  is itself σ_z-conditional; flagged back to the [C-SYM] claim card as new stage-0 evidence.
+- **H-Zcat: PASS as registered** — |C_cat(0.002)| = 0.00377 ≤ max(0.10·0.0424, 2·SE) =
+  0.00424; monotone non-increasing at every step; overlap guard clear (2·SE = 0.0002 ≪
+  ⅓·baseline = 0.0141). **Material caveat (§5 computation, consequence is the author's
+  [RULE]):** the σ_z = 0.002 residual +0.0038 ± 0.0001 is nonzero at ~40σ and EXCEEDS the
+  registered materiality yardstick 0.0018 — the catalogue-leg "no-cost limit" is approximate
+  (~9% of baseline survives at spec-z precision; a σ_z-independent floor component is the
+  natural reading — e.g. S̄_φ variation across the ball's intrinsic z-extent — measured, not
+  mechanism-attributed here).
+- **Proposed wording of record (returns to the author with G-1):** the selection-insertion
+  costs at this venue are photo-z-driven in BOTH legs; at spectroscopic precision the
+  completion-term cost vanishes to sub-materiality (−0.0004) while the catalogue-leg
+  insertion retains a small but material +0.0038 floor at σ_z = 0.002. The paper's σ_z → 0
+  sentence must be stated per-leg with these measured numbers (decision item 3:
+  measured-first, superseding the caveated-statement option) — NOT as a blanket no-cost
+  limit. Extrapolation below σ_z = 0.002 remains a trend statement (caveat 1).

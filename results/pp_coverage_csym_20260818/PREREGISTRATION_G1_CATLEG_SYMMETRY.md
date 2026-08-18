@@ -391,3 +391,148 @@ items 2–3 stand on the grid-change ground alone.
 ## VERDICT
 
 *(append-only below this line after execution)*
+
+**VERDICT — 2026-08-18 — registered read (scorer `readout_g1.py --registered`, output
+`readout_g1_output.json`; all cells complete, 0 missing; realized cost ≈ 1.8 of 3 CPU-h incl.
+referent). Branch presented, not adjudicated.**
+
+- **N-A: PASS.** REP-OFF-D bit-exact vs the referent of record and REP-OFF-P bit-exact vs the
+  on-disk prodcal cell, every truth, full R=120 — the knob extension provably leaves
+  pre-existing modes untouched at run level.
+- **N-B: PASS** (per-pair): every registered pair non-degenerate at ≥1 truth; noted honestly:
+  P4/P5 deltas at h = 0.84 are exact grid-quantized zeros (sub-h_step per-realization motion),
+  a physical small-lever result, not knob inertness (the same lever moves +0.038-class at
+  V-deep).
+- **H-G1 (P4, V-prod, symmetric − fused): PASS at every truth** — +0.00023 ± 0.00009 /
+  +0.00003 ± 0.00003 / +0.00000; all ≤ max(0.0010, 2·SE); noise guard satisfied (SE ≤ 0.9e-4
+  ≪ 3.0e-4). **Registered meaning: the catalogue-leg fusion is immaterial on top of the
+  landed form in the production-analog flat-S̄ regime (≤ +0.0002 in h, ⅛ of the materiality
+  yardstick); the ~170 CPU-h production catalogue-leg counterfactual is NOT warranted;
+  presentation option (a) carries this measured harness bound.**
+- **H-CAT (P3, V-deep, cat1d − off): PASS** — +0.0435 ± 0.0012 / +0.0428 ± 0.0011 /
+  +0.0409 ± 0.0012, coherent positive, ≤ +0.10 everywhere: the audit's mechanism table is
+  confirmed at registered fidelity (+0.041 ad-hoc → +0.0428 registered).
+- **H-SYM (V-deep symmetric absolute, 1D): MIXED — partial restoration.** Bias leg PASSES
+  (+0.00583 ± 0.00089 / +0.00727 ± 0.00102 / +0.00803 ± 0.00144, all inside ±0.012;
+  5× collapse from fused's −0.034; the audit's ad-hoc +0.008 reproduced); coverage leg misses
+  at one truth (cov68 = 0.475/0.617/0.575 vs ≥ 0.50 at every truth — 0.6·binomial-SE below
+  the edge at h = 0.62). No FAIL leg fires (bias ≪ 0.020; cov ≫ 0.20). A coherent positive
+  residual (symmetric − off = +0.0074/+0.0091/+0.0113, P2) survives the two-leg cancellation
+  (+0.0424 cat vs −0.0300 comp at this σ_z, G-2 rung 1).
+- **P1 (V-deep, symmetric − fused): +0.0380/+0.0413/+0.0397** — the asymmetry's direct cost
+  at the amplitude venue, now a registered number.
+- Registered branch of record: **H-G1 PASS + H-SYM MIXED** → first-class MIXED; the §4 branch
+  designates the V-flat symmetric cell as separating. **Post-registration fact disclosed:**
+  a V-flat ABSOLUTE read is confounded by the raised-d50 venue bias (VERDICT-2: the off twin
+  itself carries +0.010…+0.014 there) — a drafting slip in this prereg's §4 branch (neither
+  drafter nor verifier caught it). The designated cell is therefore run WITH its off/fused
+  twins for paired reads, and AMENDMENT B (below) additionally registers the sharper
+  separating cell suggested by G-2's measured σ_z-dependence: the V-deep symmetric cell at
+  σ_z = 0.002. Both return with this MIXED to the author.
+
+---
+
+## AMENDMENT B — 2026-08-18 — H-SYM MIXED separating cells (registered BEFORE running;
+## autonomous-cycle execution, flagged; verifier one-item pre-check recorded below)
+
+**Provenance:** the §4 "H-G1 PASS + H-SYM MIXED" branch (fired above) designates a V-flat
+symmetric cell; the VERDICT discloses that an absolute read there is void by the raised-d50
+confound (VERDICT-2), so the designated cell runs with paired twins; G-2's measured
+σ_z-dependence (both legs' insertions photo-z-driven) supplies the sharper separating axis.
+**Live interpretations of the H-SYM residual (+0.007 coherent, cov68 0.475–0.617):**
+(A) photo-z venue physics — the residual is the σ_z = 0.035 remnant of the imperfect
+two-leg cancellation and collapses with σ_z (G-2's floor story); (B) form/instrument — the
+symmetric insertion as specified is not the exact conditional (e.g. normalization or [P4]/V2
+prefactor class) and the residual persists at spec-z precision.
+
+**Cells (wide grid, production noise, n = 250, R = 120, truths {0.62, 0.72, 0.84}):**
+1. **SEP-Z:** V-deep, σ_z = 0.002, `symmetric`, seed 20280311, n_z_quad = Q* = 160 — pairs
+   against the existing G-2 `rung_0.002_off` (and descriptively `rung_0.002_cat1d`/`_1d`).
+   THE separating read.
+2. **V-flat trio:** z_support = 0.40, sky_frac = 1e-4, d50_gpc = 8×D50_GPC
+   (`CHOSEN_VFLAT.json` multiplier), seed 20271118 (deliberate reuse, VERDICT-2 pairing
+   class): `off`, `fused`, `symmetric` — paired reads only (absolute descriptive,
+   venue-confounded as registered).
+   **Preflight bound adjustment (registered):** at V-flat the catalogue-bearing fraction is
+   ≈ 0.145 by design (completion 0.855) — the §3b item-1 threshold (> 0.3) is replaced for
+   these cells by ∈ [0.05, 1.0); engagement certification is inverted for these cells (the
+   registered PASS hypothesis IS inertness, sub-grid-step class per the measured V-prod
+   pairs): probe-scale MAP-delta degeneracy is reported, never a STOP; knob health is
+   certified externally by the same-freeze V-deep measurement (P1/P3, +0.038…+0.043-class)
+   plus N-A. At full R=120, the VERDICT's N-B convention applies (non-degenerate at ≥ 1 truth
+   = engaged; exact grid-zeros at remaining truths recorded as physical sub-grid-step
+   motion); full-R degeneracy at ALL truths in BOTH pairs is scored PASS(inert at grid
+   resolution) with that reading stated — not an instrument STOP. *(A-B-2, applied
+   verbatim.)*
+
+**Registered reads and bands (1D channel; paired-SE-scaled edges as in §4):**
+- **SEP-Z read, delta_Z = (SEP-Z − rung_0.002_off) at h = 0.72** (additive expectation from
+  G-2 rung 3: C_cat + C_comp = +0.0033 — REPORTED-ONLY, never band-bearing: additivity is
+  measurably violated at rung 1 by −49%/−27%/−2% per truth [additive
+  +0.0146/+0.0124/+0.0115 vs measured P2 +0.0074/+0.0091/+0.0113], so the additive number is
+  an expectation to compare against, not an anchor — A-B-3): interpretation-A branch fires if
+  delta_Z ≤ ½ · (+0.0091) = +0.0046 (the σ_z = 0.035 P2 value halves or better) — the
+  residual is photo-z-driven; interpretation-B branch fires if delta_Z ≥ ⅔ · (+0.0091) =
+  +0.0061 — the residual persists at spec-z; MIXED between. Two-sided: delta_Z < −0.0010
+  (sign flip beyond noise) OR delta_Z ≥ 2·(+0.0091) = +0.0182 (beyond-persistence — exceeds
+  the σ_z = 0.035 residual itself, outside both interpretations) is MIXED-instrument (report,
+  audit before use; neither A nor B may be quoted). *(A-B-1, applied verbatim.)* Secondary
+  (descriptive): SEP-Z absolute bias/cov68 vs the rung_0.002_off twin's.
+- **V-flat paired reads:** symmetric − fused and symmetric − off, per truth: PASS(inert) =
+  |delta| ≤ max(0.0010, 2·paired-SE) at every truth; MATERIAL = coherent |delta| ≥ 0.0018 at
+  ≥ 2 truths; MIXED else. Meaning: whether the symmetric form stays inert in the
+  second flat-S̄ regime (high completion share), completing the [C-SYM] regime map.
+- **Nulls:** probe non-degeneracy per §3b (V-flat bound as amended); no rail flag > 0.10
+  (wide grid); SEP-Z instrument continuity — its generative stream must match
+  `rung_0.002_off` (same master seed 20280311, pinned by the harness stream-alignment tests).
+- **Rail-gate precedence (A-PF-1) and materiality yardstick (§5) carry unchanged.**
+
+**Budget:** SEP-Z ≈ 0.35 CPU-h + V-flat trio ≈ (300 + 900 + 950) s ≈ 0.6 CPU-h + probes ≈
+0.1 ⇒ ≈ 1.05 CPU-h; G-1 running total ≈ 2.9 of the 3 CPU-h ceiling (just inside; any overrun
+STOPs to the author per §3).
+
+**Branch handling:** every branch above returns to the author as a [RULE] with the H-SYM
+MIXED — nothing is adjudicated in-session. No production change on any branch.
+**Execution-completeness (A-B-4):** no Amendment-B branch is adjudicated until SEP-Z, all
+three V-flat cells, and their probes complete (or a registered STOP fires); both separating
+reads return to the author together with the H-SYM MIXED. V-flat overlap guard: if any V-flat
+paired SE exceeds 9e-4 (where 2·SE meets the 0.0018 MATERIAL edge), that read is
+UNDETERMINED-BY-NOISE — measured same-venue same-seed SE class 1.4–1.7e-4 gives ~6× margin,
+so this guard is expected dormant. Budget disclosure: the running total 2.9 of 3 CPU-h leaves
+≈ 5% margin — a ceiling STOP on ordinary runtime variance is plausible and is the designed
+author-return, not an anomaly.
+
+---
+
+## AMENDMENT-B VERDICT — 2026-08-18 — separating reads (scored with the pre-committed
+## scorer's paired_read; probes READY, archived; realized cost ≈ 0.9 CPU-h → G-1 total
+## ≈ 2.75 of 3 CPU-h, inside the ceiling). Branch presented, not adjudicated.
+
+- **SEP-Z (V-deep symmetric at σ_z = 0.002 − `rung_0.002_off`): interpretation-A branch
+  fires** — delta_Z = +0.00330 ± 0.00014 / **+0.00287 ± 0.00017** / +0.00253 ± 0.00018 at
+  h = 0.62/0.72/0.84; at the primary truth +0.00287 ≤ +0.0046 (the ½·P2 edge), nowhere near
+  the B edge (+0.0061) or the MIXED-instrument edges. **The H-SYM residual is photo-z venue
+  physics, not a form defect:** at spec-z precision the symmetric estimator's absolute bias is
+  −0.0003/−0.0009/−0.0016 (vs the off twin's −0.0036/−0.0038/−0.0041) — the symmetric form is
+  as calibrated as the venue permits at σ_z = 0.002. The reported-only additive expectation
+  (+0.0033) is matched within −13% at the primary truth. Descriptive: the spec-z venue's
+  coverage PROFILE is distorted for both cells (e.g. off at 0.72: cov50 0.33 / cov68 0.74;
+  symmetric cov68 ≈ 1.0 — over-wide 68% intervals), a σ_z = 0.002 venue property shared by
+  the calibrated control, reported not scored.
+- **V-flat trio: the catalogue-leg addition is BIT-INERT at flat S̄** — symmetric − fused
+  ≡ 0 exactly (n_nonzero = 0 at every truth, 120 realizations): PASS(inert at grid
+  resolution) per the A-B-2 convention, engagement established via symmetric − off
+  (n_nonzero 36/24/1). symmetric − off = +0.00120 ± 0.00017 / +0.00080 ± 0.00015 /
+  +0.00003 — **bit-identical to fused − off**, i.e. the entire delta is the already-certified
+  +0.001-class fused lever (row #124; VERDICT-2 measured the same values on the narrow grid —
+  an independent same-seed cross-grid replication). Formally the sym−off read is MIXED at
+  h = 0.62 (0.00120 > the 0.0010 PASS edge, below the 0.0018 MATERIAL edge); substantively
+  the symmetric ADDITION contributes zero. V-flat absolute legs venue-confounded as
+  registered (off twin cov68 0.15–0.25) — descriptive only.
+- **Overlap/noise guards:** all dormant (max paired SE 1.8e-4 ≪ 9e-4).
+- **Proposed synthesis (returns to the author as a [RULE]):** the H-SYM MIXED resolves to
+  interpretation A — [C-SYM]'s mechanism story is fully coherent: the ASYMMETRY owns the
+  V-deep displacement (P1 +0.041); the symmetric form's remaining +0.007 at σ_z = 0.035 is
+  the imperfect cancellation of two photo-z-driven insertion costs and collapses to
+  +0.0029 at spec-z precision (calibrated-in-bias there); at flat S̄ the catalogue-leg
+  addition is bit-inert. No branch proposes any production change.

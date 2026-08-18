@@ -571,3 +571,125 @@ new text:
 
 *Part-V verifier of record: same session. GO — the clause may enter the freeze commit as
 written; the three amendments above are recommended and none gates the freeze.*
+
+---
+
+## Part VI — One-item pre-check of G-1 AMENDMENT B (H-SYM MIXED separating cells), 2026-08-18
+
+**Verdict: GO-WITH-AMENDMENTS (2 BLOCKING, 2 NON-BLOCKING).** Ownership note first: the
+VERDICT's disclosed drafting slip (the §4 MIXED-branch's designated V-flat cell facing the
+VERDICT-2 raised-d50 confound on absolute reads) was indeed missed by this verifier too —
+Parts I–IV checked the confound at V-prod (N-C) but not on the branch-designated V-flat cell.
+The amendment's paired-only repair is the correct fix.
+
+### (1) A8-v2 (b)/(c)/(d) on the new bands + SEP-Z stream validity
+
+- **Edges recomputed from the scorer output** (`readout_g1_output.json`): P2 at h=0.72 =
+  +0.00913 ± 0.00020 → ½·(+0.0091) = 0.00457 ≈ 0.0046 ✓, ⅔ = 0.00609 ≈ 0.0061 ✓. A (≤0.0046)
+  and B (≥0.0061) are disjoint — **no both-fire**; the gap (0.0046, 0.0061) is first-class
+  MIXED ✓. Realized rung-3 paired-SE class ≈ 0.9–1.1e-4 (measured, G-2 rung-0.002 pairs) ⇒
+  the A/B edge separation 0.0015 ≈ 14σ — well-powered; no SE guard needed at this margin.
+- **Two-sidedness: interpretation-B is unbounded above** — a delta_Z of, say, +0.02 (beyond
+  any persistence reading of the +0.0091 point prediction) would fire B while refuting B's
+  meaning. Missing upper edge → **A-B-1 (BLOCKING)**, the exact defect class H-CAT's +0.10
+  cap was registered to prevent.
+- **SEP-Z pairing verified stream-valid on the artifacts:** `rung_0.002_off.json` ran wide
+  grid [0.56, 0.92], h_step 0.004, n_z_quad = 160, seed 20280311, σ_z = 0.002 — SEP-Z's
+  registered spec matches on every axis; selection_cell is estimator-side only (established
+  Part I) and N-A passed at full R on this freeze, so (SEP-Z − rung_0.002_off) is an exact
+  shared-stream pair. Q* = 160 is what the G-2 cells actually ran (verified in-config);
+  paired reads are common-mode in quadrature. Cross-registration reuse of a G-2 cell in a
+  G-1 read is flagged and same-freeze — valid.
+- **(d):** the V-flat MATERIAL read is count-based (≥2 truths); no explicit
+  execution-completeness line covers the Amendment-B cells → folded into **A-B-4**
+  (NON-BLOCKING; the "every branch returns as [RULE]" clause already prevents in-session
+  adjudication).
+
+### (2) The additive prediction +0.0033 — sound as REPORTED-ONLY, unsound as an anchor
+
+Arithmetic verified: C_cat(0.002) + C_comp(0.002) at h=0.72 = +0.00377 − 0.00043 = +0.00334 ✓.
+But additivity is **measurably violated at rung 1**: additive C_cat + C_comp =
++0.0146/+0.0124/+0.0115 vs measured P2 = +0.0074/+0.0091/+0.0113 — an interaction deficit of
+−49%/−27%/−2% by truth. The bilinear interaction shrinks ~100× at rung 3 (both legs ~10×
+smaller), so +0.0033 is a reasonable *expectation* there — but a quantity with a measured,
+strongly truth-dependent 2–49% model error cannot anchor a verdict band. As drafted the bands
+correctly use only the P2 value +0.0091; the parenthetical must be pinned so the additive
+number can never migrate into adjudication → **A-B-3**. (Same reason: keep SEP-Z adjudication
+at h = 0.72 as registered, with 0.62/0.84 reported descriptively — the interaction's
+truth-dependence makes a multi-truth coherence requirement unsafe to add now.)
+
+### (3) Budget arithmetic — verified, tight
+
+SEP-Z ≈ 0.35 CPU-h (symmetric-class wide-grid V-deep ≈ 1000 s × 1.38 ≈ 0.38 — consistent);
+V-flat trio (300 + 900 + 950) s = 0.60 ✓; probes 0.1 ⇒ 1.05 ✓. Running total 1.8 (VERDICT
+realized) + 1.05 = 2.85 ≈ 2.9 ✓ vs ceiling 3.0 — **margin ≈ 0.15 CPU-h (~5%)**: a ceiling
+STOP is plausible on ordinary runtime variance and must not be read as an anomaly → disclosed
+in A-B-4.
+
+### (4) V-flat trio voidness at 14.5% catalogue-bearing — NOT void, but the preflight would
+### spuriously STOP it as drafted
+
+Catalogue-bearing 0.145/completion 0.851–0.855 verified against the on-disk V-flat off cell.
+The trio is non-void: the lever is knob-healthy (the same knob at the same freeze moves
++0.038…+0.043 at V-deep — P1/P3 measured; stream tests + N-A pin alignment), and at V-flat the
+S̄ ≈ 0.95–1.0 near-constant catalogue factor still shifts the mixture balance measurably in
+expectation. **But the registered PASS hypothesis for the trio is precisely inertness
+(sub-grid-step deltas — cf. the measured V-prod pairs: +0.00003 at 0.72, exact grid-zeros at
+0.84), so §3b item-2's probe-delta non-degeneracy check contradicts the null under test:**
+at R=4 an inert lever plausibly yields all-zero MAP deltas ⇒ preflight STOP fires on a healthy
+cell — voidness-by-preflight, the inverse of the V-ctrl failure. → **A-B-2 (BLOCKING)**.
+
+### Part-VI amendments (exact quotable text)
+
+**A-B-1 [BLOCKING — A8-v2 (c)].** In the SEP-Z read, old text:
+
+> Two-sided: delta_Z < −0.0010 (sign flip beyond noise) is MIXED-instrument (report, audit
+> before use).
+
+new text:
+
+> Two-sided: delta_Z < −0.0010 (sign flip beyond noise) OR delta_Z ≥ 2·(+0.0091) = +0.0182
+> (beyond-persistence — exceeds the σ_z = 0.035 residual itself, outside both
+> interpretations) is MIXED-instrument (report, audit before use; neither A nor B may be
+> quoted).
+
+**A-B-2 [BLOCKING — check (4), preflight semantics for an inert-null cell].** In the V-flat
+trio's preflight paragraph, old text:
+
+> engagement is instead certified by non-degenerate probe deltas (§3b item 2 unchanged).
+
+new text:
+
+> engagement certification is inverted for these cells (the registered PASS hypothesis IS
+> inertness, sub-grid-step class per the measured V-prod pairs): probe-scale MAP-delta
+> degeneracy is reported, never a STOP; knob health is certified externally by the same-freeze
+> V-deep measurement (P1/P3, +0.038…+0.043-class) plus N-A. At full R=120, the VERDICT's N-B
+> convention applies (non-degenerate at ≥ 1 truth = engaged; exact grid-zeros at remaining
+> truths recorded as physical sub-grid-step motion); full-R degeneracy at ALL truths in BOTH
+> pairs is scored PASS(inert at grid resolution) with that reading stated — not an
+> instrument STOP.
+
+**A-B-3 [NON-BLOCKING — check (2), A8-v2 (e)].** In the SEP-Z read, old text:
+
+> (additive prediction from G-2 rung 3: C_cat + C_comp = +0.0033)
+
+new text:
+
+> (additive expectation from G-2 rung 3: C_cat + C_comp = +0.0033 — REPORTED-ONLY, never
+> band-bearing: additivity is measurably violated at rung 1 by −49%/−27%/−2% per truth
+> [additive +0.0146/+0.0124/+0.0115 vs measured P2 +0.0074/+0.0091/+0.0113], so the additive
+> number is an expectation to compare against, not an anchor)
+
+**A-B-4 [NON-BLOCKING — A8-v2 (d) + disclosures].** Append to Branch handling:
+
+> Execution-completeness: no Amendment-B branch is adjudicated until SEP-Z, all three V-flat
+> cells, and their probes complete (or a registered STOP fires); both separating reads return
+> to the author together with the H-SYM MIXED. V-flat overlap guard: if any V-flat paired SE
+> exceeds 9e-4 (where 2·SE meets the 0.0018 MATERIAL edge), that read is
+> UNDETERMINED-BY-NOISE — measured same-venue same-seed SE class 1.4–1.7e-4 gives ~6× margin,
+> so this guard is expected dormant. Budget disclosure: the running total 2.9 of 3 CPU-h
+> leaves ≈ 5% margin — a ceiling STOP on ordinary runtime variance is plausible and is the
+> designed author-return, not an anomaly.
+
+*Part-VI verifier of record: same session. BLOCKING: A-B-1, A-B-2 — apply verbatim before any
+Amendment-B cell or probe runs.*

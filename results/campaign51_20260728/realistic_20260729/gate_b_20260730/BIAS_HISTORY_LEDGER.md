@@ -1044,3 +1044,44 @@ diagnostics; the flattened-detection venue-physics observation is logged as a SE
    G-1/G-2 grounding (each prereg-first, own [DO]); flattened-detection venue-physics SEED;
    2D-channel venue noise-coupling (+0.01 class, off-cells) SEED; −11.7-class residual (in
    band); pool-vs-model mismatch. Budget close-out: ≈16.5 of 18 CPU-h ceiling.
+
+## Row #125 — 2026-08-18 — [C-SYM]/[P3] front executed autonomously; G-1/G-2 grounding measurements banked; ratification bundle PENDING
+
+**Author's verbatim ruling (2026-08-18, mid-session):** "Please move through this research
+cycle autonomously and flag it accordingly. Make sure you dont make the same mistake as last
+cycle where one of the instrument arms was void in the end. looking forward to see the
+results!"
+
+**Orchestrator-derived itemization (flagged for author veto):**
+
+1. **[DO — granted, autonomy-scoped]** The [C-SYM]/[P3] cycle's [DO]-class steps executed
+   in-session without per-step return: prereg authoring (G-1/G-2), verifier pre-checks
+   (Parts I–VI, all amendments applied verbatim), instrument build (`cat1d`/`symmetric`
+   selection cells + 13 tests), freeze (`4dd822ad`), arm-validity preflights (the mandated
+   anti-void gate — caught a grid-edge void and a 2D-band void pre-run; N-A false alarm
+   resolved as a probe-scale artifact, full-R cluster-vs-local BIT-EXACT), scored runs
+   (G-1 ≈ 2.75/3 CPU-h; G-2 ≈ 1.1/6 CPU-h), registered readouts, AMENDMENT B separating
+   cells. **Branch calls NOT adjudicated** — per the binding default they return as fresh
+   [RULE]s (the readout's §6 decision table).
+2. **Measurements of record (registered, presented):** H-G1 PASS — catalogue-leg fusion
+   immaterial in the production-analog regime (symmetric − fused ≤ +0.0002 in h; V-flat
+   bit-inert) ⇒ the ~170 CPU-h production catalogue-leg counterfactual proposed NOT
+   warranted. H-CAT PASS (+0.0428 — the audit's ad-hoc trio now registered). H-SYM MIXED →
+   SEP-Z interpretation-A (the symmetric form's +0.007 residual at σ_z = 0.035 is photo-z
+   venue physics; calibrated-in-bias at spec-z). G-2: BOTH legs' insertion costs are
+   photo-z-driven (completion −0.0300 → −0.0004, ~70×, refuting the registered persistence
+   prediction; catalogue +0.0424 → +0.0038, PASS with the +0.0038 residual MATERIAL vs the
+   0.0018 yardstick). σ_z-conditionality annotated to the [C-SYM] claim card as new stage-0
+   evidence.
+3. **[RULE — PENDING, ×6]** The ratification bundle + the [P3] presentation pick (a)/(b) +
+   the σ_z-wording ruling return to the author via
+   `results/pp_coverage_csym_20260818/CAMPAIGN_REPORT_20260818.md` §6 (decisions 1–6).
+   Nothing in this row ratifies them.
+4. **Seeds logged, not opened:** σ_z = 0.002 coverage-profile distortion (venue property,
+   shared by calibrated control); catalogue-leg σ_z-independent floor component (mechanism
+   unattributed).
+
+Products: `results/pp_coverage_csym_20260818/` (preregs + Parts I–VI verifier record + build
+note + 24 cells + scorer outputs + report); `docs/LITERATURE_WARNINGS.md` row MFG-a; the
+instrument-determinism result (full-R bit-exactness across machines). No production change
+proposed or made.
