@@ -1085,3 +1085,25 @@ Products: `results/pp_coverage_csym_20260818/` (preregs + Parts I–VI verifier 
 note + 24 cells + scorer outputs + report); `docs/LITERATURE_WARNINGS.md` row MFG-a; the
 instrument-determinism result (full-R bit-exactness across machines). No production change
 proposed or made.
+
+## Row #126 — 2026-08-18 — G-1/G-2 bundles ratified; [P3] presentation pick = (b) resolved-in-paper
+
+**Author's verbatim ruling (2026-08-18):** "awesome, approved and please do b."
+
+**Orchestrator-derived itemization (flagged for author veto), against
+`results/pp_coverage_csym_20260818/CAMPAIGN_REPORT_20260818.md` §6:**
+
+1. **[RULE — ratified, §6 #1]** G-1 readout bundle of record (H-G1 PASS ⇒ the ~170 CPU-h
+   production catalogue-leg counterfactual is NOT warranted; H-CAT PASS; H-SYM MIXED resolved
+   interpretation-A via SEP-Z; V-flat bit-inertness; disclosed drafting flags).
+2. **[RULE — ratified, §6 #2]** G-2 readout bundle of record (H-Zcat PASS with the material
+   +0.0038 spec-z floor; H-Zcomp FAIL = both legs photo-z-driven; σ_z-conditionality
+   annotated to the [C-SYM] card).
+3. **[RULE — decided, §6 #3]** **[P3] presentation pick = OPTION (b), resolved-in-paper:**
+   the paper presents the latent-model derivation as the correct form for BOTH legs; the
+   retained catalogue-leg convention as a measured approximation (M-4 mixture-share bound +
+   the new G-1 direct bound ≤ +0.0002 in regime); the [P4]/V2 measure-prefactor question
+   discussed in text (per proposal §2.4(b)).
+4. **[RULE — ratified, §6 #4]** σ_z → 0 wording of record: per-leg, with measured numbers.
+5. **[DO — granted, §6 #5]** Paper integration work proceeds under pick (b).
+6. **[RULE — ratified, §6 #6]** Both seeds logged, not opened.
