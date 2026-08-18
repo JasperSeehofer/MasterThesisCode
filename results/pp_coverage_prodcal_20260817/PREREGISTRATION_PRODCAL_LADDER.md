@@ -223,9 +223,13 @@ the narrower of the two. The comparison is a computation; its consequence is the
   one R=8, n=250 pretuning invocation per candidate (z_support, sky_frac) pair, tuning ONLY
   until the harness's host-in-ball fraction lands in [0.60, 0.70] and mean completion fraction
   in [0.30, 0.42]; the first pair to land is frozen here before Block A runs; pretuning outputs
-  are archived in `pretuning/` and never scored. Chosen values: z_support = ______,
-  sky_frac = ______ (filled by the pretuning run, recorded with its invocation line, BEFORE any
-  scored cell runs; this is the sole permitted §7 fill-in after commit, itself append-only).
+  are archived in `pretuning/` and never scored. Chosen values: **z_support = 0.40,
+  sky_frac = 1e-4** (filled 2026-08-18 by `uv run python -u pretune.py` under AMENDMENT-1,
+  first-to-land at the tenth candidate: host_in_ball_fraction = 0.670, completion_fraction =
+  0.330, both in band; disclosed descriptive facts per AMENDMENT-1 item 3: mean_ball_size =
+  2.98, impostor_fraction = 0.775, empty_ball_fraction = 0.033 — carried under the §6
+  venue-transfer caveat. This is the sole permitted §7 fill-in after commit, itself
+  append-only.)
 - **V-ctrl parameters (D-1):** the 07-11 shallow-control class, executable form:
   **z_support = 1.5** (= the harness Z-grid ceiling, making the truncation non-binding — the
   operative meaning of "untruncated" under catalogue_mode's z_support requirement),
