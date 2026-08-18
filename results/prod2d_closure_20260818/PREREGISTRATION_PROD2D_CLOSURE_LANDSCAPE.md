@@ -276,6 +276,16 @@ Production posterior widths σ_h 0.0177/0.0216 ⇒ material residual = ≥ ⅓·
   (`cluster/preflight.sh`) must print READY ✓ before sbatch (printed 2026-08-18: READY ✓).
 - **Cluster fill-in (append-only):** job id, node, wall, per-cell timings, any resubmits.
 
+**CLUSTER FILL-IN (2026-08-19, appended):** cluster repo fast-forwarded to the freeze commit
+`d6fc1ccf` (tag `prod2d-closure-base`); colliding untracked prodcal originals moved to
+`~/prodcal_untracked_backup_20260819/` and verified bit-identical (md5) to the tracked
+copies before merge; **job 6364803** submitted (cpu partition, 1 node, 18 workers,
+walltime 14 h) at 2026-08-19 ~01:20; T0 registered output `tier0_output.json` produced
+locally pre-submission (N-0 gate PASS: 2.2e-5 / 1.1e-4 vs 5e-4 tolerance). GitHub push of
+the freeze commit was REJECTED by a pre-receive hook (reason to be captured; cluster and
+local copies are the working records — the origin sync returns as a session housekeeping
+item, not verdict-relevant).
+
 ---
 
 ## VERDICT
