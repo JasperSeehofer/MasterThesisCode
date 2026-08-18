@@ -1010,3 +1010,37 @@ are we currently finally resolving the residual by situation."
    Gray-paper front (with G-1/G-2 as grounding); the −11.7-class residual sits inside its
    registered band (documented, not a defect); the venue-physics observation is a low-priority
    seed far from production's regime.
+
+**Addendum (2026-08-18) — author's verbatim ruling: "ratified, continue with amendment-4 once
+the verifier gates GO".** Item 2's pending [RULE] is GRANTED: **VERDICT-2 is ratified** (V-flat
+delta-leg PASS = fusion lever regime-consistent; absolute-leg FAIL attributed venue-intrinsic).
+AMENDMENT-4 execution confirmed on the already-landed verifier Part-VII GO (pretuning landed
+z_support=0.75, completion 0.384; registered pair running at ruling time).
+
+---
+
+## Row #124 — 2026-08-18 — Prodcal cycle CLOSED: lever certified benign in regime; absolute half closed route (a)
+
+**Author's verbatim ruling (2026-08-18):** "approved" — on the VERDICT-3 presentation (two
+routes for row #122 item 2's absolute half). **Orchestrator-derived reading, flagged for author
+veto:** route **(a)** — the absolute half CLOSES on lever-closure plus production's own
+diagnostics; the flattened-detection venue-physics observation is logged as a SEED, not opened.
+
+**Scope of record (orchestrator-derived itemization):**
+
+1. **[RULE — per the above reading]** Row #122 item 2 is CLOSED, both halves. Lever half: three
+   mutually consistent measurements (production counterfactual M-3; V-flat delta PASS; V-prod
+   delta PASS) — **the landed selection fusion is certified benign in production's regime at
+   harness fidelity; the #66/#67 disappointment path is CLOSED BENIGN.** Absolute half: closed
+   route (a) — harness-level absolute certification at flat-S̄ venues is confounded by the
+   raised-d50 venue bias (VERDICT-3's differential: driver is the d50 flattening, not
+   completion share; VERDICT-2's attribution corrected of record) and is left to any future
+   front with an estimator-side-only S̄ instrument.
+2. **The prodcal research cycle (rows #120–#124) is CLOSED.** Products of record: the [A3]
+   two-channel harness (+ tests); the asymmetric-[P2] validity boundary (safe flat-S̄ / unsafe
+   strong-gradient, mechanism owned to 3%); the [C-SYM] claim (admitted, row #122 item 5); the
+   N-1 continuity chain; the Q-0/Q-1/Q-2 audits; 6 verifier passes (Parts I–VII).
+3. **Carried open (unchanged owners):** [C-SYM]/[P3] correct-form + Gray-paper front with
+   G-1/G-2 grounding (each prereg-first, own [DO]); flattened-detection venue-physics SEED;
+   2D-channel venue noise-coupling (+0.01 class, off-cells) SEED; −11.7-class residual (in
+   band); pool-vs-model mismatch. Budget close-out: ≈16.5 of 18 CPU-h ceiling.
