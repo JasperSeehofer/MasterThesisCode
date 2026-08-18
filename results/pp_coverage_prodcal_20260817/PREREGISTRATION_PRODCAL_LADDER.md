@@ -261,8 +261,34 @@ the narrower of the two. The comparison is a computation; its consequence is the
 
 ## VERDICT
 
-*(Empty at registration. Filled only by the readout, per the pre-committed scorer; must cite
-AMENDMENT-1 below.)*
+**Filled 2026-08-18 from the registered scorer output (`readout_prodcal_output.json`,
+`--registered` invocation, 18/18 pairs), under AMENDMENT-1 and DEVIATION-1 below. Execution:
+cluster job 6355028, 14.1 of 18 CPU-h, 26/26 invocations. Full comprehension artifact:
+`CAMPAIGN_REPORT_20260818.md` (A7). Branch presented, not adjudicated.**
+
+- **H-P: FAIL** (production+fused, V-deep, n=1600: bias −0.032, cov68 0.000 — the cov<0.50 leg).
+- **H-N: asymptotic-bias signature FIRES** (flat −0.030 across n=250/800/1600, cov68 collapsing).
+- **H-B: UNDETERMINED-BY-DESIGN** (registered precondition unmet — the const+fused floor is
+  dominated by the fused shift, not a decomposable const floor).
+- **N-1: PASS after execution erratum** — first pass ran `two_branch` (driver omitted
+  `mixture_mode="exact"`; quarantined in `cells_unfaithful_n1/`; diagnosis: the +0.0235 matched
+  the July two_branch record exactly); the faithful rerun reproduces the July record on all cells.
+- **N-2: FAIL → registered STOP fired.** Instrument audit (read-only) resolved it: no code
+  defect; the −0.03 fused shift is a first-order tilt (slope·σ² predicts −0.0309 vs measured
+  −0.030) driven by S̄_φ's ~5× gradient across V-deep's completion window; the band was anchored
+  on a venue where that gradient is absent.
+- **N-3: VOID · N-5: STOP at V-ctrl, resolved as structural void** — the D-1 amendment's
+  z_support=1.5 exceeds Z_MAX_POP=0.95, emptying the completion window (completion_fraction ≡ 0):
+  the control could not test what it was registered to test.
+- **N-4: PASS** (2D fused−off delta −0.0006); the 2D channel's +0.01 bias is present in `off`
+  identically — venue noise physics, NOT a fusion effect (misattribution corrected in the
+  report).
+- **N-5 at V-deep: PASS** (all registered deltas non-degenerate).
+
+**Fired branch:** H-P FAIL → §4 FAIL branch (materiality per §5, then author [RULE]). §5
+computation: |−0.032| ≥ ⅓ × campaign width 0.0053 — *at the harness venue*; the audit's
+regime analysis and production's own zero-MAP counterfactual are the interpretation inputs put
+before the author. Decisions table: report §10. No production change is proposed by this verdict.
 
 ---
 

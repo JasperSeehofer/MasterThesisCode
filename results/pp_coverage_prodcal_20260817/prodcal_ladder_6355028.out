@@ -1,0 +1,48 @@
+Loading bwUniCluster modules...
+  Loaded: compiler/gnu/14.2
+  Loaded: devel/cuda/12.8
+  Loaded: devel/python/3.13.3-gnu-14.2
+  Workspace: /pfs/work9/workspace/scratch/st_ac147838-emri
+26 registered cells
+vdeep_1600_production_off: done in 3170s
+vdeep_1600_production_fused: done in 12918s
+vdeep_1600_const_off: done in 3225s
+vdeep_1600_const_fused: done in 13315s
+vdeep_800_production_off: done in 1126s
+vdeep_800_production_fused: done in 2305s
+vdeep_800_const_off: done in 1027s
+vdeep_800_const_fused: done in 2370s
+vdeep_250_production_off: done in 416s
+vdeep_250_production_fused: done in 1000s
+vdeep_250_const_off: done in 397s
+vdeep_250_const_fused: done in 1108s
+vdeep_250_model_off: done in 439s
+vdeep_250_model_fused: done in 767s
+vctrl_250_production_off: done in 924s
+vctrl_250_production_fused: done in 1295s
+vctrl_250_const_off: done in 1022s
+vctrl_250_const_fused: done in 1436s
+vctrl_250_model_off: done in 873s
+vctrl_250_model_fused: done in 1316s
+vdeep_250_production_1d: done in 167s
+vdeep_250_production_2d: done in 424s
+n1_0.3_const: done in 17s
+n1_0.3_modelpdet: done in 30s
+n1_0.5_const: done in 12s
+n1_0.5_modelpdet: done in 37s
+LADDER COMPLETE
+
+============================= JOB FEEDBACK =============================
+
+NodeName=uc3n002
+Job ID: 6355028
+Cluster: uc3
+User/Group: st_ac147838/st_us-403333
+State: COMPLETED (exit code 0)
+Nodes: 1
+Cores per node: 26
+CPU Utilized: 14:06:04
+CPU Efficiency: 14.63% of 4-00:23:16 core-walltime
+Job Wall-clock time: 03:42:26
+Memory Utilized: 2.69 GB
+Memory Efficiency: 8.39% of 32.00 GB (32.00 GB/node)

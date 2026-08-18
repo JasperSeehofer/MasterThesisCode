@@ -91,6 +91,10 @@ def build_cells() -> dict[str, PPCoverageConfig]:
                 injected_truths=TRUTHS,
                 seed=20260701,
                 kernel="volume",
+                # July deep cells ran --mixture-mode exact (noisemodel RUNBOOK:81-94);
+                # the first execution omitted this and fell back to two_branch,
+                # reintroducing the pre-260711-117 kernel leak (+0.0235 at zs=0.3).
+                mixture_mode="exact",
                 z_support=zs,
                 sigma_z=0.035,
                 h_step=0.004,
