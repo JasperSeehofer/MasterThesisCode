@@ -383,6 +383,38 @@ returns, not the sweep.
 
 ---
 
+## VERDICT-2 — 2026-08-18 — V-flat registered read (AMENDMENT-2 bands; scorer manifest entry 19)
+
+Pretuning landed at multiplier 8 (min-window S̄ = 0.950, completion_fraction = 0.855,
+`pretuning/CHOSEN_VFLAT.json`). Cells run locally (seed 20271118 shared across the pair,
+`vflat.log`), scored by the registered invocation. **Branch presented, not adjudicated.**
+
+**Paired-delta leg (the regime-consistency read, the cell's registered purpose): PASS on every
+truth.** Fused−off 1D delta = +0.00127 ± 0.00017 / +0.00073 ± 0.00014 / +0.00003 ± 0.00003 at
+h = 0.62/0.72/0.84 — inside [−0.0005, +0.0030], non-degenerate, noise guard satisfied
+(all paired SE ≤ 2.5e-4). Sign and order match the audit's prediction from production's
+counterfactual (small positive, ≈ +1e-4-class): **at flat S̄, the landed fused lever is
+near-inert, exactly as production's own measurement said.**
+
+**Absolute-calibration legs: FAIL fires (fused cov68 = 0.325/0.117/0.175 < 0.50 at two truths;
+bias +0.011…+0.015 outside ±0.0020).** Cause is venue-intrinsic, not fusion: the `off` twin
+carries the SAME bias (+0.010…+0.014) and the same coverage failure. Two registered-in-advance
+facts explain it: (i) AMENDMENT-2's disclosure that raising d50 changes the *generative* venue
+(weakened Malmquist) — at multiplier 8 the completion share lands at **0.855**, far above the
+production anchor 0.371, so V-flat matches production in S̄-flatness but NOT in completion
+share; (ii) the +0.01-class bias at 85% completion share is the same noise-coupling class the
+audit established for the 2D channel (photo-z error × completion share), now visible in 1D — a
+venue-physics property present identically with the fusion off.
+
+**Net registered outcome:** the fusion-specific question this venue was built to answer is
+answered (lever regime-consistent, PASS); the absolute-calibration question is NOT answered by
+this venue (its own physics fails it, fusion-independent) — the AMENDMENT-4 venue-definition
+question the verifier anticipated (Part VI) is live: a venue with flat S̄ *and* production-like
+completion share (e.g. z_support ≈ 0.60 with the raised d50) would decide it. Returns to the
+author with the readout.
+
+---
+
 ## DEVIATION-1 — 2026-08-18 — execution environment migrated to bwUniCluster (author instruction)
 
 The §7 environment ("dev machine, single-core per cell") is superseded on the author's explicit
