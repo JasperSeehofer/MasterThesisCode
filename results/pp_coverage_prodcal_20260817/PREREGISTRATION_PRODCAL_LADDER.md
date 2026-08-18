@@ -368,6 +368,21 @@ margin (3.9 CPU-h).
 
 ---
 
+## AMENDMENT-3 — 2026-08-18 — V-flat pretuning sweep extension (verifier Part-VI GO; author: "approved")
+
+The AMENDMENT-2 d50-multiplier sweep {2, 3, 4, 6} exhausted per its own clause (min-window S̄ =
+0.146/0.381/0.548/0.784, monotone; completion leg trivially satisfied 0.69–0.84; archived in
+`pretuning/pretune_vflat_m*.json`; no MAP/coverage fields read). **The sweep is extended by
+{8} ONLY**; same pretuning seed 20271222, same targets, same first-to-land rule. Deterministic
+S̄-table forecast (zero random draws): mult 8 → min-window S̄ = 0.950 ≥ 0.85.
+**Multiplier 10 is EXCLUDED outright** (verifier Part-VI item 2): its landing would give
+S̄ ≡ 1.000 across the window — an exactly-inert fused lever, reconstructing the V-ctrl-void
+failure mode this chain repairs; a void landing knowable from a table is not registered as a
+candidate. If 8 misses: STOP → author → AMENDMENT-4, at which point the venue definition itself
+returns, not the sweep.
+
+---
+
 ## DEVIATION-1 — 2026-08-18 — execution environment migrated to bwUniCluster (author instruction)
 
 The §7 environment ("dev machine, single-core per cell") is superseded on the author's explicit

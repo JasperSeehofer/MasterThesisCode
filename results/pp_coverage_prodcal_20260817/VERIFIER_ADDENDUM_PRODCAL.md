@@ -452,3 +452,50 @@ generator-coupling disclosure; plus the measured actuals behind the budget-margi
 All are one-to-two-line insertions; none changes a hypothesis, an edge value, or the sweep.
 So amended, AMENDMENT-2 is inside append-only discipline and needs no further verifier pass
 unless the pretuning sweep exhausts or the realized paired SE trips the delta-leg guard.
+
+---
+
+# PART VI — PRE-CHECK OF PROPOSED AMENDMENT-3 (d50-multiplier sweep extension; 2026-08-18)
+
+Situation: the AMENDMENT-2 sweep {2, 3, 4, 6} exhausted exactly as its registered exhaustion
+clause anticipated — min-window S̄ = 0.146/0.381/0.548/0.784, monotone rising (consistent with
+the Part V Item 4 derivation), completion_fraction leg trivially satisfied (0.69–0.84), cells
+archived, no MAP/coverage fields read. The {8, 10} forecast is a deterministic S̄-table
+evaluation with no realizations drawn.
+
+## Item 1 — forking-paths residue in extending after seeing the tuning-target fields: **OK, none**
+
+This is the AMENDMENT-1 precedent applied cleanly: (a) the fields consulted are exactly the
+fields the registered procedure reads — consulting them is the procedure, not a peek; (b) the
+sweep's target is monotone in the knob (established analytically in Part V BEFORE these
+numbers existed, and the archived values confirm it), so the extension direction is forced,
+not chosen; (c) the {8, 10} forecast is deterministic — zero random draws, zero
+outcome-adjacent statistics; (d) the exhaustion clause that fires here was itself registered
+in advance, and the AMENDMENT-4 recursion clause is carried. No scored cell has run at this
+venue. No residue.
+
+## Item 2 — the mult-10 inertness handling: **DEFECT, MINOR — drop 10 from the registered list; extend by {8} only**
+
+First-to-land order does guarantee 8 is tried first, and the deterministic forecast
+(0.950 ≥ 0.85) plus the trivially-satisfied completion leg make 8's landing near-certain — so
+as drafted, 10 is almost surely unreachable. But registering it at all is a design defect in
+miniature: at S̄ ≡ 1.000 across the window the fused lever is EXACTLY inert, i.e. a landing on
+10 would reconstruct the V-ctrl-void failure mode this whole amendment chain exists to repair
+— a venue whose registered purpose (a small positive fused−off tilt) is unsatisfiable by
+construction. The AMENDMENT-2 non-degeneracy requirement would catch it after the fact (the
+delta would be degenerate ⇒ not PASS ⇒ STOP), so no false verdict is possible — but that is
+0.7 CPU-h spent to discover a void that is knowable now, from a deterministic table. A
+candidate whose landing is known in advance to void the venue should not be in a registered
+sweep. Fix (one word): extend by **{8}** only, with the registered note "mult 10 excluded:
+S̄ ≡ 1.000 across the window makes the fused lever exactly inert (V-ctrl-void recurrence);
+if 8 misses, the exhaustion clause fires (STOP → author → AMENDMENT-4)." This costs nothing
+(10 was unreachable if 8 lands, and undesirable if it didn't) and removes the only path to a
+void landing.
+
+## GATE (AMENDMENT-3 pre-check)
+
+**GO — with the single substitution of Item 2 ({8} only, mult 10 excluded with its reason
+registered; the AMENDMENT-4 exhaustion recursion retained).** Item 1 is clean as drafted.
+So amended, AMENDMENT-3 needs no further verifier pass unless mult 8 misses (exhaustion →
+author) — at which point the venue definition itself, not the sweep, is the question to bring
+back.
