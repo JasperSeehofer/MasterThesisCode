@@ -1107,3 +1107,33 @@ proposed or made.
 4. **[RULE — ratified, §6 #4]** σ_z → 0 wording of record: per-leg, with measured numbers.
 5. **[DO — granted, §6 #5]** Paper integration work proceeds under pick (b).
 6. **[RULE — ratified, §6 #6]** Both seeds logged, not opened.
+
+## Row #127 — 2026-08-18/19 — Production-2D closure + catalog-quality landscape front OPENED and frozen (autonomous, cluster+overnight authorized)
+
+**Author's verbatim ruling (2026-08-18):** "I want this measured for sure! please do that
+closure. you can also think about if anything else is needed to be run on the cluster and
+please go ahead autonomous, I will ensure the ssh connection one more now, so you should keep
+it active over night. if would be huge news if given this horrible data (redshift and mass
+error) 1d starves while 2d is able to constrain. we could then further extrapolate other
+realisations of the errors due to improved measurements ( in the best case motivated by known
+missions to come) and have a landscape that clearly tells you: given this good of a catalog we
+can expect that constraint."
+
+**Orchestrator-derived itemization (flagged):**
+
+1. **[DO — granted]** The production-2D closure (the number-to-number budget row #124 left
+   uncomputed) + the (σ_z × σ_m) catalog-quality landscape, cluster + overnight, autonomous;
+   branch calls return as [RULE]s.
+2. **Registered instrument:** `results/prod2d_closure_20260818/` — three-tier prereg
+   (T0 production-native bootstrap/jackknife; T1 closure factorial; T2 landscape; 18 cluster
+   cells ≈ 74–79 CPU-h, ceiling 160), verifier Part VII (4 BLOCKING + 4 NON-BLOCKING, all
+   applied verbatim — decisive catch P7-1: the "1D starves" harness leg may only be scored on
+   off-basis cells, never on the venue-scoped asymmetric-insertion artifact; the
+   production-native H-L1-prod arm is the only place the author's headline sentence may be
+   quoted). Arm-validity preflight READY (5 probes, good-corner 1D un-rail confirmed).
+   Cluster preflight READY ✓ (2026-08-18).
+3. **Recon facts of record ([LOCAL]):** iiib/joint_r1 share one realization (seed61000,
+   byte-identical CRB); production 2D offsets +0.054/+0.067 (trapezoid convention); iiib's
+   top-slope event is 889 (SNR 1424.7, rank 1); production σ_M of record = R&V15 ε₀ = 0.24 dex
+   (post-`555f018`; the "0.55 dex" in older session memory was pre-fix wording); documented
+   Eddington-in-M 2D impact −0.020 (`bayesian_statistics.py:5454`).
