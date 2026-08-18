@@ -289,3 +289,18 @@ Discipline statements (verifier Part-IV conditions, incorporated verbatim):
 4. **Exhaustion clause:** if the extended sweep also exhausts, execution stops and returns to
    the author; any further extension is an AMENDMENT-2 under the same pre-check discipline.
 5. The six R=8 extension cells are budget-negligible; the 18 CPU-h ceiling is untouched.
+
+---
+
+## DEVIATION-1 — 2026-08-18 — execution environment migrated to bwUniCluster (author instruction)
+
+The §7 environment ("dev machine, single-core per cell") is superseded on the author's explicit
+instruction ("please submit it to the cluster instead" — the dev machine is needed for other
+work): execution moves to bwUniCluster 3.0, one `cpu`-partition node, 26 workers (one per
+registered invocation), via `run_ladder.sbatch` in this directory. **Nothing verdict-bearing
+changes:** same frozen code (the freezing-commit chain must be checked out on the cluster and
+its hash recorded in the `.out` log), same registered seeds (the paired-seed scheme lives inside
+`run_ladder.py`; no SLURM per-task seeding is layered over it), same scorer. The local run had
+completed 0 of 26 invocations when stopped (verified: empty `cells/`), so no partial results
+mix environments. Known residual: per-realization runtimes will differ from the §3 dev-machine
+anchors (contention profile differs); the CPU-h ceiling continues to bind on measured CPU time.
