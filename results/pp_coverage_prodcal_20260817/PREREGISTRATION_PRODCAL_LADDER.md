@@ -318,6 +318,56 @@ Discipline statements (verifier Part-IV conditions, incorporated verbatim):
 
 ---
 
+## AMENDMENT-2 — 2026-08-18 — V-flat control venue (author [DO], row #122 item 3; verifier Part-V pre-check GO)
+
+Replaces the void V-ctrl control role (VERDICT above; the void traces to the D-1 prescription's
+z_support=1.5 exceeding `Z_MAX_POP = 0.95`, owned in Part V by the verifier).
+
+**Venue V-flat:** identical to V-deep (z_support=0.40, sky_frac=1e-4, n_galaxies=2e5, mass on
+α_M=0.25) EXCEPT `d50_gpc` raised so that S̄_φ(z; h=0.72) ≥ 0.85 across the entire completion
+window z ∈ (0.40, 0.95] — the flat-survival regime. **Disclosure (verifier item 4):** d50 also
+drives the generator's latent detection, so V-flat is a *jointly different generative venue*
+(weakened Malmquist), not "V-deep with a flattened estimator" — the generator-consistent design
+is deliberate and stated.
+
+**Pretuning (registered, non-scored):** seed 20271222; sweep d50 multiplier ∈ {2, 3, 4, 6} in
+order; first to satisfy min-window S̄ ≥ 0.85 AND completion_fraction ≥ 0.20 at R=8/n=250 wins;
+archived under `pretuning/`, never scored; **only the two tuning-target fields and S̄ diagnostics
+are consulted — no MAP/coverage field is read.** If the sweep exhausts: STOP, return to the
+author; any extension is an AMENDMENT-3 under the same pre-check discipline (the
+completion_fraction leg is not obviously monotone in the multiplier).
+
+**Registered cells:** `vflat_250_production_fused` and `vflat_250_production_off`, R=120, truths
+{0.62, 0.72, 0.84}, h_step 0.004, **seed 20271118 = 20270818 + 100·venue_index with
+venue_index = 3** (index 2 retired with the void V-ctrl), shared across the pair per the §3
+scheme. **PAIRS-manifest extension (verifier item 1b, blocking):** the pair
+(`vflat_250_production_fused`, `vflat_250_production_off`) is hereby REGISTERED as manifest
+entry 19; the scorer's `PAIRS` constant is extended accordingly in this amendment's commit — the
+`--registered` invocation of record scores it; `--pair` remains never verdict-bearing.
+
+**Bands (locked now; derivation disclosed per A8):** the production counterfactual's tilt
+(+0.0155 nats/h/event × n=250 × σ² ≈ 2e-5) predicts a paired 1D delta ≈ **+7.8e-5** —
+zero-consistent; the asymmetric two-sided window below brackets that point prediction.
+- **PASS** = fused cell |bias| ≤ 0.0020 AND cov68 ∈ [0.594, 0.766] AND paired (fused−off) 1D
+  delta ∈ [−0.0005, +0.0030] at every truth, delta non-degenerate.
+- **Delta-leg noise guard (verifier item 3):** the delta leg is scored only if the realized
+  paired SE ≤ 2.5e-4; otherwise that leg is **UNDETERMINED-BY-NOISE** (reported, unscored) — the
+  unpaired worst case (7.8e-4) would breach the −0.0005 edge ~26% per truth on a true zero.
+- **FAIL** = coherent |paired delta| ≥ 0.0050 OR fused cov68 < 0.50.
+- **MIXED** = anything else. **False-outcome disclosure (corrected per verifier):** cov-band
+  exits produce MIXED, not FAIL — ≈5% per truth, ≈13% compounded across three truths under the
+  null; true false-FAIL is negligible.
+
+**Purpose registered:** this cell decides row #122 item 2's OPEN status (production-regime
+calibration). It does NOT test the symmetric variant — an exploratory symmetric-insertion run at
+V-flat may be executed and reported as **non-verdict-bearing** (feeds the admitted [C-SYM]
+claim's future front only).
+
+**Budget:** pretuning ≤ 0.2 + cells ≈ 0.7 CPU-h — inside the standing 18 CPU-h ceiling's unspent
+margin (3.9 CPU-h).
+
+---
+
 ## DEVIATION-1 — 2026-08-18 — execution environment migrated to bwUniCluster (author instruction)
 
 The §7 environment ("dev machine, single-core per cell") is superseded on the author's explicit

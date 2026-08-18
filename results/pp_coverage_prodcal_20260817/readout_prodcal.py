@@ -62,6 +62,8 @@ PAIRS: list[tuple[str, str]] = [
     ("vctrl_250_const_fused", "vctrl_250_production_fused"),
     ("vctrl_250_const_off", "vctrl_250_production_off"),
     # N-3 (V-ctrl production fused vs off) is the first V-ctrl row above.
+    # Entry 19 — AMENDMENT-2 (2026-08-18): the V-flat regime-consistency pair.
+    ("vflat_250_production_fused", "vflat_250_production_off"),
 ]
 
 

@@ -358,3 +358,97 @@ disclosure in the fill-in line; exhaustion clause) and the three form conditions
 verbatim.** So amended, AMENDMENT-1 is a procedure repair executed before any outcome existed,
 fully inside append-only discipline; no superseding prereg is required, and no further
 verifier pass is needed unless the extended sweep also exhausts.
+
+---
+
+# PART V — PRE-CHECK OF PROPOSED AMENDMENT-2 (V-flat control venue; row #122 item 3, author-granted; 2026-08-18)
+
+**Verifier's own error, owned first:** the V-ctrl structural void traces to Part II/III's D-1
+prescription — z_support = 1.5 was verified against the harness Z-GRID ceiling (1.5) but not
+against the POPULATION ceiling `Z_MAX_POP = 0.95` (`pp_coverage.py:276`), so the completion
+window (z_support, Z_MAX_POP] was empty by construction. The "non-binding truncation" reading
+was wrong at the population layer. This pre-check therefore re-derives the replacement venue's
+physics from the code rather than from any prior prescription of mine.
+
+## Item 1 — internal consistency (seeds/pairing/ceiling): **OK with two required fixes**
+
+- Seed 20270818+300 = 20271118 is fresh as a seed (no `"seed": 20271118` anywhere in
+  `results/`; the raw digit-string matches in `run_20260805_n2sel1d` posterior files are
+  substrings inside single-line float arrays, not seeds — same for pretuning 20271222).
+  Shared across the fused/off pair ⇒ pairing preserved ✓. **Required fix (a):** +300 implies
+  venue_index = 3, silently skipping index 2 — name it explicitly ("venue_index = 3; index 2
+  retired with the void V-ctrl") so the §3 scheme stays parseable.
+- h_step 0.004, R=120, three truths — Block-A conventions ✓. Budget 0.9 CPU-h fits under the
+  18 CPU-h ceiling on either margin figure (registered 14.6 ⇒ 3.4 nominal; the amendment must
+  cite the measured actuals behind its "3.9 unspent" so the accounting is evidence, not
+  assertion).
+- **Required fix (b) — the pair is not in the registered manifest.** Under committed D-3,
+  `--pair` is "exploratory and never verdict-bearing" and the scorer's `PAIRS` constant is the
+  only verdict-bearing list — which does not contain
+  (vflat_250_production_fused, vflat_250_production_off). As drafted, AMENDMENT-2's own
+  paired band could not legally be scored. The amendment must explicitly register the pair as
+  a manifest extension ("the pair (…) is appended to the registered manifest; for this pair
+  the recorded `--pair` invocation is verdict-bearing by this registration"), or ship a
+  one-line scorer-manifest addition in the amendment commit.
+
+## Item 2 — pretuning discipline: **OK with the Part IV boilerplate made explicit**
+
+Fixed fresh seed, fixed ordered sweep {2, 3, 4, 6}, joint numeric targets, first-to-satisfy,
+archived-never-scored: the Part IV shape ✓. The min-S̄ target is well-posed because min-over-
+window S̄ is **monotone increasing in the d50 multiplier** (see Item 4), so first-to-satisfy is
+a procedure, not a choice, on that leg. The completion_fraction ≥ 0.20 leg is not obviously
+monotone in the multiplier, so exhaustion is possible. Two required clauses (Part IV
+precedent, both one-liners): (i) exhaustion ⇒ STOP, return to author, any extension is an
+AMENDMENT-3 under this same pre-check discipline; (ii) only the tuning-target fields of the
+pretuning outputs are read (no MAP/coverage fields).
+
+## Item 3 — bands: **numerically well-defined and mutually exclusive; derivation reproduces; asymmetric window acceptable; one noise guard required**
+
+- Exclusivity checked: the PASS delta window [−0.0005, +0.0030] cannot intersect the FAIL
+  |delta| ≥ 0.0050 leg; the PASS cov band [0.594, 0.766] cannot intersect cov68 < 0.50 ✓.
+- Derivation arithmetic reproduces: 0.0155 nats/h/event × 250 events × σ²≈2e-5 ⇒ ≈ +7.8e-5 ≈
+  +1e-4 — disclosed per A8 ✓.
+- **Asymmetry: acceptable.** The window IS two-sided about the ≈+1e-4 point prediction, with
+  headroom deliberately on the predicted-positive side; a symmetric window would pretend the
+  prediction were sign-agnostic when the whole point of the venue is a small POSITIVE tilt.
+- **Required guard:** the lower edge −0.0005 is only meaningful if the realized paired SE is
+  small. The unpaired worst-case bound at n=250 is √2·5.5e-4 ≈ 7.8e-4 — at which a TRUE-zero
+  delta breaches −0.0005 at ~26% per truth. The shared-stream paired SE is expected far
+  smaller (the counterfactual's near-zero per-event deltas), but it is unmeasured at this
+  venue. Register: "the delta leg is scored only if the realized paired SE ≤ 2.5e-4 (edge ≥
+  2·SE); otherwise the delta leg is UNDETERMINED-BY-NOISE, reported, and the cell's verdict
+  rests on the bias+cov legs." Numeric edges stay locked; honesty about their resolvability is
+  added.
+- **Required relabel:** "false-fail rate … dominated by the cov68 leg (~5%)" conflates
+  MIXED with FAIL. Falling out of the PASS cov band (≈4.6% per truth, ≈13% for at least one of
+  three truths) produces MIXED, not FAIL; actual false-FAIL under nominal behaviour is the
+  cov68 < 0.50 tail (≈4σ, negligible) plus the |delta| ≥ 0.0050 coherent tail (negligible).
+  State it as "false-non-PASS (MIXED) ≈ 5% per truth, ≈13% compounded" — otherwise the
+  registered error-rate claim is wrong in the safe-looking direction.
+
+## Item 4 — venue definition (does raising d50 alone flatten S̄?): **YES — no different knob needed; one disclosure required**
+
+Verified against the frozen instrument: `detection_probability = 0.5·erfc((d_L − d50)/(√2·
+w_pdet))` (`pp_coverage.py:437`) is monotone increasing in d50 at fixed d_L; the S_4D horizon
+rescaling is `d50·(M_z/1e6)^mass_horizon_index` (`:191`) with φ compactly supported on
+[M_SOURCE_MIN, M_SOURCE_MAX] — so for every (z ≤ 0.95, M in support), S → 1 as the multiplier
+grows, and min-over-window S̄_φ is monotone increasing in the multiplier. Raising d50 alone
+therefore does flatten S̄ across the (0.40, 0.95] window, α_M = 0.25 included; the sweep
+{2,3,4,6} is well-posed. w_pdet held fixed is fine (the relative roll-off sharpens, but the
+window sits at S̄ ≥ 0.85 by construction). **Required disclosure:** config.d50_gpc also drives
+the GENERATOR's latent detection (`:884`), so V-flat is a jointly different generative venue
+(weakened Malmquist selection), not "V-deep with a flattened estimator." That is the correct,
+generator-consistent design for a calibration venue — but the amendment must say so, or a
+reader will mistake the fused−off delta for an estimator-only contrast at the V-deep
+population.
+
+## GATE (AMENDMENT-2 pre-check)
+
+**GO — conditional on the amendment text incorporating, verbatim in the committed section:
+(1a) venue_index = 3 named; (1b) the vflat pair registered as a manifest extension (the D-3
+blocker); (2i) the exhaustion clause; (2ii) the tuning-fields-only statement; (3) the paired-SE
+≤ 2.5e-4 delta-leg guard and the MIXED/FAIL relabel of the error-rate claim; (4) the
+generator-coupling disclosure; plus the measured actuals behind the budget-margin figure.**
+All are one-to-two-line insertions; none changes a hypothesis, an edge value, or the sweep.
+So amended, AMENDMENT-2 is inside append-only discipline and needs no further verifier pass
+unless the pretuning sweep exhausts or the realized paired SE trips the delta-leg guard.

@@ -942,3 +942,39 @@ paper"
 4. Remaining paper [DO]s of proposal §5 (scope, TO-MAKE figures, discussion.tex:235 rewrite)
    are granted under this ruling; execution sequenced after the measurement collection so the
    figures/text carry final numbers.
+
+---
+
+## Row #122 — 2026-08-18 — Prodcal ladder readout ratified: asymmetric-[P2] boundary measured, instrument cleared
+
+**Author's verbatim ruling (2026-08-18):** "all ratified. Question about the asymmetric entering
+of S. Why shoud there even be a scientifically motivation that it only appears in one of the
+legs? but maybe I misunderstood this."
+
+**Ruling target:** `results/pp_coverage_prodcal_20260817/CAMPAIGN_REPORT_20260818.md` §10
+(decisions 1–5). **Orchestrator-derived itemization:**
+
+1. **[RULE — ratified, #1]** Readout bundle of record: H-P/H-N FAIL at V-deep with the audit's
+   mechanism attribution (first-order tilt from S̄_φ's gradient; instrument faithful — no code
+   defect); the two compliance deviations (V-ctrl structurally void via the D-1 z_support=1.5 >
+   Z_MAX_POP error; Block-N1 driver `mixture_mode` erratum, quarantined + faithfully rerun); the
+   2D-bias misattribution correction (venue noise physics, present in `off`). Banked as a
+   MEASUREMENT of where the asymmetric insertion is unsafe — NOT as production-bias evidence.
+2. **[RULE — ratified, #2, orchestrator-derived option reading]** Production-regime calibration
+   status: **option (a) — OPEN pending the flat-S̄ control cell**, read as implied by the
+   simultaneous grant of #3 (the cell that decides it). *Reading flagged for author veto.*
+3. **[DO — granted, #3]** AMENDMENT-2: flat-S̄ completion control venue (~1 CPU-h), verifier
+   one-item pre-check first; audit prediction: small positive tilt, ≈0 MAP motion.
+4. **[DO — granted, #4]** φ-slope decider cell for the 2D catalogue-leg overlap question.
+5. **[RULE — ratified, #5]** The symmetric-insertion finding enters the record as a NEW CLAIM
+   (stage-0 intake for a future front): the exact latent-threshold conditional puts S̄ in BOTH
+   numerator legs; production's completion-only form is a scoped, empirically-safe-in-regime
+   approximation whose validity boundary is now measured. Refute-by: the flat-S̄ cell failing to
+   calibrate under the symmetric variant. **No production change proposed or authorized.**
+
+**Author's physics question answered in-session (recorded):** there is NO first-principles
+motivation for the asymmetry — it is derivation scope (completion leg was the measured
+defect-owner; catalogue-leg counterpart = the deferred [P3] fork, MAJOR-3/M-4/row #119) plus
+regime safety (flat S̄ ⇒ the asymmetry's error nearly cancels; counterfactual zero MAP motion).
+The symmetric form is the theoretically-motivated one; harness evidence: symmetric +0.008 /
+completion-only −0.029 / catalogue-only +0.041.
