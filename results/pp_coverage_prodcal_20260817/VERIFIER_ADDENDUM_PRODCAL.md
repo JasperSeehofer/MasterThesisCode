@@ -499,3 +499,70 @@ registered; the AMENDMENT-4 exhaustion recursion retained).** Item 1 is clean as
 So amended, AMENDMENT-3 needs no further verifier pass unless mult 8 misses (exhaustion →
 author) — at which point the venue definition itself, not the sweep, is the question to bring
 back.
+
+---
+
+# PART VII — PRE-CHECK OF PROPOSED AMENDMENT-4 (V-prod venue, absolute-calibration half; author [DO] 2026-08-18)
+
+## Item 1 — joint satisfiability of the two pretuning targets: **well-posed, but the landing is NOT assured inside {0.55…0.70} — extend the registered sweep now**
+
+- The S̄ leg is better than "monotone-easier": it is **constant-satisfied**. S̄_φ(z) is
+  decreasing in z (p_det decreasing in d_L, d_L increasing in z), so min-window S̄ over
+  (zs, 0.95] sits at the fixed far edge z = 0.95 and is INDEPENDENT of zs — and the
+  AMENDMENT-3 deterministic table already fixed it at 0.950 ≥ 0.85 for d50×8. The sweep is
+  therefore effectively one-dimensional on completion_fraction, which is monotone decreasing
+  in zs: well-posed, first-to-land is a procedure. ✓
+- But a crude volume-weighting cross-check argues the target band may lie ABOVE the sweep
+  ceiling: at zs = 0.40 the archives give completion 0.855 (measured) vs a (zs/0.95)³ volume
+  proxy of 0.93 — scaling that measured-to-proxy ratio to the 0.30–0.42 target puts the
+  landing zs around ~0.75–0.80, outside {0.55…0.70}. The proxy is rough (w_pop, mass
+  weighting, the population's z-falloff all bend it), so this is a risk flag, not a
+  prediction — but the fix is free: **register the sweep as z_support ∈ {0.55, 0.60, 0.65,
+  0.70, 0.75, 0.80, 0.85, 0.90} in order now.** With a monotone target and first-to-land,
+  a longer list adds no discretion and no compute after landing; it only removes a likely
+  AMENDMENT-5 ritual. (The exhaustion clause stays regardless; zs near 0.95 shrinks the
+  completion window toward emptiness, which the completion target itself keeps distance
+  from.)
+
+## Item 2 — venue_index: **prefer 4; 6 acceptable only with a mapping table**
+
+The scheme so far reads 0 = V-deep, 1 = V-ctrl (retired void), 3 = V-flat (2 retired).
+The next consecutive index is **4** (seed 20270818 + 400 = 20271218 — fresh; distinct from
+pretuning seeds 20271222/20271333, and no `"seed": 2027xxxx` exists anywhere in prior
+`results/`). "Indexes 4–5 unreachable" is not a property of the formula (any integer is
+reachable); skipping to 6 just makes the scheme less parseable. If 6 is kept for an
+unstated reason, the amendment must carry the explicit venue_index → venue mapping table;
+otherwise register venue_index = 4, seed 20271218.
+
+## Item 3 — the interpretation clause: **legitimate branch-referent, with one numeric tightening required**
+
+The clause does not pre-assign a FAIL reading: it pre-registers an ATTRIBUTION route
+conditional on a specific data pattern (the off twin failing the absolute legs the same way
+fused does), which is exactly what A8 branch discipline is for — the off twin is the control
+that isolates fusion from venue physics, and pre-committing that reading prevents post-hoc
+spin in either direction. It correctly returns to the author as scope routing rather than
+issuing a verdict. Required tightening: "identically" must be numeric or it becomes a
+judgment call at readout — register it as "paired (fused−off) delta within the PASS window
+AND |bias_fused − bias_off| ≤ 2·paired-SE AND |cov68_fused − cov68_off| ≤ 2·SE(cov68)".
+
+## Item 4 — anything else: **three small items**
+
+- PAIRS entry 20 registered in the amendment with the scorer extended in the same commit —
+  satisfies the D-3 discipline as prescribed in Part V ✓. Bands reuse the AMENDMENT-2
+  structure including the paired-SE ≤ 2.5e-4 noise guard and the corrected MIXED labeling
+  (~13% compounded) — both Part V requirements, correctly carried ✓.
+- **Tier disclosure (required, one line):** this venue decides the absolute-calibration half
+  at n = 250 (SE(bias) ≈ 5.5e-4; the ±0.0020 PASS edge is ≈3.6σ) — evidence at the Block-A
+  tier, not the [R-2] n=1600 tier. A PASS here must be quotable as such.
+- **Budget actuals (repeat requirement):** cite the measured spend behind "~2.7 CPU-h
+  remaining," as required for AMENDMENT-2's margin figure.
+
+## GATE (AMENDMENT-4 pre-check)
+
+**GO — conditional on: (1) the sweep registered through zs = 0.90 (or, if kept at 0.70, an
+explicit registered acceptance that the volume-proxy risk flag makes exhaustion the likely
+outcome); (2) venue_index = 4 / seed 20271218 (or 6 with the mapping table); (3) the numeric
+definition of "identically" in the interpretation clause; (4) the n=250-tier disclosure and
+the budget actuals.** All are line-level insertions; the venue physics, targets, bands, and
+branch structure are sound. No further verifier pass unless the (extended) sweep exhausts or
+the delta-leg noise guard trips.

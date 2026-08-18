@@ -383,6 +383,47 @@ returns, not the sweep.
 
 ---
 
+## AMENDMENT-4 — 2026-08-18 — venue V-prod (author [DO], row #123 item 1; verifier Part-VII GO)
+
+**Venue V-prod:** `d50_gpc = 8 × D50_GPC` (the AMENDMENT-3 flattening, frozen; min-window S̄ is
+pinned at the fixed far edge z=0.95 → 0.950, independent of z_support), all else as V-deep
+EXCEPT z_support swept to the production completion anchor.
+
+**Pretuning (registered, non-scored):** seed 20271333; sweep **z_support ∈ {0.55, 0.60, 0.65,
+0.70, 0.75, 0.80, 0.85, 0.90}** in order (extended to 0.90 per Part-VII item 1 — the target is
+1-D monotone in z_support, so the longer list adds no discretion); first to satisfy
+completion_fraction ∈ [0.30, 0.42] AND min-window S̄ ≥ 0.85 over (z_support, 0.95] at R=8/n=250
+wins; archived, never scored; only tuning-target fields consulted; exhaustion → STOP → author →
+AMENDMENT-5.
+
+**Registered cells:** `vprod_250_production_fused` / `vprod_250_production_off`, R=120, truths
+{0.62, 0.72, 0.84}, h_step 0.004, **seed 20271218 = 20270818 + 100·venue_index, venue_index = 4**
+(Part-VII item 2; freshness verifier-checked), shared across the pair. **PAIRS manifest entry
+20**, registered here; scorer extended in this amendment's commit.
+
+**Bands (locked; AMENDMENT-2 structure carried):** PASS = fused |bias| ≤ 0.0020 AND cov68 ∈
+[0.594, 0.766] AND paired delta ∈ [−0.0005, +0.0030] non-degenerate (noise guard: delta leg
+scored only if paired SE ≤ 2.5e-4, else UNDETERMINED-BY-NOISE); FAIL = coherent |paired delta| ≥
+0.0050 OR fused cov68 < 0.50; MIXED else; cov-band exits are MIXED (~13% compounded under the
+null across three truths).
+
+**Interpretation clause (branch-referent, Part-VII item 3 numeric form):** if the off twin fails
+the absolute legs **identically** — paired delta within its PASS window AND |bias_fused −
+bias_off| ≤ 2·paired-SE AND |Δcov68| ≤ 2·binomial-SE — the failure routes to venue-physics
+scope (VERDICT-2's attribution extends) and the absolute half returns to the author as a
+venue-physics question, not a fusion question.
+
+**Tier disclosure (Part-VII item 4):** this cell decides the absolute half at **n=250 /
+Block-A tier**, not [R-2] tier — a PASS is quotable at that tier only.
+
+**Budget actuals:** spent to date ≈ 14.6 CPU-h (cluster job 14.1 + local N1 rerun/V-flat
+pair/pretunes ≈ 0.5) of the 18 ceiling → 3.4 remaining; this amendment ≤ 0.9.
+
+**Purpose registered:** decides row #122 item 2's absolute-calibration half at the
+production-like regime (flat S̄ AND completion ≈ 0.37).
+
+---
+
 ## VERDICT-2 — 2026-08-18 — V-flat registered read (AMENDMENT-2 bands; scorer manifest entry 19)
 
 Pretuning landed at multiplier 8 (min-window S̄ = 0.950, completion_fraction = 0.855,

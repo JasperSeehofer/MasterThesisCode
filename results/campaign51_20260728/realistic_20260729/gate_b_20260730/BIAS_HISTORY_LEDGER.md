@@ -978,3 +978,35 @@ defect-owner; catalogue-leg counterpart = the deferred [P3] fork, MAJOR-3/M-4/ro
 regime safety (flat S̄ ⇒ the asymmetry's error nearly cancels; counterfactual zero MAP motion).
 The symmetric form is the theoretically-motivated one; harness evidence: symmetric +0.008 /
 completion-only −0.029 / catalogue-only +0.041.
+
+---
+
+## Row #123 — 2026-08-18 — V-flat read banked; AMENDMENT-4 final verification granted; cycle-status question answered
+
+**Author's verbatim ruling (2026-08-18):** "So I have one question. Did everything go well and
+only because of the newly detected venue physics? which introduces a bias. We now have to kill
+this research cycle because it says sixty six and sixty seven disappointment path. Or did this
+research cycle produce as expected? Now the final conclusion is that the s factor needs to
+appear both legs equally. Secondly, for number two, I think it just makes sense to have this
+additional final verification, especially if it doesn't need a lot of compute. So please go for
+It. And then if I understand correctly, number three motivates the next research cycle or where
+are we currently finally resolving the residual by situation."
+
+**Orchestrator-derived itemization:**
+
+1. **[DO — granted]** AMENDMENT-4: the final absolute-calibration verification at a venue with
+   flat S̄ AND production-like completion share (≈0.37 anchor); verifier Part-VII pre-check
+   first; ≤0.9 CPU-h. Executes VERDICT-2's designated next measurement.
+2. **[RULE — PENDING]** VERDICT-2 ratification (report decision 1) — the author asked for
+   comprehension first; the answer of record (given in-session): the cycle SUCCEEDED, nothing
+   is killed — the #66/#67 disappointment path closed BENIGN for production's regime (three
+   consistent measurements); the V-deep H-P FAIL is the measured validity boundary of the
+   asymmetric form (a discovery, not a malfunction); the venue physics is an independent
+   secondary observation that caused neither. "Both legs equally" is the correct FORM ([C-SYM])
+   but production does not need it as a bias fix (asymmetry's error measured negligible in
+   regime) — a correctness/paper matter per the standing correctness-over-bias-removal ruling.
+3. **Recorded orientation answer:** no live unexplained production H₀ bias remains (rows
+   #111/#116/#119 + this cycle); the record's next cycle is the [C-SYM]/[P3] correct-form +
+   Gray-paper front (with G-1/G-2 as grounding); the −11.7-class residual sits inside its
+   registered band (documented, not a defect); the venue-physics observation is a low-priority
+   seed far from production's regime.
