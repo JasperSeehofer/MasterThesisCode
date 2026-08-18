@@ -424,6 +424,52 @@ production-like regime (flat S̄ AND completion ≈ 0.37).
 
 ---
 
+## VERDICT-3 — 2026-08-18 — V-prod registered read (AMENDMENT-4 bands; manifest entry 20)
+
+Pretuning landed at z_support = 0.75 (completion 0.384, on the 0.371 anchor;
+`pretuning/CHOSEN_VPROD.json`). Cells run locally (seed 20271218 shared, `vprod.log`), scored by
+the registered invocation. **Branch presented, not adjudicated.**
+
+**Delta leg: PASS at every truth** — fused−off 1D delta +0.000967 ± 0.000157 / +0.000700 ±
+0.000139 / +0.000033 ± 0.000033 at h = 0.62/0.72/0.84; inside [−0.0005, +0.0030],
+non-degenerate, noise guard satisfied. **Third consecutive venue-consistent measurement of the
+lever** (production counterfactual → V-flat → V-prod): at flat S̄ the landed fusion contributes
+a +0.001-class positive nudge at most.
+
+**Absolute legs: FAIL fires** (fused cov68 = 0.500/0.258/0.192 — the <0.50 leg at h=0.72/0.84;
+bias +0.0080/+0.0094/+0.0116 outside ±0.0020). Off twin: +0.0070/+0.0087/+0.0116, cov68
+0.567/0.325/0.192.
+
+**Interpretation clause, applied as registered:** fully satisfied at h=0.84 (|Δbias| = 0.00003 ≤
+2·SE, |Δcov| = 0); at h=0.62/0.72 the |bias_fused − bias_off| ≤ 2·paired-SE sub-condition FAILS
+— but only because the paired read resolves the lever's small contribution (+0.0007…+0.0010),
+which is itself INSIDE the registered delta PASS window. **Drafting tension disclosed:** the
+clause demanded lever-indistinguishability at paired precision while the delta band explicitly
+permits +0.0030; both readings are reported. Substantively, the off twin fails the absolute legs
+on its own, carrying ≈90% of the displacement — the failure routes to **venue-physics scope**
+per the clause's registered intent, with the strict-reading caveat recorded.
+
+**Mechanism identification by cross-venue differential (zero-compute, from existing cells):**
+at FIXED z_support = 0.40, raising d50 ×8 turns the calibrated V-deep `off` cell (−0.0013…
+−0.0036) into the biased V-flat `off` cell (+0.0101…+0.0142); V-prod (completion 0.384) and
+V-flat (completion 0.855) share the bias at similar size despite a 2.2× completion-share
+difference. **The driver of the absolute-leg venue bias is the raised-d50 (weakened-Malmquist)
+generative venue itself, NOT completion share** — VERDICT-2's completion-share attribution is
+hereby weakened/corrected. Whether production's real detection physics shares any analog of
+this flattened-detection bias class is a venue-transfer question (§6 caveat binds both ways).
+
+**Net registered outcome for row #122 item 2's absolute half:** at this harness class and tier
+(n=250/Block-A), absolute calibration at flat-S̄ venues is confounded by a raised-d50 venue
+bias that the fusion does not own and the harness venues cannot avoid while flattening S̄ by
+raising d50. The lever half of item 2 is closed (three consistent PASSes); the absolute half
+returns to the author with two routes: accept lever-closure + production's own diagnostics as
+the certification basis (the harness has said all it can at this fidelity), or open the
+flattened-detection venue-physics claim as its own front (with a venue design that flattens S̄
+WITHOUT changing the generative detection — e.g. an estimator-side-only S̄ patch cell, which is
+a new instrument knob and therefore a new registration).
+
+---
+
 ## VERDICT-2 — 2026-08-18 — V-flat registered read (AMENDMENT-2 bands; scorer manifest entry 19)
 
 Pretuning landed at multiplier 8 (min-window S̄ = 0.950, completion_fraction = 0.855,
