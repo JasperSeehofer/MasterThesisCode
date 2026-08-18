@@ -257,4 +257,31 @@ the narrower of the two. The comparison is a computation; its consequence is the
 
 ## VERDICT
 
-*(Empty at registration. Filled only by the readout, per the pre-committed scorer.)*
+*(Empty at registration. Filled only by the readout, per the pre-committed scorer; must cite
+AMENDMENT-1 below.)*
+
+---
+
+## AMENDMENT-1 — 2026-08-18 — pretuning sweep extension (verifier Part-IV pre-check: GO; author: "approved")
+
+The registered pretuning candidate sweep exhausted without landing: host_in_ball_fraction =
+0.279 / 0.415 / 0.534 at z_support = 0.25 / 0.30 / 0.35, monotonically short of the [0.60, 0.70]
+target, and insensitive to sky_frac (which was verified live on the archived cells:
+mean_ball_size 0.91→7.17 and impostor_fraction 0.693→0.925 across the sky_frac range, as
+designed — host-in-ball is a pure z_support truncation effect). **The registered candidate sweep
+is extended by z_support ∈ {0.40, 0.45} × sky_frac ∈ {1e-4, 2e-4, 4e-4}, appended to the
+lexicographic order after the original nine; same pretuning seed 20270999, same targets, same
+first-to-land rule.** sky_frac remains swept, not pinned: landing requires both targets, and the
+completion-fraction band has not been shown sky_frac-inert.
+
+Discipline statements (verifier Part-IV conditions, incorporated verbatim):
+1. This amendment is committed BEFORE any extension pretuning cell runs.
+2. **No MAP/coverage field of the archived pretuning outputs was read** — only the two
+   registered tuning-target fields (host_in_ball_fraction, completion_fraction) and the ball
+   diagnostics (mean_ball_size, impostor_fraction, empty_ball_fraction) were consulted.
+3. Impostor loading is NOT added as a tuning target. The frozen pair's mean_ball_size and
+   impostor_fraction are recorded in the §7 fill-in line as **disclosed descriptive facts**,
+   carried under the §6 venue-transfer caveat.
+4. **Exhaustion clause:** if the extended sweep also exhausts, execution stops and returns to
+   the author; any further extension is an AMENDMENT-2 under the same pre-check discipline.
+5. The six R=8 extension cells are budget-negligible; the 18 CPU-h ceiling is untouched.

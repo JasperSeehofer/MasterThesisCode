@@ -299,3 +299,62 @@ per this re-check). No open verifier findings remain. The prereg + scorer are re
 author [DO]; on approval, commit `PREREGISTRATION_PRODCAL_LADDER.md`, `readout_prodcal.py`,
 and the frozen harness in one commit, run the pretuning fill-in, then execute per §3. The
 append-only line binds from that commit; any deviation is recorded in the VERDICT section.
+
+---
+
+# PART IV — PRE-CHECK OF PROPOSED AMENDMENT-1 (pretuning sweep extension; prereg committed at fe72d52b; 2026-08-17)
+
+Situation of record: the registered 3×3 candidate sweep exhausted without landing —
+host_in_ball_fraction 0.279/0.415/0.534 at z_support 0.25/0.30/0.35, monotone undershoot of
+the [0.60, 0.70] target; sky_frac verified live on its designed levers (mean_ball_size
+0.91→7.17, impostor_fraction 0.693→0.925) and inert on host-in-ball (a pure z_support
+truncation effect). **Zero scored cells have run.** The registered D-7 procedure had no
+exhaustion branch — a gap in the Part II prescription itself, now exposed; the extension
+repairs a procedure defect, it does not react to any outcome.
+
+## Question 1 — appended-amendment form vs append-only discipline: **OK; no v4 file**
+
+A dated AMENDMENT-1 section appended below the VERDICT line respects the letter of the
+committed rules (no edit above the VERDICT line; the §7 body untouched — the carve-out fill-in
+blanks stay blank until the extended sweep lands). It also respects the substance, on three
+grounds that must all hold and currently do: (a) no scored cell has run, so no outcome exists
+to react to; (b) the only data consulted are the pretuning tuning-target fields, which the
+registered procedure itself reads, from cells run at the registered disjoint seed 20270999;
+(c) the extension preserves every discipline element (same seed, same targets, same
+first-to-land rule, deterministic appended order). A superseding v4 file is NOT required and
+would be worse: it would orphan the committed hash fe72d52b that the freeze chain cites. Three
+form conditions, all cheap: (i) commit AMENDMENT-1 BEFORE any extension pretuning cell runs;
+(ii) the amendment text states explicitly that no MAP/coverage field of any archived pretuning
+output was read — only the tuning-target fields; (iii) the VERDICT section remains
+readout-only and its eventual text cites AMENDMENT-1.
+
+## Question 2 — the extension itself: **OK with two required additions; do NOT pin sky_frac**
+
+- **Keep the sky_frac sweep.** Pinning it to 1e-4 would be wrong: landing requires BOTH
+  registered targets, and while host-in-ball is sky_frac-inert, the completion-fraction target
+  [0.30, 0.42] has not been shown to be. If (0.40, 1e-4) misses on completion share, the rule
+  must be able to advance deterministically to (0.40, 2e-4) etc. If both targets turn out
+  sky_frac-inert, the sweep is harmless (the order is fixed). Lexicographically taking 1e-4
+  when it lands is not a defect — it is the registered rule doing its job.
+- **Required addition 1 — no new tuning targets, but disclose the loading.** Impostor loading
+  (ball ~2.5–3, impostor_fraction ~0.75 at zs=0.40/sf=1e-4) is NOT a registered target, and
+  adding one now — after seeing the nine pretuning outputs — would be exactly the post-hoc
+  tuning-rule expansion the discipline forbids. Instead the fill-in line must record the
+  frozen pair's mean_ball_size and impostor_fraction as DISCLOSED descriptive facts, carried
+  under the §6 venue-transfer caveat (the harness venue's impostor loading vs production's is
+  then an on-record transfer axis, not a hidden one).
+- **Required addition 2 — exhaustion clause.** The slope (~+0.12 in host-in-ball per +0.05 in
+  z_support) projects ≈0.65 at zs=0.40 — likely to land — but the amendment must close the gap
+  it is repairing: if the extended sweep ALSO exhausts, execution stops and returns to the
+  author; any further extension is an AMENDMENT-2 under this same pre-check discipline (no
+  silent iteration).
+- Cost: six R=8/n=250 pretuning cells are budget-negligible; no change to the 18 CPU-h
+  ceiling needed. Seed 20270999 reuse across candidates is the registered design ✓.
+
+## GATE (AMENDMENT-1 pre-check)
+
+**GO — conditional on the amendment text incorporating the two required additions (loading
+disclosure in the fill-in line; exhaustion clause) and the three form conditions of Question 1
+verbatim.** So amended, AMENDMENT-1 is a procedure repair executed before any outcome existed,
+fully inside append-only discipline; no superseding prereg is required, and no further
+verifier pass is needed unless the extended sweep also exhausts.

@@ -15,7 +15,10 @@ from pathlib import Path
 from darksiren_emri.validation.pp_coverage import PPCoverageConfig, run_coverage
 
 PRETUNE_SEED = 20270999
-CANDIDATES = [(zs, sf) for zs in (0.25, 0.30, 0.35) for sf in (1e-4, 2e-4, 4e-4)]
+# Original nine + the AMENDMENT-1 extension, appended after them in order.
+CANDIDATES = [(zs, sf) for zs in (0.25, 0.30, 0.35) for sf in (1e-4, 2e-4, 4e-4)] + [
+    (zs, sf) for zs in (0.40, 0.45) for sf in (1e-4, 2e-4, 4e-4)
+]
 HOST_BAND = (0.60, 0.70)
 COMP_BAND = (0.30, 0.42)
 
