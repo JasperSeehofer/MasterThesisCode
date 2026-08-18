@@ -322,3 +322,18 @@ Sequencing of record: ladder verdict (G-4) → G-1-harness + G-2 + G-3 → autho
 with measurements in hand → figures/text (items 4–5) carry final numbers.
 
 *Append-only from its commit.*
+
+---
+
+## 7. G-3 COLLECTED — 2026-08-18 (appended per the append-only rule)
+
+**Verdict: MATCH.** §4 UNVERIFIED item (iii) is resolved: the repo's rendering of Gray et al.
+2020 Eqs. (A.9)/(A.10), the connecting redshift-uncertainty sentence, the absence of any
+distance–redshift Jacobian in the A.5–A.10 derivation (the paper's sole "Jacobian" is the
+detector/source-frame mass one), and the footnote-3 fragment are verbatim-faithful to
+**arXiv:1908.06050v4** (2020-06-12, the version matching the published PRD 101, 122001 (2020);
+the PRD page itself is robot-blocked, no known errata affecting Appendix A). Citation of record:
+arXiv v4 + PRD DOI. **Caveat for drafting:** the "denominator-only; numerator p_det is the MFG
+'most common mistake'" phrasing is a repo gloss consistent with the paper's structure, NOT
+Gray's own words — cite as a supported claim, never blockquote. Also corrected: the §4 table's
+`L6_DER3_...` path is `results/mechanism_study_20260813/`, not `docs/derivations/`.
