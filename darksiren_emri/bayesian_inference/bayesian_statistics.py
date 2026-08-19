@@ -2816,6 +2816,17 @@ det_index_to_slot: dict[int, int] = {}
 sigma2_cond_arr: npt.NDArray[np.float64] = np.empty(0)
 proj_arr: npt.NDArray[np.float64] = np.empty(0)
 
+# (N8) d_L-only 2x2 block conditional scalars for g_i / completion_mass_factor_g
+# (prod2d closure counterfactual instrument, "neutralized" mode; results/
+# prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1 V1').
+# Distinct from sigma2_cond_arr/proj_arr above, which condition on the FULL 3D
+# observed vector (phi, theta, d_L_frac) for the candidate's own numerator;
+# these condition on d_L_frac ONLY (cov_4d[3,2]/cov_4d[2,2] block), mirroring
+# self._proj_d_L_to_M / self._sigma_cond_M (:3749-3750) used by the completion
+# leg's own g_i.
+proj_d_L_to_M_arr: npt.NDArray[np.float64] = np.empty(0)
+sigma_cond_M_arr: npt.NDArray[np.float64] = np.empty(0)
+
 # Pre-extracted detection parameters (avoid pickling Detection objects per starmap call)
 det_d_L_arr: npt.NDArray[np.float64] = np.empty(0)
 det_d_L_unc_arr: npt.NDArray[np.float64] = np.empty(0)
@@ -2932,6 +2943,13 @@ class BayesianStatistics:
     # Sigma_glob_wbh (each galaxy's actual M_z inside the 4D p_det); "3d_shared"
     # (documented diagnostic) uses the pooled-3D Sigma_glob shared with beta_Gbar.
     _dgen_catalog_selection: str = "4d_exact"
+    # Prod2d closure counterfactual instrument (set by evaluate(); results/
+    # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1):
+    # "production" reproduces the pre-flag path exactly. Class-level default
+    # (not just __init__) so instances built via object.__new__ (existing
+    # p_Di unit-test harnesses) still resolve a value at self._catalogue_mass_overlap.
+    _catalogue_mass_overlap: str = "production"
+    _catalogue_mass_error_scale: float = 1.0
 
     def __init__(self) -> None:
         self.h_values = []
@@ -2958,6 +2976,12 @@ class BayesianStatistics:
         # INSTRUMENTATION (default OFF): N-2 selection-in-numerator
         # counterfactual cell. "off" => the production path, byte-identical.
         self._selection_in_completion_numerator: str = "off"
+        # INSTRUMENTATION (default OFF): prod2d closure counterfactual
+        # instrument (results/prod2d_closure_20260818/
+        # PREREGISTRATION_PROD_COUNTERFACTUAL.md §1). "production" =>
+        # the pre-flag path, byte-identical.
+        self._catalogue_mass_overlap: str = "production"
+        self._catalogue_mass_error_scale: float = 1.0
 
     def evaluate(
         self,
@@ -3008,6 +3032,16 @@ class BayesianStatistics:
         # "off"/"1d"/"2d" are the item-4 counterfactual decomposition cells
         # (pre-#118 estimator / [P2]-only / [P1]-only).
         selection_in_completion_numerator: str = "auto",
+        # Production counterfactual instrument (prod2d closure, results/
+        # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1):
+        # "production" (default) is byte-identical to the pre-flag path.
+        # "neutralized" (V1') replaces the 2D catalogue leg's per-candidate
+        # mz_integral with the completion leg's population mass factor
+        # (completion_mass_factor_g). "inflated" (V2) scales the numerator
+        # width sigma_gal by catalogue_mass_error_scale while freezing the
+        # Eddington-shifted mean. Never a production posterior.
+        catalogue_mass_overlap: str = "production",
+        catalogue_mass_error_scale: float = 1.0,
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3073,6 +3107,36 @@ class BayesianStatistics:
                 "COUNTERFACTUAL: selection_in_completion_numerator='off' under "
                 "absolute_marginal — the legacy pre-#118 estimator (no survival "
                 "factor in either completion leg). Not a production posterior."
+            )
+        # Prod2d closure counterfactual instrument (results/
+        # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1,
+        # P8): validated here the same way selection_in_completion_numerator
+        # is validated above.
+        _cat_mass_overlap = str(catalogue_mass_overlap)
+        if _cat_mass_overlap not in ("production", "neutralized", "inflated"):
+            raise ValueError(
+                "catalogue_mass_overlap must be 'production', 'neutralized' "
+                f"or 'inflated', got {catalogue_mass_overlap!r}"
+            )
+        _cat_mass_error_scale = float(catalogue_mass_error_scale)
+        if _cat_mass_error_scale != 1.0 and _cat_mass_overlap != "inflated":
+            raise ValueError(
+                "catalogue_mass_error_scale != 1.0 requires "
+                "catalogue_mass_overlap='inflated' "
+                f"(got catalogue_mass_overlap={_cat_mass_overlap!r}, "
+                f"catalogue_mass_error_scale={_cat_mass_error_scale!r})."
+            )
+        self._catalogue_mass_overlap = _cat_mass_overlap
+        self._catalogue_mass_error_scale = _cat_mass_error_scale
+        if _cat_mass_overlap != "production":
+            _LOGGER.warning(
+                "INSTRUMENTATION ACTIVE: --catalogue_mass_overlap=%s "
+                "(catalogue_mass_error_scale=%.6g) — a prod2d closure "
+                "counterfactual (results/prod2d_closure_20260818/"
+                "PREREGISTRATION_PROD_COUNTERFACTUAL.md §1). Not a production "
+                "posterior.",
+                _cat_mass_overlap,
+                _cat_mass_error_scale,
             )
         # G4: deterministic seed for the with-BH-mass MC denominator (threaded to
         # single_host_likelihood workers; per-call streams derived per host).
@@ -3771,6 +3835,8 @@ class BayesianStatistics:
                 _det_theta,
                 _D_h_table,
                 completeness,
+                _proj_d_L_to_M_arr,
+                _sigma_cond_M_arr,
             ),
         ) as pool:
             _LOGGER.info(
@@ -4209,6 +4275,8 @@ class BayesianStatistics:
             self._normalization_mode,
             self._host_z_kernel,
             self._host_mass_kernel,
+            self._catalogue_mass_overlap,
+            self._catalogue_mass_error_scale,
         )
 
         results_without_blackhole_mass = _starmap_host_batches(
@@ -4220,6 +4288,8 @@ class BayesianStatistics:
             self._normalization_mode,
             self._host_z_kernel,
             self._host_mass_kernel,
+            self._catalogue_mass_overlap,
+            self._catalogue_mass_error_scale,
         )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
@@ -5106,6 +5176,11 @@ def single_host_likelihood(
     # flag; "auto" == the historical bundling (trunc_lognormal iff
     # mass_trunc). No value change on the default path.
     host_mass_kernel: str = "auto",
+    # Prod2d closure counterfactual instrument (results/prod2d_closure_20260818/
+    # PREREGISTRATION_PROD_COUNTERFACTUAL.md §1). "production" (default) is
+    # byte-identical to the pre-flag path.
+    catalogue_mass_overlap: str = "production",
+    catalogue_mass_error_scale: float = 1.0,
 ) -> list[float]:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -5116,6 +5191,7 @@ def single_host_likelihood(
     global means_4d, cov_inv_4d, log_norm_4d
     global det_index_to_slot
     global sigma2_cond_arr, proj_arr
+    global proj_d_L_to_M_arr, sigma_cond_M_arr
     global det_d_L_arr, det_d_L_unc_arr, det_M_arr, det_phi_arr, det_theta_arr
     global completeness_model
 
@@ -5506,6 +5582,44 @@ def single_host_likelihood(
                 mz_integral = _mass_trunc_mz_integral(
                     mu_cond, math.sqrt(_sigma2_cond), 1.0 + z, _det_M, host_M, _sigma_lnM, _Z_M
                 )
+            elif catalogue_mass_overlap != "production":
+                # [PHYSICS] prod2d closure counterfactual instrument (results/
+                # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md
+                # §1). Guard pattern: the production float stream (the final
+                # ``else`` branch below) is reached ONLY when
+                # catalogue_mass_overlap == "production" and is never touched
+                # here.
+                mu_gal_frac = _host_M_eff * (1 + z) / _det_M
+                if catalogue_mass_overlap == "neutralized":
+                    # V1': replace the candidate's own mz_integral with the
+                    # SAME population mass factor the completion leg uses
+                    # (completion_mass_factor_g, :2022) at the candidate's own
+                    # z-nodes, with the event's det_M_z / projection /
+                    # sigma_cond -- the candidate becomes mass-UNINFORMATIVE.
+                    # Both legs remain densities in the same x_M measure
+                    # (registered normalization coherence statement, §1 V1').
+                    mz_integral = completion_mass_factor_g(
+                        np.asarray(z, dtype=np.float64),
+                        np.asarray(luminosity_distance_fraction, dtype=np.float64),
+                        _det_M,
+                        float(proj_d_L_to_M_arr[slot]),
+                        float(sigma_cond_M_arr[slot]),
+                    )
+                elif catalogue_mass_overlap == "inflated":
+                    # V2: host_M_error -> k*host_M_error ONLY in the numerator
+                    # width sigma_gal; the Eddington-shifted mean _host_M_eff
+                    # (above) stays computed from the UNSCALED host_M_error
+                    # (frozen mu_eff, §1 V2).
+                    sigma_gal_frac = (host_M_error * catalogue_mass_error_scale) * (1 + z) / _det_M
+                    sigma2_sum = _sigma2_cond + sigma_gal_frac**2
+                    mz_integral = np.exp(
+                        -0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum
+                    ) / np.sqrt(2 * np.pi * sigma2_sum)
+                else:
+                    raise ValueError(
+                        "catalogue_mass_overlap must be 'production', "
+                        f"'neutralized' or 'inflated', got {catalogue_mass_overlap!r}"
+                    )
             else:
                 # Galaxy mass in M_z_frac coordinates: M_z_frac = M_gal * (1+z) / M_z_det
                 # Eq. (14.22) in derivations/dark_siren_likelihood.md
@@ -5623,6 +5737,11 @@ def single_host_likelihood_batch(
     # #40 remainder: 2D host-mass kernel decomposition flag ("auto" == the
     # historical mass_trunc bundling; see resolve_host_mass_kernel).
     host_mass_kernel: str = "auto",
+    # Prod2d closure counterfactual instrument (results/prod2d_closure_20260818/
+    # PREREGISTRATION_PROD_COUNTERFACTUAL.md §1). "production" (default) is
+    # byte-identical to the pre-flag path.
+    catalogue_mass_overlap: str = "production",
+    catalogue_mass_error_scale: float = 1.0,
 ) -> npt.NDArray[np.float64]:
     """Host-batched twin of :func:`single_host_likelihood`.
 
@@ -5657,6 +5776,11 @@ def single_host_likelihood_batch(
             ``"auto"`` reproduces the historical mode bundling.
         host_mass_kernel: 2D host-mass kernel selection (#40 remainder);
             ``"auto"`` reproduces the historical mass_trunc bundling.
+        catalogue_mass_overlap: Prod2d closure counterfactual instrument
+            ("production"/"neutralized"/"inflated"); see
+            results/prod2d_closure_20260818/
+            PREREGISTRATION_PROD_COUNTERFACTUAL.md §1.
+        catalogue_mass_error_scale: Width multiplier ``k`` for "inflated".
 
     Returns:
         Array of shape ``(n, 6)`` when ``evaluate_with_bh_mass`` else
@@ -5667,6 +5791,7 @@ def single_host_likelihood_batch(
     global means_4d
     global det_index_to_slot
     global sigma2_cond_arr, proj_arr
+    global proj_d_L_to_M_arr, sigma_cond_M_arr
     global det_d_L_arr, det_d_L_unc_arr, det_M_arr
     global completeness_model
 
@@ -5995,6 +6120,46 @@ def single_host_likelihood_batch(
         mz_integral = _mass_trunc_mz_integral(
             mu_cond, math.sqrt(_sigma2_cond), 1.0 + y_num_nodes, _det_M, host_M, sigma_lnM, Z_M
         )
+    elif catalogue_mass_overlap != "production":
+        # [PHYSICS] prod2d closure counterfactual instrument (results/
+        # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1).
+        # Guard pattern: the production float stream (the `else` branch below)
+        # is reached ONLY when catalogue_mass_overlap == "production" and is
+        # never touched here.
+        mu_gal_frac = host_M_eff[:, None] * (1 + y_num_nodes) / _det_M
+        if catalogue_mass_overlap == "neutralized":
+            # V1': replace the candidate's own mz_integral with the SAME
+            # population mass factor the completion leg uses
+            # (completion_mass_factor_g, :2022) at the candidate's own
+            # z-nodes, with the event's det_M_z / projection / sigma_cond --
+            # the candidate becomes mass-UNINFORMATIVE. Both legs remain
+            # densities in the same x_M measure (registered normalization
+            # coherence statement, §1 V1').
+            _z_flat = np.broadcast_to(y_num_nodes, mu_gal_frac.shape).reshape(-1)
+            _dlf_flat = np.broadcast_to(luminosity_distance_fraction, mu_gal_frac.shape).reshape(-1)
+            mz_integral = completion_mass_factor_g(
+                _z_flat,
+                _dlf_flat,
+                _det_M,
+                float(proj_d_L_to_M_arr[slot]),
+                float(sigma_cond_M_arr[slot]),
+            ).reshape(mu_gal_frac.shape)
+        elif catalogue_mass_overlap == "inflated":
+            # V2: host_M_error -> k*host_M_error ONLY in the numerator width
+            # sigma_gal; the Eddington-shifted mean host_M_eff (above) stays
+            # computed from the UNSCALED host_M_error (frozen mu_eff, §1 V2).
+            sigma_gal_frac = (
+                (host_M_error * catalogue_mass_error_scale)[:, None] * (1 + y_num_nodes) / _det_M
+            )
+            sigma2_sum = _sigma2_cond + sigma_gal_frac**2
+            mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
+                2 * np.pi * sigma2_sum
+            )
+        else:
+            raise ValueError(
+                "catalogue_mass_overlap must be 'production', 'neutralized' "
+                f"or 'inflated', got {catalogue_mass_overlap!r}"
+            )
     else:
         mu_gal_frac = host_M_eff[:, None] * (1 + y_num_nodes) / _det_M
         sigma_gal_frac = host_M_error[:, None] * (1 + y_num_nodes) / _det_M
@@ -6100,6 +6265,8 @@ def _starmap_host_batches(
     normalization_mode: str,
     host_z_kernel: str = "auto",
     host_mass_kernel: str = "auto",
+    catalogue_mass_overlap: str = "production",
+    catalogue_mass_error_scale: float = 1.0,
 ) -> list[list[float]]:
     """Dispatch the batched host kernel over worker processes.
 
@@ -6118,6 +6285,11 @@ def _starmap_host_batches(
         normalization_mode: In-catalogue normalization mode.
         host_z_kernel: Numerator host-z kernel selection (issue #40a).
         host_mass_kernel: 2D host-mass kernel selection (#40 remainder).
+        catalogue_mass_overlap: Prod2d closure counterfactual instrument
+            ("production"/"neutralized"/"inflated"); see
+            results/prod2d_closure_20260818/
+            PREREGISTRATION_PROD_COUNTERFACTUAL.md §1.
+        catalogue_mass_error_scale: Width multiplier ``k`` for "inflated".
 
     Returns:
         Per-host result rows in input order.
@@ -6143,6 +6315,8 @@ def _starmap_host_batches(
             normalization_mode,
             host_z_kernel,
             host_mass_kernel,
+            catalogue_mass_overlap,
+            catalogue_mass_error_scale,
         )
         for idx in chunk_indices
     ]
@@ -6480,6 +6654,14 @@ def child_process_init(
     current_det_theta_arr: npt.NDArray[np.float64],
     current_D_h_table: dict[float, float] | None = None,
     current_completeness: CompletenessModel | None = None,
+    # (N8) d_L-only 2x2 block conditional scalars, threaded for the
+    # "neutralized" prod2d closure counterfactual (results/
+    # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1 V1').
+    # None (default, e.g. existing hand-built worker-global tests) leaves the
+    # module globals at their prior value -- byte-identical, since only the
+    # "neutralized" mode reads them.
+    current_proj_d_L_to_M_arr: npt.NDArray[np.float64] | None = None,
+    current_sigma_cond_M_arr: npt.NDArray[np.float64] | None = None,
 ) -> None:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -6490,6 +6672,7 @@ def child_process_init(
     global means_4d, cov_inv_4d, log_norm_4d
     global det_index_to_slot
     global sigma2_cond_arr, proj_arr
+    global proj_d_L_to_M_arr, sigma_cond_M_arr
     global det_d_L_arr, det_d_L_unc_arr, det_M_arr, det_phi_arr, det_theta_arr
     global D_h_table
     global completeness_model
@@ -6508,6 +6691,10 @@ def child_process_init(
     det_index_to_slot = current_det_index_to_slot
     sigma2_cond_arr = current_sigma2_cond_arr
     proj_arr = current_proj_arr
+    if current_proj_d_L_to_M_arr is not None:
+        proj_d_L_to_M_arr = current_proj_d_L_to_M_arr
+    if current_sigma_cond_M_arr is not None:
+        sigma_cond_M_arr = current_sigma_cond_M_arr
     det_d_L_arr = current_det_d_L_arr
     det_d_L_unc_arr = current_det_d_L_unc_arr
     det_M_arr = current_det_M_arr

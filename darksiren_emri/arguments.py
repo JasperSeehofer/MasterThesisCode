@@ -296,6 +296,20 @@ class Arguments:
         val: str = self._parsed_arguments.selection_in_completion_numerator
         return val
 
+    @property
+    def catalogue_mass_overlap(self) -> str:
+        """Production counterfactual instrument (prod2d closure, catalogue-leg
+        mass overlap): 'production'/'neutralized'/'inflated'. See
+        results/prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md.
+        """
+        return str(self._parsed_arguments.catalogue_mass_overlap)
+
+    @property
+    def catalogue_mass_error_scale(self) -> float:
+        """Width multiplier ``k`` for the 'inflated' catalogue_mass_overlap
+        variant (default 1.0; only meaningful with catalogue_mass_overlap='inflated')."""
+        return float(self._parsed_arguments.catalogue_mass_error_scale)
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -349,6 +363,18 @@ class Arguments:
                 "catalogue; docs/derivations/realistic_host_observation_model.md "
                 "§1.2/§5). Drop --simulation_steps/--injection_campaign/"
                 "--snr_analysis or drop --observed_catalogue."
+            )
+        # Prod2d closure counterfactual instrument (P8, results/
+        # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1):
+        # --catalogue_mass_error_scale is only meaningful for 'inflated' -- a
+        # non-default scale under any other mode is REJECTED, never silently
+        # ignored.
+        if self.catalogue_mass_error_scale != 1.0 and self.catalogue_mass_overlap != "inflated":
+            raise ArgumentsError(
+                "--catalogue_mass_error_scale != 1.0 requires "
+                "--catalogue_mass_overlap inflated "
+                f"(got catalogue_mass_overlap={self.catalogue_mass_overlap!r}, "
+                f"catalogue_mass_error_scale={self.catalogue_mass_error_scale!r})."
             )
 
 
@@ -780,6 +806,34 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "never production posteriors. Non-'off' cells require "
             "--normalization_mode absolute_marginal. See also "
             "results/run_20260804_postfix/gate_vii/PREREGISTRATION_N2_SEL1D.md."
+        ),
+    )
+    parser.add_argument(
+        "--catalogue_mass_overlap",
+        type=str,
+        choices=["production", "neutralized", "inflated"],
+        default="production",
+        help=(
+            "Production counterfactual instrument (prod2d closure, catalogue- "
+            "leg mass overlap; results/prod2d_closure_20260818/"
+            "PREREGISTRATION_PROD_COUNTERFACTUAL.md §1). 'production' (default) "
+            "is byte-identical to the pre-flag behaviour. 'neutralized' (V1') "
+            "replaces the 2D catalogue leg's per-candidate mz_integral with the "
+            "SAME population mass factor (completion_mass_factor_g) the "
+            "completion leg uses -- the candidate becomes mass-uninformative. "
+            "'inflated' (V2) scales the numerator width sigma_gal by "
+            "--catalogue_mass_error_scale while freezing the Eddington-shifted "
+            "mean at its k=1 value. Never a production posterior."
+        ),
+    )
+    parser.add_argument(
+        "--catalogue_mass_error_scale",
+        type=float,
+        default=1.0,
+        help=(
+            "Width multiplier k for the 'inflated' --catalogue_mass_overlap "
+            "variant (default 1.0). REJECTED (not silently ignored) unless "
+            "--catalogue_mass_overlap inflated is also given."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

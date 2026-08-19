@@ -202,6 +202,8 @@ def main() -> None:
             host_mass_kernel=arguments.host_mass_kernel,
             freeze_g_frac_ref_h=arguments.freeze_g_frac_ref_h,
             selection_in_completion_numerator=arguments.selection_in_completion_numerator,
+            catalogue_mass_overlap=arguments.catalogue_mass_overlap,
+            catalogue_mass_error_scale=arguments.catalogue_mass_error_scale,
         )
 
     if arguments.snr_analysis:
@@ -1377,6 +1379,11 @@ def evaluate(
     # [PHYSICS] selection fusion (rows #117-#118): "auto" -> "fused" under
     # absolute_marginal, "off" otherwise; explicit cells are counterfactuals.
     selection_in_completion_numerator: str = "auto",
+    # Production counterfactual instrument (prod2d closure, results/
+    # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1):
+    # "production" (default) is byte-identical to pre-flag behaviour.
+    catalogue_mass_overlap: str = "production",
+    catalogue_mass_error_scale: float = 1.0,
 ) -> None:
     from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1402,6 +1409,8 @@ def evaluate(
         host_mass_kernel=host_mass_kernel,
         freeze_g_frac_ref_h=freeze_g_frac_ref_h,
         selection_in_completion_numerator=selection_in_completion_numerator,
+        catalogue_mass_overlap=catalogue_mass_overlap,
+        catalogue_mass_error_scale=catalogue_mass_error_scale,
     )
 
 
