@@ -1,0 +1,72 @@
+{
+  "production_formula": "darksiren_emri/galaxy_catalogue/handler.py:1337-1351 _empiric_stellar_mass_to_BH_mass_relation (Reines & Volonteri 2015, arXiv:1508.06274, Eq. 5 + Sec 4.1 0.24 dex intrinsic scatter); applied catalog-wide at load by _map_stellar_masses_to_BH_masses (handler.py:1105-1111).",
+  "galaxy_catalog_band": {
+    "M_min": 10000.0,
+    "M_max": 10000000.0,
+    "z_max": 1.5
+  },
+  "bootstrap_B": 10000,
+  "bootstrap_seed": 20280612,
+  "venues": {
+    "iiib": {
+      "venue": "iiib",
+      "n_events": 76,
+      "n_events_total_venue": 1588,
+      "frac_in_catalog": 0.04785894206549118,
+      "sigma_M_dex_distribution": {
+        "min": 0.30068771057251503,
+        "median": 0.39018949223365434,
+        "max": 1.6430035189775387
+      },
+      "sigma_M_fractional_distribution": {
+        "min": 0.6923590400107813,
+        "median": 0.8984445082601286,
+        "max": 3.7831554105344405
+      },
+      "spearman_ds_sigma_M_dex": {
+        "point": -0.0325759212166533,
+        "ci95": [
+          -0.2435387487963904,
+          0.1877454597959795
+        ],
+        "ci_width": 0.43128420859236993,
+        "excludes_zero": false,
+        "excludes_zero_positive_M_A_direction": false
+      },
+      "bootstrap_B": 10000,
+      "bootstrap_seed": 20280612
+    },
+    "joint_r1": {
+      "venue": "joint_r1",
+      "n_events": 76,
+      "n_events_total_venue": 1588,
+      "frac_in_catalog": 0.04785894206549118,
+      "sigma_M_dex_distribution": {
+        "min": 0.30068771057251503,
+        "median": 0.39018949223365434,
+        "max": 1.6430035189775387
+      },
+      "sigma_M_fractional_distribution": {
+        "min": 0.6923590400107813,
+        "median": 0.8984445082601286,
+        "max": 3.7831554105344405
+      },
+      "spearman_ds_sigma_M_dex": {
+        "point": -0.26830290051244415,
+        "ci95": [
+          -0.45836081216568325,
+          -0.05848153440938233
+        ],
+        "ci_width": 0.39987927775630094,
+        "excludes_zero": true,
+        "excludes_zero_positive_M_A_direction": false
+      },
+      "bootstrap_B": 10000,
+      "bootstrap_seed": 20280612
+    }
+  },
+  "P5_same_subset_both_venues": true,
+  "n_common_host_galaxy_index": 76,
+  "sigma_M_leg_R_CLASS_OWNED_M_A_form": false,
+  "disclosure": "UNDERPOWERED-NULL: sigma_M leg does not fire (CI does not exclude 0 in the positive M-A direction in both venues) on the n~=76 in-catalog subset. Per PREREGISTRATION_PROD_REGRESSION.md P5, this is reported as underpowered-null, never as refutation of M-A. See per-venue ci_width above."
+}

@@ -186,3 +186,39 @@ Runtime: seconds, local. No cluster dependency; independent of job 6364821.
 ## VERDICT
 
 *(append-only below this line after execution)*
+
+**VERDICT (2026-08-19, appended after stage-1 + stage-2 execution; branch presented to the
+author as a [RULE], not adjudicated):**
+
+- Gates: G-a/G-b PASS both venues (Σs2D ratio 1.8%/0.86%; Σs1D −407/−382); G-c positive
+  (+392/+388). c′ validity gate: 0/3176 violations per venue.
+- **Stage-1:** S1 = −0.190 [−0.262, −0.115] (iiib) / −0.276 [−0.337, −0.212] (joint_r1);
+  S2 r_rb = −0.359 [−0.459, −0.255] / −0.303 [−0.365, −0.240]; S1a = +0.253 / +0.090 (CIs
+  exclude 0); S1b = +0.046 (incl. 0) / +0.065 (excl. 0); S3 = +0.014 / +0.019 (incl. 0 both).
+  Sensitivity: no sign flips on adjudicating statistics under one-step node-pair shifts.
+  **All firing statistics are in the direction OPPOSITE the registered M-B convention:** the
+  Δs excess is stochastically LARGER in catalogue-supported events and decreases with
+  completion share. L-B = False both venues (direction), L-C = False both venues.
+- **Stage-2 (triggered by rule 3):** σ_M recomputed for the n = 76 in-catalog true hosts
+  (handler.py:1337-1351 R&V15 + 0.24 dex; σ_M dex median 0.390, range 0.301–1.643; row-join
+  cross-verified against the live handler, 0 mismatches). ρ(Δs, σ_M) = −0.033
+  [−0.244, +0.188] (iiib) / −0.268 [−0.458, −0.058] (joint_r1) — the positive-direction leg
+  does NOT fire; **UNDERPOWERED-NULL** per P5 (CI widths 0.43/0.40; joint_r1's negative
+  excursion reported, not interpreted — P5's caveat and the true-host-vs-impostor-candidate
+  σ_M mismatch noted below).
+- **Branch (rule 4): R-MIXED** — legs fired in both venues but in the anti-registered
+  direction; σ_M leg null. Reported with both venues' numbers, no forcing.
+- **Orchestrator reading for the author (non-binding):** the registered M-B (completion
+  re-balance) form is refuted in direction — decisively and in both venues. The per-event
+  structure that DOES fire localizes the 2D−1D excess in the CATALOGUE leg: it concentrates
+  where catalogue candidates engage the mass overlap (cat_e), while the true host being in
+  the catalogue ANTI-correlates (S4) — i.e. the excess rides on impostor-candidate mass
+  overlaps, the M-A (inverse-mass kernel shift) locus of the mechanism doc, whose specific
+  true-host σ_M covariate is the wrong probe for impostor-driven structure (registered
+  stage-2 tested what it registered; the impostor-side σ_M test would be a NEW registered
+  read). M-C shows nothing. Per P8: this is per-event structure consistent with a
+  catalogue-leg form of the coupling class — it does not quantify the +0.054/+0.067.
+- P7-4 status: the transfer gap is PARTIALLY closed — production-native per-event structure
+  exists and localizes to the catalogue-leg locus; the harness class attribution (σ_M × σ_z
+  collapse) remains the class evidence. Follow-up candidates (each a fresh prereg, author-
+  gated): impostor-candidate-side σ_M read; per-event Δmean_e leave-one-out column (§6.1).
