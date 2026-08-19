@@ -1242,3 +1242,21 @@ can expect that constraint."
 4. **Gate presentation (memo §7) returns to the author** for the /physics-change approval;
    validation bed already banked and verified (bscale counterfactual = the new formula's
    posterior exactly).
+
+## Row #132 — 2026-08-19 — Post-fix baseline banked (N-B0 EXACT); Option B + battery APPROVED ("all approved"); literal row-#111 transfer RETIRED
+
+1. **Post-fix baseline of record** (`PREREG_POSTFIX_BASELINE.md` VERDICT): 2D mean_h
+   0.6771/0.6788 — exact to 4 decimals vs the registered counterfactual prediction; new
+   offsets **−0.0529/−0.0512** (below truth; base tilt exposed); σ_h 0.0239/0.0225; 1D
+   0.6010/0.6020. Derived-form B_scale fix cross-validated end-to-end.
+2. **Author ratification (verbatim): "all approved"** on
+   `PROPOSAL_1D_CORRESPONDENCE_20260819.md` §5: **[RULE]** the literal row-#111
+   "transfer the terms" item is RETIRED as superseded (wrong-as-premised per
+   `PRODUCTION_TRANSFER_RECON_20260816.md`; α-pairing + selected-population prior already
+   in production, density-form venue-inert, LOO inapplicable); **[DO]** Option B — the
+   production 1D correspondence measurement (base-tilt decomposition; DS-6 reproduction
+   target; ~25-50 CPU-h; validation-code only unless a defect is found); **[DO]** battery
+   prereg authoring (s_Edd exact-quadrature re-measurement, f_k-vs-f̄ consistency, D3/F10
+   J_α; flags-on-main, one fleet, reads against the new baselines).
+3. Both streams open with prereg-first + verifier + physics-gate discipline; g_i stays
+   rank 4; landscape stays gated.
