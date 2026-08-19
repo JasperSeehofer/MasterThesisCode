@@ -192,6 +192,30 @@ R_LOW_THRESHOLD = 0.605  # DS-6 rail statistic (prereg S-RAIL)
 # effectively delta-function redshift. Flagged for review.
 EXACT_Z_ERROR_FLOOR = 1.0e-6
 
+# ── Fleet arm registry (cluster-fleet CLI stage, prereg §2 arm doses) ────────
+# arm -> (sigma_z_scale, area_scale), verbatim from the task spec's registered
+# mapping. b0 = B-0 (production-mapped); bsig005/bsig025 = B-sigma starvation
+# ladder (0.05x/0.25x); eden05/eden2 = E-DEN (area x0.5/x2, exploratory).
+ARM_SPECS: dict[str, tuple[float, float]] = {
+    "b0": (1.0, 1.0),
+    "bsig005": (0.05, 1.0),
+    "bsig025": (0.25, 1.0),
+    "eden05": (1.0, 0.5),
+    "eden2": (1.0, 2.0),
+}
+# Registered paired-seed discipline (prereg §1 D-C): b0/bsig005 get the
+# adjudicating N=25; bsig025/eden05/eden2 are the N=10 reported-only doses.
+# All arm seed lists start at the SAME 900101 anchor (paired across arms by
+# construction, so a B-sigma/E-DEN seed at index i is the same universe
+# construction seed as B-0's seed at index i).
+ARM_SEEDS: dict[str, tuple[int, ...]] = {
+    "b0": tuple(range(900101, 900126)),
+    "bsig005": tuple(range(900101, 900126)),
+    "bsig025": tuple(range(900101, 900111)),
+    "eden05": tuple(range(900101, 900111)),
+    "eden2": tuple(range(900101, 900111)),
+}
+
 
 class _UnityCompleteness:
     """P14: f≡1 completeness shim satisfying the ``CompletenessModel`` Protocol.
@@ -540,10 +564,20 @@ class MirrorUniverseGenerator:
         obs_d_L = np.clip(obs_d_L, 1.0e-6, None)
 
         # (c) sky: correlated draw about the host's true position using the
-        # resampled row's own (phiS, qS) 2x2 covariance sub-block.
-        phi_var = rows["delta_phiS_delta_phiS"].to_numpy(dtype=np.float64)
-        theta_var = rows["delta_qS_delta_qS"].to_numpy(dtype=np.float64)
-        cov_theta_phi = rows["delta_phiS_delta_qS"].to_numpy(dtype=np.float64)
+        # resampled row's own (phiS, qS) 2x2 covariance sub-block, scaled by
+        # config.area_scale (E-DEN arm, registered mechanism -- see the
+        # module docstring's E-DEN implementation note). For a 2x2 covariance
+        # block, localization AREA ~ sqrt(det(cov)); scaling the WHOLE
+        # covariance block by a scalar s scales det(cov) by s^2, hence area
+        # by s -- so multiplying phi_var/theta_var/cov_theta_phi by
+        # area_scale scales the drawn localization area by exactly
+        # area_scale, matching the registered "(phi,theta) covariance
+        # sub-block scaled by area_scale" mechanism. area_scale == 1.0 is a
+        # byte-identical no-op (B-0/B-sigma arms).
+        area_scale = float(self.config.area_scale)
+        phi_var = rows["delta_phiS_delta_phiS"].to_numpy(dtype=np.float64) * area_scale
+        theta_var = rows["delta_qS_delta_qS"].to_numpy(dtype=np.float64) * area_scale
+        cov_theta_phi = rows["delta_phiS_delta_qS"].to_numpy(dtype=np.float64) * area_scale
         obs_phiS = np.empty(n, dtype=np.float64)
         obs_qS = np.empty(n, dtype=np.float64)
         for i in range(n):
@@ -1051,6 +1085,24 @@ def run_mirror_seed_inprocess(
 
     Returns:
         ``(diagnostics_csv_path, elapsed_seconds)``.
+
+    Note:
+        **Low-wing h-bounds widening (harness-registered mechanism, flagged
+        for review).** ``BayesianStatistics.evaluate`` STOPs
+        (``ValueError("Hubble constant out of bounds.")``) if any requested
+        h falls outside its OWN freshly-constructed ``LamCDMScenario``'s
+        registered ``[0.6, 0.86]`` window (``bayesian_statistics.py:3199``,
+        ``:3620-3624``) -- this is production's real parameter-space bound,
+        unrelated to :data:`H_GRID_41`. The prereg's S-RAIL low wing
+        (:data:`H_WING_LOW`, ``[0.50, 0.58]``, REPORTED-ONLY diagnostic) is
+        outside it by construction. Since ``bs`` here is a FRESH, throwaway
+        ``BayesianStatistics()`` instance local to this call (discarded on
+        return -- no shared/module state), this function widens
+        ``bs.cosmological_model.h.lower_limit``/``upper_limit`` to cover
+        ``min(h_values)``/``max(h_values)`` (a no-op, byte-identical
+        widening when ``h_values`` already sits inside ``[0.6, 0.86]``, e.g.
+        every G-1/G-2 call) rather than editing production's
+        ``LamCDMScenario`` class default -- no production file is touched.
     """
     import darksiren_emri.bayesian_inference.bayesian_statistics as _bs_mod
 
@@ -1071,6 +1123,14 @@ def run_mirror_seed_inprocess(
         os.chdir(work_root)
         cosmological_model = Model1CrossCheck(rng=np.random.default_rng(seed))
         bs = BayesianStatistics()
+        # Low-wing widening (see the docstring Note above): no-op when
+        # h_values is already inside bs's own registered [0.6, 0.86] bound.
+        bs.cosmological_model.h.lower_limit = min(
+            bs.cosmological_model.h.lower_limit, min(h_values)
+        )
+        bs.cosmological_model.h.upper_limit = max(
+            bs.cosmological_model.h.upper_limit, max(h_values)
+        )
         start = time.time()
         bs.evaluate(
             galaxy_catalog,
@@ -1354,17 +1414,195 @@ def run_g2_cost_pilot(
     )
 
 
+# ── Fleet arm-runner stage (cluster fleet execution, task spec item 1) ──────
+
+
+def compute_full_log_posterior_vector(
+    diagnostics_csv: str | Path,
+    h_grid: tuple[float, ...] = H_GRID_FULL,
+) -> tuple[list[float], list[float]]:
+    """Full (41-node production grid + REPORTED-ONLY low wing) log-posterior vector.
+
+    Same aggregation as :func:`compute_seed_statistics` (Sigma log
+    ``combined_no_bh`` over events, per h-node, no normalization/shift
+    applied) but over :data:`H_GRID_FULL` rather than the production-only
+    :data:`H_GRID_41` subset, so the fleet JSON carries the full vector the
+    prereg's S-RAIL diagnostic wing needs (task spec item 1: "the full 41+low
+    -wing log-posterior vector").
+
+    Args:
+        diagnostics_csv: A mirror-seed run's ``event_likelihoods.csv``
+            (must have been evaluated over a superset of ``h_grid``, e.g. via
+            :func:`run_mirror_seed_inprocess` with ``h_values=H_GRID_FULL``).
+        h_grid: The full grid (default: production 41-node grid + low wing).
+
+    Returns:
+        ``(h_grid_sorted, sum_log_l)`` -- parallel lists, same length as
+        ``h_grid``.
+    """
+    df = pd.read_csv(diagnostics_csv)
+    grid = np.array(sorted(h_grid), dtype=np.float64)
+    df = df[np.isin(df["h"].to_numpy(dtype=np.float64), grid)]
+    piv = df.pivot_table(index="event_idx", columns="h", values="combined_no_bh", aggfunc="first")
+    piv = piv.reindex(columns=grid)
+    vals = piv.to_numpy(dtype=np.float64)
+    with np.errstate(divide="ignore"):
+        log_l = np.where(vals > 0.0, np.log(vals, where=vals > 0.0), -np.inf)
+    sum_log_l = np.nansum(np.where(np.isfinite(log_l), log_l, -1.0e300), axis=0)
+    return grid.tolist(), sum_log_l.tolist()
+
+
+def _git_commit() -> str:
+    """Current HEAD short-circuit lookup (recorded per fleet-task JSON, best-effort)."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(_REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip()
+    except (subprocess.CalledProcessError, OSError):
+        return "unknown"
+
+
+def run_arm_seed(
+    work_root: Path,
+    arm: str,
+    seed: int,
+    out_dir: Path,
+    config: CorrespondenceConfig | None = None,
+) -> Path:
+    """Run one (arm, seed) fleet task (cluster-fleet CLI stage, task spec item 1).
+
+    Maps ``arm`` to ``(sigma_z_scale, area_scale)`` via :data:`ARM_SPECS`,
+    draws one mirror-universe realization at that dose, evaluates it
+    in-process over :data:`H_GRID_FULL` (production 41-node grid + the
+    REPORTED-ONLY diagnostic low wing), and writes
+    ``<out_dir>/<arm>_seed<seed>.json``.
+
+    **Idempotent** (walltime-kill safety, task spec item 1): if the output
+    JSON already exists, the function returns immediately WITHOUT rebuilding
+    the catalogue or re-running ``evaluate()`` -- a resubmitted array task
+    resumes rather than re-paying the ~29 min/seed-run cost.
+
+    Args:
+        work_root: Per-task scratch directory for the sandboxed evaluate()
+            run (catalogue variant + CRB-CSV write + diagnostics output).
+        arm: One of :data:`ARM_SPECS`' keys
+            (``b0``/``bsig005``/``bsig025``/``eden05``/``eden2``).
+        seed: Realization seed. Expected to be a member of
+            ``ARM_SEEDS[arm]`` per the registered paired-seed discipline
+            (prereg §1 D-C) -- not enforced here (kept testable with
+            arbitrary seeds); the sbatch task-list construction is the
+            actual enforcement point.
+        out_dir: Fleet output directory (one JSON per task).
+        config: Optional override (default: the registered n_events=200,
+            with ``sigma_z_scale``/``area_scale`` taken from
+            ``ARM_SPECS[arm]``).
+
+    Returns:
+        The (written-or-pre-existing) JSON path.
+
+    Raises:
+        KeyError: If ``arm`` is not a registered arm.
+    """
+    if arm not in ARM_SPECS:
+        raise KeyError(f"unknown arm {arm!r}; registered arms: {sorted(ARM_SPECS)}")
+    sigma_z_scale, area_scale = ARM_SPECS[arm]
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{arm}_seed{seed}.json"
+    if out_path.is_file():
+        _LOGGER.info(
+            "arm=%s seed=%d: output already exists, skipping (idempotent) -- %s",
+            arm,
+            seed,
+            out_path,
+        )
+        return out_path
+
+    cfg = config or CorrespondenceConfig(sigma_z_scale=sigma_z_scale, area_scale=area_scale)
+    catalogue_pin_ok = check_reduced_catalogue_pin()
+    gen = MirrorUniverseGenerator(cfg)
+    host_pool, _observed_path, handler = gen.host_pool_for_sigma_scale(
+        work_root / "catalogue", seed, sigma_z_scale=sigma_z_scale
+    )
+    events = gen.draw_realization(seed, host_pool=host_pool)
+    diag_csv, elapsed = run_mirror_seed_inprocess(
+        work_root / f"seed{seed}",
+        events,
+        seed,
+        galaxy_catalog=handler,
+        h_values=H_GRID_FULL,
+        completeness_override=False,
+    )
+    stats = compute_seed_statistics(diag_csv, seed, h_grid=H_GRID_41)
+    h_grid, log_posterior = compute_full_log_posterior_vector(diag_csv, h_grid=H_GRID_FULL)
+
+    record: dict[str, Any] = {
+        "arm": arm,
+        "seed": seed,
+        "sigma_z_scale": sigma_z_scale,
+        "area_scale": area_scale,
+        "n_events_drawn": cfg.n_events,
+        "n_eff": stats.n_events,
+        "mean_h": stats.mean_h,
+        "map_h": stats.map_h,
+        "sigma_h": stats.sigma_h,
+        "c50": stats.c50,
+        "c68": stats.c68,
+        "c90": stats.c90,
+        "r_low": stats.r_low,
+        "h_grid": h_grid,
+        "log_posterior": log_posterior,
+        "elapsed_s": elapsed,
+        "git_commit": _git_commit(),
+        "catalogue_pin_ok": catalogue_pin_ok,
+    }
+    out_path.write_text(json.dumps(record, indent=2))
+    _LOGGER.info(
+        "arm=%s seed=%d: wrote %s (elapsed=%.1fs, n_eff=%d, mean_h=%.4f)",
+        arm,
+        seed,
+        out_path,
+        elapsed,
+        stats.n_events,
+        stats.mean_h,
+    )
+    return out_path
+
+
 def _cli() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--stage", choices=("g0", "g1", "g2"), default="g0")
+    parser.add_argument("--stage", choices=("g0", "g1", "g2", "arm"), default="g0")
     parser.add_argument(
         "--work-root",
         default="/tmp/correspondence_1d_g0",
         help="Scratch directory for the sandboxed evaluate() run.",
     )
     parser.add_argument("--seed", type=int, default=777010)
+    parser.add_argument(
+        "--arm",
+        choices=tuple(ARM_SPECS),
+        default=None,
+        help="Fleet arm (--stage arm only): b0/bsig005/bsig025/eden05/eden2.",
+    )
+    parser.add_argument(
+        "--out-dir",
+        default=None,
+        help="Fleet output directory (--stage arm only): "
+        "<out-dir>/<arm>_seed<seed>.json is written (idempotent).",
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
+
+    if args.stage == "arm":
+        if args.arm is None or args.out_dir is None:
+            parser.error("--stage arm requires --arm and --out-dir")
+        out_path = run_arm_seed(Path(args.work_root), args.arm, args.seed, Path(args.out_dir))
+        print(json.dumps({"out_path": str(out_path)}, indent=2))
+        return 0
 
     if args.stage == "g0":
         result = run_g0_fidelity_pilot(Path(args.work_root), seed=args.seed)
