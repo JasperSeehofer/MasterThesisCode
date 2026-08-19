@@ -1137,3 +1137,32 @@ can expect that constraint."
    top-slope event is 889 (SNR 1424.7, rank 1); production σ_M of record = R&V15 ε₀ = 0.24 dex
    (post-`555f018`; the "0.55 dex" in older session memory was pre-fix wording); documented
    Eddington-in-M 2D impact −0.020 (`bayesian_statistics.py:5454`).
+
+## Row #128 — 2026-08-19 — Closure day 2: budget B-UNOWNED; catalogue-leg mass overlap ELIMINATED (regression + production counterfactual); landscape cancelled + gated behind residual resolution
+
+1. **Executed under row #127 autonomy + same-day author interaction.** Three registered
+   measurements: (i) production-native per-event slope regression
+   (`PREREGISTRATION_PROD_REGRESSION.md` v2, stage-1 + stage-2) — **R-MIXED**: M-B
+   completion-rebalance form refuted IN DIRECTION both venues (S1 −0.190/−0.276, S2 r_rb
+   −0.359/−0.303); the 2D−1D slope excess concentrates in catalogue-supported,
+   impostor-borne events; true-host σ_M leg UNDERPOWERED-NULL (n=76). (ii) σ_M×σ_z
+   mechanism derivation (`MECHANISM_SIGMA_M_SIGMA_Z_DERIVATION.md`) with blind T2
+   response-surface predictions registered pre-readout. (iii) **production counterfactual**
+   (`PREREGISTRATION_PROD_COUNTERFACTUAL.md` v2; [PHYSICS] instrument
+   `--catalogue_mass_overlap`, gate-ledger rows; jobs 6369297–6369304, 250/250, all gates
+   PASS): **ΔV1′ = +0.0010/+0.0032** — catalogue-leg mass-overlap ownership of the
+   +0.054/+0.067 offsets REFUTED at materiality (registered branch C-MIXED by the letter:
+   joint_r1 0.0032 in the 0.003–0.006 gap); k-ladder shows real leg sensitivity
+   (k=2: +0.0089/+0.0164).
+2. **P7-4 budget assembled (production-native only):** r_v = Δ_v − (−0.020) =
+   **+0.074/+0.087** vs 2σ_total ≈ 0.023 ⇒ **B-UNOWNED** both venues. Residual owner
+   search narrowed to the completion-leg mass factor / alpha_G_phi-path asymmetry.
+3. **Job 6364821 CANCELLED** at 12:45 (author-directed; 13 fused cells non-finishing under
+   contention); **author [RULE] verbatim in CLUSTER FILL-IN 2:** landscape/T1 gated behind
+   the final 2D-residual resolution; execution-completeness clause amended; 5 off cells
+   banked as registered reads.
+4. **Repo history rewrite (author-approved):** 2 accidental 4 GB CSVs excised from 16
+   unpushed commits; hash map `docs/HISTORY_REWRITE_20260819.md`; freeze d6fc1ccf →
+   26bcd9a4; origin synced; cluster re-tagged.
+5. **PENDING author decisions:** report §4 table (`CAMPAIGN_REPORT_20260819.md`) — ratify
+   #1–#3/#5, [DO] completion-leg counterfactual, [DO] backup-ref prune.
