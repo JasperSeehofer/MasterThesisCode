@@ -1292,3 +1292,13 @@ can expect that constraint."
    instrument + measured response are the validation bed.
 3. Option B status: G-0 PASS at bit precision (catalogue-provenance defect found and fixed
    en route; md5 pin added); mirror generator + G-1/G-2 pilots in flight.
+
+## Row #135 — 2026-08-20 — J_α fork RULED: option (b), batch with Option B ("b is fine")
+
+Author [RULE] (verbatim: *"b is fine"*): the J_α default stays `point`; J_α is carried as a
+quantified systematic (−0.0025/−0.0061, r_Malm +4.0–7.8%) with its derivation of record
+(`docs/derivations/jalpha_selection_mass_kernel.md` v2: kernel-everywhere is the A2-correct
+form; mixed form is a defect; flip scoped to the φ-convention assembly when adopted). The
+default flip is BATCHED with the Option B base-tilt resolution — one re-baseline instead of
+two; at that point the E×J interaction requires the cheap s_Edd re-measure at the new
+configuration (disclosed in memo §5/P7).
