@@ -1166,3 +1166,27 @@ can expect that constraint."
    26bcd9a4; origin synced; cluster re-tagged.
 5. **PENDING author decisions:** report §4 table (`CAMPAIGN_REPORT_20260819.md`) — ratify
    #1–#3/#5, [DO] completion-leg counterfactual, [DO] backup-ref prune.
+
+## Row #129 — 2026-08-19 — Row #128 decisions RATIFIED; step-back gate + audit opened; candidate battery authorized (structure per author directive)
+
+1. **Author ratification (verbatim):** *"Okay. Nice. So we have an additional measurement.
+   The results are ratified, and the next steps approved."* — row #128 items 1–3 and 5
+   RATIFIED (budget B-UNOWNED; regression R-MIXED; counterfactual C-MIXED with
+   ownership-refuted-at-materiality reading; fix-fork re-scoped), item 6 executed (backup
+   refs pruned; excised blobs verified absent from the odb).
+2. **New front structure (author directive, 2026-08-19, key phrases verbatim):** an initial
+   step where a top-tier agent *"takes a step back … looks at the evolution of the bias and
+   the current structure of the mathematics"* and judges rabbit-hole vs principled
+   (GATE-OPEN/GATE-HOLD); in parallel a *"verifier scanner"* re-checking rows #119–#128
+   (*"if the numbers motivate the decisions that we made"*); after GATE-OPEN: the two
+   leading candidates (completion-leg g_i; alpha_G_phi-path asymmetry) + one exploratory
+   researcher for additional candidates; then ONE cluster job tackling several candidates
+   at once. Author's closing value restated as binding: *"it's not our goal to remove the
+   bias by any means. We want to find a scientifically motivated and derivable mathematical
+   description of darksiren cosmology."*
+3. **Orchestrator adjustment accepted into the plan:** candidates as registered
+   default-off CLI flags on main (the row #128 counterfactual pattern) — NOT branches — so
+   all candidates run in parallel cells in one fleet; one battery prereg with per-candidate
+   bands + one verifier pass + one physics-gate presentation instead of N research cycles.
+4. Gate agent + audit agent LAUNCHED (both top-tier, fresh-context by design); candidate
+   implementation HELD until GATE-OPEN, per the author's sequencing.
