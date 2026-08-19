@@ -310,6 +310,16 @@ class Arguments:
         variant (default 1.0; only meaningful with catalogue_mass_overlap='inflated')."""
         return float(self._parsed_arguments.catalogue_mass_error_scale)
 
+    @property
+    def completion_b_scale(self) -> str:
+        """Completion-leg normalization convention (docs/derivations/
+        bscale_completion_normalization.md §6/§7; ledger rows #130-#131).
+        'derived' (default, [PHYSICS]) drops the un-derived
+        beta_Gbar_phi/beta_Gbar multiplier; 'legacy' preserves it for
+        byte-identical reproduction of historical runs.
+        """
+        return str(self._parsed_arguments.completion_b_scale)
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -834,6 +844,24 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "Width multiplier k for the 'inflated' --catalogue_mass_overlap "
             "variant (default 1.0). REJECTED (not silently ignored) unless "
             "--catalogue_mass_overlap inflated is also given."
+        ),
+    )
+    parser.add_argument(
+        "--completion_b_scale",
+        type=str,
+        choices=["derived", "legacy"],
+        default="derived",
+        help=(
+            "[PHYSICS] completion-leg normalization convention "
+            "(docs/derivations/bscale_completion_normalization.md §6/§7; "
+            "ledger rows #130-#131). 'derived' (default) is the "
+            "derivation-complete form: B_num^phi = B_num, "
+            "B_num_wbh^phi = B_num_wbh (no transfer factor -- MFG (2019) "
+            "arXiv:1809.02063 Eqs. (5)-(7)). 'legacy' preserves the "
+            "un-derived beta_Gbar^phi/beta_Gbar multiplier introduced by "
+            "FIXB_PATHA_PACKAGE.md §3.2 (2026-08-04, now retracted) for "
+            "byte-identical reproduction of historical runs only -- never a "
+            "production posterior."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

@@ -273,3 +273,11 @@ the measurement of record: `0.07280503 → 0.0542477`, `z = −0.48`.
   `R_eff`.
 * Bishop (2006), *PRML*, Eqs. 2.81–2.82 — the Gaussian conditional behind
   `μ_cond`/`σ_cond`.
+
+**ERRATUM (2026-08-19):** §2's line `B_num^φ = β_Ḡ^φ·L_comp (= B_num·β_Ḡ^φ/β_Ḡ)`
+is retracted — the transfer is un-derived and the factor is a defect (two
+detection models in one term, MFG A2). Derived form: `B_num^φ = B_num`. See
+docs/derivations/bscale_completion_normalization.md (ledger rows #130-#131);
+production default is the derived form as of the [PHYSICS] commit implementing
+it; the legacy factor remains available as `--completion_b_scale legacy` for
+historical-run reproduction.

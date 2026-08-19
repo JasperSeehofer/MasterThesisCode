@@ -2381,6 +2381,52 @@ def path_a_mixture_objects(
     }
 
 
+def path_a_completion_numerators(
+    B_num: float,
+    B_num_wbh: float,
+    beta_Gbar_phi: float,
+    beta_Gbar: float,
+    mode: str = "derived",
+) -> tuple[float, float, float]:
+    r"""Path-(A) completion-leg numerators under the selected convention.
+
+    [PHYSICS] docs/derivations/bscale_completion_normalization.md §6
+    (ledger rows #130-#131); MFG (2019) arXiv:1809.02063 Eqs. (5)-(7).
+
+    ``mode="derived"`` (production default): the completion leg is already a
+    p_pop-measure integral as constructed (memo §2), so no transfer factor
+    exists -- ``B_num_phi = B_num``, ``B_num_wbh_phi = B_num_wbh``.
+
+    ``mode="legacy"``: preserves the un-derived
+    ``B_scale = beta_Gbar_phi/beta_Gbar`` multiplier
+    (``FIXB_PATHA_PACKAGE.md`` §3.2, 2026-08-04) for byte-identical
+    reproduction of historical runs. The multiplication imports the
+    difference of two detection models' volume-response slopes onto the
+    completion leg -- an MFG-A2 violation (memo §3) -- and is retained ONLY
+    as an instrument.
+
+    Args:
+        B_num: 1D completion numerator (unscaled).
+        B_num_wbh: 2D (with-BH-mass) completion numerator (unscaled).
+        beta_Gbar_phi: ``beta_Gbar^phi(h)``.
+        beta_Gbar: legacy ``beta_Gbar(h)``.
+        mode: ``"derived"`` (default) or ``"legacy"``.
+
+    Returns:
+        ``(B_num_phi, B_num_wbh_phi, B_scale_diagnostic)``. ``B_scale`` is
+        always reported (1.0 under ``"derived"``) as a diagnostic; it is not
+        written to any output column (verified: the diagnostics CSV records
+        the unscaled ``B_num``/``B_num_wbh``, not the phi-scaled values).
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7).
+    """
+    B_scale = beta_Gbar_phi / beta_Gbar if beta_Gbar > 0.0 else 0.0
+    if mode == "legacy":
+        return B_num * B_scale, B_num_wbh * B_scale, B_scale
+    return B_num, B_num_wbh, 1.0
+
+
 def _log_path_a_selection_objects(
     h: float,
     *,
@@ -2950,6 +2996,13 @@ class BayesianStatistics:
     # p_Di unit-test harnesses) still resolve a value at self._catalogue_mass_overlap.
     _catalogue_mass_overlap: str = "production"
     _catalogue_mass_error_scale: float = 1.0
+    # Completion-leg normalization convention (docs/derivations/
+    # bscale_completion_normalization.md §6/§7, ledger rows #130-#131).
+    # "derived" (default, [PHYSICS]): B_num_phi = B_num, B_num_wbh_phi =
+    # B_num_wbh (no multiplier -- the MFG-derivation-complete form).
+    # "legacy": preserves the un-derived beta_Gbar_phi/beta_Gbar multiplier
+    # for byte-identical reproduction of historical runs.
+    _completion_b_scale: str = "derived"
 
     def __init__(self) -> None:
         self.h_values = []
@@ -2982,6 +3035,12 @@ class BayesianStatistics:
         # the pre-flag path, byte-identical.
         self._catalogue_mass_overlap: str = "production"
         self._catalogue_mass_error_scale: float = 1.0
+        # Completion-leg normalization convention (docs/derivations/
+        # bscale_completion_normalization.md §6/§7; ledger rows #130-#131).
+        # "derived" (default) => byte-different from pre-change runs (the
+        # derivation-complete form); "legacy" reproduces the un-derived
+        # beta_Gbar_phi/beta_Gbar multiplier for historical-run reproduction.
+        self._completion_b_scale: str = "derived"
 
     def evaluate(
         self,
@@ -3042,6 +3101,12 @@ class BayesianStatistics:
         # Eddington-shifted mean. Never a production posterior.
         catalogue_mass_overlap: str = "production",
         catalogue_mass_error_scale: float = 1.0,
+        # Completion-leg normalization convention (docs/derivations/
+        # bscale_completion_normalization.md §6/§7, ledger rows #130-#131):
+        # "derived" (default, [PHYSICS]) drops the un-derived
+        # beta_Gbar_phi/beta_Gbar multiplier (B_num_phi = B_num). "legacy"
+        # preserves it for byte-identical reproduction of historical runs.
+        completion_b_scale: str = "derived",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3128,6 +3193,23 @@ class BayesianStatistics:
             )
         self._catalogue_mass_overlap = _cat_mass_overlap
         self._catalogue_mass_error_scale = _cat_mass_error_scale
+        # Completion-leg normalization convention (docs/derivations/
+        # bscale_completion_normalization.md §6/§7; ledger rows #130-#131).
+        _completion_b_scale = str(completion_b_scale)
+        if _completion_b_scale not in ("derived", "legacy"):
+            raise ValueError(
+                f"completion_b_scale must be 'derived' or 'legacy', got {completion_b_scale!r}"
+            )
+        self._completion_b_scale = _completion_b_scale
+        if _completion_b_scale == "legacy":
+            _LOGGER.warning(
+                "INSTRUMENTATION ACTIVE: --completion_b_scale=legacy — the "
+                "completion-leg numerator carries the un-derived "
+                "beta_Gbar_phi/beta_Gbar multiplier (docs/derivations/"
+                "bscale_completion_normalization.md §6, DEFECT). Kept for "
+                "historical-run reproduction only; the production default is "
+                "'derived'."
+            )
         if _cat_mass_overlap != "production":
             _LOGGER.warning(
                 "INSTRUMENTATION ACTIVE: --catalogue_mass_overlap=%s "
@@ -4878,11 +4960,14 @@ class BayesianStatistics:
                 # mixture (FIXB_PATHA_PACKAGE.md §3.2, 2026-08-04):
                 #   1D: p_i = (beta_G^phi L_cat^1D + B_num^phi) / D~^phi
                 #   2D: p_i = (alpha_G^phi L_cat^2D + B_num^phi g_i) / D~^phi
-                # with B_num^phi = beta_Gbar^phi L_comp (the completion leg
-                # re-expressed in the phi convention: B_num carries the
-                # legacy beta_Gbar's normalisation, so it is transferred by
-                # the ratio beta_Gbar^phi/beta_Gbar) and alpha_G^phi =
-                # beta_G^phi r_Malm the mass-aware in-catalogue selection.
+                # with B_num^phi = B_num (derived form, docs/derivations/
+                # bscale_completion_normalization.md §6, ledger rows
+                # #130-#131: the completion leg is already a p_pop-measure
+                # integral as constructed, so no transfer factor exists; the
+                # legacy beta_Gbar^phi/beta_Gbar multiplier was a defect,
+                # kept only under --completion_b_scale legacy) and
+                # alpha_G^phi = beta_G^phi r_Malm the mass-aware
+                # in-catalogue selection.
                 # The tower identity S_3D = INTEGRAL phi S_4D dM now holds by
                 # construction (r_phi == 1) and r_Malm is a pure Malmquist
                 # ratio. Mandel, Farr & Gair (2019), arXiv:1809.02063,
@@ -4899,11 +4984,19 @@ class BayesianStatistics:
                 alpha_G_phi = path_a["alpha_G_phi"]
                 D_tilde_phi = path_a["D_tilde_phi"]
                 r_Malm = path_a["r_Malm"]
-                # L_comp = B_num/beta_Gbar is convention-free; the phi-convention
-                # completion numerator is beta_Gbar^phi L_comp.
-                B_scale = beta_Gbar_phi / beta_Gbar if beta_Gbar > 0.0 else 0.0
-                B_num_phi = B_num * B_scale
-                B_num_wbh_phi = B_num_wbh * B_scale
+                # Derived form B_num^phi = B_num — docs/derivations/
+                # bscale_completion_normalization.md §6; MFG (2019)
+                # arXiv:1809.02063 Eqs. (5)-(7). Legacy
+                # beta_Gbar^phi/beta_Gbar multiplication was un-derived
+                # (defect, ledger row #131); kept only under
+                # --completion_b_scale legacy for historical-run reproduction.
+                B_num_phi, B_num_wbh_phi, _B_scale = path_a_completion_numerators(
+                    B_num,
+                    B_num_wbh,
+                    beta_Gbar_phi,
+                    beta_Gbar,
+                    mode=getattr(self, "_completion_b_scale", "derived"),
+                )
                 if D_tilde_phi > 0.0:
                     w_G = path_a["w_tilde_G"]
                     combined_without_bh_mass = float(

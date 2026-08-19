@@ -448,11 +448,18 @@ def _run_p_Di_phi(
     norm_mode: str = "absolute_marginal",
     with_bh_numerator_scale: float = 1.0,
     h: float = _H,
+    # Completion-leg normalization convention (docs/derivations/
+    # bscale_completion_normalization.md §6/§7, ledger rows #130-#131).
+    # "derived" (default) matches the production default since the
+    # [PHYSICS] change; explicit "legacy" reproduces the retracted
+    # beta_Gbar^phi/beta_Gbar transfer for the historical-arithmetic pin.
+    completion_b_scale: str = "derived",
 ) -> dict[str, Any]:
     """Run ``p_Di`` with the path-(A) tables installed; return its diagnostic row."""
     instance = object.__new__(BayesianStatistics)
     instance.h = h
     instance._normalization_mode = norm_mode
+    instance._completion_b_scale = completion_b_scale
     instance.catalog_only = False
     instance.posterior_data = {}
     instance.posterior_data_with_bh_mass = {
@@ -522,8 +529,21 @@ def _run_p_Di_phi(
 
 
 def test_path_a_assembly_matches_the_packaged_formulas() -> None:
-    """1D: (beta_G^phi L1 + B^phi)/D~^phi; 2D: (alpha_G^phi L2 + B^phi g)/D~^phi."""
-    row = _run_p_Di_phi()
+    """1D: (beta_G^phi L1 + B^phi)/D~^phi; 2D: (alpha_G^phi L2 + B^phi g)/D~^phi.
+
+    Pins the FIXB_PATHA_PACKAGE.md §3.2 (2026-08-04) arithmetic verbatim,
+    including its ``B_scale = beta_Gbar^phi/beta_Gbar`` transfer factor --
+    now retracted as an un-derived defect (docs/derivations/
+    bscale_completion_normalization.md §6, ledger rows #130-#131) and no
+    longer the production default. Per the memo's §7 regression-test
+    clause ("keep an instrument flag --completion_b_scale legacy ... to
+    preserve counterfactual reproducibility of the historical runs"), this
+    historical-arithmetic pin is kept ALIVE by running it explicitly under
+    ``completion_b_scale="legacy"`` rather than silently changing the
+    expected numbers; the new default's numerics are covered separately by
+    ``darksiren_emri_test/bayesian_inference/test_completion_b_scale.py``.
+    """
+    row = _run_p_Di_phi(completion_b_scale="legacy")
     obj = path_a_mixture_objects(
         _BETA_G_PHI_073, _BETA_GBAR_PHI_073, _SIGMA_PHI_073_DELIVERED, 4.221903e8
     )

@@ -204,6 +204,7 @@ def main() -> None:
             selection_in_completion_numerator=arguments.selection_in_completion_numerator,
             catalogue_mass_overlap=arguments.catalogue_mass_overlap,
             catalogue_mass_error_scale=arguments.catalogue_mass_error_scale,
+            completion_b_scale=arguments.completion_b_scale,
         )
 
     if arguments.snr_analysis:
@@ -1384,6 +1385,12 @@ def evaluate(
     # "production" (default) is byte-identical to pre-flag behaviour.
     catalogue_mass_overlap: str = "production",
     catalogue_mass_error_scale: float = 1.0,
+    # Completion-leg normalization convention (docs/derivations/
+    # bscale_completion_normalization.md §6/§7; ledger rows #130-#131):
+    # "derived" (default, [PHYSICS]) drops the un-derived
+    # beta_Gbar_phi/beta_Gbar multiplier; "legacy" preserves it for
+    # byte-identical reproduction of historical runs.
+    completion_b_scale: str = "derived",
 ) -> None:
     from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1411,6 +1418,7 @@ def evaluate(
         selection_in_completion_numerator=selection_in_completion_numerator,
         catalogue_mass_overlap=catalogue_mass_overlap,
         catalogue_mass_error_scale=catalogue_mass_error_scale,
+        completion_b_scale=completion_b_scale,
     )
 
 
