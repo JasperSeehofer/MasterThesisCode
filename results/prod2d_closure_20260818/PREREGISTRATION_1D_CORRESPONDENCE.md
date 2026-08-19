@@ -149,3 +149,11 @@ stage-2 σ_M recompute used the stale local catalogue — its differing columns 
 redshift-side while σ_M derives from the mass columns, and stage-2 was UNDERPOWERED-NULL
 with no ruling resting on it; noted for completeness, no re-run warranted unless the mass
 columns also differ (checked at sync).
+
+**G-0 FINAL (2026-08-20, appended): PASS.** With the catalogue of record in place (md5
+c52c13b5…, now pinned in-code with a STOP gate): L_cat_no_bh wholesale-vs-banked ≤ 4.3e-14;
+B_num 0.0; combined_no_bh **bit-for-bit 0.0**; harness combine re-orchestration ≤ 4.4e-8
+(CSV 7-sig-fig floor). No tolerance loosened. Context-build runtime 251 s (the D-D cost
+anchor input). The first-run FAIL is fully attributed to the stale local catalogue (interim
+record above); the fidelity layer is verified end-to-end. Next per registration: mirror
+generator + G-1 + D-D cost pilot, then arms.

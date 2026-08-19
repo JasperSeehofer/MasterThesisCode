@@ -115,6 +115,19 @@ BANKED_CSV_PATH = str(
     _REPO_ROOT / "results/prod2d_closure_20260818/postfix_baseline/iiib/event_likelihoods.csv"
 )
 PACKAGE_SRC = str(_REPO_ROOT / "darksiren_emri")
+# The GLADE reduced catalogue GalaxyCatalogueHandler reads for production
+# --evaluate. 2026-08-19 G-0 finding: the dev-machine copy was a stale Jul-1
+# snapshot (no in-code md5 pin existed anywhere for this file, unlike
+# CRB_CSV_MD5 above), which was the confirmed root cause of the first G-0
+# FAIL (L_cat_no_bh/L_cat_with_bh and the h-only global-selection-sum
+# precompute tables alpha_G_phi/D_tilde_phi all diverged from the banked
+# reference). Replaced with the cluster copy of record (redshift columns
+# regenerated 2026-07-27; mass columns identical) and pinned here, mirroring
+# CRB_CSV_MD5, so this drift cannot silently recur.
+REDUCED_CATALOGUE_PATH = str(
+    _REPO_ROOT / "darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv"
+)
+REDUCED_CATALOGUE_MD5 = "c52c13b5cab61f6b3f04bbe202550969"
 
 # G-0 registered flags (postfix_baseline/iiib run_metadata_0.json, verbatim).
 PRODUCTION_FLAGS: dict[str, str] = {
@@ -238,6 +251,21 @@ def check_crb_pin(crb_path: str = CRB_CSV_PATH) -> bool:
         ``True`` iff the md5 matches :data:`CRB_CSV_MD5`.
     """
     return _md5_of_file(crb_path) == CRB_CSV_MD5
+
+
+def check_reduced_catalogue_pin(catalogue_path: str = REDUCED_CATALOGUE_PATH) -> bool:
+    """Verify the reduced GLADE catalogue matches the pinned cluster copy.
+
+    Mirrors :func:`check_crb_pin`. Registered 2026-08-19 after a G-0 FAIL was
+    traced to a stale local copy of this file (no prior in-code pin existed).
+
+    Args:
+        catalogue_path: Path to the reduced catalogue CSV under test.
+
+    Returns:
+        ``True`` iff the md5 matches :data:`REDUCED_CATALOGUE_MD5`.
+    """
+    return _md5_of_file(catalogue_path) == REDUCED_CATALOGUE_MD5
 
 
 def _setup_wholesale_cwd(work_root: Path, crb_path: str, injection_dir: str) -> Path:
@@ -452,13 +480,18 @@ class G0Result:
         context_build_seconds: Wall time of the single production context
             build serving all probe h (cost-pilot anchor, prereg D-D).
         crb_pin_ok: Whether the CRB CSV matched the V-T3 pin.
-        verdict: ``"PASS"`` or ``"FAIL"``.
+        catalogue_pin_ok: Whether the reduced GLADE catalogue matched
+            :data:`REDUCED_CATALOGUE_MD5`.
+        verdict: ``"PASS"``, ``"FAIL"``, or ``"STOP"`` (an input pin
+            mismatch — the run was not attempted, mirroring
+            ``venue_transfer.py``'s V-T3 pin-integrity STOP).
     """
 
     stages: list[G0StageResult]
     n_events_evaluated: int
     context_build_seconds: float
     crb_pin_ok: bool
+    catalogue_pin_ok: bool
     verdict: str
 
 
@@ -468,9 +501,18 @@ def run_g0_fidelity_pilot(
     h_values: tuple[float, ...] = G0_PROBE_H,
     crb_path: str = CRB_CSV_PATH,
     injection_dir: str = INJECTION_POOL_DIR,
+    catalogue_path: str = REDUCED_CATALOGUE_PATH,
     seed: int = 777010,
 ) -> G0Result:
     """Run gate G-0 (prereg §4): the fidelity pilot.
+
+    Checks the V-T3-style input pins FIRST (:func:`check_crb_pin`,
+    :func:`check_reduced_catalogue_pin`) and STOPs (returns a ``"STOP"``
+    verdict without running the expensive wholesale evaluate()) on any
+    mismatch — the 2026-08-19 G-0 FAIL was traced to exactly this class of
+    silent input drift (a stale local reduced-catalogue copy with no pin to
+    catch it), so this gate is now enforced up front rather than discovered
+    downstream in a 4-5 minute wholesale run.
 
     Drives the production-wholesale layer once (serving every probe h),
     compares its per-event ``L_cat_no_bh``/``B_num``/``combined_no_bh``
@@ -487,12 +529,29 @@ def run_g0_fidelity_pilot(
         h_values: Probe h-grid.
         crb_path: The pinned CRB CSV.
         injection_dir: The injection pool directory.
+        catalogue_path: The pinned reduced GLADE catalogue.
         seed: CLI ``--seed`` for the wholesale run.
 
     Returns:
         The :class:`G0Result`.
     """
     crb_pin_ok = check_crb_pin(crb_path)
+    catalogue_pin_ok = check_reduced_catalogue_pin(catalogue_path)
+    if not (crb_pin_ok and catalogue_pin_ok):
+        _LOGGER.error(
+            "G-0 STOP: input pin mismatch (crb_pin_ok=%s, catalogue_pin_ok=%s) — "
+            "wholesale evaluate() NOT run.",
+            crb_pin_ok,
+            catalogue_pin_ok,
+        )
+        return G0Result(
+            stages=[],
+            n_events_evaluated=0,
+            context_build_seconds=0.0,
+            crb_pin_ok=crb_pin_ok,
+            catalogue_pin_ok=catalogue_pin_ok,
+            verdict="STOP",
+        )
     csv_path, elapsed = run_production_wholesale(
         work_root, h_values=h_values, seed=seed, crb_path=crb_path, injection_dir=injection_dir
     )
@@ -561,7 +620,12 @@ def run_g0_fidelity_pilot(
     )
     verdict = (
         "PASS"
-        if (crb_pin_ok and min_events >= G0_MIN_EVENTS and overall_max <= G0_RTOL)
+        if (
+            crb_pin_ok
+            and catalogue_pin_ok
+            and min_events >= G0_MIN_EVENTS
+            and overall_max <= G0_RTOL
+        )
         else "FAIL"
     )
     return G0Result(
@@ -569,6 +633,7 @@ def run_g0_fidelity_pilot(
         n_events_evaluated=min_events,
         context_build_seconds=elapsed,
         crb_pin_ok=crb_pin_ok,
+        catalogue_pin_ok=catalogue_pin_ok,
         verdict=verdict,
     )
 
@@ -595,6 +660,7 @@ def _cli() -> int:
         )
     print(f"context_build_seconds={result.context_build_seconds:.1f}")
     print(f"crb_pin_ok={result.crb_pin_ok}")
+    print(f"catalogue_pin_ok={result.catalogue_pin_ok}")
     return 0 if result.verdict == "PASS" else 1
 
 
