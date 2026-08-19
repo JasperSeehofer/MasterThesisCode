@@ -1,0 +1,638 @@
+{
+  "preregistration": "PREREGISTRATION_PROD_COUNTERFACTUAL.md v2",
+  "truth": 0.73,
+  "venues": {
+    "iiib": {
+      "sanity_dedupe": {
+        "v0": {
+          "raw_rows": 3176,
+          "deduped_rows": 3176,
+          "n_duplicates_removed": 0,
+          "n_events": 1588,
+          "n_h": 2,
+          "expected_rows": 3176,
+          "matches_expected": true
+        },
+        "v1": {
+          "raw_rows": 65108,
+          "deduped_rows": 65108,
+          "n_duplicates_removed": 0,
+          "n_events": 1588,
+          "n_h": 41,
+          "expected_rows": 65108,
+          "matches_expected": true
+        },
+        "v2k05": {
+          "raw_rows": 65108,
+          "deduped_rows": 65108,
+          "n_duplicates_removed": 0,
+          "n_events": 1588,
+          "n_h": 41,
+          "expected_rows": 65108,
+          "matches_expected": true
+        },
+        "v2k2": {
+          "raw_rows": 65108,
+          "deduped_rows": 65108,
+          "n_duplicates_removed": 0,
+          "n_events": 1588,
+          "n_h": 41,
+          "expected_rows": 65108,
+          "matches_expected": true
+        }
+      },
+      "N0_gate": {
+        "venue": "iiib",
+        "probes": [
+          {
+            "h": 0.72,
+            "n_events_matched": 1588,
+            "max_rel_diff_combined_no_bh": 0.0,
+            "pass_combined_no_bh": true,
+            "max_rel_diff_combined_with_bh": 6.118002543670688e-14,
+            "pass_combined_with_bh": true
+          },
+          {
+            "h": 0.78,
+            "n_events_matched": 1588,
+            "max_rel_diff_combined_no_bh": 0.0,
+            "pass_combined_no_bh": true,
+            "max_rel_diff_combined_with_bh": 3.975241103616234e-14,
+            "pass_combined_with_bh": true
+          }
+        ],
+        "gate_pass": true
+      },
+      "N0_metadata_diff": {
+        "venue": "iiib",
+        "reference": "/home/jasper/Repositories/darksiren-emri/results/run_20260817_fusion_counterfactual/off_iiib/run_metadata_0.json",
+        "cells": {
+          "v0": {
+            "metadata_file_used": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/counterfactual/v0_iiib/run_metadata_19.json",
+            "differing_keys": {
+              "catalogue_mass_error_scale": {
+                "cell_value": 1.0,
+                "reference_value": "<absent>"
+              },
+              "catalogue_mass_overlap": {
+                "cell_value": "production",
+                "reference_value": "<absent>"
+              },
+              "h_value": {
+                "cell_value": 0.72,
+                "reference_value": 0.6
+              },
+              "seed": {
+                "cell_value": 777019,
+                "reference_value": 777000
+              },
+              "simulation_index": {
+                "cell_value": 19,
+                "reference_value": 0
+              },
+              "working_directory": {
+                "cell_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260819_cf_v0_iiib",
+                "reference_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260817_fusioncf_off_iiib"
+              },
+              "git_commit": {
+                "cell_value": "a4dae5a3df0e040d42c9012b1cf5387eeb05c87f",
+                "reference_value": "ac24b632568bbd824547b0c121a37fa5ad00bbfd"
+              },
+              "random_seed": {
+                "cell_value": 777019,
+                "reference_value": 777000
+              },
+              "timestamp": {
+                "cell_value": "2026-08-19T15:45:15.806077",
+                "reference_value": "2026-08-17T11:10:39.612194"
+              }
+            },
+            "not_whitelisted_keys": {},
+            "flag_any_not_whitelisted": false
+          },
+          "v1": {
+            "metadata_file_used": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/counterfactual/v1_iiib/run_metadata_0.json",
+            "differing_keys": {
+              "catalogue_mass_error_scale": {
+                "cell_value": 1.0,
+                "reference_value": "<absent>"
+              },
+              "catalogue_mass_overlap": {
+                "cell_value": "neutralized",
+                "reference_value": "<absent>"
+              },
+              "working_directory": {
+                "cell_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260819_cf_v1_iiib",
+                "reference_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260817_fusioncf_off_iiib"
+              },
+              "git_commit": {
+                "cell_value": "a4dae5a3df0e040d42c9012b1cf5387eeb05c87f",
+                "reference_value": "ac24b632568bbd824547b0c121a37fa5ad00bbfd"
+              },
+              "timestamp": {
+                "cell_value": "2026-08-19T15:45:16.151611",
+                "reference_value": "2026-08-17T11:10:39.612194"
+              }
+            },
+            "not_whitelisted_keys": {},
+            "flag_any_not_whitelisted": false
+          },
+          "v2k05": {
+            "metadata_file_used": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/counterfactual/v2k05_iiib/run_metadata_0.json",
+            "differing_keys": {
+              "catalogue_mass_error_scale": {
+                "cell_value": 0.5,
+                "reference_value": "<absent>"
+              },
+              "catalogue_mass_overlap": {
+                "cell_value": "inflated",
+                "reference_value": "<absent>"
+              },
+              "working_directory": {
+                "cell_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260819_cf_v2k05_iiib",
+                "reference_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260817_fusioncf_off_iiib"
+              },
+              "git_commit": {
+                "cell_value": "a4dae5a3df0e040d42c9012b1cf5387eeb05c87f",
+                "reference_value": "ac24b632568bbd824547b0c121a37fa5ad00bbfd"
+              },
+              "timestamp": {
+                "cell_value": "2026-08-19T15:59:09.295407",
+                "reference_value": "2026-08-17T11:10:39.612194"
+              }
+            },
+            "not_whitelisted_keys": {},
+            "flag_any_not_whitelisted": false
+          },
+          "v2k2": {
+            "metadata_file_used": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/counterfactual/v2k2_iiib/run_metadata_0.json",
+            "differing_keys": {
+              "catalogue_mass_error_scale": {
+                "cell_value": 2.0,
+                "reference_value": "<absent>"
+              },
+              "catalogue_mass_overlap": {
+                "cell_value": "inflated",
+                "reference_value": "<absent>"
+              },
+              "working_directory": {
+                "cell_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260819_cf_v2k2_iiib",
+                "reference_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260817_fusioncf_off_iiib"
+              },
+              "git_commit": {
+                "cell_value": "a4dae5a3df0e040d42c9012b1cf5387eeb05c87f",
+                "reference_value": "ac24b632568bbd824547b0c121a37fa5ad00bbfd"
+              },
+              "timestamp": {
+                "cell_value": "2026-08-19T16:15:40.477478",
+                "reference_value": "2026-08-17T11:10:39.612194"
+              }
+            },
+            "not_whitelisted_keys": {},
+            "flag_any_not_whitelisted": false
+          }
+        }
+      },
+      "N1_gate": {
+        "venue": "iiib",
+        "variants": {
+          "v1": {
+            "n_events_matched": 1588,
+            "n_h_matched": 41,
+            "max_rel_diff_combined_no_bh": 0.0,
+            "bit_identical_1e15": true
+          },
+          "v2k05": {
+            "n_events_matched": 1588,
+            "n_h_matched": 41,
+            "max_rel_diff_combined_no_bh": 0.0,
+            "bit_identical_1e15": true
+          },
+          "v2k2": {
+            "n_events_matched": 1588,
+            "n_h_matched": 41,
+            "max_rel_diff_combined_no_bh": 0.0,
+            "bit_identical_1e15": true
+          }
+        }
+      },
+      "N2_gate": {
+        "venue": "iiib",
+        "h": 0.72,
+        "n_events_matched": 1588,
+        "n_catalogue_supported": 294,
+        "n_changed_ge_1e-6_rel": 275,
+        "fraction_changed": 0.935374149659864,
+        "gate_pass_ge_10pct": true
+      },
+      "R1_R2_reads": {
+        "venue": "iiib",
+        "baseline": {
+          "mean_h_2D": 0.7842219822201786,
+          "sigma_h_2D": 0.017753545879607025,
+          "mean_h_1D": 0.6039824001144781,
+          "sigma_h_1D": 0.0062017734611915735,
+          "n_events": 1588,
+          "n_h": 41,
+          "header_ref_mean_h_2D": 0.7842,
+          "header_ref_mean_h_1D": 0.604
+        },
+        "variants": {
+          "v1": {
+            "mean_h_2D": 0.7851784887018263,
+            "sigma_h_2D": 0.018377204286796168,
+            "delta_vs_banked_v0_2D": 0.0009565064816476898,
+            "mean_h_1D": 0.6039824001144781,
+            "sigma_h_1D": 0.0062017734611915735,
+            "mean_h_1D_matches_baseline_1D": true,
+            "n_events": 1588,
+            "n_h": 41
+          },
+          "v2k05": {
+            "mean_h_2D": 0.7836610519455288,
+            "sigma_h_2D": 0.017661886622283258,
+            "delta_vs_banked_v0_2D": -0.0005609302746497624,
+            "mean_h_1D": 0.6039824001144781,
+            "sigma_h_1D": 0.0062017734611915735,
+            "mean_h_1D_matches_baseline_1D": true,
+            "n_events": 1588,
+            "n_h": 41
+          },
+          "v2k2": {
+            "mean_h_2D": 0.7931092174049444,
+            "sigma_h_2D": 0.019713005549694095,
+            "delta_vs_banked_v0_2D": 0.008887235184765863,
+            "mean_h_1D": 0.6039824001144781,
+            "sigma_h_1D": 0.0062017734611915735,
+            "mean_h_1D_matches_baseline_1D": true,
+            "n_events": 1588,
+            "n_h": 41
+          }
+        }
+      },
+      "h_grid_sanity": {
+        "n_h": 41,
+        "h_grid": [
+          0.6,
+          0.61,
+          0.62,
+          0.63,
+          0.64,
+          0.65,
+          0.655,
+          0.66,
+          0.665,
+          0.67,
+          0.675,
+          0.68,
+          0.685,
+          0.69,
+          0.695,
+          0.7,
+          0.705,
+          0.71,
+          0.715,
+          0.72,
+          0.725,
+          0.73,
+          0.735,
+          0.74,
+          0.745,
+          0.75,
+          0.755,
+          0.76,
+          0.765,
+          0.77,
+          0.775,
+          0.78,
+          0.785,
+          0.79,
+          0.8,
+          0.81,
+          0.82,
+          0.83,
+          0.84,
+          0.85,
+          0.86
+        ]
+      }
+    },
+    "joint_r1": {
+      "sanity_dedupe": {
+        "v0": {
+          "raw_rows": 3176,
+          "deduped_rows": 3176,
+          "n_duplicates_removed": 0,
+          "n_events": 1588,
+          "n_h": 2,
+          "expected_rows": 3176,
+          "matches_expected": true
+        },
+        "v1": {
+          "raw_rows": 65108,
+          "deduped_rows": 65108,
+          "n_duplicates_removed": 0,
+          "n_events": 1588,
+          "n_h": 41,
+          "expected_rows": 65108,
+          "matches_expected": true
+        },
+        "v2k05": {
+          "raw_rows": 65108,
+          "deduped_rows": 65108,
+          "n_duplicates_removed": 0,
+          "n_events": 1588,
+          "n_h": 41,
+          "expected_rows": 65108,
+          "matches_expected": true
+        },
+        "v2k2": {
+          "raw_rows": 65108,
+          "deduped_rows": 65108,
+          "n_duplicates_removed": 0,
+          "n_events": 1588,
+          "n_h": 41,
+          "expected_rows": 65108,
+          "matches_expected": true
+        }
+      },
+      "N0_gate": {
+        "venue": "joint_r1",
+        "probes": [
+          {
+            "h": 0.72,
+            "n_events_matched": 1588,
+            "max_rel_diff_combined_no_bh": 0.0,
+            "pass_combined_no_bh": true,
+            "max_rel_diff_combined_with_bh": 5.876611724780135e-14,
+            "pass_combined_with_bh": true
+          },
+          {
+            "h": 0.78,
+            "n_events_matched": 1588,
+            "max_rel_diff_combined_no_bh": 0.0,
+            "pass_combined_no_bh": true,
+            "max_rel_diff_combined_with_bh": 5.543449495455544e-14,
+            "pass_combined_with_bh": true
+          }
+        ],
+        "gate_pass": true
+      },
+      "N0_metadata_diff": {
+        "venue": "joint_r1",
+        "reference": "/home/jasper/Repositories/darksiren-emri/results/run_20260817_fusion_counterfactual/off_joint_r1/run_metadata_0.json",
+        "cells": {
+          "v0": {
+            "metadata_file_used": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/counterfactual/v0_joint_r1/run_metadata_19.json",
+            "differing_keys": {
+              "catalogue_mass_error_scale": {
+                "cell_value": 1.0,
+                "reference_value": "<absent>"
+              },
+              "catalogue_mass_overlap": {
+                "cell_value": "production",
+                "reference_value": "<absent>"
+              },
+              "h_value": {
+                "cell_value": 0.72,
+                "reference_value": 0.6
+              },
+              "seed": {
+                "cell_value": 777019,
+                "reference_value": 777000
+              },
+              "simulation_index": {
+                "cell_value": 19,
+                "reference_value": 0
+              },
+              "working_directory": {
+                "cell_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260819_cf_v0_joint_r1",
+                "reference_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260817_fusioncf_off_joint_r1"
+              },
+              "git_commit": {
+                "cell_value": "a4dae5a3df0e040d42c9012b1cf5387eeb05c87f",
+                "reference_value": "ac24b632568bbd824547b0c121a37fa5ad00bbfd"
+              },
+              "random_seed": {
+                "cell_value": 777019,
+                "reference_value": 777000
+              },
+              "timestamp": {
+                "cell_value": "2026-08-19T16:28:47.949084",
+                "reference_value": "2026-08-17T11:16:47.595964"
+              }
+            },
+            "not_whitelisted_keys": {},
+            "flag_any_not_whitelisted": false
+          },
+          "v1": {
+            "metadata_file_used": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/counterfactual/v1_joint_r1/run_metadata_0.json",
+            "differing_keys": {
+              "catalogue_mass_error_scale": {
+                "cell_value": 1.0,
+                "reference_value": "<absent>"
+              },
+              "catalogue_mass_overlap": {
+                "cell_value": "neutralized",
+                "reference_value": "<absent>"
+              },
+              "working_directory": {
+                "cell_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260819_cf_v1_joint_r1",
+                "reference_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260817_fusioncf_off_joint_r1"
+              },
+              "git_commit": {
+                "cell_value": "a4dae5a3df0e040d42c9012b1cf5387eeb05c87f",
+                "reference_value": "ac24b632568bbd824547b0c121a37fa5ad00bbfd"
+              },
+              "timestamp": {
+                "cell_value": "2026-08-19T16:29:00.872214",
+                "reference_value": "2026-08-17T11:16:47.595964"
+              }
+            },
+            "not_whitelisted_keys": {},
+            "flag_any_not_whitelisted": false
+          },
+          "v2k05": {
+            "metadata_file_used": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/counterfactual/v2k05_joint_r1/run_metadata_0.json",
+            "differing_keys": {
+              "catalogue_mass_error_scale": {
+                "cell_value": 0.5,
+                "reference_value": "<absent>"
+              },
+              "catalogue_mass_overlap": {
+                "cell_value": "inflated",
+                "reference_value": "<absent>"
+              },
+              "working_directory": {
+                "cell_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260819_cf_v2k05_joint_r1",
+                "reference_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260817_fusioncf_off_joint_r1"
+              },
+              "git_commit": {
+                "cell_value": "a4dae5a3df0e040d42c9012b1cf5387eeb05c87f",
+                "reference_value": "ac24b632568bbd824547b0c121a37fa5ad00bbfd"
+              },
+              "timestamp": {
+                "cell_value": "2026-08-19T16:40:17.364007",
+                "reference_value": "2026-08-17T11:16:47.595964"
+              }
+            },
+            "not_whitelisted_keys": {},
+            "flag_any_not_whitelisted": false
+          },
+          "v2k2": {
+            "metadata_file_used": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/counterfactual/v2k2_joint_r1/run_metadata_0.json",
+            "differing_keys": {
+              "catalogue_mass_error_scale": {
+                "cell_value": 2.0,
+                "reference_value": "<absent>"
+              },
+              "catalogue_mass_overlap": {
+                "cell_value": "inflated",
+                "reference_value": "<absent>"
+              },
+              "working_directory": {
+                "cell_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260819_cf_v2k2_joint_r1",
+                "reference_value": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260817_fusioncf_off_joint_r1"
+              },
+              "git_commit": {
+                "cell_value": "a4dae5a3df0e040d42c9012b1cf5387eeb05c87f",
+                "reference_value": "ac24b632568bbd824547b0c121a37fa5ad00bbfd"
+              },
+              "timestamp": {
+                "cell_value": "2026-08-19T16:48:55.070853",
+                "reference_value": "2026-08-17T11:16:47.595964"
+              }
+            },
+            "not_whitelisted_keys": {},
+            "flag_any_not_whitelisted": false
+          }
+        }
+      },
+      "N1_gate": {
+        "venue": "joint_r1",
+        "variants": {
+          "v1": {
+            "n_events_matched": 1588,
+            "n_h_matched": 41,
+            "max_rel_diff_combined_no_bh": 0.0,
+            "bit_identical_1e15": true
+          },
+          "v2k05": {
+            "n_events_matched": 1588,
+            "n_h_matched": 41,
+            "max_rel_diff_combined_no_bh": 0.0,
+            "bit_identical_1e15": true
+          },
+          "v2k2": {
+            "n_events_matched": 1588,
+            "n_h_matched": 41,
+            "max_rel_diff_combined_no_bh": 0.0,
+            "bit_identical_1e15": true
+          }
+        }
+      },
+      "N2_gate": {
+        "venue": "joint_r1",
+        "h": 0.72,
+        "n_events_matched": 1588,
+        "n_catalogue_supported": 607,
+        "n_changed_ge_1e-6_rel": 514,
+        "fraction_changed": 0.8467874794069192,
+        "gate_pass_ge_10pct": true
+      },
+      "R1_R2_reads": {
+        "venue": "joint_r1",
+        "baseline": {
+          "mean_h_2D": 0.7967072760429396,
+          "sigma_h_2D": 0.021706099941214942,
+          "mean_h_1D": 0.6073927960970548,
+          "sigma_h_1D": 0.008537769817985841,
+          "n_events": 1588,
+          "n_h": 41,
+          "header_ref_mean_h_2D": 0.7966,
+          "header_ref_mean_h_1D": 0.6074
+        },
+        "variants": {
+          "v1": {
+            "mean_h_2D": 0.7998722062940683,
+            "sigma_h_2D": 0.022137118453937767,
+            "delta_vs_banked_v0_2D": 0.003164930251128739,
+            "mean_h_1D": 0.6073927960970548,
+            "sigma_h_1D": 0.008537769817985841,
+            "mean_h_1D_matches_baseline_1D": true,
+            "n_events": 1588,
+            "n_h": 41
+          },
+          "v2k05": {
+            "mean_h_2D": 0.792842764978095,
+            "sigma_h_2D": 0.021519597289427036,
+            "delta_vs_banked_v0_2D": -0.0038645110648445335,
+            "mean_h_1D": 0.6073927960970548,
+            "sigma_h_1D": 0.008537769817985841,
+            "mean_h_1D_matches_baseline_1D": true,
+            "n_events": 1588,
+            "n_h": 41
+          },
+          "v2k2": {
+            "mean_h_2D": 0.8131238619551608,
+            "sigma_h_2D": 0.021131132194816125,
+            "delta_vs_banked_v0_2D": 0.016416585912221282,
+            "mean_h_1D": 0.6073927960970548,
+            "sigma_h_1D": 0.008537769817985841,
+            "mean_h_1D_matches_baseline_1D": true,
+            "n_events": 1588,
+            "n_h": 41
+          }
+        }
+      },
+      "h_grid_sanity": {
+        "n_h": 41,
+        "h_grid": [
+          0.6,
+          0.61,
+          0.62,
+          0.63,
+          0.64,
+          0.65,
+          0.655,
+          0.66,
+          0.665,
+          0.67,
+          0.675,
+          0.68,
+          0.685,
+          0.69,
+          0.695,
+          0.7,
+          0.705,
+          0.71,
+          0.715,
+          0.72,
+          0.725,
+          0.73,
+          0.735,
+          0.74,
+          0.745,
+          0.75,
+          0.755,
+          0.76,
+          0.765,
+          0.77,
+          0.775,
+          0.78,
+          0.785,
+          0.79,
+          0.8,
+          0.81,
+          0.82,
+          0.83,
+          0.84,
+          0.85,
+          0.86
+        ]
+      }
+    }
+  },
+  "venue_differential_deltaV1_joint_minus_iiib": 0.0022084237694810493,
+  "runtime_seconds": 0.9028277397155762
+}

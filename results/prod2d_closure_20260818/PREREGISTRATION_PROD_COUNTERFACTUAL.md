@@ -150,3 +150,30 @@ sonnet compute + top-tier interpretation. Top-tier count: 2 — within the ≤3 
 ## VERDICT
 
 *(append-only below this line after execution)*
+
+**VERDICT (2026-08-19, appended after execution; branch presented to the author as a [RULE]):**
+
+- Fleet: jobs 6369297–6369304, 250/250 COMPLETED, zero failures; instrument commit range
+  `a4dae5a3` ([PHYSICS], gate-ledger rows). Gates: **N-0 PASS** (combined_no_bh rel diff 0.0;
+  combined_with_bh ≤ 6.2e-14 vs 1e-10 gate; metadata diffs all whitelisted, both venues);
+  **N-1 PASS** (1D bit-identical, all variants); **N-2 PASS** (engagement 93.5% iiib / 84.7%
+  joint_r1 vs 10% gate).
+- **R1: ΔV1 = +0.0010 (iiib) / +0.0032 (joint_r1)** — POSITIVE (registered prediction was
+  negative-material) and both far below the 0.006 materiality yardstick.
+- **R2: ΔV2(k=0.5) = −0.0006 / −0.0039; ΔV2(k=2.0) = +0.0089 / +0.0164** — the width
+  response is monotone INCREASING in k and does not saturate at the neutralized value
+  (k=2 exceeds V1′), i.e. the catalogue leg has real sensitivity; its production
+  operating-point contribution is ≈ 0.
+- Venue differential ΔV1(joint) − ΔV1(iiib) = +0.0022 (descriptive photo-z read).
+- **Branch (registered table): C-MIXED by the letter** — iiib lands in the C-REFUTED range
+  (|ΔV1| < 0.003, N-2 passed) while joint_r1 falls in the registered 0.003–0.006 gap
+  (0.0032). Substantive orchestrator reading (non-binding): **catalogue-leg mass-overlap
+  OWNERSHIP of the +0.054/+0.067 offsets is refuted at materiality in both venues**; the
+  regression's per-event slope structure (catalogue-supported concentration) reflects
+  variation AROUND the shift, exactly as its P8 caveat anticipated — not the shift's owner.
+- Consequence for the mechanism register: M-A (catalogue-kernel shift) is now refuted at
+  production magnitude; M-B was refuted in direction by the regression; the remaining
+  candidates for the B-UNOWNED residual are the COMPLETION-leg mass factor g_i/g_frac
+  geometry (untouched by V1′ by design, M-C's home) and non-mass-overlap 2D/1D structural
+  differences (the alpha_G_phi vs beta_G_phi path asymmetry). A completion-leg counterfactual
+  is the natural next registered measurement — returns to the author as a fresh [DO].
