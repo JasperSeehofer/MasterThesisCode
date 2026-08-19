@@ -1,14 +1,16 @@
-r"""Option-B 1D production-correspondence harness (fidelity pilot G-0 only).
+r"""Option-B 1D production-correspondence harness (G-0 fidelity + generator + G-1/G-2).
 
 **What this instrument is.** The Option-B measurement registered in
 ``results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md`` (v2):
 decompose the production 1D base tilt into information-starvation vs
-form-defect components. This module currently implements **only gate G-0**
-(prereg §4, the STOP gate that must pass before ANY arm runs) — the
-production-wholesale fidelity pilot. It does **not** implement the
-mirror-universe generator (B-0/B-σ/B-D2/E-DEN arms) yet: see
-:class:`MirrorUniverseGenerator`, a registered-shape stub that raises
-``NotImplementedError`` until a later build.
+form-defect components. Gate G-0 (prereg §4, the STOP gate that must pass
+before ANY arm runs — the production-wholesale fidelity pilot) is PASSED
+(see the append-only VERDICT section of the prereg). This build adds the
+**mirror-universe generator** (:class:`MirrorUniverseGenerator`, D-B),
+gate **G-1** (:func:`run_g1_null`, the mirror sanity null) and gate **G-2**
+(:func:`run_g2_cost_pilot`, the D-D cost pilot). The adjudicating arms
+(B-0/B-σ/B-D2/E-DEN, prereg §2) are NOT run by this build — only the
+machinery + the two STOP gates, per task scope.
 
 **D-A (fidelity: production-wholesale).** Per the prereg, the harness must
 call production's own per-event assembly wholesale rather than re-deriving
@@ -61,24 +63,39 @@ References:
 """
 
 import argparse
+import functools
 import hashlib
 import json
 import logging
+import os
 import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
 from darksiren_emri.bayesian_inference.bayesian_statistics import (
+    BayesianStatistics,
     path_a_completion_numerators,
     path_a_mixture_objects,
 )
+from darksiren_emri.constants import (
+    HOST_DRAW_Z_MAX,
+    M_SOURCE_FRAME_MAX,
+    M_SOURCE_FRAME_MIN,
+    H,
+)
+from darksiren_emri.cosmological_model import Model1CrossCheck
+from darksiren_emri.galaxy_catalogue.handler import (
+    GalaxyCatalogueHandler,
+    InternalCatalogColumns,
+)
+from darksiren_emri.physical_relations import dist_vectorized
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -147,6 +164,67 @@ G0_PROBE_H: tuple[float, ...] = (0.675, 0.700)
 G0_MIN_EVENTS = 3
 G0_RTOL = 1.0e-6
 
+# ── D-B/S-RAIL registered h grid (prereg §3 S-RAIL) ──────────────────────────
+# The production H_VALUES 41-node hybrid grid [0.600, 0.860], VERBATIM,
+# extracted from the banked postfix_baseline/iiib event_likelihoods.csv (the
+# grid production actually ran, not re-derived from a formula) plus the
+# REPORTED-ONLY diagnostic low wing {0.50, 0.52, ..., 0.58} (never
+# band-bearing; prereg S-RAIL).
+H_GRID_41: tuple[float, ...] = (
+    0.6, 0.61, 0.62, 0.63, 0.64, 0.65, 0.655, 0.66, 0.665, 0.67, 0.675, 0.68,
+    0.685, 0.69, 0.695, 0.7, 0.705, 0.71, 0.715, 0.72, 0.725, 0.73, 0.735,
+    0.74, 0.745, 0.75, 0.755, 0.76, 0.765, 0.77, 0.775, 0.78, 0.785, 0.79,
+    0.8, 0.81, 0.82, 0.83, 0.84, 0.85, 0.86,
+)  # fmt: skip
+H_WING_LOW: tuple[float, ...] = (0.50, 0.52, 0.54, 0.56, 0.58)
+H_GRID_FULL: tuple[float, ...] = tuple(sorted(set(H_WING_LOW) | set(H_GRID_41)))
+H_TRUE: float = H  # mirror-universe truth h_true = 0.73 (constants.H, D-B)
+R_LOW_THRESHOLD = 0.605  # DS-6 rail statistic (prereg S-RAIL)
+
+# G-1 "exact z" operational mechanism (harness-registered, NOT in the prereg's
+# P14 text -- that text fixes only the completeness mechanism). "sigma_z_scale
+# -> 0" cannot be realized via realize_observed_catalogue(sigma_scale=0)
+# (that call is a documented BYTE-IDENTICAL copy of the parent -- it changes
+# NEITHER z_obs NOR z_error, so it reproduces B-0, not a null). The harness
+# instead builds its own exact-z catalogue variant: z_obs left AT the stored
+# (already-truth-by-convention, D-B item d) value, and REDSHIFT_MEASUREMENT_ERROR
+# floored to a tiny width so the host-z kernel integrates against an
+# effectively delta-function redshift. Flagged for review.
+EXACT_Z_ERROR_FLOOR = 1.0e-6
+
+
+class _UnityCompleteness:
+    """P14: f≡1 completeness shim satisfying the ``CompletenessModel`` Protocol.
+
+    Every method returns 1.0 (broadcast to the input shape), i.e. the
+    catalogue is treated as fully complete everywhere -- G-1's "full
+    completeness" mechanism (prereg §4 P14). The real GLADE completeness
+    object cannot be dialed to f=1, so this harness-owned stand-in is
+    monkeypatched over
+    :func:`darksiren_emri.galaxy_catalogue.pixel_completeness.from_cache_or_build`
+    at its ``bayesian_statistics`` module-level import site for the duration
+    of the G-1 run only (never a production code edit).
+    """
+
+    def f_bar(
+        self, z: float | npt.NDArray[np.floating[Any]], h: float = H_TRUE
+    ) -> float | npt.NDArray[np.floating[Any]]:
+        arr = np.asarray(z, dtype=np.float64)
+        return np.ones_like(arr) if arr.ndim > 0 else 1.0
+
+    def f_k(
+        self, z: float | npt.NDArray[np.floating[Any]], k: int, h: float = H_TRUE
+    ) -> float | npt.NDArray[np.floating[Any]]:
+        return self.f_bar(z, h)
+
+    def ang2pix(self, phi: float, theta: float) -> int:
+        return 0
+
+    def get_completeness_at_redshift(
+        self, z: float | npt.NDArray[np.floating[Any]], h: float = H_TRUE
+    ) -> float | npt.NDArray[np.floating[Any]]:
+        return self.f_bar(z, h)
+
 
 # ── Config scaffold (future arms; G-0 exercises only the fidelity layer) ────
 
@@ -155,12 +233,15 @@ G0_RTOL = 1.0e-6
 class CorrespondenceConfig:
     """Registered-shape config for the full Option-B harness (prereg §1/§2).
 
-    Only the fields G-0 actually reads are used today
-    (``crb_reference_csv``/``injection_data_dir``/``pruned_catalogue_csv``/
-    ``h_probe``); the rest are the D-C/D-D scale-and-budget knobs for the
-    B-0/B-sigma/B-D2/E-DEN arms, carried here so the later build extends this
-    dataclass rather than replacing it (prereg §5: "structured for the later
-    arms").
+    G-0 reads only ``crb_reference_csv``/``injection_data_dir``/``h_probe``.
+    :class:`MirrorUniverseGenerator` (D-B) reads ``n_events``/``crb_reference_csv``.
+    ``sigma_z_scale``/``area_scale``/``d2_form`` are the B-sigma/E-DEN/B-D2
+    arm knobs -- NOT run by this build (the adjudicating arms, prereg §2);
+    carried here so a later build extends this dataclass rather than
+    replacing it (prereg §5: "structured for the later arms").
+    ``pruned_catalogue_csv`` is unused (the real candidate structure is built
+    by :func:`_load_galaxy_catalog_handler` from :data:`REDUCED_CATALOGUE_PATH`
+    directly, not from a config field) -- kept for prereg-shape compatibility.
 
     Attributes:
         n_events: Mirror-universe events per realization (D-C: 200).
@@ -190,32 +271,299 @@ class CorrespondenceConfig:
     h_probe: tuple[float, ...] = G0_PROBE_H
 
 
-class MirrorUniverseGenerator:
-    """Registered-shape stub for the D-B real-catalogue mirror-universe draw.
+@dataclass(frozen=True)
+class HostPool:
+    """The candidate-structure host pool a realization draws from (D-B).
 
-    Not implemented in this build (G-0 exercises only the production-context
-    fidelity layer, per the task scope). Per D-B, this will resample entire
-    per-event Fisher rows (full covariance + detected parameters, incl. sky
-    localization) from :data:`CRB_CSV_PATH`, SNR-weighted, and dose host
-    z_obs by ``sigma_z_scale`` / localization area by ``area_scale``.
+    Built from the SAME pruned/rotated/mass-mapped catalogue production's own
+    ``GalaxyCatalogueHandler`` builds (``M_min=M_SOURCE_FRAME_MIN,
+    M_max=M_SOURCE_FRAME_MAX, z_max=HOST_DRAW_Z_MAX``), so the row order
+    (hence any ``host_galaxy_index`` this harness writes) is IDENTICAL to what
+    a wholesale ``--evaluate`` run over the same catalogue file will itself
+    build -- deterministic given fixed inputs, verified structurally (not
+    re-verified per-seed, since the pruning is a pure function of the file).
+
+    Attributes:
+        phiS: Ecliptic sky azimuth (rad), one per host.
+        qS: Ecliptic sky polar angle (rad), one per host.
+        z: Host redshift -- BY THE MIRROR CONVENTION (D-B item d, registered)
+            this catalogue value is treated as EXACT TRUTH for the mirror
+            universe (real galaxies have no independently known true z; the
+            catalogue's own z_obs is declared truth here).
+        z_error: Host redshift measurement error (as stored/realized).
+        n: Number of hosts in the pool.
+    """
+
+    phiS: npt.NDArray[np.float64]
+    qS: npt.NDArray[np.float64]
+    z: npt.NDArray[np.float64]
+    z_error: npt.NDArray[np.float64]
+    n: int
+
+
+@functools.lru_cache(maxsize=8)
+def _load_galaxy_catalog_handler(catalogue_path: str) -> GalaxyCatalogueHandler:
+    """Build (or return the cached) ``GalaxyCatalogueHandler`` for a catalogue file.
+
+    Calls production's own class wholesale (D-A fidelity extended to the
+    candidate-structure builder), so the mirror's host geometry/pruning is
+    byte-identical to what a wholesale evaluate() run over the same
+    catalogue file builds. Cached (harness-side reuse, not a production
+    change; a G-2 cost finding): repeated seeds/h-values at the same
+    ``sigma_z_scale`` (hence the same catalogue file) pay this cost --
+    catalogue read + prune + BallTree build -- exactly once per process, and
+    the SAME handler instance is handed to
+    :func:`run_mirror_seed_inprocess`'s ``BayesianStatistics.evaluate`` call,
+    so the host-draw pool and the evaluate() candidate structure are not just
+    consistent but the IDENTICAL object.
+
+    Args:
+        catalogue_path: Absolute path to a reduced-catalogue-schema CSV (the
+            baseline :data:`REDUCED_CATALOGUE_PATH` or an
+            ``observed_catalogue_*``/exact-z variant).
+
+    Returns:
+        The (possibly cached) handler.
+    """
+    is_baseline = Path(catalogue_path).resolve() == Path(REDUCED_CATALOGUE_PATH).resolve()
+    return GalaxyCatalogueHandler(
+        M_min=M_SOURCE_FRAME_MIN,
+        M_max=M_SOURCE_FRAME_MAX,
+        z_max=HOST_DRAW_Z_MAX,
+        observed_catalogue_path=None if is_baseline else catalogue_path,
+    )
+
+
+def _host_pool_from_handler(handler: GalaxyCatalogueHandler) -> HostPool:
+    """Extract a :class:`HostPool` from a built handler's pruned catalogue."""
+    df = handler.reduced_galaxy_catalog.reset_index(drop=True)
+    return HostPool(
+        phiS=df[InternalCatalogColumns.PHI_S].to_numpy(dtype=np.float64),
+        qS=df[InternalCatalogColumns.THETA_S].to_numpy(dtype=np.float64),
+        z=df[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64),
+        z_error=df[InternalCatalogColumns.REDSHIFT_ERROR].to_numpy(dtype=np.float64),
+        n=len(df),
+    )
+
+
+def _load_host_pool(catalogue_path: str) -> HostPool:
+    """Convenience wrapper: cached handler -> :class:`HostPool`."""
+    return _host_pool_from_handler(_load_galaxy_catalog_handler(catalogue_path))
+
+
+def build_exact_z_catalogue(
+    output_csv_path: str, catalogue_path: str = REDUCED_CATALOGUE_PATH
+) -> str:
+    """Build the G-1 "exact z" catalogue variant (harness-registered mechanism).
+
+    Copies the reduced catalogue schema byte-for-byte EXCEPT
+    ``REDSHIFT_MEASUREMENT_ERROR``, which is floored to
+    :data:`EXACT_Z_ERROR_FLOOR` so the host-z kernel integrates against an
+    effectively delta-function redshift (see the module-level "G-1 exact z"
+    note -- this is NOT ``realize_observed_catalogue(sigma_scale=0)``, which
+    is a documented byte-identical copy and would reproduce B-0, not a null).
+
+    Args:
+        output_csv_path: Destination CSV path (headerless, reduced-catalogue
+            schema, same column order as the parent).
+        catalogue_path: Parent reduced catalogue (pinned baseline default).
+
+    Returns:
+        ``output_csv_path``.
+    """
+    from darksiren_emri.galaxy_catalogue.handler import _reduced_catalog_column_names
+
+    names = _reduced_catalog_column_names()
+    df = pd.read_csv(catalogue_path, names=names)
+    df[InternalCatalogColumns.REDSHIFT_ERROR] = EXACT_Z_ERROR_FLOOR
+    df.to_csv(output_csv_path, header=False, index=False)
+    return output_csv_path
+
+
+class MirrorUniverseGenerator:
+    """D-B real-catalogue mirror-universe draw.
+
+    Per realization (seed): (a) draws ``n_events`` hosts from the pinned
+    catalogue's host pool, weighted by a detection-realistic proxy (see
+    :meth:`_host_draw_weights` -- **registered design choice, flagged for
+    review**); (b) resamples ``n_events`` ENTIRE per-event Fisher rows (full
+    covariance + detected parameters) from the pinned production CRB CSV,
+    SNR-weighted, WITHOUT replacement (the donor pool, ~1588 rows, comfortably
+    exceeds 200; sampling without replacement avoids duplicate covariance
+    structures in one realization); (c) places each event at its host: true
+    d_L from the host's z at ``h_true`` (:data:`H_TRUE`), the sky
+    localization Gaussian RECENTERED at the host's own (phiS, qS) with the
+    resampled row's own (phiS, qS) 2x2 covariance sub-block (this is the
+    harness's operational reading of "rotate the Fisher row's localization to
+    the host's sky location" -- a RECENTER, not a literal spherical tensor
+    rotation of the covariance; **registered design choice, flagged for
+    review**), and a correlated draw of the OBSERVED (phiS, qS, d_L) about
+    that true position using the row's own covariance (item (c)'s "draw the
+    observed d_L from the row's sigma_dL about the true d_L", applied
+    identically to the sky sector); (d) host photo-z: B-0 (``sigma_z_scale
+    == 1.0``) uses the catalogue's OWN z_obs/z_error columns AS-IS (D-B item
+    d: "z_true := the catalogue z_obs treated as exact ... for the mirror
+    universe's truth" -- the catalogue's stored photo-z error is already the
+    width the host-z kernel is meant to integrate against, so B-0 needs no
+    extra re-scattering pass); ``sigma_z_scale`` doses (the B-sigma arm, NOT
+    run by this build) are realized via production's own
+    :func:`~darksiren_emri.galaxy_catalogue.observed_realization.realize_observed_catalogue`
+    (the exact registered mechanism, D-B item d) -- see
+    :meth:`host_pool_for_sigma_scale`.
+
+    Mass columns (M, M_error, and their Fisher covariance entries) are left
+    at the resampled row's own values -- unlinked to the newly assigned
+    host's mass. This is harmless for the registered B-0/B-sigma/S-RAIL
+    statistics (all defined on ``combined_no_bh``, which does not consume the
+    with-BH-mass branch); flagged for review as a scope limitation.
     """
 
     def __init__(self, config: CorrespondenceConfig) -> None:
         self.config = config
+        self._donor_rows: pd.DataFrame = pd.read_csv(config.crb_reference_csv)
 
-    def draw_realization(self, seed: int) -> None:
-        """Draw one mirror-universe realization (NOT IMPLEMENTED).
+    @staticmethod
+    def _host_draw_weights(pool: HostPool) -> npt.NDArray[np.float64]:
+        """Detection-realistic host-draw weighting (D-B item a, registered choice).
+
+        w_i proportional to 1 / d_L(z_i, h_true)^2 -- the standard
+        inverse-square SNR/flux falloff (nearer hosts are more likely to host
+        a DETECTABLE EMRI), evaluated at the mirror truth :data:`H_TRUE`.
+        Deliberately decoupled from the independently SNR-weighted Fisher-row
+        draw (item b): both draws bias toward "more easily detectable"
+        systems in the same physical sense (nearby/high-SNR), without
+        requiring a per-row true-distance match, which the "place each event
+        at its host" step (item c) makes unnecessary -- the row's own d_L is
+        discarded and replaced by ``dist(host_z, h_true)``. Flagged for
+        review: this is a SIMPLE proxy (Gray et al. 2020's own catalogue
+        weighting is luminosity/rate-based, not distance-only); a
+        rate-weighted alternative (``galaxy_catalog.draw_rate_weighted_hosts``,
+        already used by the injection side, ``dark_siren_injection.py``) was
+        considered and rejected here only because it requires the injection
+        machinery's rate-table construction, out of scope for this harness's
+        n=200 pilot cost budget.
 
         Args:
-            seed: Realization seed.
+            pool: The host pool.
 
-        Raises:
-            NotImplementedError: Always, in this build.
+        Returns:
+            Normalized weights, shape ``(pool.n,)``.
         """
-        raise NotImplementedError(
-            "MirrorUniverseGenerator is a G-0-scope stub; the D-B real-catalogue "
-            "resampling draw is not built (harness prereg §1 D-B; see module docstring)."
+        d_l = dist_vectorized(pool.z, h=H_TRUE)
+        w = 1.0 / np.clip(d_l, 1.0e-6, None) ** 2
+        total = w.sum()
+        return w / total if total > 0 else np.full(pool.n, 1.0 / pool.n)
+
+    def host_pool_for_sigma_scale(
+        self, work_root: Path, seed: int, sigma_z_scale: float
+    ) -> tuple[HostPool, str | None, GalaxyCatalogueHandler]:
+        """Resolve the host pool + (optional) observed-catalogue path for a dose.
+
+        ``sigma_z_scale == 1.0`` (B-0): the pinned baseline catalogue, as-is
+        (D-B item d). ``sigma_z_scale == 0.0`` (G-1's "exact z"): the
+        harness's own exact-z variant (:func:`build_exact_z_catalogue`).
+        Any other value (the B-sigma arm, NOT run by this build): production's
+        ``realize_observed_catalogue`` at that ``sigma_scale``.
+
+        Args:
+            work_root: Scratch directory for a written catalogue variant.
+            seed: Realization seed (only consumed by the ``realize_observed_catalogue``
+                branch).
+            sigma_z_scale: The dose.
+
+        Returns:
+            ``(host_pool, observed_catalogue_path_or_None, handler)`` -- the
+            handler is the SAME object the host pool was extracted from, for
+            direct reuse as ``BayesianStatistics.evaluate``'s ``galaxy_catalog``
+            argument (G-2 reuse finding: no second candidate-structure build).
+        """
+        if sigma_z_scale == 1.0:
+            handler = _load_galaxy_catalog_handler(REDUCED_CATALOGUE_PATH)
+            return _host_pool_from_handler(handler), None, handler
+        if sigma_z_scale == 0.0:
+            work_root.mkdir(parents=True, exist_ok=True)
+            out = str(work_root / "exact_z_catalogue.csv")
+            build_exact_z_catalogue(out)
+            handler = _load_galaxy_catalog_handler(out)
+            return _host_pool_from_handler(handler), out, handler
+        from darksiren_emri.galaxy_catalogue.observed_realization import (
+            observed_catalogue_filename,
+            realize_observed_catalogue,
         )
+
+        work_root.mkdir(parents=True, exist_ok=True)
+        out = str(work_root / observed_catalogue_filename(seed))
+        realize_observed_catalogue(REDUCED_CATALOGUE_PATH, out, seed, sigma_scale=sigma_z_scale)
+        handler = _load_galaxy_catalog_handler(out)
+        return _host_pool_from_handler(handler), out, handler
+
+    def draw_realization(self, seed: int, host_pool: HostPool | None = None) -> pd.DataFrame:
+        """Draw one mirror-universe realization: ``n_events`` synthetic CRB rows.
+
+        Args:
+            seed: Realization seed (drives BOTH the host draw and the row
+                draw + noise draws via independent RNG sub-streams, for
+                reproducibility -- see the ``test_correspondence_1d.py``
+                determinism test).
+            host_pool: Pre-resolved host pool (reuse across seeds at the same
+                dose via :meth:`host_pool_for_sigma_scale`); defaults to the
+                pinned baseline (``sigma_z_scale == 1.0``, B-0).
+
+        Returns:
+            A DataFrame with the SAME columns/order as
+            :data:`CRB_CSV_PATH` (:attr:`config.crb_reference_csv`), the
+            mirror-universe's ``n_events`` synthetic events.
+        """
+        pool = host_pool if host_pool is not None else _load_host_pool(REDUCED_CATALOGUE_PATH)
+        n = self.config.n_events
+        rng = np.random.default_rng(seed)
+
+        # (b) SNR-weighted row draw, without replacement.
+        snr = self._donor_rows["SNR"].to_numpy(dtype=np.float64)
+        row_p = snr / snr.sum()
+        row_idx = rng.choice(len(self._donor_rows), size=n, replace=False, p=row_p)
+        rows = self._donor_rows.iloc[row_idx].reset_index(drop=True).copy()
+
+        # (a) detectability-weighted host draw, without replacement.
+        host_w = self._host_draw_weights(pool)
+        host_idx = rng.choice(pool.n, size=n, replace=False, p=host_w)
+        host_z = pool.z[host_idx]
+        host_phiS = pool.phiS[host_idx]
+        host_qS = pool.qS[host_idx]
+
+        # (c) true d_L from host z at h_true; observed d_L about it.
+        true_d_L = dist_vectorized(host_z, h=H_TRUE)
+        sigma_dL = np.sqrt(
+            rows["delta_luminosity_distance_delta_luminosity_distance"].to_numpy(dtype=np.float64)
+        )
+        obs_d_L = true_d_L + rng.normal(size=n) * sigma_dL
+        obs_d_L = np.clip(obs_d_L, 1.0e-6, None)
+
+        # (c) sky: correlated draw about the host's true position using the
+        # resampled row's own (phiS, qS) 2x2 covariance sub-block.
+        phi_var = rows["delta_phiS_delta_phiS"].to_numpy(dtype=np.float64)
+        theta_var = rows["delta_qS_delta_qS"].to_numpy(dtype=np.float64)
+        cov_theta_phi = rows["delta_phiS_delta_qS"].to_numpy(dtype=np.float64)
+        obs_phiS = np.empty(n, dtype=np.float64)
+        obs_qS = np.empty(n, dtype=np.float64)
+        for i in range(n):
+            cov = np.array([[phi_var[i], cov_theta_phi[i]], [cov_theta_phi[i], theta_var[i]]])
+            try:
+                chol = np.linalg.cholesky(cov)
+            except np.linalg.LinAlgError:
+                chol = np.diag([np.sqrt(max(phi_var[i], 0.0)), np.sqrt(max(theta_var[i], 0.0))])
+            offset = chol @ rng.normal(size=2)
+            obs_phiS[i] = host_phiS[i] + offset[0]
+            obs_qS[i] = host_qS[i] + offset[1]
+        obs_phiS = np.mod(obs_phiS, 2.0 * np.pi)
+        obs_qS = np.clip(obs_qS, 0.0, np.pi)
+
+        rows["luminosity_distance"] = obs_d_L
+        rows["phiS"] = obs_phiS
+        rows["qS"] = obs_qS
+        rows["host_galaxy_index"] = host_idx.astype(np.int64)
+        rows["in_catalog"] = True
+        return rows
 
 
 # ── Layer 1: production-wholesale evaluate() driver ──────────────────────────
@@ -638,8 +986,377 @@ def run_g0_fidelity_pilot(
     )
 
 
+# ── Mirror-universe in-process evaluation driver ─────────────────────────────
+
+
+def write_mirror_crb_csv(events: pd.DataFrame, out_path: str) -> str:
+    """Write a mirror realization's synthetic CRB rows to disk.
+
+    Args:
+        events: A :meth:`MirrorUniverseGenerator.draw_realization` result.
+        out_path: Destination CSV path.
+
+    Returns:
+        ``out_path``.
+    """
+    events.to_csv(out_path, index=False)
+    return out_path
+
+
+def run_mirror_seed_inprocess(
+    work_root: Path,
+    events: pd.DataFrame,
+    seed: int,
+    galaxy_catalog: GalaxyCatalogueHandler,
+    h_values: tuple[float, ...] = H_GRID_41,
+    completeness_override: bool = False,
+    injection_dir: str = INJECTION_POOL_DIR,
+) -> tuple[Path, float]:
+    """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
+
+    Calls the REAL ``BayesianStatistics().evaluate(...)`` method directly
+    (imported, not reimplemented -- same D-A fidelity as
+    :func:`run_production_wholesale`'s subprocess layer, since
+    ``darksiren_emri.main.evaluate`` is itself nothing but this call plus CLI
+    parsing). Running in-process (rather than via subprocess) buys two
+    things the task explicitly asks the harness to exploit: (1) a
+    monkeypatchable completeness object for G-1's f=1 shim (impossible over a
+    subprocess boundary without a CLI flag, which production does not have --
+    see :class:`_UnityCompleteness`); (2) a caller-supplied ``galaxy_catalog``
+    that can be REUSED across seeds/h without rebuilding the candidate
+    structure (the G-2 reuse finding). No production file is edited by
+    either use.
+
+    Args:
+        work_root: Scratch directory; only ``work_root/simulations`` needs to
+            exist (for the CRB-CSV writer and the diagnostics-CSV output --
+            evaluate() writes ``simulations/diagnostics/event_likelihoods.csv``
+            relative to the process CWD).
+        events: The mirror realization's synthetic CRB rows.
+        seed: Realization seed (threaded into ``BayesianStatistics.evaluate``'s
+            ``base_seed``, and into ``Model1CrossCheck``'s rng -- the latter
+            is structural only here, since ``evaluate()`` does not draw new
+            events; it exists to keep the call signature identical to
+            production's ``main.py`` construction).
+        galaxy_catalog: A pre-built handler (:func:`_load_galaxy_catalog_handler`
+            output) -- REUSED, not rebuilt, per realization.
+        h_values: The h-grid to evaluate (single ``evaluate()`` call fuses the
+            whole grid -- production's own h-list-fusion feature, prereg D-D's
+            "context build serves every h" cost anchor).
+        completeness_override: If ``True``, monkeypatch
+            ``bayesian_statistics.from_cache_or_build`` to return
+            :class:`_UnityCompleteness` for the duration of this call (G-1
+            only; restored in a ``finally``).
+        injection_dir: The pinned injection pool (p_det grid input).
+
+    Returns:
+        ``(diagnostics_csv_path, elapsed_seconds)``.
+    """
+    import darksiren_emri.bayesian_inference.bayesian_statistics as _bs_mod
+
+    sims = work_root / "simulations"
+    sims.mkdir(parents=True, exist_ok=True)
+    crb_path = sims / "prepared_cramer_rao_bounds.csv"
+    write_mirror_crb_csv(events, str(crb_path))
+    # true_cramer_rao_bounds.csv is read at __init__ but unused downstream of
+    # evaluate() (mirrors _setup_wholesale_cwd's subprocess-route symlink).
+    (sims / "cramer_rao_bounds.csv").write_bytes(crb_path.read_bytes())
+    _symlink(sims / "injections", Path(injection_dir))
+
+    original_cwd = Path.cwd()
+    original_from_cache = _bs_mod.from_cache_or_build
+    try:
+        if completeness_override:
+            _bs_mod.from_cache_or_build = lambda *a, **k: _UnityCompleteness()  # type: ignore[assignment]
+        os.chdir(work_root)
+        cosmological_model = Model1CrossCheck(rng=np.random.default_rng(seed))
+        bs = BayesianStatistics()
+        start = time.time()
+        bs.evaluate(
+            galaxy_catalog,
+            cosmological_model,
+            h_value=h_values[0],
+            h_values=list(h_values),
+            base_seed=seed,
+            pdet_z_resolved=True,
+            normalization_mode=PRODUCTION_FLAGS["--normalization_mode"],
+            host_z_kernel=PRODUCTION_FLAGS["--host_z_kernel"],
+            selection_in_completion_numerator=PRODUCTION_FLAGS[
+                "--selection_in_completion_numerator"
+            ],
+            catalogue_mass_overlap=PRODUCTION_FLAGS["--catalogue_mass_overlap"],
+            completion_b_scale=PRODUCTION_FLAGS["--completion_b_scale"],
+            pdet_dl_bins=int(PRODUCTION_FLAGS["--pdet_dl_bins"]),
+            pdet_mass_bins=int(PRODUCTION_FLAGS["--pdet_mass_bins"]),
+            pdet_estimator=PRODUCTION_FLAGS["--pdet_estimator"],
+        )
+        elapsed = time.time() - start
+    finally:
+        _bs_mod.from_cache_or_build = original_from_cache
+        os.chdir(original_cwd)
+    diag_csv = work_root / "simulations" / "diagnostics" / "event_likelihoods.csv"
+    if not diag_csv.is_file():
+        raise RuntimeError(f"expected diagnostics CSV not found: {diag_csv}")
+    return diag_csv, elapsed
+
+
+# ── Per-seed registered statistics (prereg §2/§3) ────────────────────────────
+
+
+@dataclass
+class SeedStats:
+    """Per-seed registered statistics (prereg §2: mean_h, MAP, sigma_h, coverage, R_low).
+
+    Attributes:
+        seed: Realization seed.
+        n_events: Distinct events contributing to the combine.
+        mean_h: Posterior mean over :data:`H_GRID_41`.
+        map_h: Posterior mode (argmax) over :data:`H_GRID_41`.
+        sigma_h: Posterior std over :data:`H_GRID_41`.
+        c50: Whether ``h_true`` falls inside the 50% HPD set.
+        c68: Whether ``h_true`` falls inside the 68% HPD set.
+        c90: Whether ``h_true`` falls inside the 90% HPD set.
+        r_low: DS-6 rail indicator, ``map_h <= R_LOW_THRESHOLD``.
+    """
+
+    seed: int
+    n_events: int
+    mean_h: float
+    map_h: float
+    sigma_h: float
+    c50: bool
+    c68: bool
+    c90: bool
+    r_low: bool
+
+
+def _hpd_contains(
+    post_n: npt.NDArray[np.float64],
+    weights: npt.NDArray[np.float64],
+    target_idx: int,
+    level: float,
+) -> bool:
+    """Whether grid node ``target_idx`` is in the smallest-density-first HPD set at ``level``."""
+    order = np.argsort(-post_n)
+    cum = 0.0
+    for idx in order:
+        cum += float(post_n[idx] * weights[idx])
+        if idx == target_idx:
+            return True
+        if cum >= level:
+            return False
+    return False
+
+
+def compute_seed_statistics(
+    diagnostics_csv: str | Path,
+    seed: int,
+    h_grid: tuple[float, ...] = H_GRID_41,
+    h_true: float = H_TRUE,
+) -> SeedStats:
+    """Per-seed 1D posterior (Sigma log combined_no_bh, trapezoid) + registered statistics.
+
+    Mirrors ``results/prod2d_closure_20260818/tier0_bootstrap_jackknife.py``'s
+    ``_moments``/``_hpd_width`` convention (the existing prod2d-closure
+    combine machinery): non-uniform trapezoid weights
+    ``w = np.gradient(h_grid)``, ``post_n`` the gradient-weighted-normalized
+    posterior density.
+
+    Args:
+        diagnostics_csv: A wholesale/in-process run's
+            ``event_likelihoods.csv``.
+        seed: The realization seed (recorded, not consumed).
+        h_grid: The registered production grid (S-RAIL; the low wing, if
+            present in the CSV, is excluded here -- REPORTED-ONLY).
+        h_true: The mirror-universe truth.
+
+    Returns:
+        The :class:`SeedStats`.
+    """
+    df = pd.read_csv(diagnostics_csv)
+    grid = np.array(sorted(h_grid), dtype=np.float64)
+    df = df[np.isin(df["h"].to_numpy(dtype=np.float64), grid)]
+    piv = df.pivot_table(index="event_idx", columns="h", values="combined_no_bh", aggfunc="first")
+    piv = piv.reindex(columns=grid)
+    vals = piv.to_numpy(dtype=np.float64)
+    with np.errstate(divide="ignore"):
+        log_l = np.where(vals > 0.0, np.log(vals, where=vals > 0.0), -np.inf)
+    sum_log_l = np.nansum(np.where(np.isfinite(log_l), log_l, -1.0e300), axis=0)
+
+    weights = np.gradient(grid)
+    lp = sum_log_l - sum_log_l.max()
+    post = np.exp(lp)
+    norm = float((post * weights).sum())
+    post_n = post / norm if norm > 0 else post
+    mean_h = float((post_n * grid * weights).sum())
+    var = float((post_n * (grid - mean_h) ** 2 * weights).sum())
+    sigma_h = float(np.sqrt(max(var, 0.0)))
+    map_h = float(grid[int(np.argmax(sum_log_l))])
+
+    target_idx_arr = np.nonzero(np.isclose(grid, h_true))[0]
+    target_idx = (
+        int(target_idx_arr[0]) if target_idx_arr.size else int(np.argmin(np.abs(grid - h_true)))
+    )
+    c50 = _hpd_contains(post_n, weights, target_idx, 0.50)
+    c68 = _hpd_contains(post_n, weights, target_idx, 0.68)
+    c90 = _hpd_contains(post_n, weights, target_idx, 0.90)
+    r_low = map_h <= R_LOW_THRESHOLD
+
+    return SeedStats(
+        seed=seed,
+        n_events=int(piv.shape[0]),
+        mean_h=mean_h,
+        map_h=map_h,
+        sigma_h=sigma_h,
+        c50=c50,
+        c68=c68,
+        c90=c90,
+        r_low=r_low,
+    )
+
+
+# ── G-1 (mirror sanity, STOP) ─────────────────────────────────────────────────
+
+
+@dataclass
+class G1Result:
+    """G-1 result (prereg §4): mirror sanity null.
+
+    Attributes:
+        stats: The single-seed :class:`SeedStats`.
+        se_proxy: The SE proxy against which ``|mean_h - h_true|`` is
+            gated -- ``sigma_h`` itself (a single-realization run has no
+            ensemble SE; ``sigma_h`` is the harness's registered-compatible
+            stand-in, flagged for review).
+        bias: ``mean_h - h_true``.
+        verdict: ``"PASS"`` or ``"STOP"``.
+    """
+
+    stats: SeedStats
+    se_proxy: float
+    bias: float
+    verdict: str
+
+
+def run_g1_null(
+    work_root: Path,
+    seed: int = 900001,
+    config: CorrespondenceConfig | None = None,
+) -> G1Result:
+    """Run gate G-1 (prereg §4): sigma_z_scale -> 0 (exact z) AND f=1 completeness.
+
+    Args:
+        work_root: Scratch directory.
+        seed: Realization seed.
+        config: Optional override (default: the registered n_events=200).
+
+    Returns:
+        The :class:`G1Result`.
+    """
+    cfg = config or CorrespondenceConfig()
+    gen = MirrorUniverseGenerator(cfg)
+    host_pool, _observed_path, handler = gen.host_pool_for_sigma_scale(
+        work_root / "catalogue", seed, sigma_z_scale=0.0
+    )
+    events = gen.draw_realization(seed, host_pool=host_pool)
+    diag_csv, elapsed = run_mirror_seed_inprocess(
+        work_root / f"seed{seed}",
+        events,
+        seed,
+        galaxy_catalog=handler,
+        h_values=H_GRID_41,
+        completeness_override=True,
+    )
+    _LOGGER.info("G-1 evaluate() elapsed: %.1fs", elapsed)
+    stats = compute_seed_statistics(diag_csv, seed)
+    bias = stats.mean_h - H_TRUE
+    se_proxy = max(stats.sigma_h, 1.0e-6)
+    verdict = "PASS" if abs(bias) <= 2.0 * se_proxy else "STOP"
+    return G1Result(stats=stats, se_proxy=se_proxy, bias=bias, verdict=verdict)
+
+
+# ── G-2 (cost pilot, STOP) ─────────────────────────────────────────────────────
+
+
+@dataclass
+class G2Result:
+    """G-2 result (prereg §1 D-D): B-0 cost pilot.
+
+    Attributes:
+        per_seed_elapsed_seconds: One entry per pilot seed-run.
+        anchor_cpu_h: The registered 0.969 CPU-h/seed-run anchor.
+        realized_cpu_h_per_seed: Mean of ``per_seed_elapsed_seconds`` in CPU-h
+            (single-worker wall time used as the CPU-h proxy -- the harness
+            runs single-process; see report notes on multi-worker scaling).
+        ratio_to_anchor: ``realized_cpu_h_per_seed / anchor_cpu_h``.
+        verdict: ``"PROCEED"`` if ``ratio_to_anchor <= 2.0`` else ``"STOP"``.
+    """
+
+    per_seed_elapsed_seconds: list[float]
+    anchor_cpu_h: float
+    realized_cpu_h_per_seed: float
+    ratio_to_anchor: float
+    verdict: str
+
+
+G2_ANCHOR_CPU_H = 0.969
+G2_STOP_MULTIPLE = 2.0
+
+
+def run_g2_cost_pilot(
+    work_root: Path,
+    seeds: tuple[int, ...] = (900101, 900102),
+    config: CorrespondenceConfig | None = None,
+) -> G2Result:
+    """Run gate G-2 (prereg §1 D-D): 2 full B-0 seed-runs, timed.
+
+    B-0 = production-mapped form, sigma_z_scale = 1.0 (GLADE empirical, the
+    catalogue as-is), over the FULL registered grid (:data:`H_GRID_41`).
+    The galaxy-catalogue handler is built ONCE and reused across both pilot
+    seeds (the G-2 "context reuse across seeds" finding, see module
+    docstring / :func:`_load_galaxy_catalog_handler`).
+
+    Args:
+        work_root: Scratch directory.
+        seeds: Exactly the 2 pilot seeds (D-D).
+        config: Optional override (default: the registered n_events=200).
+
+    Returns:
+        The :class:`G2Result`.
+    """
+    cfg = config or CorrespondenceConfig()
+    gen = MirrorUniverseGenerator(cfg)
+    host_pool, _observed_path, handler = gen.host_pool_for_sigma_scale(
+        work_root / "catalogue", seeds[0], sigma_z_scale=1.0
+    )
+    elapsed_list: list[float] = []
+    for seed in seeds:
+        events = gen.draw_realization(seed, host_pool=host_pool)
+        _diag_csv, elapsed = run_mirror_seed_inprocess(
+            work_root / f"seed{seed}",
+            events,
+            seed,
+            galaxy_catalog=handler,
+            h_values=H_GRID_41,
+            completeness_override=False,
+        )
+        _LOGGER.info("G-2 seed=%d evaluate() elapsed: %.1fs", seed, elapsed)
+        elapsed_list.append(elapsed)
+    realized_cpu_h = float(np.mean(elapsed_list)) / 3600.0
+    ratio = realized_cpu_h / G2_ANCHOR_CPU_H
+    verdict = "PROCEED" if ratio <= G2_STOP_MULTIPLE else "STOP"
+    return G2Result(
+        per_seed_elapsed_seconds=elapsed_list,
+        anchor_cpu_h=G2_ANCHOR_CPU_H,
+        realized_cpu_h_per_seed=realized_cpu_h,
+        ratio_to_anchor=ratio,
+        verdict=verdict,
+    )
+
+
 def _cli() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--stage", choices=("g0", "g1", "g2"), default="g0")
     parser.add_argument(
         "--work-root",
         default="/tmp/correspondence_1d_g0",
@@ -648,20 +1365,53 @@ def _cli() -> int:
     parser.add_argument("--seed", type=int, default=777010)
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
-    result = run_g0_fidelity_pilot(Path(args.work_root), seed=args.seed)
-    print(json.dumps({"verdict": result.verdict}, indent=2))
-    for s in result.stages:
+
+    if args.stage == "g0":
+        result = run_g0_fidelity_pilot(Path(args.work_root), seed=args.seed)
+        print(json.dumps({"verdict": result.verdict}, indent=2))
+        for s in result.stages:
+            print(
+                f"h={s.h}: n={s.n_events} "
+                f"L_cat_no_bh={s.max_rel_L_cat_no_bh:.3e} "
+                f"B_num={s.max_rel_B_num:.3e} "
+                f"combined_no_bh(wholesale-vs-bank)={s.max_rel_combined_no_bh_wholesale:.3e} "
+                f"combined_no_bh(harness-reassembly)={s.max_rel_combined_no_bh_reassembled:.3e}"
+            )
+        print(f"context_build_seconds={result.context_build_seconds:.1f}")
+        print(f"crb_pin_ok={result.crb_pin_ok}")
+        print(f"catalogue_pin_ok={result.catalogue_pin_ok}")
+        return 0 if result.verdict == "PASS" else 1
+    if args.stage == "g1":
+        g1 = run_g1_null(Path(args.work_root), seed=args.seed)
         print(
-            f"h={s.h}: n={s.n_events} "
-            f"L_cat_no_bh={s.max_rel_L_cat_no_bh:.3e} "
-            f"B_num={s.max_rel_B_num:.3e} "
-            f"combined_no_bh(wholesale-vs-bank)={s.max_rel_combined_no_bh_wholesale:.3e} "
-            f"combined_no_bh(harness-reassembly)={s.max_rel_combined_no_bh_reassembled:.3e}"
+            json.dumps(
+                {
+                    "verdict": g1.verdict,
+                    "bias": g1.bias,
+                    "se_proxy": g1.se_proxy,
+                    "mean_h": g1.stats.mean_h,
+                    "map_h": g1.stats.map_h,
+                    "sigma_h": g1.stats.sigma_h,
+                    "n_events": g1.stats.n_events,
+                },
+                indent=2,
+            )
         )
-    print(f"context_build_seconds={result.context_build_seconds:.1f}")
-    print(f"crb_pin_ok={result.crb_pin_ok}")
-    print(f"catalogue_pin_ok={result.catalogue_pin_ok}")
-    return 0 if result.verdict == "PASS" else 1
+        return 0 if g1.verdict == "PASS" else 1
+    g2 = run_g2_cost_pilot(Path(args.work_root))
+    print(
+        json.dumps(
+            {
+                "verdict": g2.verdict,
+                "per_seed_elapsed_seconds": g2.per_seed_elapsed_seconds,
+                "realized_cpu_h_per_seed": g2.realized_cpu_h_per_seed,
+                "anchor_cpu_h": g2.anchor_cpu_h,
+                "ratio_to_anchor": g2.ratio_to_anchor,
+            },
+            indent=2,
+        )
+    )
+    return 0 if g2.verdict == "PROCEED" else 1
 
 
 if __name__ == "__main__":

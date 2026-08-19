@@ -157,3 +157,31 @@ B_num 0.0; combined_no_bh **bit-for-bit 0.0**; harness combine re-orchestration 
 anchor input). The first-run FAIL is fully attributed to the stale local catalogue (interim
 record above); the fidelity layer is verified end-to-end. Next per registration: mirror
 generator + G-1 + D-D cost pilot, then arms.
+
+**G-1/G-2 RECORD + PRE-ARM AMENDMENT (2026-08-20, appended BEFORE any adjudicating arm):**
+
+- **G-1 PASS:** exact-z (REDSHIFT_MEASUREMENT_ERROR floored to 1e-6 — registered harness
+  convention; the prereg's P14 fixed only the f≡1 shim) + unity completeness ⇒ mean_h =
+  MAP = 0.730 exactly (single-node posterior collapse under near-noiseless information; no
+  NaN/inf; n_eff = 69). The mirror's null is clean.
+- **G-2 PROCEED:** 2 B-0 pilot seeds, 0.478 CPU-h/seed-run = 0.49× the 0.969 anchor (2×
+  STOP threshold comfortably cleared). Cost decomposition: per-h global selection sums over
+  the 20.8M-galaxy catalogue dominate (~20-25 of ~29 min); handler/BallTree amortized
+  across seeds already. Reuse analysis of record: the per-(h, catalogue) selection tables
+  are event-set-independent (computed before the per-event loop) and COULD be cached across
+  seeds — not exploited now (fleet fits the ceiling without touching evaluate(): ≈105 ×
+  0.478 ≈ 50 CPU-h < 120).
+- **AMENDMENT A-1 (n_eff, registered now that the fact is known):** the production
+  Fisher-quality filter passes ~69/200 mirror events per realization (donor rows placed at
+  nearer hosts inflate σ_dL/dL — a disclosed consequence of the 1/d_L² host-draw proxy).
+  S-CORR's event-sampling scaling uses the realized mean n_eff over B-0 seeds in place of
+  200: z_v = (m_v − μ̄)/√(s²·(n_eff/1588) + s²/25). The S-RAIL scale-confound check
+  (σ_h ×2 band) is expected to fire at n_eff ≈ 69 — the AGGREGATION arm (8 disjoint
+  subsets, pseudo-n = 8·n_eff ≈ 552, still ×2.9 below production n) is registered as the
+  rail statistic of record with THAT pseudo-n disclosed; if even pooled σ_h stays outside
+  ×2 of production's, the rail read is SCALE-CONFOUNDED as registered and returns to the
+  author.
+- **Generator conventions of record (flagged for author review, non-blocking):** host draw
+  ∝ 1/d_L²(z; h_true); sky localization recentred at the host with the donor's own (φ,θ)
+  covariance (not a spherical rotation); donor mass columns unlinked (harmless to the 1D
+  statistic); B-0 uses the pinned catalogue's own z_obs/z_err as-is.
