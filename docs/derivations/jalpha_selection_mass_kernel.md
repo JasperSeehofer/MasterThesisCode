@@ -28,6 +28,14 @@ selection term to the SAME posterior expectation:
 
     Σ⁴ᴰ_kernel(h) = Σ_g w_g · E_{M ~ N(M_eff,g, σ_g²)} [ S_4D(d_L(z_g;h), M(1+z_g)) ]
 
+(mean-matched surrogate — P2: the exact tilted posterior is non-Gaussian with unmatched
+variance near the κ_cap roll-off; the A2 claim here is consistency with the estimator's
+SHARED surrogate measurement model — the same N(M_eff, σ_g²) the numerator mz kernel and
+D_g use — not posterior exactness. The surrogate error is common-mode between numerator and
+selection and folds into §4's next-order term. Coordinate/width consistency
+verifier-checked: the numerator's fractional-coordinate kernel equals this absolute-M kernel
+under the linear change of variable, same mean, same width, same (1+z) placement.)
+
 — exactly the battery's registered instrument (P2: erf-sum at the Eddington mean, no
 R_eff inside, σ_g = BH_MASS_ERROR linear). Σᶲ is untouched (no per-galaxy mass evaluation
 in it), so the change is r_Malm → r_Malm·J_α(h) with J_α = Σ⁴ᴰ_kernel/Σ⁴ᴰ_point — the
@@ -49,16 +57,22 @@ S_4D is piecewise-linear-in-M between p_det grid nodes; a Gaussian expectation o
 function equals its point value — J_α ≠ 1 only through S_4D's curvature and the horizon
 edge across the kernel width. With σ_g/M ≈ 0.9 the kernel spans the erf roll-off for
 near-horizon galaxies, raising their effective detectability weight (heavy-mass tail is
-louder), hence r_Malm up 4–8% and a modest low-h pull. The sign and smallness are thus
-structural, not tuned — consistent with the fixb_pathA "adverse-direction, second-tier"
-expectation.
+louder), hence r_Malm up 4–8%. **The smallness is structural** (Gaussian expectation of a
+piecewise-linear S differs from the point value only through curvature/edge terms). **The
+SIGN of the h-pull is NOT derived here (P4):** in the production mixture Σ⁴ᴰ cancels in
+α_G^φ·L_cat, so the effect acts solely through D̃^φ(h) = β_G^φ·r_Malm·J_α + β_Ḡ^φ (shared
+by BOTH channels), and the low-h direction depends on the h-slope of α_G^φ(J_α − 1) —
+measured (ΔJ = −0.0025/−0.0061), directionally coherent with the near-horizon-edge picture,
+but plausible-not-derived.
 
 ## 4. Next-order term, disclosed and bounded out of scope
 
 The rate weight w_g = R_eff(M_g)/(1+z_g) is also point-evaluated. It appears in BOTH Σ⁴ᴰ
-and Σᶲ (and the numerator's w_g), so its measurement-error correction largely cancels in
-r_Malm and in the catalogue-leg ratio; the residual is a curvature term of R_eff over σ_g,
-common-mode across legs. It is NOT part of D3's documented inconsistency (which is the
+and Σᶲ (and the numerator's w_g), so in r_Malm its correction δ_g ≈ ½σ_g²R_eff″/R_eff
+cancels only up to the covariance between δ_g and the normalized mass-dependent survival
+weight (exact cancellation would require mass-independent S-weighting — P5); the residual
+is that covariance — a curvature term times a weight anomaly, hence next-order, and
+additionally common-mode with §2(a)'s surrogate factorization error R_eff(M_g)/Z_M. It is NOT part of D3's documented inconsistency (which is the
 S_4D evaluation only) and is left as a documented next-order entry — measuring it would be
 a separate registered instrument if ever warranted.
 
@@ -78,7 +92,24 @@ a separate registered instrument if ever warranted.
 - **Expected consequence (honest):** production 2D offsets move −0.0529/−0.0512 →
   ≈ −0.0554/−0.0573 (slightly further below truth). This is a correctness adoption, not a
   bias repair; the base tilt remains Option B's target.
+- **Hidden-consumer scoping (P6, BLOCKING repair applied):** `generator_marginal` mode's
+  D_gen consumes Σ⁴ᴰ under its default `dgen_catalog_selection="4d_exact"` — a mode the
+  battery never exercised and one under legacy byte-identity expectations. **The default
+  flip is therefore SCOPED to the φ-convention (`absolute_marginal`) assembly only:**
+  `generator_marginal` retains the point form (its historical reproducibility preserved;
+  documented in the flag help + a pinned test), unless/until a registered generator_marginal
+  regression cell measures the shift. Diagnostic consumers (selection_tables JSONs,
+  per-event CSV columns L_cat_with_bh/alpha_G_phi/r_Malm/D̃^φ/w_G/combined_*) change
+  meaning with the era — cross-run tooling must not mix point-era and kernel-era rows
+  (declared; no re-run needed).
+- **Interaction disclosure (P7):** under the kernel default, `--eddington_m` newly gates
+  Σ⁴ᴰ's M_eff (it was inert there under point), so the banked s_Edd (+0.0012/+0.0019,
+  measured at J=point) does not transfer unmeasured to the post-flip configuration; and
+  D̃^φ is shared by both channels, so the 1D posterior moves too — the banked battery jker
+  1D deltas (−0.000116/−0.000404) are the regression of record.
 - **Alternative on the fork:** (c-style) keep `point` as default and document J_α as a
   quantified systematic (−0.002/−0.006) — coherent only as a temporary state, since §2
-  establishes the mixed form as a genuine A2 defect; recommended only if the author prefers
-  to batch the default flip with the Option B outcome.
+  establishes the mixed form as a genuine A2 defect; reasonable if the author prefers to
+  batch the default flip with the Option B outcome (one re-baseline instead of two).
+- Line-cite fix (P8): the executing point evaluation is :2889–2903 (the :2707-2731 cite in
+  §1 is the docstring block).
