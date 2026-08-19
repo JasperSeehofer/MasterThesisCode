@@ -320,6 +320,27 @@ class Arguments:
         """
         return str(self._parsed_arguments.completion_b_scale)
 
+    @property
+    def eddington_m(self) -> str:
+        """Tilt-ledger battery instrument E (results/prod2d_closure_20260818/
+        PREREGISTRATION_TILT_BATTERY.md §1): 'on'/'off'. 'on' (default) is
+        byte-identical to the pre-flag path; 'off' assigns the raw
+        (unshifted) host_M to the 2D catalogue leg's mu_gal and the per-host
+        D_g erf-sum, re-measuring s_Edd at the current operating point.
+        """
+        return str(self._parsed_arguments.eddington_m)
+
+    @property
+    def sigma4d_mass_kernel(self) -> str:
+        """Tilt-ledger battery instrument J (results/prod2d_closure_20260818/
+        PREREGISTRATION_TILT_BATTERY.md §1, P2 registered kernel):
+        'point'/'kernel'. 'point' (default) is byte-identical to the pre-flag
+        path; 'kernel' replaces the with-BH-mass global catalogue selection's
+        point p_det evaluation with the Eddington-shifted mass-smearing
+        expectation.
+        """
+        return str(self._parsed_arguments.sigma4d_mass_kernel)
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -862,6 +883,38 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "FIXB_PATHA_PACKAGE.md §3.2 (2026-08-04, now retracted) for "
             "byte-identical reproduction of historical runs only -- never a "
             "production posterior."
+        ),
+    )
+    parser.add_argument(
+        "--eddington_m",
+        type=str,
+        choices=["on", "off"],
+        default="on",
+        help=(
+            "[PHYSICS] tilt-ledger battery instrument E (results/"
+            "prod2d_closure_20260818/PREREGISTRATION_TILT_BATTERY.md §1). "
+            "'on' (default) is byte-identical to the pre-flag behaviour: the "
+            "2D catalogue leg's mu_gal and the per-host D_g erf-sum both use "
+            "the Eddington-shifted effective mass. 'off' assigns the raw "
+            "(unshifted) host_M instead, re-measuring the s_Edd budget leg "
+            "at the current operating point. Never a production posterior."
+        ),
+    )
+    parser.add_argument(
+        "--sigma4d_mass_kernel",
+        type=str,
+        choices=["point", "kernel"],
+        default="point",
+        help=(
+            "[PHYSICS] tilt-ledger battery instrument J (results/"
+            "prod2d_closure_20260818/PREREGISTRATION_TILT_BATTERY.md §1, P2 "
+            "registered kernel). 'point' (default) is byte-identical to the "
+            "pre-flag behaviour: the with-BH-mass global catalogue selection "
+            "Sigma^4D point-evaluates p_det at the observer-frame mass "
+            "M_z = M_g(1+z_g). 'kernel' replaces this with the expectation "
+            "over the Eddington-shifted per-galaxy mass prior "
+            "E_{M~N(M_eff_g, sigma_g^2)}[S_4D(d_L_g, M(1+z_g))], sigma_g = "
+            "the catalogue BH_MASS_ERROR column. Never a production posterior."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

@@ -205,6 +205,8 @@ def main() -> None:
             catalogue_mass_overlap=arguments.catalogue_mass_overlap,
             catalogue_mass_error_scale=arguments.catalogue_mass_error_scale,
             completion_b_scale=arguments.completion_b_scale,
+            eddington_m=arguments.eddington_m,
+            sigma4d_mass_kernel=arguments.sigma4d_mass_kernel,
         )
 
     if arguments.snr_analysis:
@@ -1391,6 +1393,11 @@ def evaluate(
     # beta_Gbar_phi/beta_Gbar multiplier; "legacy" preserves it for
     # byte-identical reproduction of historical runs.
     completion_b_scale: str = "derived",
+    # Tilt-ledger battery counterfactual instruments (results/
+    # prod2d_closure_20260818/PREREGISTRATION_TILT_BATTERY.md §1): "on"/
+    # "point" (defaults) are byte-identical to the pre-flag path.
+    eddington_m: str = "on",
+    sigma4d_mass_kernel: str = "point",
 ) -> None:
     from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1419,6 +1426,8 @@ def evaluate(
         catalogue_mass_overlap=catalogue_mass_overlap,
         catalogue_mass_error_scale=catalogue_mass_error_scale,
         completion_b_scale=completion_b_scale,
+        eddington_m=eddington_m,
+        sigma4d_mass_kernel=sigma4d_mass_kernel,
     )
 
 

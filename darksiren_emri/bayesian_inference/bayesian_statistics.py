@@ -619,6 +619,61 @@ def eddington_shifted_host_mass(host_M: float, host_M_error: float) -> float:
     return float(np.trapezoid(M_grid * w, M_grid) / Z)
 
 
+def _eddington_shifted_host_mass_batch(
+    host_M: npt.NDArray[np.float64],
+    host_M_error: npt.NDArray[np.float64],
+    n_grid: int = 401,
+    chunk_size: int = 100_000,
+) -> npt.NDArray[np.float64]:
+    """Vectorised twin of :func:`eddington_shifted_host_mass` over an array.
+
+    Row ``i`` uses the SAME moment-matching quadrature (same grid construction
+    -- ``[M_g - 5 sigma, M_g + 5 sigma]`` clamped to ``sigma <= 2 M_g`` and
+    ``M >= 1e3``, ``n_grid`` nodes -- and the same trapezoid reduction) as the
+    scalar function, only batched over a leading host axis (never a per-host
+    Python loop). Used where the scalar function's own per-host list
+    comprehension (the small-``n`` per-event-candidate twin at
+    ``single_host_likelihood_batch``) would be prohibitively slow -- e.g. over
+    the full ``reduced_galaxy_catalog`` (tens of millions of rows, instrument
+    J's ``--sigma4d_mass_kernel=kernel``,
+    results/prod2d_closure_20260818/PREREGISTRATION_TILT_BATTERY.md §1).
+    Chunked (``chunk_size`` rows) to bound the ``(chunk, n_grid)`` intermediates.
+
+    Args:
+        host_M: Catalogue (source-frame) host BH mass estimates [M_sun].
+        host_M_error: 1-sigma mass uncertainties [M_sun].
+        n_grid: Quadrature nodes per host (matches the scalar default, 401).
+        chunk_size: Hosts per chunk.
+
+    Returns:
+        Shifted effective masses [M_sun], same shape as ``host_M``; a row
+        equals ``host_M`` when its uncertainty is zero/invalid (bare-Gaussian
+        limit, same guard as the scalar function).
+    """
+    host_M = np.asarray(host_M, dtype=np.float64)
+    host_M_error = np.asarray(host_M_error, dtype=np.float64)
+    out = np.array(host_M, dtype=np.float64, copy=True)
+    valid = (host_M > 0.0) & (host_M_error > 0.0) & np.isfinite(host_M_error)
+    valid_idx = np.flatnonzero(valid)
+    for start in range(0, valid_idx.size, chunk_size):
+        idx = valid_idx[start : start + chunk_size]
+        M_v = host_M[idx]
+        sigma = np.minimum(host_M_error[idx], 2.0 * M_v)
+        lo = np.maximum(M_v - 5.0 * sigma, 1e3)
+        hi = M_v + 5.0 * sigma
+        t = np.linspace(0.0, 1.0, n_grid)
+        M_grid = lo[:, None] + (hi - lo)[:, None] * t[None, :]  # (chunk, n_grid)
+        w = np.exp(-0.5 * ((M_grid - M_v[:, None]) / sigma[:, None]) ** 2) * np.asarray(
+            R_eff_per_mbh(M_grid.reshape(-1)), dtype=np.float64
+        ).reshape(M_grid.shape)
+        Z = np.trapezoid(w, M_grid, axis=1)
+        num = np.trapezoid(M_grid * w, M_grid, axis=1)
+        finite = np.isfinite(Z) & (Z > 0.0)
+        shifted = np.where(finite, num / np.where(finite, Z, 1.0), M_v)
+        out[idx] = shifted
+    return out
+
+
 def _mass_trunc_lnM_weight(
     M: npt.NDArray[np.float64],
     host_M: float | npt.NDArray[np.float64],
@@ -2473,6 +2528,58 @@ def _log_path_a_selection_objects(
     )
 
 
+def write_selection_table_json(
+    h: float,
+    *,
+    beta_G_phi: float,
+    beta_Gbar_phi: float,
+    sigma_phi: float,
+    sigma_4d: float,
+    directory: str = ".",
+) -> str:
+    r"""P4 banked source (PREREGISTRATION_TILT_BATTERY.md §2, N-2(J)).
+
+    Dumps the per-h selection table ``{beta_G_phi, beta_Gbar_phi, sigma_phi,
+    sigma_4d, r_Malm}`` to ``<directory>/selection_tables_h_<label>.json`` so
+    instrument J's engagement gate (``max_h |r_Malm,kernel/r_Malm,point - 1| >
+    1e-4``) is scored from files, not log-line scraping. ``r_Malm =
+    sigma_4d/sigma_phi`` (:func:`path_a_mixture_objects`) is the quantity J's
+    ``--sigma4d_mass_kernel=kernel`` moves (``sigma_4d``) while ``sigma_phi``
+    (mass-blind) stays fixed. Always written whenever the phi-selection
+    objects are computed, independent of ``--sigma4d_mass_kernel``/
+    ``--eddington_m``.
+
+    Args:
+        h: Dimensionless Hubble parameter.
+        beta_G_phi: Phi-marginal in-catalogue selection integral.
+        beta_Gbar_phi: Phi-marginal completion selection integral.
+        sigma_phi: Global mass-blind catalogue selection sum Sigma^phi(h).
+        sigma_4d: Global with-BH-mass catalogue selection sum Sigma^4D(h).
+        directory: Output directory (default: the current working directory,
+            i.e. the run's working directory).
+
+    Returns:
+        The path written.
+    """
+    obj = path_a_mixture_objects(beta_G_phi, beta_Gbar_phi, sigma_phi, sigma_4d)
+    h_label = str(np.round(h, 4)).replace(".", "_")
+    path = os.path.join(directory, f"selection_tables_h_{h_label}.json")
+    with open(path, "w") as sel_file:
+        json.dump(
+            {
+                "h": h,
+                "beta_G_phi": beta_G_phi,
+                "beta_Gbar_phi": beta_Gbar_phi,
+                "sigma_phi": sigma_phi,
+                "sigma_4d": sigma_4d,
+                "r_Malm": obj["r_Malm"],
+            },
+            sel_file,
+            indent=2,
+        )
+    return path
+
+
 def rescore_class_share_joint_selection(
     predicted_in_catalogue_share: float,
     retention_ratio: float = P0_WINDOW_CLASS_RETENTION_RATIO,
@@ -2530,6 +2637,16 @@ def precompute_global_catalog_selection(
     smear_sigma_z: bool = False,
     phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]
     | None = None,
+    # Instrument J (results/prod2d_closure_20260818/
+    # PREREGISTRATION_TILT_BATTERY.md §1, P2 registered kernel): "point"
+    # (default) is byte-identical to the pre-flag path; "kernel" applies only
+    # inside the with_bh_mass=True branch (never with_bh_mass=False).
+    sigma4d_mass_kernel: str = "point",
+    # Instrument E (PREREGISTRATION_TILT_BATTERY.md §1): governs whether the
+    # "kernel" mode's per-galaxy mean M_eff_g carries the Eddington-in-M shift
+    # (the SAME shift production's per-event D_g uses). No effect under
+    # sigma4d_mass_kernel="point" (unchanged point evaluation at raw M_g).
+    eddington_m: str = "on",
 ) -> dict[float, float]:
     r"""Precompute the GLOBAL in-catalogue selection denominator (Option A).
 
@@ -2586,6 +2703,19 @@ def precompute_global_catalog_selection(
             guarantees the two sums are computed on the catalogue the run
             actually loads — the convention rule of decision D2, whose
             violation produced the retired mixed-catalogue ``r_Malm = 0.4304``.
+        sigma4d_mass_kernel: Instrument J (results/prod2d_closure_20260818/
+            PREREGISTRATION_TILT_BATTERY.md §1, P2 registered kernel).
+            ``"point"`` (default) evaluates ``P_det`` at the point observer-
+            frame mass ``M_z = M_g(1+z_g)``, byte-identical to the pre-flag
+            path. ``"kernel"`` (only valid with ``with_bh_mass=True``)
+            replaces the point evaluation by ``E_{M~N(M_eff_g,
+            sigma_g^2)}[S_4D(d_L_g, M(1+z_g))]`` via the erf-sum inner-M
+            machinery of :func:`_bh_mass_denominator_inner_m_integral_batch`,
+            with ``sigma_g`` = the catalogue ``BH_MASS_ERROR`` column.
+        eddington_m: Instrument E (PREREGISTRATION_TILT_BATTERY.md §1).
+            Governs whether ``sigma4d_mass_kernel="kernel"``'s per-galaxy mean
+            ``M_eff_g`` carries the Eddington-in-M shift (``"on"``, default)
+            or the raw ``M_g`` (``"off"``). No effect under ``"point"``.
 
     Returns:
         Dict mapping ``h -> sum_global w_g D_g(h)`` (dimensionless rate-weighted
@@ -2603,6 +2733,17 @@ def precompute_global_catalog_selection(
             "must be requested with with_bh_mass=False and smear_sigma_z=False "
             "(FIXB_PATHA_PACKAGE.md §3.2 slot 2)."
         )
+    if sigma4d_mass_kernel not in ("point", "kernel"):
+        raise ValueError(
+            f"sigma4d_mass_kernel must be 'point' or 'kernel', got {sigma4d_mass_kernel!r}"
+        )
+    if sigma4d_mass_kernel == "kernel" and not with_bh_mass:
+        raise ValueError(
+            "sigma4d_mass_kernel='kernel' requires with_bh_mass=True (the "
+            "without-BH-mass channel never consumes the mass kernel)."
+        )
+    if eddington_m not in ("on", "off"):
+        raise ValueError(f"eddington_m must be 'on' or 'off', got {eddington_m!r}")
     catalog = galaxy_catalog.reduced_galaxy_catalog
     z_all = np.asarray(
         catalog[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64),
@@ -2612,6 +2753,13 @@ def precompute_global_catalog_selection(
         catalog[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64),
         dtype=np.float64,
     )
+    if sigma4d_mass_kernel == "kernel":
+        # Instrument J: sigma_g for the mass-smearing kernel (linear M_sun,
+        # the same catalogue column D_g's host_M_error argument reads).
+        M_error_all = np.asarray(
+            catalog[InternalCatalogColumns.BH_MASS_ERROR].to_numpy(dtype=np.float64),
+            dtype=np.float64,
+        )
     if smear_sigma_z:
         if InternalCatalogColumns.REDSHIFT_ERROR not in catalog.columns:
             raise ValueError(
@@ -2710,25 +2858,51 @@ def precompute_global_catalog_selection(
             # stays ISOTROPIC (phi=theta=0, sky-marginalised 2D accessor). The
             # residual sky-selection systematic (<~1%) applies to the with-BH-mass
             # posterior ONLY, not the primary result. PHYSICS-CHANGE-PROTOCOL §9.3.
-            M_z_g = M_g * (1.0 + z_g)  # observer-frame mass (P_det grid axis)
             phi_iso = np.zeros_like(z_g)
             theta_iso = np.zeros_like(z_g)
-            # [PHYSICS] FIX-3 §7.1 [RATIFY-Z1/Z5]: Sigma_glob_wbh's averaging
-            # measure is the CATALOGUE's joint (z_g, M_z,g) — when the flag is
-            # on the galaxy's own z_g conditions the query, S(d_L(z_g;h) |
-            # z_g, M_g(1+z_g)); sky stays isotropic (unchanged decision).
-            # docs/derivations/fix3_zmz_catalog_selection.md §3.1 (K1)/(K2).
-            p_det = np.asarray(
-                detection_probability_obj.detection_probability_with_bh_mass_interpolated(
-                    d_L_g,
-                    M_z_g,
+            if sigma4d_mass_kernel == "kernel":
+                # [PHYSICS] Instrument J registered kernel (results/
+                # prod2d_closure_20260818/PREREGISTRATION_TILT_BATTERY.md §1,
+                # P2): replaces the point evaluation at M_z_g = M_g(1+z_g) by
+                # the expectation over the per-galaxy Eddington-shifted mass
+                # prior, via the SAME erf-sum inner-M machinery production's
+                # own D_g uses. sigma_g = catalogue BH_MASS_ERROR. M_eff_g
+                # carries the SAME Eddington-in-M shift D_g uses, gated by
+                # --eddington_m (instrument E); NO R_eff/mass_trunc lognormal
+                # inside the kernel (w_g stays the point rate weight computed
+                # above; Sigma^phi is untouched -- it contains no per-galaxy
+                # mass evaluation).
+                sigma_g = M_error_all[eligible]
+                M_eff_g = (
+                    _eddington_shifted_host_mass_batch(M_g, sigma_g) if eddington_m == "on" else M_g
+                )
+                p_det = _sigma4d_mass_kernel_expectation(
+                    z_g,
+                    M_eff_g,
+                    sigma_g,
                     phi_iso,
                     theta_iso,
-                    h=h,
-                    **_wbh_z_kwargs(detection_probability_obj, z_g),
-                ),
-                dtype=np.float64,
-            )
+                    h,
+                    detection_probability_obj,
+                )
+            else:
+                M_z_g = M_g * (1.0 + z_g)  # observer-frame mass (P_det grid axis)
+                # [PHYSICS] FIX-3 §7.1 [RATIFY-Z1/Z5]: Sigma_glob_wbh's averaging
+                # measure is the CATALOGUE's joint (z_g, M_z,g) — when the flag is
+                # on the galaxy's own z_g conditions the query, S(d_L(z_g;h) |
+                # z_g, M_g(1+z_g)); sky stays isotropic (unchanged decision).
+                # docs/derivations/fix3_zmz_catalog_selection.md §3.1 (K1)/(K2).
+                p_det = np.asarray(
+                    detection_probability_obj.detection_probability_with_bh_mass_interpolated(
+                        d_L_g,
+                        M_z_g,
+                        phi_iso,
+                        theta_iso,
+                        h=h,
+                        **_wbh_z_kwargs(detection_probability_obj, z_g),
+                    ),
+                    dtype=np.float64,
+                )
         elif _sky_aware:
             # Sky-resolved p_det at each galaxy's real ecliptic latitude, using the
             # IDENTICAL flat per-band survival that D(h) and beta_Gbar use (NOT the
@@ -3003,6 +3177,14 @@ class BayesianStatistics:
     # "legacy": preserves the un-derived beta_Gbar_phi/beta_Gbar multiplier
     # for byte-identical reproduction of historical runs.
     _completion_b_scale: str = "derived"
+    # Instrument E (results/prod2d_closure_20260818/
+    # PREREGISTRATION_TILT_BATTERY.md §1). "on" (default) is byte-identical to
+    # the pre-flag path.
+    _eddington_m: str = "on"
+    # Instrument J (results/prod2d_closure_20260818/
+    # PREREGISTRATION_TILT_BATTERY.md §1). "point" (default) is byte-identical
+    # to the pre-flag path.
+    _sigma4d_mass_kernel: str = "point"
 
     def __init__(self) -> None:
         self.h_values = []
@@ -3041,6 +3223,11 @@ class BayesianStatistics:
         # derivation-complete form); "legacy" reproduces the un-derived
         # beta_Gbar_phi/beta_Gbar multiplier for historical-run reproduction.
         self._completion_b_scale: str = "derived"
+        # Tilt-ledger battery counterfactual instruments (results/
+        # prod2d_closure_20260818/PREREGISTRATION_TILT_BATTERY.md §1).
+        # "on"/"point" => the pre-flag production path, byte-identical.
+        self._eddington_m: str = "on"
+        self._sigma4d_mass_kernel: str = "point"
 
     def evaluate(
         self,
@@ -3107,6 +3294,19 @@ class BayesianStatistics:
         # beta_Gbar_phi/beta_Gbar multiplier (B_num_phi = B_num). "legacy"
         # preserves it for byte-identical reproduction of historical runs.
         completion_b_scale: str = "derived",
+        # Instrument E (results/prod2d_closure_20260818/
+        # PREREGISTRATION_TILT_BATTERY.md §1): "on" (default) is byte-identical
+        # to the pre-flag path; "off" assigns the raw (unshifted) host_M to
+        # _host_M_eff, re-measuring s_Edd at the current operating point.
+        eddington_m: str = "on",
+        # Instrument J (results/prod2d_closure_20260818/
+        # PREREGISTRATION_TILT_BATTERY.md §1, P2 registered kernel): "point"
+        # (default) is byte-identical to the pre-flag path; "kernel" replaces
+        # the with-BH-mass global catalogue selection's point p_det evaluation
+        # by the expectation over the Eddington-shifted per-galaxy mass prior
+        # (the erf-sum inner-M machinery, matched to production's own D_g
+        # kernel).
+        sigma4d_mass_kernel: str = "point",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3219,6 +3419,37 @@ class BayesianStatistics:
                 "posterior.",
                 _cat_mass_overlap,
                 _cat_mass_error_scale,
+            )
+        # Tilt-ledger battery counterfactual instruments (results/
+        # prod2d_closure_20260818/PREREGISTRATION_TILT_BATTERY.md §1/§2/§6).
+        # Validated here the same way catalogue_mass_overlap is validated
+        # above (defence in depth against argparse's choices= gate).
+        _eddington_m = str(eddington_m)
+        if _eddington_m not in ("on", "off"):
+            raise ValueError(f"eddington_m must be 'on' or 'off', got {eddington_m!r}")
+        self._eddington_m = _eddington_m
+        if _eddington_m == "off":
+            _LOGGER.warning(
+                "INSTRUMENTATION ACTIVE: --eddington_m=off — the 2D catalogue "
+                "leg's mu_gal and the per-host D_g erf-sum both use the raw "
+                "(unshifted) host_M instead of eddington_shifted_host_mass "
+                "(results/prod2d_closure_20260818/PREREGISTRATION_TILT_BATTERY.md "
+                "§1 instrument E). Not a production posterior."
+            )
+        _sigma4d_mass_kernel = str(sigma4d_mass_kernel)
+        if _sigma4d_mass_kernel not in ("point", "kernel"):
+            raise ValueError(
+                f"sigma4d_mass_kernel must be 'point' or 'kernel', got {sigma4d_mass_kernel!r}"
+            )
+        self._sigma4d_mass_kernel = _sigma4d_mass_kernel
+        if _sigma4d_mass_kernel == "kernel":
+            _LOGGER.warning(
+                "INSTRUMENTATION ACTIVE: --sigma4d_mass_kernel=kernel — the "
+                "global with-BH-mass catalogue selection Sigma^4D replaces its "
+                "point p_det evaluation with the registered mass-smearing "
+                "kernel (results/prod2d_closure_20260818/"
+                "PREREGISTRATION_TILT_BATTERY.md §1 instrument J). Not a "
+                "production posterior."
             )
         # G4: deterministic seed for the with-BH-mass MC denominator (threaded to
         # single_host_likelihood workers; per-call streams derived per host).
@@ -3514,6 +3745,8 @@ class BayesianStatistics:
             with_bh_mass=True,
             z_max_cap=REDSHIFT_UPPER_LIMIT,
             smear_sigma_z=smear_global_selection,
+            sigma4d_mass_kernel=self._sigma4d_mass_kernel,
+            eddington_m=self._eddington_m,
         )
         # [PHYSICS] Path (A): ONE detection model (FIXB_PATHA_PACKAGE.md §3.2,
         # 2026-08-04). Only the production mixture mode consumes the
@@ -3570,6 +3803,19 @@ class BayesianStatistics:
                         if _D_h_table.get(_h_phi, 0.0) > 0.0
                         else float("nan")
                     ),
+                )
+                # P4 (PREREGISTRATION_TILT_BATTERY.md §2 N-2(J) banked
+                # source): dump the per-h selection table to a small JSON in
+                # the working directory so instrument J's engagement gate is
+                # scored from files, not log-line scraping. Always written
+                # whenever the phi-selection objects above are computed
+                # (independent of --sigma4d_mass_kernel/--eddington_m).
+                write_selection_table_json(
+                    _h_phi,
+                    beta_G_phi=_beta_G_phi_table[_h_phi],
+                    beta_Gbar_phi=_beta_Gbar_phi_table[_h_phi],
+                    sigma_phi=_global_cat_selection_phi[_h_phi],
+                    sigma_4d=_global_cat_denom_with_bh[_h_phi],
                 )
 
         # generator_marginal precomputes: the draw-side calibration pair
@@ -4359,6 +4605,7 @@ class BayesianStatistics:
             self._host_mass_kernel,
             self._catalogue_mass_overlap,
             self._catalogue_mass_error_scale,
+            self._eddington_m,
         )
 
         results_without_blackhole_mass = _starmap_host_batches(
@@ -4372,6 +4619,7 @@ class BayesianStatistics:
             self._host_mass_kernel,
             self._catalogue_mass_overlap,
             self._catalogue_mass_error_scale,
+            self._eddington_m,
         )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
@@ -5248,6 +5496,77 @@ def _bh_mass_denominator_inner_m_integral_batch(
     return np.asarray(val, dtype=np.float64)
 
 
+def _sigma4d_mass_kernel_expectation(
+    z_g: npt.NDArray[np.float64],
+    M_eff_g: npt.NDArray[np.float64],
+    sigma_g: npt.NDArray[np.float64],
+    phi_g: npt.NDArray[np.float64],
+    theta_g: npt.NDArray[np.float64],
+    h: float,
+    detection_probability_obj: Any,
+    chunk_size: int = 200_000,
+) -> npt.NDArray[np.float64]:
+    r"""Instrument J registered kernel (results/prod2d_closure_20260818/
+    PREREGISTRATION_TILT_BATTERY.md §1, P2): per-galaxy
+
+    .. math::
+
+        p_{\det,g} = \mathbb{E}_{M \sim \mathcal{N}(M_{\mathrm{eff},g},\,
+        \sigma_g^2)}\bigl[S_{4D}(d_L(z_g),\, M(1+z_g))\bigr],
+
+    reusing the erf-sum inner-M closed form of
+    :func:`_bh_mass_denominator_inner_m_integral_batch` (the SAME exact
+    quadrature against the piecewise-linear ``p_det`` interpolant that
+    production's own ``D_g`` uses -- a single ``z``-node per galaxy). ``sigma_g
+    -> 0`` collapses the Gaussian kernel to a delta function and recovers the
+    point evaluation ``S_4D(d_L(z_g), M_eff_g(1+z_g))`` exactly (pinned
+    limiting-case test). NO R_eff/truncated-lognormal mass prior enters this
+    kernel (unlike ``_mass_trunc``): ``w_g`` stays the point rate weight
+    outside this function, so ``R_eff`` is counted exactly once and cancels in
+    ``r_Malm`` (registered, P2).
+
+    Chunked at ``chunk_size`` rows (catalogue-scale call site: tens of
+    millions of eligible galaxies), mirroring
+    :func:`_smeared_global_pdet_expectation`.
+
+    Args:
+        z_g: Eligible galaxy redshifts, shape ``(n,)``.
+        M_eff_g: Eddington-shifted (or raw, per ``--eddington_m``) mean host
+            masses [M_sun], shape ``(n,)``.
+        sigma_g: Catalogue ``BH_MASS_ERROR`` 1-sigma mass uncertainties
+            [M_sun], shape ``(n,)``.
+        phi_g: Ecliptic azimuths (isotropic zeros on the production path),
+            shape ``(n,)``.
+        theta_g: Ecliptic polar angles (isotropic zeros), shape ``(n,)``.
+        h: Dimensionless Hubble parameter.
+        detection_probability_obj: ``SimulationDetectionProbability`` instance.
+        chunk_size: Galaxies per chunk.
+
+    Returns:
+        Per-galaxy ``p_det,g``, shape ``(n,)``.
+    """
+    n = int(z_g.size)
+    out = np.empty(n, dtype=np.float64)
+    # Numerical floor only (BH_MASS_ERROR is always > 0 in the production
+    # catalogue); avoids a division by zero for a synthetic sigma_g == 0 test
+    # input while still recovering the point evaluation in that limit.
+    sigma_floor = np.maximum(sigma_g, 1e-8)
+    for start in range(0, n, chunk_size):
+        sl = slice(start, min(start + chunk_size, n))
+        z_col = z_g[sl][:, None]  # (chunk, 1): a single quadrature node per galaxy
+        val = _bh_mass_denominator_inner_m_integral_batch(
+            z_col,
+            detection_probability_obj,
+            phi_g[sl],
+            theta_g[sl],
+            M_eff_g[sl],
+            sigma_floor[sl],
+            h,
+        )
+        out[sl] = val[:, 0]
+    return out
+
+
 def single_host_likelihood(
     host_phiS: float,
     host_qS: float,
@@ -5274,6 +5593,12 @@ def single_host_likelihood(
     # byte-identical to the pre-flag path.
     catalogue_mass_overlap: str = "production",
     catalogue_mass_error_scale: float = 1.0,
+    # Instrument E (results/prod2d_closure_20260818/
+    # PREREGISTRATION_TILT_BATTERY.md §1). "on" (default) is byte-identical to
+    # the pre-flag path; "off" assigns the raw (unshifted) host_M to
+    # _host_M_eff, switching the numerator mass prior AND the per-host D_g
+    # erf-sum together (the single assignment below).
+    eddington_m: str = "on",
 ) -> list[float]:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -5287,6 +5612,9 @@ def single_host_likelihood(
     global proj_d_L_to_M_arr, sigma_cond_M_arr
     global det_d_L_arr, det_d_L_unc_arr, det_M_arr, det_phi_arr, det_theta_arr
     global completeness_model
+
+    if eddington_m not in ("on", "off"):
+        raise ValueError(f"eddington_m must be 'on' or 'off', got {eddington_m!r}")
 
     FIXED_QUAD_N = _HOST_QUAD_N
 
@@ -5626,10 +5954,21 @@ def single_host_likelihood(
         # mass_trunc computes the FULL truncated lognormal x R_eff mass marginal, so
         # it needs neither the G2d point shift nor the linear sigma_M; every other
         # calibrated mode uses the moment-matched effective mass.
+        # Impact re-measured by the E instrument (--eddington_m {on,off}; results/
+        # prod2d_closure_20260818/PREREGISTRATION_TILT_BATTERY.md §1 R-E), which
+        # replaces the stale -0.020 empirical-impact figure (audit finding 5) with
+        # a direct s_Edd,new = mean_h(baseline) - mean_h(E-off) measurement at the
+        # current operating point; the pre-D_g-fix expectation anchor is a
+        # -0.0022-class shift (docs/gates/G7row9_N5). "off" is a guard pattern
+        # (the shift is simply never computed), so "on" stays bit-identical.
         _host_M_eff = (
-            eddington_shifted_host_mass(host_M, host_M_error)
-            if (_use_volume_deconv and not _use_mass_trunc)
-            else host_M
+            host_M
+            if eddington_m == "off"
+            else (
+                eddington_shifted_host_mass(host_M, host_M_error)
+                if (_use_volume_deconv and not _use_mass_trunc)
+                else host_M
+            )
         )
         if _use_mass_trunc:
             # sigma_lnM (recovered from the stored linear error) + per-host Z_M for
@@ -5835,6 +6174,11 @@ def single_host_likelihood_batch(
     # byte-identical to the pre-flag path.
     catalogue_mass_overlap: str = "production",
     catalogue_mass_error_scale: float = 1.0,
+    # Instrument E (results/prod2d_closure_20260818/
+    # PREREGISTRATION_TILT_BATTERY.md §1). "on" (default) is byte-identical to
+    # the pre-flag path; "off" assigns the raw (unshifted) host_M to
+    # host_M_eff.
+    eddington_m: str = "on",
 ) -> npt.NDArray[np.float64]:
     """Host-batched twin of :func:`single_host_likelihood`.
 
@@ -5887,6 +6231,9 @@ def single_host_likelihood_batch(
     global proj_d_L_to_M_arr, sigma_cond_M_arr
     global det_d_L_arr, det_d_L_unc_arr, det_M_arr
     global completeness_model
+
+    if eddington_m not in ("on", "off"):
+        raise ValueError(f"eddington_m must be 'on' or 'off', got {eddington_m!r}")
 
     n = int(host_z.size)
     if n == 0:
@@ -6179,7 +6526,13 @@ def single_host_likelihood_batch(
     # early returns/clamps; negligible cost) — bit-identical to the scalar path.
     # mass_trunc uses neither the point shift nor the linear sigma_M (it integrates
     # the full truncated lognormal x R_eff prior), so skip the per-host quadrature.
-    if _use_volume_deconv and not _use_mass_trunc:
+    # Instrument E (--eddington_m {on,off}; PREREGISTRATION_TILT_BATTERY.md §1):
+    # "off" is a guard pattern -- host_M_eff is assigned raw host_M directly and
+    # eddington_shifted_host_mass is never called, so "on" (default) reproduces
+    # the pre-flag path bit-identically.
+    if eddington_m == "off":
+        host_M_eff = np.asarray(host_M, dtype=np.float64)
+    elif _use_volume_deconv and not _use_mass_trunc:
         host_M_eff = np.array(
             [
                 eddington_shifted_host_mass(float(m), float(dm_))
@@ -6360,6 +6713,7 @@ def _starmap_host_batches(
     host_mass_kernel: str = "auto",
     catalogue_mass_overlap: str = "production",
     catalogue_mass_error_scale: float = 1.0,
+    eddington_m: str = "on",
 ) -> list[list[float]]:
     """Dispatch the batched host kernel over worker processes.
 
@@ -6383,6 +6737,8 @@ def _starmap_host_batches(
             results/prod2d_closure_20260818/
             PREREGISTRATION_PROD_COUNTERFACTUAL.md §1.
         catalogue_mass_error_scale: Width multiplier ``k`` for "inflated".
+        eddington_m: Instrument E ("on"/"off"); see
+            results/prod2d_closure_20260818/PREREGISTRATION_TILT_BATTERY.md §1.
 
     Returns:
         Per-host result rows in input order.
@@ -6410,6 +6766,7 @@ def _starmap_host_batches(
             host_mass_kernel,
             catalogue_mass_overlap,
             catalogue_mass_error_scale,
+            eddington_m,
         )
         for idx in chunk_indices
     ]
