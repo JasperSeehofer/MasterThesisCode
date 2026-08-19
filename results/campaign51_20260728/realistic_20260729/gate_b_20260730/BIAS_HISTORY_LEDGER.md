@@ -1190,3 +1190,31 @@ can expect that constraint."
    bands + one verifier pass + one physics-gate presentation instead of N research cycles.
 4. Gate agent + audit agent LAUNCHED (both top-tier, fresh-context by design); candidate
    implementation HELD until GATE-OPEN, per the author's sequencing.
+
+## Row #130 — 2026-08-19 — STEP-BACK GATE: **GATE-HOLD** (un-derived B_scale factor found, moves 2D mean by +0.12/+0.14); AUDIT: chain verified OK except stale s_Edd (−0.020 → −0.0022-class)
+
+1. **Gate review (`GATE_REVIEW_20260819.md`): GATE-HOLD.** The elimination arc is
+   disciplined, NOT a rabbit hole — but it is aimed one leg to the side of an un-derived
+   object: **`B_scale = β_Ḡ^φ(h)/β_Ḡ(h)` (`bayesian_statistics.py:4904-4906`)**, a ratio
+   of two DIFFERENT detection models multiplying the completion leg (~93-95% of mixture
+   weight). MFG-consistent assembly gives B_scale ≡ 1; no derivation exists (fixb_pathA §2's
+   "convention transfer" claim does not hold — B_num is already in the φ convention
+   post-fusion). Measured d ln B_scale/dh = +0.16; banked-data counterfactual
+   (orchestrator-verified, reproduces production bit-for-bit): its h-slope moves the 2D
+   mean by **+0.119/+0.137** — 2× the whole offset. Survived all eliminations because every
+   instrument arm held it fixed and the harness never implemented it. Frame change ordered:
+   from "find the owner of +0.06" to **closing the tilt ledger** (production sits at the
+   balance point of ±0.12-0.16 tilts; single-component freezes overshoot past truth).
+   Also surfaced: row #111's 1D correct-form production transfer LAPSED; D3/F10 J_α
+   unmeasured; g_i demoted to rank 4 (deforming it now = confounded elimination).
+2. **Audit (`MEASUREMENT_AUDIT_20260819.md`):** rows #119–#128 chain verified OK — T0,
+   regression, counterfactual, #119 all reproduce exactly; branch calls supported; no gate
+   misfires. ONE CAUTION: the budget's s_Edd = −0.020 is STALE (G7row9_N5_postDgfix_SUMMARY
+   recorded −0.0022 post-fix on 2026-07-12; flag not caught at freeze). B-UNOWNED robust
+   under any s_Edd ∈ [−0.02, +0.02]; headline residual corrects to **≈ +0.056/+0.069
+   (~2.3–2.9 σ_total)**. The corrected residual returns to the author as a fresh [RULE]
+   (the prior ratification was against the stale number).
+3. **Per the author's row-#129 sequencing, the candidate battery is ON HOLD until the
+   author rules on the gate-exit plan** (B_scale derivation memo → /physics-change if
+   defect; lapsed #111 transfer re-presented; battery re-ranked). Decisions table in the
+   session presentation; artifacts committed.
