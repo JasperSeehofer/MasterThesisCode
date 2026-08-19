@@ -1,7 +1,8 @@
 # PRE-REGISTRATION — Option B: production 1D correspondence measurement
 
-**Date:** 2026-08-19 · **Status:** DRAFT v1 — awaiting verifier pre-check (shared pass with
-`PREREGISTRATION_TILT_BATTERY.md`). Authorized: row #132 [DO] ("all approved"). **Validation
+**Date:** 2026-08-19 · **Status:** v2 — verifier pre-check applied (v1 NOT-READY; P7–P15
+amendments verbatim below; verifier: READY-WITH-AMENDMENTS on re-check with G-0
+registered — it is). Authorized: row #132 [DO] ("all approved"). **Validation
 code only** — no production change on any branch; a /physics-change would be triggered only
 IF a form defect is found and its fix proposed (fresh gate). Recon of record: 2026-08-19
 sonnet recon (DS-6 record, mirror assets, pinned inputs, cost anchors).
@@ -23,17 +24,24 @@ production's low rail — never explained).
   convenience — a re-derived kernel could not settle a correspondence question).
 - **D-B Universe: real-catalogue candidate structure at reduced scale.** Candidate field =
   the MD5-pinned pruned GLADE catalogue (venue_transfer asset); hosts drawn from it with
-  known truth h_true = 0.73; per-event GW σ_dL/dL resampled from the seed61000 CRB
-  empirical distribution (SNR-weighted); completeness = the real
+  known truth h_true = 0.73; **mirror events resample ENTIRE per-event Fisher rows (full
+  covariance + detected parameters, incl. sky localization) from the banked seed61000 CRB
+  CSV, SNR-weighted (P7: σ_dL-only resampling is insufficient — sky area drives candidate
+  counts — and is not used)**; completeness = the real
   `GladeCatalogCompleteness`/`PixelCompleteness` object (importable, recon-verified) —
   NOT a synthetic ball, NOT a LOO construction (D-iii is architecturally production-
   inapplicable; the real-catalogue draw sidesteps it and its open derivation becomes an
   exploratory arm, E-DEN).
-- **D-C Scale:** n_events = 200 per realization (cost control; the tilt class is a broad
-  ensemble effect per T0 jackknife), N = 25 seeds per arm, paired seeds across arms.
-- **D-D Cost pilot (registered, STOP-gated):** 2 seeds of B-0 first; if realized CPU-h/seed
-  > 2× the 0.969 anchor ⇒ STOP and re-scope (ceiling 60 CPU-h total; the 2D analog's 406
-  CPU-h overrun is the cautionary anchor — no 2D arms in this prereg).
+- **D-C Scale & budget (P13 re-costed):** n_events = 200 per realization; paired seeds
+  across arms. Seeds per arm: **N = 25 for the adjudicating arms** (B-0, B-σ 0.05×, B-D2);
+  **N = 10 for the reported-only doses** (B-σ 0.25×, E-DEN ×2). Total ≈ 105 seed-runs; at
+  the 0.969 CPU-h/seed-run anchor ≈ **102 CPU-h; registered ceiling 120 CPU-h** (the v1
+  "25–50" estimate and 60 ceiling were arithmetic errors — corrected here and flagged to
+  the author; the anchor's unit is CPU-h per seed-run of ONE arm). The 2D analog's 406
+  CPU-h overrun remains the cautionary anchor — no 2D arms in this prereg.
+- **D-D Cost pilot (registered, STOP-gated):** 2 seed-runs of B-0 first; if realized
+  CPU-h/seed-run > 2× the 0.969 anchor ⇒ STOP and re-scope before the fleet (the pilot
+  bounds the per-seed rate; the §D-C arithmetic bounds the fleet).
 
 ## 2. Arms (all 1D channel; paired seeds)
 
@@ -41,32 +49,46 @@ production's low rail — never explained).
   photo-z errors of the pinned catalogue). The correspondence arm.
 - **B-σ (starvation ladder):** σ_z scaled to {0.25×, 0.05×} of empirical (host z_obs
   re-scattered; same seeds) — the information-content dose response.
-- **B-D2 (density-form toggle):** the D-ii form defect arm — the GW event term evaluated in
-  d_obs-density form vs production's ratio-pdf form (the one venue-measured-inert term
-  whose production magnitude is unknown; implemented harness-side around the wholesale
-  call, production code untouched).
-- **E-DEN (exploratory, REPORTED-ONLY):** candidate-multiplicity response — localization
-  area scaled ×{0.5, 2} (same universe) — the real-catalogue impostor-density fingerprint
-  (the D-iii open derivation's measurement side).
+- **B-D2 (density-form toggle; P12 demoted to REPORTED-ONLY behind its own parity gate):**
+  the D-ii form defect arm — the GW event term in d_obs-density form vs production's
+  ratio-pdf form. The exact outer-correction formula (or reimplemented-kernel route) is
+  registered in the harness doc BEFORE B-D2 runs; either way a parity gate applies: at the
+  production form, the B-D2 machinery must agree with the wholesale kernel to 1e-10 before
+  the toggle is trusted (failure ⇒ B-D2 not quoted; the adjudicating arms are unaffected).
+  S-DECOMP's FORM-COMPONENT clause binds only if the parity gate passed.
+- **E-DEN (exploratory, REPORTED-ONLY, N=10):** candidate-multiplicity response —
+  localization area scaled ×{0.5, 2} (same universe) — the real-catalogue impostor-density
+  fingerprint (the D-iii open derivation's measurement side).
 
 ## 3. Registered statistics and bands
 
 Per arm: mean_h bias ± SE over seeds, coverage C50/C68/C90, rail fraction R_low
 (P(MAP ≤ 0.605), the DS-6 statistic), posterior width distribution.
 
-- **S-CORR (the correspondence read, fixing the P7-8 one-draw question):** production's
-  banked 1D means (0.6010/0.6020) are placed in B-0's realization distribution of mean_h.
-  **CORRESPONDENCE-PASS** if within [q05, q95]; **FAIL** outside. This replaces
-  single-number matching with ensemble placement — production is one draw; the mirror
-  provides the ensemble it should be a draw from.
-- **S-RAIL (closing DS-6, bands fixed NOW):** RAIL-REPRODUCED if R_low(B-0) ≥ 0.90;
-  RAIL-NOT-REPRODUCED if ≤ 0.10; the calgate alternative signature (uniform positive MAP
-  bias + coverage collapse) is a REGISTERED NAMED OUTCOME (D-CLASS-REPRODUCED) rather than
-  a MIXED bucket — if B-0 shows it, the verdict is that the defect-class phenomenon, not
-  the rail, is the transferable object (DS-6's ambiguity resolved either way).
-- **S-DECOMP:** T_starv = bias(B-0) − bias(B-σ, 0.05×) (paired); T_D2 = bias(B-0) −
-  bias(B-D2) (paired). Registered reading: STARVATION-DOMINATED if |T_starv| ≥ 3·|T_D2|
-  AND B-σ(0.05×) coverage recovers to [0.594, 0.766] at C68; FORM-COMPONENT-PRESENT if
+- **S-CORR (P8 re-posed — class consistency, n-scaled):** let μ̄ and s² be the mean and
+  variance of B-0's 25 realization means. Production's banked 1D mean m_v (BOTH venues,
+  two reads: 0.6010 iiib / 0.6020 joint_r1) is scored as
+  z_v = (m_v − μ̄)/√(s²·(200/1588) + s²/25) — event-sampling variance scaled to
+  production's n under the i.i.d.-dominant assumption (disclosed limitation, P7-8-class),
+  plus ensemble-mean estimation error. **CORRESPONDENCE-PASS** iff |z_v| ≤ 2. The claim
+  adjudicated is "production's 1D mean is consistent with the class the mirror defines" —
+  NOT "the mirror reproduces seed61000".
+- **S-RAIL (P9/P10 — grid registered, outcomes mutually exclusive, scale confound
+  handled):** the mirror h grid = the production H_VALUES 41-node hybrid grid
+  [0.600, 0.860] VERBATIM, plus a diagnostic low wing {0.50, 0.52, …, 0.58}
+  (REPORTED-ONLY: edge pile-up vs resolved low peak — information production cannot see;
+  never band-bearing). R_low = P(MAP ≤ 0.605) on the production grid. S-RAIL is
+  adjudicated only if B-0's median posterior σ_h is within ×2 of production's 1D σ_h;
+  otherwise the read is **SCALE-CONFOUNDED** (named outcome, returns to the author) and
+  the rail statistic of record becomes the AGGREGATION arm: 8 disjoint 200-event subsets
+  pooled into pseudo-1588 log-posteriors (zero extra CPU). Outcomes evaluated in order,
+  mutually exclusive: **RAIL-REPRODUCED** iff R_low ≥ 0.90; else **D-CLASS-REPRODUCED**
+  iff R_low ≤ 0.10 AND median(MAP − 0.73) ≥ +0.02 AND C68 ≤ 0.40; else
+  **RAIL-NOT-REPRODUCED** iff R_low ≤ 0.10; else **MIXED** (fresh author [RULE]).
+- **S-DECOMP (P11 bands corrected):** T_starv = bias(B-0) − bias(B-σ, 0.05×) (paired);
+  T_D2 = bias(B-0) − bias(B-D2) (paired; binds only if B-D2's parity gate passed).
+  STARVATION-DOMINATED iff |T_starv| ≥ 3·max(|T_D2|, SE_paired(T_D2)) AND B-σ(0.05×) C68
+  recovers into the N=25 binomial 95% band **[0.497, 0.863]**; FORM-COMPONENT-PRESENT iff
   |T_D2| ≥ max(0.005, 2·SE_paired); MIXED else. Every branch returns to the author as a
   [RULE]; a FORM-COMPONENT-PRESENT finding opens a fresh /physics-change proposal (not
   pre-approved).
@@ -76,12 +98,26 @@ Per arm: mean_h bias ± SE over seeds, coverage C50/C68/C90, rail fraction R_low
 
 ## 4. Gates
 
+- **G-0 (fidelity pilot, STOP — runs before ANY arm; the P7 blocking repair):** the
+  harness, via `child_process_init` (:6728-6801, installs all worker globals) + wholesale
+  `single_host_likelihood` + its OWN completion/assembly layer (B_num is a class-method
+  closure, :4602-4645, and the β/Σ/D̃^φ assembly must be re-orchestrated harness-side —
+  the venue_transfer precedent imports only leaf functions, so this extension is unproven
+  until G-0 passes), must reproduce **≥ 3 banked production events' 1D per-event values**
+  (catalogue leg, completion leg, AND combined_no_bh) from the post-fix baseline
+  `event_likelihoods.csv` at 2 probe h to max rel diff ≤ 1e-6. Failure ⇒ STOP (harness
+  defect; nothing downstream is quoted).
 - **G-1 (mirror sanity):** B-0 with σ_z → 0 AND full completeness must recover truth
-  (|bias| ≤ 2·SE) — the harness's own null; failure ⇒ STOP (mirror defect, nothing quoted).
+  (|bias| ≤ 2·SE) — the harness's own null; failure ⇒ STOP (mirror defect, nothing
+  quoted). **P14 mechanism registered:** "full completeness" = an f ≡ 1 shim object
+  satisfying the `CompletenessModel` Protocol (the real GLADE object cannot be dialed).
 - **G-2 (pilot):** §1 D-D cost gate.
 - **G-3 (fidelity pin):** the wholesale `single_host_likelihood` calls must run with
   production-default flags (derived B_scale form, `catalogue_mass_overlap=production`,
   volume_deconv) — recorded in the harness config dump per run.
+- **Execution-completeness (P15):** an arm's read requires its full registered seed count
+  COMPLETED; partial fleets are banked but adjudicate nothing without a fresh author
+  [RULE].
 
 ## 5. Execution & tiering
 
