@@ -132,3 +132,20 @@ comprehension-first, folded into the tilt-ledger budget with the battery results
 ## VERDICT
 
 *(append-only below this line after execution)*
+
+**G-0 INTERIM RECORD (2026-08-19/20, appended):** first G-0 execution **FAIL — STOP honored,
+nothing downstream quoted.** Localization (informative): completion leg B_num max rel diff
+0.0; the harness combine re-orchestration reproduces the wholesale run's own combined_no_bh
+to ≤2.2e-7 (PASS-class); the CATALOGUE leg fails (L_cat_no_bh up to 5.6e-1 rel; one
+non-degenerate event ~20%), with the global selection sums off at 4-7e-5. **Root cause
+FOUND by md5 comparison: the local `reduced_galaxy_catalogue.csv` (Jul 1, f2433d55…) is a
+STALE pre-regeneration version; the cluster copy of record (Jul 27, c52c13b5…, the one all
+banked runs used) has systematically different redshift columns (e.g. first row z
+0.000991 → 0.001733 — the Jul-27 regeneration era).** No md5 pin existed for this file
+(unlike venue_transfer's PRUNED_CATALOGUE_CSV). Actions: cluster copy synced to replace the
+local file; an md5 pin for the catalogue of record is added to the harness (and flagged for
+DATA_INVENTORY); G-0 re-runs against the synced copy. **Disclosure:** today's regression
+stage-2 σ_M recompute used the stale local catalogue — its differing columns are
+redshift-side while σ_M derives from the mass columns, and stage-2 was UNDERPOWERED-NULL
+with no ruling resting on it; noted for completeness, no re-run warranted unless the mass
+columns also differ (checked at sync).
