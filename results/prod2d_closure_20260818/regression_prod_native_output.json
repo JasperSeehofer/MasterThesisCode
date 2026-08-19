@@ -1,0 +1,448 @@
+{
+  "node_pairs": {
+    "iiib": [
+      0.78,
+      0.785
+    ],
+    "joint_r1": [
+      0.79,
+      0.8
+    ]
+  },
+  "sensitivity_pairs": {
+    "iiib": {
+      "left": [
+        0.775,
+        0.78
+      ],
+      "right": [
+        0.785,
+        0.79
+      ]
+    },
+    "joint_r1": {
+      "left": [
+        0.785,
+        0.79
+      ],
+      "right": [
+        0.8,
+        0.81
+      ]
+    }
+  },
+  "bootstrap_B": 10000,
+  "bootstrap_seed": 20280612,
+  "statsmodels_available": false,
+  "venues": {
+    "iiib": {
+      "venue": "iiib",
+      "node_pair": [
+        0.78,
+        0.785
+      ],
+      "grid": [
+        0.6,
+        0.61,
+        0.62,
+        0.63,
+        0.64,
+        0.65,
+        0.655,
+        0.66,
+        0.665,
+        0.67,
+        0.675,
+        0.68,
+        0.685,
+        0.69,
+        0.695,
+        0.7,
+        0.705,
+        0.71,
+        0.715,
+        0.72,
+        0.725,
+        0.73,
+        0.735,
+        0.74,
+        0.745,
+        0.75,
+        0.755,
+        0.76,
+        0.765,
+        0.77,
+        0.775,
+        0.78,
+        0.785,
+        0.79,
+        0.8,
+        0.81,
+        0.82,
+        0.83,
+        0.84,
+        0.85,
+        0.86
+      ],
+      "n_events": 1588,
+      "n_events_excluded_physics_floor": {
+        "combined_no_bh": 0,
+        "combined_with_bh": 0
+      },
+      "gates": {
+        "G_a_2d_slopes_sum_near_zero": {
+          "sum_s2d": -14.87052432705049,
+          "sum_abs_s2d": 807.5943002712704,
+          "tolerance": 0.05,
+          "pass": true
+        },
+        "G_b_1d_slopes_sum_negative": {
+          "sum_s1d": -407.02762405672524,
+          "pass": true
+        },
+        "G_c_ds_sum_positive_reported": {
+          "sum_ds": 392.1570997296748,
+          "positive": true
+        },
+        "c_prime_validity_gate": {
+          "range": [
+            -0.01,
+            1.01
+          ],
+          "n_pairs_checked": 3176,
+          "n_violations": 0,
+          "violation_frac": 0.0,
+          "stop_threshold": 0.01,
+          "stop": false,
+          "violator_event_idx": [],
+          "n_violator_events_excluded_from_c_prime": 0
+        }
+      },
+      "tie_zero_fractions": {
+        "frac_c_prime_eq_1_exact_bitwise": 0.8173803526448362,
+        "frac_c_prime_eq_1_within_1e-9": 0.8639798488664987,
+        "frac_L_cat_with_bh_zero_both_nodes": 0.8148614609571788,
+        "frac_cat_e_true": 0.18513853904282115,
+        "frac_cat_e_false": 0.8148614609571788,
+        "frac_L_cat_with_bh_zero_either_node": 0.8148614609571788,
+        "frac_ds_exactly_zero": 0.0
+      },
+      "STOP": false,
+      "legs": {
+        "L_B": false,
+        "L_C": false
+      },
+      "sensitivity": {
+        "left": {
+          "node_pair": [
+            0.775,
+            0.78
+          ],
+          "S1_spearman_c_prime": -0.19059399507974972,
+          "S1a_pointbiserial_cat_e": 0.25676031465103566,
+          "S1b_spearman_g_e": 0.04393049994804331,
+          "S2_rank_biserial": -0.36128021533188237,
+          "S3_spearman_m_e": 0.014481593256399958
+        },
+        "right": {
+          "node_pair": [
+            0.785,
+            0.79
+          ],
+          "S1_spearman_c_prime": -0.19400496367239076,
+          "S1a_pointbiserial_cat_e": 0.24510336295628385,
+          "S1b_spearman_g_e": 0.04971374348407457,
+          "S2_rank_biserial": -0.3646132332376537,
+          "S3_spearman_m_e": 0.017164905824389058
+        }
+      },
+      "statistics": {
+        "S1_spearman_c_prime": {
+          "point": -0.18959143659288372,
+          "ci95": [
+            -0.2624220888298455,
+            -0.1147847477407459
+          ],
+          "excludes_zero": true
+        },
+        "S1a_pointbiserial_cat_e": {
+          "point": 0.25264206042809295,
+          "ci95": [
+            0.1530624128500329,
+            0.34880548988917554
+          ],
+          "excludes_zero": true
+        },
+        "S1b_spearman_g_e": {
+          "point": 0.045625507248933904,
+          "ci95": [
+            -0.007562920410093744,
+            0.1002044485028525
+          ],
+          "excludes_zero": false
+        },
+        "S2_rank_biserial": {
+          "point": -0.35934559295124546,
+          "ci95": [
+            -0.4590650581926468,
+            -0.25482274610083827
+          ],
+          "excludes_zero": true,
+          "orientation": "POSITIVE = Delta s stochastically larger in the NON-catalogue-supported group (cat_e = False) -- the registered M-B direction. r_rb = 1 - 2U/(n1*n2) with U = mannwhitneyu(ds[cat_e], ds[~cat_e]).statistic, n1 = n_cat_true, n2 = n_cat_false."
+        },
+        "S3_spearman_m_e": {
+          "point": 0.01405520291789782,
+          "ci95": [
+            -0.03799691235631926,
+            0.06688427750747118
+          ],
+          "excludes_zero": false
+        },
+        "S4_controls": {
+          "log10_SNR": {
+            "point": -0.2219290077991126,
+            "ci95": [
+              -0.2794531134426388,
+              -0.16443845743824634
+            ]
+          },
+          "sigma_dL_over_dL": {
+            "point": 0.21088135042687592,
+            "ci95": [
+              0.15294257708034087,
+              0.2683239226314034
+            ]
+          },
+          "z_e": {
+            "point": 0.23407241681226856,
+            "ci95": [
+              0.16815024085239771,
+              0.2999894206127531
+            ]
+          },
+          "in_catalog": {
+            "point": -0.4033313224104265,
+            "ci95": [
+              -0.484394822100829,
+              -0.31211499387781416
+            ]
+          }
+        },
+        "P10_mass_extremity_reported": {
+          "spearman_signed_ln_M_ratio": 0.05230666337395391,
+          "spearman_m_e_positive_leg": 0.025434267439065256,
+          "spearman_m_e_negative_leg": -0.0136542520448727
+        },
+        "S4_ols_hc3": {
+          "skipped": true,
+          "note": "statsmodels not installed in this venv -- OLS skipped per Sec 3 fallback."
+        }
+      }
+    },
+    "joint_r1": {
+      "venue": "joint_r1",
+      "node_pair": [
+        0.79,
+        0.8
+      ],
+      "grid": [
+        0.6,
+        0.61,
+        0.62,
+        0.63,
+        0.64,
+        0.65,
+        0.655,
+        0.66,
+        0.665,
+        0.67,
+        0.675,
+        0.68,
+        0.685,
+        0.69,
+        0.695,
+        0.7,
+        0.705,
+        0.71,
+        0.715,
+        0.72,
+        0.725,
+        0.73,
+        0.735,
+        0.74,
+        0.745,
+        0.75,
+        0.755,
+        0.76,
+        0.765,
+        0.77,
+        0.775,
+        0.78,
+        0.785,
+        0.79,
+        0.8,
+        0.81,
+        0.82,
+        0.83,
+        0.84,
+        0.85,
+        0.86
+      ],
+      "n_events": 1588,
+      "n_events_excluded_physics_floor": {
+        "combined_no_bh": 0,
+        "combined_with_bh": 0
+      },
+      "gates": {
+        "G_a_2d_slopes_sum_near_zero": {
+          "sum_s2d": 6.368494140070959,
+          "sum_abs_s2d": 744.7373054591621,
+          "tolerance": 0.05,
+          "pass": true
+        },
+        "G_b_1d_slopes_sum_negative": {
+          "sum_s1d": -381.660758099964,
+          "pass": true
+        },
+        "G_c_ds_sum_positive_reported": {
+          "sum_ds": 388.029252240035,
+          "positive": true
+        },
+        "c_prime_validity_gate": {
+          "range": [
+            -0.01,
+            1.01
+          ],
+          "n_pairs_checked": 3176,
+          "n_violations": 0,
+          "violation_frac": 0.0,
+          "stop_threshold": 0.01,
+          "stop": false,
+          "violator_event_idx": [],
+          "n_violator_events_excluded_from_c_prime": 0
+        }
+      },
+      "tie_zero_fractions": {
+        "frac_c_prime_eq_1_exact_bitwise": 0.621536523929471,
+        "frac_c_prime_eq_1_within_1e-9": 0.7657430730478589,
+        "frac_L_cat_with_bh_zero_both_nodes": 0.6177581863979849,
+        "frac_cat_e_true": 0.3822418136020151,
+        "frac_cat_e_false": 0.6177581863979849,
+        "frac_L_cat_with_bh_zero_either_node": 0.6177581863979849,
+        "frac_ds_exactly_zero": 0.0
+      },
+      "STOP": false,
+      "legs": {
+        "L_B": false,
+        "L_C": false
+      },
+      "sensitivity": {
+        "left": {
+          "node_pair": [
+            0.785,
+            0.79
+          ],
+          "S1_spearman_c_prime": -0.28903129533441163,
+          "S1a_pointbiserial_cat_e": 0.08201910024326158,
+          "S1b_spearman_g_e": 0.06262080810819057,
+          "S2_rank_biserial": -0.32253508590736346,
+          "S3_spearman_m_e": 0.021226909753739146
+        },
+        "right": {
+          "node_pair": [
+            0.8,
+            0.81
+          ],
+          "S1_spearman_c_prime": -0.257360832360333,
+          "S1a_pointbiserial_cat_e": 0.10870765837750539,
+          "S1b_spearman_g_e": 0.06728268650054131,
+          "S2_rank_biserial": -0.2782572333983244,
+          "S3_spearman_m_e": 0.01548771635423078
+        }
+      },
+      "statistics": {
+        "S1_spearman_c_prime": {
+          "point": -0.27551293871948174,
+          "ci95": [
+            -0.3366360334039853,
+            -0.2122019997103039
+          ],
+          "excludes_zero": true
+        },
+        "S1a_pointbiserial_cat_e": {
+          "point": 0.08976334091110506,
+          "ci95": [
+            0.061795196258667695,
+            0.21199908968033948
+          ],
+          "excludes_zero": true
+        },
+        "S1b_spearman_g_e": {
+          "point": 0.06464450584256028,
+          "ci95": [
+            0.01135993064550577,
+            0.11994555681979768
+          ],
+          "excludes_zero": true
+        },
+        "S2_rank_biserial": {
+          "point": -0.30312511020761845,
+          "ci95": [
+            -0.36452086029317643,
+            -0.23976534304916777
+          ],
+          "excludes_zero": true,
+          "orientation": "POSITIVE = Delta s stochastically larger in the NON-catalogue-supported group (cat_e = False) -- the registered M-B direction. r_rb = 1 - 2U/(n1*n2) with U = mannwhitneyu(ds[cat_e], ds[~cat_e]).statistic, n1 = n_cat_true, n2 = n_cat_false."
+        },
+        "S3_spearman_m_e": {
+          "point": 0.01862378941047723,
+          "ci95": [
+            -0.03279863425852184,
+            0.07134202121479132
+          ],
+          "excludes_zero": false
+        },
+        "S4_controls": {
+          "log10_SNR": {
+            "point": -0.19367610726318513,
+            "ci95": [
+              -0.25208777880581495,
+              -0.13579372269295806
+            ]
+          },
+          "sigma_dL_over_dL": {
+            "point": 0.18215193529165594,
+            "ci95": [
+              0.1239678538899871,
+              0.24048025782109872
+            ]
+          },
+          "z_e": {
+            "point": 0.20995356765007356,
+            "ci95": [
+              0.14465961020352197,
+              0.27556228652308906
+            ]
+          },
+          "in_catalog": {
+            "point": -0.003565310100507359,
+            "ci95": [
+              -0.34943551971811004,
+              0.14506527834280558
+            ]
+          }
+        },
+        "P10_mass_extremity_reported": {
+          "spearman_signed_ln_M_ratio": 0.02551657198049866,
+          "spearman_m_e_positive_leg": 0.00739941289189011,
+          "spearman_m_e_negative_leg": 0.015890323539947498
+        },
+        "S4_ols_hc3": {
+          "skipped": true,
+          "note": "statsmodels not installed in this venv -- OLS skipped per Sec 3 fallback."
+        }
+      }
+    }
+  },
+  "any_stop": false
+}
