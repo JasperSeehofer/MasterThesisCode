@@ -1260,3 +1260,18 @@ can expect that constraint."
    J_α; flags-on-main, one fleet, reads against the new baselines).
 3. Both streams open with prereg-first + verifier + physics-gate discipline; g_i stays
    rank 4; landscape stays gated.
+
+## Row #133 — 2026-08-19/20 — Battery v2 + Correspondence v2 APPROVED ("approved"); F-withdrawal RATIFIED (closes BOUNDED-IMMATERIAL by derivation)
+
+1. **Author approval (verbatim "approved")** on the three items presented: (i) [RULE]
+   instrument F withdrawn — the bscale-memo §4 f-treatment tilt-ledger entry **closes
+   BOUNDED-IMMATERIAL by derivation** (banded β_Ḡ^φ ≡ isotropic under the isotropic S̄_φ;
+   residual = event-ensemble × completeness sky covariance ≲ 2e-4, gate (ii-e)); (ii) [DO]
+   battery physics gate: instruments E (`--eddington_m`) + J (`--sigma4d_mass_kernel`, P2
+   erf-sum Gaussian kernel at the Eddington mean) per `PREREGISTRATION_TILT_BATTERY.md` v2
+   §6; (iii) [DO] correspondence corrected budget (≈102 CPU-h, ceiling 120 — v1's 25–50
+   was an arithmetic error, corrected before build per the approval-inputs rule) per
+   `PREREGISTRATION_1D_CORRESPONDENCE.md` v2.
+2. Execution opens: battery instruments implementation → [PHYSICS] commit → 168-task fleet;
+   correspondence harness build gated by G-0 fidelity pilot (1e-6 vs banked per-event
+   values) before any arm.
