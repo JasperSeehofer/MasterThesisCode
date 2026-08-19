@@ -31,3 +31,12 @@ same banked seed61000 inputs/symlinks/seeds as the runs of record. Run dirs
 ## VERDICT
 
 *(append-only after execution)*
+
+**VERDICT (2026-08-19, appended after execution):** jobs 6372475/6372476, 82/82 COMPLETED.
+**N-B0 PASS, exact:** 2D mean_h = 0.6771 (iiib) / 0.6788 (joint_r1) — equal to the
+registered counterfactual prediction to 4 decimals; 1D 0.6010/0.6020 likewise. σ_h(2D) =
+0.0239/0.0225, MAP 0.675/0.675. **N-B1 PASS** (completion_b_scale=derived, sel=off, commit
+e65d263c). **New baselines of record:** production 2D offset vs truth = **−0.0529 (iiib) /
+−0.0512 (joint_r1)** — below truth as predicted; the re-exposed base tilt is the open tilt
+ledger. The [PHYSICS] derived-form implementation is cross-validated end-to-end on the full
+pipeline (prediction → shipped code → cluster fleet, exact agreement).
