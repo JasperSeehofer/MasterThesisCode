@@ -73,3 +73,25 @@ localizes → counterfactual exonerates → structure-around-the-shift lesson).
 Check gate + audit agent reports → present both to author → on GATE-OPEN: exploratory
 researcher → battery prereg (flags on main) → verifier → physics gate → one parallel fleet →
 readout → fork with mechanism → then un-gate the landscape.
+
+---
+
+## SUPERSESSION NOTE (2026-08-19, evening — read before §1)
+
+The gate returned **GATE-HOLD** and its exit is already executed through the first fix:
+rows #130–#131 + `GATE_REVIEW_20260819.md` + `MEASUREMENT_AUDIT_20260819.md` +
+`docs/derivations/bscale_completion_normalization.md` → **[PHYSICS] commit (B_scale removed,
+derived form default, legacy behind --completion_b_scale legacy)**. Corrected residual of
+record: +0.056/+0.069 (stale s_Edd fixed by audit). Expected post-fix production 2D:
+≈ −0.05 (base tilt re-exposed — by design, correctness over bias-removal).
+
+§1's ordering is superseded by the ratified tilt-ledger program:
+1. Author the **row-#111 1D correct-form transfer proposal** (recon rows #109–#116 for the
+   venue-validated terms: density-form event term, measure/Jacobian, LOO weight, α-pairing;
+   map onto production; derivation session + ~15 CPU-h validation run).
+2. Re-ranked battery (one prereg, flags on main, one fleet): s_Edd re-measurement
+   (exact-quadrature, seed61000, 41-pt), f_k-vs-f̄ completeness consistency, D3/F10 J_α;
+   g_i only after those (rank 4, per gate review).
+3. A post-fix production re-evaluate (derived form, both venues, 41-h) to establish the new
+   baseline posterior of record BEFORE the battery reads against it.
+4. Landscape/T1 stays gated until the tilt ledger closes.
