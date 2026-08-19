@@ -144,3 +144,26 @@ limiting test + the per-h selection-table JSON dump (P4).
 ## VERDICT
 
 *(append-only below this line after execution)*
+
+**VERDICT (2026-08-20, appended after execution; branches presented, not adjudicated):**
+
+- Fleet: jobs 6373194–6373199, 168/168 COMPLETED. **N-0 PASS** (v0 bit-identical to
+  baseline, 0.0 both channels/venues; metadata diffs whitelisted-only; v0 run_metadata
+  absent — flagged, pre-dates the dump, not gate-bearing). **N-1(E) PASS** (1D bit-identical
+  over the full grid). **N-2(E) PASS** (87.1%/78.9% engagement). **N-2(J) PASS** (max
+  |r_Malm ratio − 1| = 0.0775/0.0557; eoff-vs-v0 table identity verified first).
+- **R-E: s_Edd,new = +0.0012 (iiib) / +0.0019 (joint_r1)** — POSITIVE and immaterial
+  (≪ 0.008). The stale −0.020 was off by an order of magnitude AND sign at the current
+  operating point (the audit's staleness caution fully vindicated; the G7row9_N5 −0.0022
+  anchor was closer but also sign-differed — measured at the derived-form baseline, this
+  is the number of record). Budget leg: s_Edd ≈ +0.001–0.002, immaterial.
+- **R-J: ΔJ = −0.0025 (iiib) / −0.0061 (joint_r1)**; r_Malm rises 4.0–7.8% under the
+  kernel-consistent Σ⁴ᴰ. Sub-material in iiib, 76% of materiality in joint_r1. Per the
+  registered use (§4): J is a DOCUMENTED derivable inconsistency (D3/F10, MFG A2) with a
+  measured near-material size — it returns to the author as a /physics-change CANDIDATE
+  (adopting the kernel form would move the post-fix offsets to ≈ −0.055/−0.057), not
+  pre-decided.
+- **Tilt-ledger state after this battery** (baseline offsets −0.0529/−0.0512): s_Edd
+  measured immaterial (+0.001/+0.002); f-treatment BOUNDED-IMMATERIAL by derivation
+  (≤ 2e-4); J_α measured −0.0025/−0.0061 (fork pending); the BASE TILT remains the open
+  dominant entry — exactly what the running Option B correspondence measurement decomposes.
