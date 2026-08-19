@@ -291,3 +291,25 @@ item, not verdict-relevant).
 ## VERDICT
 
 *(append-only below this line after execution)*
+
+**CLUSTER FILL-IN 2 (2026-08-19, appended):** job **6364821** (resubmission of 6364803 with
+RUN_DIR export) ran to ~12.7 h of 14 h wall; **5/18 cells completed** — exactly the five off
+cells (vdeep_anchor_off 8772 s, vdeep_off_sz{0.002, 0.010, 0.035} 9330/11555/9620 s,
+vprod_anchor_off 19302 s); all 13 fused cells still in flight at 12.3 h against the §2
+scaled estimate ≈ 5 h/cell (18-worker single-node contention; the estimate's 26-worker
+prodcal anchor did not transfer). Author-directed CANCEL in preference to a timeout kill
+(verbatim: *"If we can find evidence that these jobs will not finish, we can also stop them
+right away and prepare the next round."*).
+
+**AUTHOR [RULE] (2026-08-19, verbatim):** *"but if we find that we need another physics
+change due to the 2d residual we need to rerun the landscape job anyway, or not? so we could
+gate that behind the final resolution of the bias"* — the 13 fused T1/T2 cells are
+**DEFERRED, gated behind the final resolution of the 2D residual** (fix fork a/b ⇒ the
+landscape is measured once, with the corrected estimator; fork c ⇒ the current-estimator
+landscape runs as registered). This amends §4's execution-completeness clause for the
+closure: branches are presented on the production-native legs (T0, s_Edd, the executed
+production-native regression `PREREGISTRATION_PROD_REGRESSION.md`) plus the five banked off
+cells as interim class evidence, with the deferral stated. The five off cells remain fully
+registered reads (H-L1-harness 1D basis; σ_z-ladder class evidence). The mechanism doc's
+blind T2 predictions (`MECHANISM_SIGMA_M_SIGMA_Z_DERIVATION.md` §5) remain registered and
+apply to the current-estimator landscape whenever it runs.
