@@ -1218,3 +1218,27 @@ can expect that constraint."
    author rules on the gate-exit plan** (B_scale derivation memo → /physics-change if
    defect; lapsed #111 transfer re-presented; battery re-ranked). Decisions table in the
    session presentation; artifacts committed.
+
+## Row #131 — 2026-08-19 — Row #130 package RATIFIED ("all approved, very valuable input!"); B_scale derivation memo DELIVERED: verdict DEFECT; /physics-change presentation PENDING author
+
+1. **Author ratification (verbatim):** *"all approved, very valuable input!"* — the row #130
+   4-item package: corrected residual [RULE] (r ≈ +0.056/+0.069, s_Edd band [−0.020, 0]
+   until re-measured); B_scale derivation memo [DO]; lapsed row-#111 1D transfer
+   re-presentation [DO]; battery re-ranking [RULE] (g_i deferred; s_Edd + J_α cells join).
+2. **`docs/derivations/bscale_completion_normalization.md` delivered.** Verdict: **B_scale
+   is a DEFECT** — both mixture legs are already commensurate p_pop-measure integrals
+   (catalogue leg via n̂_w^φ, dark leg directly), so every consistent MFG assembly gives
+   B_scale ≡ 1; the fixb_pathA "convention transfer" fails because B_num contains no legacy
+   detection model to transfer out (OFF runs carry no survival; FUSED carries S̄_φ already);
+   L_comp is diagnostic-only by the code's own comment. The factor imports
+   d ln(β_Ḡ^φ/β_Ḡ)/dh ≈ +0.16/h onto the ~94%-weight leg — the MFG-A2 two-detection-model
+   violation, re-installed on the completion leg by the very package that removed it from
+   the catalogue leg. Nearby genuine (separate, bounded) item: f_k vs f̄ completeness
+   treatment joins the tilt ledger with J_α.
+3. **Honest consequence stated in the memo §7:** the derived form moves production 2D to
+   ≈ −0.05 BELOW truth (base tilt re-exposed) — the fix is correctness, not bias removal;
+   the remaining tilt ledger (row-#111 transfer, f̄/f_k, J_α, s_Edd) becomes the open
+   budget on a derivation-complete normalization.
+4. **Gate presentation (memo §7) returns to the author** for the /physics-change approval;
+   validation bed already banked and verified (bscale counterfactual = the new formula's
+   posterior exactly).
