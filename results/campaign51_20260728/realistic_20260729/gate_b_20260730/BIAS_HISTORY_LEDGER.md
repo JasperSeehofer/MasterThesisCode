@@ -1275,3 +1275,20 @@ can expect that constraint."
 2. Execution opens: battery instruments implementation → [PHYSICS] commit → 168-task fleet;
    correspondence harness build gated by G-0 fidelity pilot (1e-6 vs banked per-event
    values) before any arm.
+
+## Row #134 — 2026-08-20 — Battery VERDICT banked; J_α PROMOTED to formal correction candidate (author directive)
+
+1. **Battery results of record** (`PREREGISTRATION_TILT_BATTERY.md` VERDICT, all gates
+   PASS): **s_Edd,new = +0.0012/+0.0019** (stale −0.020 wrong by order AND sign; budget leg
+   now measured immaterial); **ΔJ = −0.0025/−0.0061**, r_Malm +4.0–7.8% under the
+   kernel-consistent Σ⁴ᴰ; f-treatment closed BOUNDED-IMMATERIAL by derivation (row #133).
+2. **Author directive (verbatim):** *"if it is a scientific clue in J alpha, we should
+   promote it to a candidate dont you think?"* — J_α is PROMOTED to a formal correction
+   candidate on correctness grounds (documented D3/F10 MFG-A2 inconsistency with a measured
+   production response), with the orchestrator's framing accepted: it is a correct-form
+   clue, NOT a residual owner (it moves offsets away from truth; the base tilt remains
+   Option B's target). Path: derivation memo (kernel-everywhere vs point-everywhere — the
+   A2 question), verifier pre-check, /physics-change gate to the author; the battery
+   instrument + measured response are the validation bed.
+3. Option B status: G-0 PASS at bit precision (catalogue-provenance defect found and fixed
+   en route; md5 pin added); mirror generator + G-1/G-2 pilots in flight.
