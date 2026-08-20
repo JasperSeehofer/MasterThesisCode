@@ -1929,19 +1929,135 @@ def _hpd_contains(
     return False
 
 
+ZeroHandling = Literal["physics_floor", "legacy_sentinel"]
+MomentWeights = Literal["trapezoid", "legacy_gradient"]
+
+
+def combine_log_likelihood(
+    vals: npt.NDArray[np.float64],
+    zero_handling: ZeroHandling = "physics_floor",
+) -> npt.NDArray[np.float64]:
+    """Sum per-event log-likelihoods over events, handling zero likelihoods.
+
+    ``"physics_floor"`` (default, and the corrected behaviour) reproduces
+    production's registered ``CombinationStrategy.PHYSICS_FLOOR``
+    (``bayesian_inference/posterior_combination.py`` ``_physics_floor``): a zero
+    is replaced by that event's own smallest non-zero likelihood, and an event
+    that is zero at *every* node is excluded outright.
+
+    ``"legacy_sentinel"`` reproduces the pre-2026-08-20 behaviour bit-for-bit --
+    a ``-1.0e300`` floor applied in LOG space. It is retained ONLY so the banked
+    fleet (``results/prod2d_closure_20260818/correspondence_arms/*.json``) stays
+    reproducible, which GATE R-0a of AMENDMENT A-7 depends on. Never use it for
+    new measurements.
+
+    The two agree bit-for-bit whenever at least one grid node survives -- verified
+    ``max|delta mean_h| = 0.000e+00`` across all 98 such banked seeds. They differ
+    only when EVERY node carries a zero, where the sentinel produces a finite,
+    normalizable vector that a correct ``-inf`` would have refused. See ledger row
+    #145 and ``docs/derivations/GATE_PRESENTATION_SENTINEL_COMBINE_20260820.md``.
+
+    Args:
+        vals: ``(n_events, n_nodes)`` per-event likelihoods (linear, not log).
+        zero_handling: Strategy, as above.
+
+    Returns:
+        ``(n_nodes,)`` summed log-likelihood.
+
+    Raises:
+        ValueError: If ``zero_handling`` is not a registered strategy.
+    """
+    if zero_handling == "legacy_sentinel":
+        positive = vals > 0.0
+        # `out=` pre-fills the non-positive entries, so nothing uninitialized is
+        # ever read; bit-identical to the original `np.where(...)` form, which
+        # discarded those entries anyway.
+        log_l = np.full_like(vals, -np.inf)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            np.log(vals, where=positive, out=log_l)
+        summed: npt.NDArray[np.float64] = np.nansum(
+            np.where(np.isfinite(log_l), log_l, -1.0e300), axis=0
+        )
+        return summed
+    if zero_handling != "physics_floor":
+        msg = f"unknown zero_handling {zero_handling!r}"
+        raise ValueError(msg)
+
+    # posterior_combination._physics_floor (:219-273): per-event min-nonzero
+    # floor; events that are zero at every node have no floor and are excluded.
+    floored = vals.copy()
+    keep = np.ones(floored.shape[0], dtype=bool)
+    for i, row in enumerate(floored):
+        zero = row == 0.0
+        if not zero.any():
+            continue
+        nonzero = row[~zero & ~np.isnan(row)]
+        if nonzero.size == 0:
+            keep[i] = False
+        else:
+            floored[i, zero] = float(nonzero.min())
+    if not keep.any():
+        return np.full(floored.shape[1], -np.inf, dtype=np.float64)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        total: npt.NDArray[np.float64] = np.log(floored[keep]).sum(axis=0)
+    return total
+
+
+def moment_weights(
+    grid: npt.NDArray[np.float64],
+    convention: MomentWeights = "trapezoid",
+) -> npt.NDArray[np.float64]:
+    """Quadrature weights for posterior moments on a (possibly non-uniform) grid.
+
+    ``"trapezoid"`` (default, and the corrected behaviour) is the composite
+    trapezoid rule: ``w_i = (h_{i+1} - h_{i-1})/2`` in the interior and
+    ``w = delta/2`` at each endpoint, so ``sum(w)`` equals the interval length.
+
+    ``"legacy_gradient"`` reproduces the pre-2026-08-20 ``np.gradient(grid)``,
+    which is the central-difference derivative stencil: it matches trapezoid in
+    the interior but returns the FULL one-sided spacing at both boundaries,
+    doubling each endpoint weight (0.010 vs 0.005 on ``H_GRID_41``) and
+    over-counting the interval by one grid step (0.27 vs 0.26). Retained only for
+    reproducing the banked fleet.
+
+    Args:
+        grid: Monotonically increasing h-grid.
+        convention: Weight convention, as above.
+
+    Returns:
+        Weights, same shape as ``grid``.
+
+    Raises:
+        ValueError: If ``convention`` is not registered.
+    """
+    if convention == "legacy_gradient":
+        return np.gradient(grid)
+    if convention != "trapezoid":
+        msg = f"unknown moment-weight convention {convention!r}"
+        raise ValueError(msg)
+    w = np.empty_like(grid)
+    w[1:-1] = (grid[2:] - grid[:-2]) / 2.0
+    w[0] = (grid[1] - grid[0]) / 2.0
+    w[-1] = (grid[-1] - grid[-2]) / 2.0
+    return w
+
+
 def compute_seed_statistics(
     diagnostics_csv: str | Path,
     seed: int,
     h_grid: tuple[float, ...] = H_GRID_41,
     h_true: float = H_TRUE,
+    zero_handling: ZeroHandling = "physics_floor",
+    weights_convention: MomentWeights = "trapezoid",
 ) -> SeedStats:
     """Per-seed 1D posterior (Sigma log combined_no_bh, trapezoid) + registered statistics.
 
-    Mirrors ``results/prod2d_closure_20260818/tier0_bootstrap_jackknife.py``'s
-    ``_moments``/``_hpd_width`` convention (the existing prod2d-closure
-    combine machinery): non-uniform trapezoid weights
-    ``w = np.gradient(h_grid)``, ``post_n`` the gradient-weighted-normalized
-    posterior density.
+    Zero per-event likelihoods are handled by production's registered
+    ``PHYSICS_FLOOR`` strategy and moments use true composite-trapezoid weights.
+    Both were corrected on 2026-08-20 (ledger row #145,
+    ``docs/derivations/GATE_PRESENTATION_SENTINEL_COMBINE_20260820.md``); the
+    superseded behaviours remain reachable via ``zero_handling`` /
+    ``weights_convention`` solely to reproduce the banked fleet.
 
     Args:
         diagnostics_csv: A wholesale/in-process run's
@@ -1950,6 +2066,8 @@ def compute_seed_statistics(
         h_grid: The registered production grid (S-RAIL; the low wing, if
             present in the CSV, is excluded here -- REPORTED-ONLY).
         h_true: The mirror-universe truth.
+        zero_handling: See :func:`combine_log_likelihood`.
+        weights_convention: See :func:`moment_weights`.
 
     Returns:
         The :class:`SeedStats`.
@@ -1960,11 +2078,22 @@ def compute_seed_statistics(
     piv = df.pivot_table(index="event_idx", columns="h", values="combined_no_bh", aggfunc="first")
     piv = piv.reindex(columns=grid)
     vals = piv.to_numpy(dtype=np.float64)
-    with np.errstate(divide="ignore"):
-        log_l = np.where(vals > 0.0, np.log(vals, where=vals > 0.0), -np.inf)
-    sum_log_l = np.nansum(np.where(np.isfinite(log_l), log_l, -1.0e300), axis=0)
+    sum_log_l = combine_log_likelihood(vals, zero_handling)
 
-    weights = np.gradient(grid)
+    # Ledger row #145: a seed whose every node is masked carries no information.
+    # The superseded -1.0e300 floor turned that into a plausible FINITE vector
+    # (mean_h = the grid midpoint, which coincides with H_TRUE) that was banked
+    # silently; correct -inf turns it into NaN statistics. Neither is acceptable
+    # as a result, so refuse it explicitly rather than emit a number.
+    if not np.isfinite(sum_log_l).any():
+        msg = (
+            f"seed {seed}: no h-node carries a finite summed log-likelihood "
+            f"(every node masked by zero per-event likelihoods) -- this seed is "
+            f"uninformative and must not be scored"
+        )
+        raise ValueError(msg)
+
+    weights = moment_weights(grid, weights_convention)
     lp = sum_log_l - sum_log_l.max()
     post = np.exp(lp)
     norm = float((post * weights).sum())
@@ -2448,6 +2577,7 @@ def run_d1_premise_check(
 def compute_full_log_posterior_vector(
     diagnostics_csv: str | Path,
     h_grid: tuple[float, ...] = H_GRID_FULL,
+    zero_handling: ZeroHandling = "physics_floor",
 ) -> tuple[list[float], list[float]]:
     """Full (41-node production grid + REPORTED-ONLY low wing) log-posterior vector.
 
@@ -2463,6 +2593,9 @@ def compute_full_log_posterior_vector(
             (must have been evaluated over a superset of ``h_grid``, e.g. via
             :func:`run_mirror_seed_inprocess` with ``h_values=H_GRID_FULL``).
         h_grid: The full grid (default: production 41-node grid + low wing).
+        zero_handling: See :func:`combine_log_likelihood`. Defaults to the
+            corrected ``"physics_floor"``; ``"legacy_sentinel"`` reproduces the
+            banked fleet's vectors bit-for-bit (ledger row #145).
 
     Returns:
         ``(h_grid_sorted, sum_log_l)`` -- parallel lists, same length as
@@ -2474,9 +2607,7 @@ def compute_full_log_posterior_vector(
     piv = df.pivot_table(index="event_idx", columns="h", values="combined_no_bh", aggfunc="first")
     piv = piv.reindex(columns=grid)
     vals = piv.to_numpy(dtype=np.float64)
-    with np.errstate(divide="ignore"):
-        log_l = np.where(vals > 0.0, np.log(vals, where=vals > 0.0), -np.inf)
-    sum_log_l = np.nansum(np.where(np.isfinite(log_l), log_l, -1.0e300), axis=0)
+    sum_log_l = combine_log_likelihood(vals, zero_handling)
     return grid.tolist(), sum_log_l.tolist()
 
 

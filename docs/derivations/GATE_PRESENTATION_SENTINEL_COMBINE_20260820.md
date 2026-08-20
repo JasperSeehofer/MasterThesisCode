@@ -54,12 +54,19 @@ sentinels than the maximum node differs by a multiple of `−10³⁰⁰`, whose 
 ≥1 surviving node, the sentinel and true `−∞` agree to `max|Δ mean_h| = 0.000e+00`.
 
 The defect bites only when **every** node of `H_GRID_41` carries ≥1 sentinel, i.e. when the seed
-contains an event with `L_i(h) = 0 ∀h`. Then true `−∞` gives an all-`−∞` vector, `np.exp` of the
-shifted vector is all-NaN, and the harness's own guard
-`if not np.isfinite(sum_log_l).any()` refuses the seed. The sentinel instead yields a finite,
-normalizable vector that is **silently banked**. Verified directly: under true `−∞`,
-`b0_900101` and `bf1_900101` have **0/46 finite nodes** (guard fires); `bout_900101` has 33/46
-(guard does not fire).
+contains an event with `L_i(h) = 0 ∀h`. Then true `−∞` gives an all-`−∞` vector, so
+`lp = sum_log_l − max(sum_log_l)` is `NaN` and `mean_h`/`sigma_h` come out **NaN** — visibly
+broken. The sentinel instead yields a finite, normalizable vector that is **silently banked**.
+Verified directly: under true `−∞`, `b0_900101` and `bf1_900101` have **0/46 finite nodes**;
+`bout_900101` has 33/46 and is unaffected.
+
+> **Correction (2026-08-20, post-approval).** This paragraph originally claimed the all-`−∞` case
+> "fires the harness's own `if not np.isfinite(sum_log_l).any()` guard". **No such guard existed** —
+> the module's only `isfinite` check is at `:2296`, inside `_normalized_model_cdf`, and is
+> unrelated. Correct `−∞` yielded NaN statistics, not a refusal. The claim was inherited from a
+> synthesis agent without re-derivation. The substance is unchanged — the sentinel turned a visibly
+> broken result into a plausible one — and an explicit guard **was added** as part of the approved
+> fix. See the second addendum to ledger row #145.
 
 Two failure modes follow, both reproduced bit-exactly:
 

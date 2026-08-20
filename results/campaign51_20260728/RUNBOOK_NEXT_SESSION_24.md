@@ -13,8 +13,20 @@ it, a zero-compute forensic on the banked arm JSONs found **why the existing one
 **The defect.** `correspondence_1d.py:1965`/`:2479` floor a zero per-event likelihood **in log
 space** at `-1.0e300`. Correctly stated (narrowed by measurement): this is *numerically identical
 to correct `-inf` whenever ≥1 grid node survives* — `max|Δ mean_h| = 0.000e+00` across all 98 such
-banked seeds. It bites only when **every** node is masked, where correct `-inf` fires the harness's
-own `isfinite().any()` guard but the sentinel banks a finite, normalizable posterior **silently**.
+banked seeds. It bites only when **every** node is masked, where correct `-inf` yields **NaN**
+statistics (visibly broken) but the sentinel banks a finite, normalizable posterior **silently**.
+(An earlier wording claimed an `isfinite().any()` guard already existed — it did not; corrected in
+the second addendum to row #145. One has now been added as part of the approved fix.)
+
+**STATUS 2026-08-20, after the author's "please continue, approved":** both fixes are
+**IMPLEMENTED** (row #146) and A15 is **ADOPTED**. Legacy paths are retained and reproduce the
+banked fleet **123/123** bit-exactly. The **fully-corrected** numbers (both fixes) are in row #146
+item 5 and supersede A-7's combine-only table: b0 **+0.0296** · bsig005 **+0.0362** · eden05
+**+0.0139** · eden2 **+0.0321** · bf1 **+0.0358** · bout **−0.1287** · bsel **−0.1083** · bself
+**−0.1126** · bden **−0.1159**. The bisection *signal* is preserved (successive differences
+−0.0043, −0.0033 vs published −0.0043, −0.0030). **Open:** row #144's residual bound (≥0.073) was
+derived against −0.112 and needs recomputing against −0.1083. **Next: item 7, the `g_frac = NaN`
+thread (§2).**
 
 **Blast radius 25/123 banked seeds (20.3%)** — catalogue-mode 25/70, population-mode **0/53**.
 21 are exactly flat ⇒ `mean_h` = the `H_GRID_41` midpoint `(0.600+0.860)/2 = 0.7299999999999999`,

@@ -1694,3 +1694,76 @@ does the pipeline sometimes produce hostless events" — production never does �
 **why the MIRROR places a host in the catalogue that the ball-tree lookup then fails to recover**,
 in 25/70 catalogue-mode seeds and 0/60 population-mode seeds. That is a defect in the mirror's own
 host-draw/lookup correspondence, and it is a prerequisite for the row #144 §6 positive control.
+
+### Second addendum to row #145 (2026-08-20) — CORRECTION: there is no `isfinite()` guard; correct `-inf` yields NaN
+
+Row #145 item 1, its first addendum, the gate presentation and runbook 24 all stated that under
+mathematically-correct `-inf` handling "the harness's own `isfinite().any()` guard" would fire.
+**That is wrong and is withdrawn.** No such guard existed in `compute_seed_statistics`; the only
+`isfinite` check in the module is at `:2296`, inside `_normalized_model_cdf`, and is unrelated.
+Verified directly: with `sum_log_l` all `-inf`, `lp = sum_log_l - sum_log_l.max()` is `NaN`, so
+`mean_h` and `sigma_h` come out **NaN** — visibly broken, but not raised.
+
+The claim was inherited from a synthesis agent without re-derivation — precisely the failure mode
+the same session recorded as a lesson. **The substance is unchanged and arguably cleaner:** the
+sentinel converted a *visibly broken NaN* result into a *plausible finite* one that was banked
+silently. An explicit guard has now been added as part of the approved fix, so the statement is
+true going forward but was not true of the banked record.
+
+## Row #146 — 2026-08-20 — Gate APPROVED and IMPLEMENTED: the combine and moment weights are corrected; legacy paths preserved and proven to reproduce the banked fleet 123/123
+
+Author ruling, verbatim: **"please continue, approved"**, given on the 8-item decision table of
+`docs/derivations/GATE_PRESENTATION_SENTINEL_COMBINE_20260820.md` §6. That table mixed [DO] and
+[RULE] tags; **the itemisation below is orchestrator-derived**.
+
+1. **[DO] Change 1 IMPLEMENTED** — the log-space `-1.0e300` sentinel is replaced by production's
+   registered `PHYSICS_FLOOR` semantics, via a new shared `combine_log_likelihood()` helper used by
+   both `compute_seed_statistics` and `compute_full_log_posterior_vector`.
+2. **[DO] Change 2 IMPLEMENTED** — `np.gradient(grid)` is replaced by true composite-trapezoid
+   weights via a new `moment_weights()` helper.
+3. **Legacy paths retained and proven.** `zero_handling="legacy_sentinel"` and
+   `weights_convention="legacy_gradient"` reproduce **123/123** banked arm seeds bit-exactly — the
+   registered statistics *and* the full 46-node `log_posterior` vectors. GATE R-0a of A-7 therefore
+   remains re-runnable from the library itself, not only from the standalone scorer.
+4. **New guard.** A seed with no finite node now **raises** rather than emitting a number. See the
+   correction addendum above: the superseded path emitted the grid midpoint, and correct `-inf`
+   would have emitted NaN — no guard existed.
+5. **FULLY-CORRECTED numbers of record (both changes applied).** A-7's verdict table applied only
+   Change 1 (it froze the weights for bit-reproduction); these are the numbers with both:
+
+   | arm | N | published | A-7 (combine only) | **fully corrected** |
+   |---|---|---|---|---|
+   | b0 | 25 | +0.0245 | +0.0298 | **+0.0296** |
+   | bsig005 | 23 | +0.0348 | +0.0366 | **+0.0362** |
+   | eden05 | 10 | +0.0093 | +0.0140 | **+0.0139** |
+   | eden2 | 10 | +0.0211 | +0.0322 | **+0.0321** |
+   | **bf1** | 2 | −0.0000 | +0.0359 | **+0.0358** |
+   | bout | 15 | −0.1293 | −0.1293 | **−0.1287** |
+   | bsel | 12 | −0.1120 | −0.1120 | **−0.1083** |
+   | bself | 11 | −0.1163 | −0.1163 | **−0.1126** |
+   | bden | 15 | −0.1193 | −0.1193 | **−0.1159** |
+
+   The weight correction moves the population-mode arms by **+0.0037/+0.0037/+0.0034/+0.0006**,
+   matching the per-arm shifts predicted in the gate presentation §Change 2 to the quoted digit —
+   an independent confirmation of that change's magnitude.
+6. **[RULE] The bisection SIGNAL is preserved.** The chain becomes −0.1083 → −0.1126 → −0.1159;
+   the successive differences are −0.0043 and −0.0033 against the published −0.0043 and −0.0030.
+   The weight correction is near-common to all three arms, so CONVENTION-NOT-IT and MEASURE-NOT-IT
+   stand. **Open item:** row #144's residual bound (≥0.073) was derived against −0.112 and should
+   be recomputed against −0.1083 (a 3.3% reduction in the input); the direction is small and
+   unfavourable to the bound, and it is NOT asserted here to be unaffected.
+7. **[RULE] Items 3–6 of the decision table are RATIFIED**: the corrected numbers supersede the
+   published ones; every rail in every catalogue-mode arm is an artefact and any banked
+   `C50/C68/C90`/`R_low` claim for those arms is withdrawn; B-F1's "0.7300, truth to four decimals"
+   is withdrawn and the positive control **fails** (+0.0358, coverage 0/0/0, PROVISIONAL at n = 2);
+   G-1's PASS is recorded **UNSUPPORTED**.
+8. **[RULE] Amendment A15 ADOPTED** and written into `docs/RESEARCH_CYCLE.md`, with the
+   NULL-BY-CONSTRUCTION corollary. Its evidence now includes this session's own two violations.
+9. **Verification:** new `darksiren_emri_test/validation/test_sentinel_combine_fix.py` (16 cases),
+   including the banked degenerate triple pinned under legacy mode and three parametrised
+   `_hpd_contains`-vs-analytic-Gaussian pins that protect the routine a verifier wrongly proposed
+   "fixing". Full suite **1684 passed / 15 skipped / 27 deselected**; ruff + format + mypy clean.
+10. **[DO] Next (item 7):** the `g_frac = NaN` empty-candidate-set generator defect — why the
+    MIRROR places a host in the catalogue that the ball-tree lookup then fails to recover, in 25/70
+    catalogue-mode seeds and 0/60 population-mode. It is a prerequisite for the row #144 §6
+    positive control.
