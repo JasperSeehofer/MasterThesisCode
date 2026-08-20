@@ -63,7 +63,18 @@ def _summarize(arm: str, seeds: list[dict[str, Any]]) -> dict[str, Any]:
     lo, hi = _binomial_band(n)
     unbiased = abs(bias) <= max(MATERIALITY, 2.0 * se)
     covered = lo <= c68 <= hi
-    if arm == "bself":
+    if arm == "bden":
+        # AMENDMENT A-5 bands: the data-measure instrument, referenced to
+        # B-SEL's measured bias (0.1120). MEASURE-OWNS-IT confirms
+        # docs/derivations/completion_numerator_data_measure.md; MEASURE-NOT-IT
+        # falsifies it and moves the hunt to D_tilde^phi's class composition.
+        if unbiased and covered:
+            verdict = "MEASURE-OWNS-IT"
+        elif abs(bias) <= 0.5 * 0.1120:
+            verdict = "MEASURE-PARTIAL"
+        else:
+            verdict = "MEASURE-NOT-IT"
+    elif arm == "bself":
         # AMENDMENT A-4 bands: fused-convention bisection, referenced to B-SEL's
         # measured bias (0.1120). CONVENTION-OWNS-IT means the off-basis
         # numerator/denominator asymmetry IS the internal misnormalization.
@@ -118,7 +129,7 @@ def main() -> None:
     args = parser.parse_args()
 
     report: dict[str, Any] = {"truth_h": TRUTH_H, "arms": {}}
-    for arm in ("bout", "bf1", "bsel", "bself"):
+    for arm in ("bout", "bf1", "bsel", "bself", "bden"):
         seeds = _load(arm, args.dir)
         if not seeds:
             report["arms"][arm] = {"arm": arm, "n_seeds": 0, "verdict": "NO-DATA"}
@@ -133,6 +144,27 @@ def main() -> None:
             f"R_low={summary['r_low']:.2f}  -> {summary['verdict']}"
         )
 
+    bden = report["arms"].get("bden", {})
+    if bden.get("n_seeds"):
+        v = bden.get("verdict")
+        if v == "MEASURE-OWNS-IT":
+            print(
+                "\nBISECTION: the completion numerator's data measure IS the internal "
+                "misnormalization — the ratio-density event term does not normalize to the "
+                "denominator's measure (memo section 2 CONFIRMED). Next: /physics-change for "
+                "the production default, with B-SEL's 12 banked seeds as the regression bed."
+            )
+        elif v == "MEASURE-PARTIAL":
+            print(
+                "\nBISECTION: the data measure owns PART of the defect; a second term remains "
+                "(next target: D_tilde^phi's alpha_G^phi/beta_Gbar^phi class composition)."
+            )
+        elif v == "MEASURE-NOT-IT":
+            print(
+                "\nBISECTION: MEASURE-NOT-IT => completion_numerator_data_measure.md is "
+                "FALSIFIED as the owner. Next target: D_tilde^phi's class composition (a dark "
+                "event's numerator carries only the dark term; its denominator carries both)."
+            )
     bself = report["arms"].get("bself", {})
     if bself.get("n_seeds"):
         v = bself.get("verdict")
