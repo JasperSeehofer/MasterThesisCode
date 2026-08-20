@@ -1767,3 +1767,42 @@ Author ruling, verbatim: **"please continue, approved"**, given on the 8-item de
     MIRROR places a host in the catalogue that the ball-tree lookup then fails to recover, in 25/70
     catalogue-mode seeds and 0/60 population-mode. It is a prerequisite for the row #144 §6
     positive control.
+
+## Row #147 — 2026-08-20 — G-FRAC thread OPENED and CLOSED in one pass: **CONTROL-SAFE**; the #29/#55 exoneration confirmed at machine precision; the mirror-vs-production fidelity gap named
+
+Decision-table item 7, approved. Registered as **AMENDMENT A-8** with its exoneration check done
+**before** opening (hard rule 1), and scoped explicitly so it is not a re-litigation. All reads
+zero-compute over the 130 banked CSVs.
+
+1. **[RULE] The §2 item 8 exoneration is CONFIRMED, strengthened.** Excluding every all-zero event
+   changes its seed's `mean_h` by **0.000e+00** — identically zero, not merely below the 1e-12
+   registered threshold — across all 25 affected seeds (41 events). Row #55 measured these as
+   h-inert (−59 over the grid vs host events' −4265); that is now exact. The registered refutation
+   ("exhibit one whose exclusion moves `mean_h` by >1e-12") found **none**. These events cannot
+   carry bias, and this thread does **not** re-open them as a mechanism.
+2. **[RULE] BAND G → CONTROL-SAFE.** All three conditions hold: h-inert (item 1), excluded by the
+   corrected combine (row #146), and confined to the catalogue-mode draw — **0/60 population-mode
+   seeds**. **B-SEL, which draws from the estimator's own detected-dark density
+   `w_pop·(1−f̄)·S̄_φ` and is the closest existing analogue to the row #144 §6 control, carries 0
+   all-zero events in 12 seeds.** The registered positive control may be built on the
+   population/forward-model generator without inheriting this. **The control is UNBLOCKED.**
+3. **Two populations, not one.** **B-F1 is structural**: with `f ≡ 1` the completion leg vanishes,
+   so `g_frac` is undefined for **100%** of its events and any hostless event is necessarily
+   all-zero — a consequence of the arm's design, and a further reason it was never a usable control
+   (row #145 item 4). The real-completeness arms (b0/bsig005/eden*) have a `g_frac`-NaN baseline of
+   **3–5%**, of which the all-zero events are the subset where `B_num` also vanishes.
+4. **The fidelity gap, named precisely.** The mirror's catalogue-mode draw produces
+   `g_frac`-undefined (hostless) events at **3–5%**; production produces them at **0.0%**
+   (0 in 1588, addendum to row #145). This is a **correspondence-fidelity limitation of the mirror**,
+   documented, not a bias mechanism.
+5. **No per-event covariate separates them.** `alpha_G_phi`, `w_G` and `r_Malm` have *identical*
+   medians for all-zero events and their seed-mates — they are per-h global normalizers, not
+   per-event quantities. The only discriminators are the zero condition itself and `g_frac = NaN`.
+6. **OPEN, and deliberately not pursued.** *Why* `B_num = 0` for these events is undecided: the CSV
+   banks `B_num`, not its integrand, so "complete pixel (`f_k ≈ 1`)" and "collapsed integration
+   bounds" are indistinguishable from banked data — exactly the structural blindness A-8 declared
+   in advance. Deciding it needs a re-instrumented completion integrand, which the CONTROL-SAFE
+   branch does not require. Recorded as an open mirror-fidelity item, **not** a measured mechanism.
+7. **Thread disposition: CLOSED.** Per hard rule 6 (measurement-before-gate), the cheap read
+   collapsed the need for the expensive one: a campaign on an exonerated, machine-precision-inert
+   non-cause was not opened.

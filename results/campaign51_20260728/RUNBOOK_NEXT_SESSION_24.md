@@ -63,7 +63,7 @@ are *not* underflow (fleet min non-zero 4.876e-48, ~302 orders above the subnorm
 PROVISIONAL-WITH-A-BOUND is untouched**; and all production numbers (the additive sentinel exists
 nowhere else, and no production module imports these functions).
 
-## 2. THE ROOT CAUSE IS UPSTREAM, MIRROR-SPECIFIC, AND STILL OPEN
+## 2. THE ROOT CAUSE — mirror-specific, h-INERT, and CLOSED (row #147)
 
 Every all-zero event has `L_cat_no_bh = 0`, `B_num = 0` **and `g_frac = NaN`** — an empty candidate
 set / undefined catalogue–completion mixing fraction — in **100%** of cases, against a 3–6%
@@ -77,11 +77,23 @@ events each) have **0 zero cells, 0 all-zero events and 0.0% `g_frac` NaN**. So 
 sentinel nor its upstream trigger touched the post-fix baselines, the dark class 0.6001, or the
 score −0.635 ± 0.017. See the addendum to ledger row #145.
 
-That sharpens the open thread rather than closing it: the question is **not** "why does the
-pipeline produce hostless events" — production never does — but specifically **why the MIRROR
-places a host in the catalogue that the ball-tree lookup then fails to recover**, in 25/70
-catalogue-mode seeds and 0/60 population-mode seeds. Gate-presentation item 7 proposes this as the
-next thread **ahead of** the row #144 §6 positive control, because that control would inherit it.
+**RESOLVED, row #147 (AMENDMENT A-8), same session.** The thread was opened with its exoneration
+check first (hard rule 1: §2 item 8 records the #29 zero-host fallback as h-inert per #55) and
+closed in one zero-compute pass:
+
+- Excluding every all-zero event changes its seed's `mean_h` by **0.000e+00** — exactly, across all
+  25 seeds / 41 events. The exoneration is confirmed at machine precision; these events **cannot**
+  carry bias.
+- **BAND G → CONTROL-SAFE.** The mechanism is confined to the catalogue-mode draw (**0/60**
+  population-mode seeds), and **B-SEL — which draws from the estimator's own detected-dark density
+  and is the closest analogue to the planned control — has 0 all-zero events in 12 seeds.**
+  **The row #144 §6 positive control is UNBLOCKED and is now the next front.**
+- Two populations: **B-F1 is structural** (`f ≡ 1` ⇒ `g_frac` undefined for 100% of its events);
+  the real-completeness arms have a 3–5% `g_frac`-NaN baseline. **Fidelity gap, named:** the mirror
+  emits hostless events at 3–5%, production at **0.0%** (0 in 1588).
+- **Left OPEN deliberately:** *why* `B_num = 0` (complete pixel vs collapsed integration bounds) is
+  undecidable from banked data — the declared structural blindness — and the CONTROL-SAFE branch
+  does not require it. Documented as a mirror-fidelity limitation, not a mechanism.
 
 ## 3. Open author decisions (8, all in the gate presentation §6)
 
@@ -121,6 +133,9 @@ The 130 per-event CSVs are already safe locally.
 
 ## 6. Resume recipe (one line)
 
-Read row #145 → A-7 verdict → the gate presentation's 8 decisions → get the author's ruling → then
-either implement the two fixes or open the `g_frac = NaN` empty-candidate-set thread, and only
-after that build the row #144 §6 positive control.
+All 8 decisions are ruled and executed (rows #146, #147). **Read rows #145–#147, then build the
+row #144 §6 positive control** — an arm generated end-to-end by the estimator's own forward model
+plus an injected-bias variant proving it detects a known displacement. It is UNBLOCKED, it is the
+last thing standing between the campaign and a verdict on B-SEL's residual, and it must be
+registered under A15 (its bands need stated operating characteristics, and the control itself must
+be shown capable of failing).

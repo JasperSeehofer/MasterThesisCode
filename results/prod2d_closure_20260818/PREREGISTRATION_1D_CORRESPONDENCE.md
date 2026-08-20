@@ -713,3 +713,126 @@ h = 0.600, the node every arm rails onto, and the docstring at `:1943` calling t
 weights" is wrong; (b) `_hpd_contains` returns True on reaching the target *before* testing
 `cum >= level` (`:1925` vs `:1927`), so a flat posterior scores "covered at 50%" at cumulative
 mass 0.50926.
+
+## AMENDMENT A-8 (registered pre-read, 2026-08-20) — G-FRAC: the mirror's generator–likelihood inconsistency
+
+**Provenance gating (what made this necessary).** A-7 found that the sentinel's trigger is a
+*generator* condition: events whose `combined_no_bh` is zero at every h, all carrying
+`g_frac = NaN`, in 25/70 catalogue-mode seeds and **0/60 population-mode**; and the same read on
+five banked production runs returns **0 such events in 1588** (addendum to ledger row #145).
+Approved as decision-table item 7 ("please continue, approved").
+
+**Exoneration check (hard rule 1), done BEFORE opening.** The consolidated list §2 item 8 records
+*"The #29 zero-host fallback as the rail cause — real bug, but fallback events are h-inert (#55)"*,
+and row #55 measured those events at **−59 over the grid** against host events' −4265. Item 16
+records underflow as inert (#7); item 10 exonerates `L_comp`/`B_num` as a defective integral.
+
+> **Scope, stated so this is not a re-litigation.** This amendment does **NOT** re-open the
+> zero-host fallback as a bias mechanism — that is exonerated and the exoneration stands. An event
+> that is zero at every h contributes a constant to `sum_log_l` which the `lp − max` shift removes;
+> it is h-inert **by construction**, and the corrected combine now excludes it outright. The claim
+> here is about **correspondence fidelity**, not bias.
+
+**CLAIM G-FRAC.** The mirror's *catalogue-mode* host draw generates events to which the mirror's
+own likelihood assigns exactly zero probability at every h (`L_cat_no_bh = 0` **and** `B_num = 0`
+simultaneously) — i.e. its universe contains objects its estimator says cannot exist — at a rate
+production does not exhibit.
+
+**Why it matters, and the only stake claimed.** Row #144 §6 registers the next front as an arm
+"generated end-to-end by the estimator's own forward model". A generator that emits
+likelihood-impossible events is by definition not that. The stake is **whether the registered
+positive control can be built on this generator**, nothing more.
+
+**Registered reads (all zero-compute, from the 130 banked CSVs + code):**
+1. Per all-zero event, whether `B_num = 0` holds at every h or only at some.
+2. What distinguishes all-zero events from their seed-mates in the banked columns
+   (`alpha_G_phi`, `D_tilde_phi`, `w_G`, `r_Malm`, `L_comp`).
+3. Whether the arms' `unity_completeness` flag partitions them: B-F1 (`f ≡ 1` ⇒ `B_num ≡ 0` by
+   construction, so *every* hostless event is all-zero) versus b0/bsig005/eden (real completeness,
+   where `B_num = 0` requires `f_k ≈ 1` at the event's own pixel).
+4. The per-seed and per-arm rate, already known: 25/70 catalogue-mode, 0/60 population-mode.
+
+**BAND G (the only band, and it is a disposition, not a bias measurement).**
+- **CONTROL-SAFE** if the all-zero events are confirmed h-inert *and* excluded by the corrected
+  combine *and* the mechanism is confined to the catalogue-mode draw ⇒ the row #144 §6 control,
+  which is population/forward-model generated, does not inherit it; the thread CLOSES as a
+  documented mirror-fidelity limitation and the control proceeds.
+- **CONTROL-COMPROMISED** if any all-zero event is *not* h-inert, or if the mechanism can arise in
+  a forward-model-generated arm ⇒ the generator must be repaired before the control is built.
+- **MIXED** if the mechanism is understood but its reach into a forward-model arm cannot be decided
+  from banked data ⇒ name the one cheap measurement that decides it.
+
+**A10 — invariants and structural blindness.** Invariants held fixed: the banked CSVs' column set
+(no `f_k` column, so pixel completeness is *inferred*, never measured here — last audited NEVER);
+the corrected combine; the arm registry. **Structural blindness:** this read cannot distinguish
+"`B_num = 0` because the pixel is complete" from "`B_num = 0` because the integration bounds
+collapsed" — the CSV banks `B_num`, not its integrand. If read 2 cannot separate them, BAND G
+returns MIXED rather than a mechanism.
+
+**A15 compliance.** BAND G carries no numeric threshold and therefore no null to calibrate; it is a
+disposition over a *logical* condition (h-inert AND excluded AND confined). Its "can-fail" property
+is that read 1 can show an all-zero event is not h-inert, which would flip it directly. Read 4's
+rate (25/70 vs 0/60) is an already-measured descriptive fact, not a band.
+
+**Refute by:** exhibit a single all-zero event whose exclusion changes its seed's `mean_h` by more
+than 1e-12, or exhibit the same all-zero condition in a population-mode (B-OUT/B-SEL) seed.
+
+## A-8 VERDICT (2026-08-20) — **CONTROL-SAFE**; the exoneration is confirmed at machine precision, and the fidelity gap is named
+
+All reads zero-compute over the 130 banked CSVs; 25 seeds carry all-zero events, **41 events total**
+(b0 16 · bsig005 11 · eden2 7 · bf1 6 · eden05 1).
+
+**READ 1 — h-inertness, exact.** Excluding every all-zero event changes its seed's `mean_h` by
+**0.000e+00** — not "below 1e-12", but identically zero — across all 25 seeds. Row #55's
+h-inert finding (−59 over the grid vs host events' −4265) is hereby confirmed at machine precision,
+and the §2 item 8 exoneration **stands, strengthened**. The registered refutation
+("exhibit one all-zero event whose exclusion moves `mean_h` by more than 1e-12") found none.
+
+**READ 2 — what distinguishes them.** Exactly three things, each at 100%: `B_num = 0`,
+`L_cat_no_bh = 0`, and `g_frac = NaN`. The remaining banked columns do **not** distinguish them at
+all — `alpha_G_phi` (6.216e+07), `w_G` (0.06422) and `r_Malm` (0.3832) have *identical* medians for
+all-zero events and their seed-mates, because they are per-h global normalizers rather than
+per-event quantities. So the CSV carries no per-event covariate separating these events beyond the
+zero condition itself.
+
+**READ 3 — the partition is clean, and there are TWO populations, not one.**
+
+| arm | `unity_completeness` | seeds | all-zero events | baseline `g_frac`-NaN rate among seed-mates |
+|---|---|---|---|---|
+| **bf1** | **True** | 2 | 6 | **1.000** |
+| b0 | False | 10 | 16 | 0.038 |
+| bsig005 | False | 7 | 11 | 0.054 |
+| eden2 | False | 5 | 7 | 0.031 |
+| eden05 | False | 1 | 1 | 0.035 |
+
+- **B-F1 is structural, not a defect.** With `f ≡ 1` the completion leg vanishes identically, so
+  `g_frac` is undefined for **every one of its events** (rate 1.000) and any hostless event is
+  necessarily all-zero. This is a consequence of the arm's own design, and it is a further reason
+  B-F1 was never a usable positive control (ledger row #145 item 4).
+- **The real-completeness arms are the fidelity gap.** Their `g_frac`-NaN baseline is 3–5%, and the
+  all-zero events are the subset of those that also sit where `B_num` vanishes.
+
+**READ 4 — the asymmetry, restated against production.** Catalogue-mode 25/70 seeds ·
+population-mode **0/60** · production **0 all-zero events in 1588, with a `g_frac`-NaN rate of
+0.0%** (addendum to ledger row #145). **The fidelity gap, precisely:** the mirror's catalogue-mode
+draw produces `g_frac`-undefined (hostless) events at a 3–5% rate; production produces them at
+**zero**.
+
+### BAND G → **CONTROL-SAFE**
+
+All three registered conditions hold: the events are h-inert (READ 1, exactly), the corrected
+combine excludes them (`physics_floor`, ledger row #146), and the mechanism is confined to the
+catalogue-mode draw (READ 4: 0/60 population-mode). **B-SEL is the closest existing analogue to the
+row #144 §6 control** — it draws from the estimator's own detected-dark density
+`w_pop·(1−f̄)·S̄_φ` — and it carries **0 all-zero events in 12 seeds**. The registered control may
+therefore be built on the population/forward-model generator without inheriting this.
+
+**Left OPEN by the structural-blindness clause, as anticipated.** *Why* `B_num = 0` for these
+events is **not** decided: the CSV banks `B_num`, not its integrand, so "the pixel is complete
+(`f_k ≈ 1`)" and "the integration bounds collapsed" remain indistinguishable from banked data. This
+is recorded as an open mirror-fidelity limitation, **not** a measured mechanism, and it is **not**
+on the critical path — deciding it would require re-instrumenting the completion integrand, which
+BAND G's CONTROL-SAFE branch explicitly does not require.
+
+**Thread disposition: CLOSED as a documented mirror-fidelity limitation.** It is not re-opened as a
+bias mechanism (exonerated, and now confirmed exactly), and it does not gate the positive control.
