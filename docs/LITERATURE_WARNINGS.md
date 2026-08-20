@@ -91,6 +91,10 @@ answers: `results/mechanism_study_20260813/L0_LIT_FULLTEXT_20260815.md` §1.
 except one unrelated detector-frame mass-Jacobian hit — do not attribute a Jacobian requirement to
 this paper's derivation.
 
+| # | warning/condition (location) | what it requires | our status | evidence |
+|---|---|---|---|---|
+| G20-d | **§IV.3 (MDC2)**, verbatim (WebFetch-extracted, confirmed across two independent fetches; raw-PDF cross-check before quoting in a paper): "the well-localized events for which the host is not inside the catalog do not have support for the correct value of H0. In real catalogs, galaxy clustering might ensure that there are nearby bright galaxies in the catalog, partially mitigating this bias." | the paper's own MDC validates only **25–75% completeness**; below 25% is untested by Gray 2020 itself | `VIOLATED`-adjacent context: our production venue's in-catalogue share is **4.79%** (ledger row #136) — **outside Gray 2020's own validated range**; the estimator is being used below the floor its source paper ever tested | `[LIT]` Stage-L sweep 2026-08-21 (ledger rows #149–#150 context); row #136 for the 4.79% |
+
 ---
 
 ## Gray et al. 2023 — arXiv:2308.02281 (v2), "Joint cosmological and gravitational-wave population
@@ -165,6 +169,42 @@ but never interrogated in this repo for their own stated validity conditions or 
 | SBC-a | SBC/coverage method's own stated validity conditions and failure modes (Talts et al. 2018 §2–3; Cook, Gelman & Rubin 2006) — cited as method only, never interrogated | whether rank-statistic SBC as specified can detect a selection term that is wrong **identically** in generator and estimator (the D1-class blind spot); complements the mandatory absolute detected-count audit leg | `UNCHECKED` | `darksiren_emri/validation/calibration_gate.py:176-177` |
 
 ---
+
+## Alfradique, Bom & Castro 2025 — arXiv:2503.18887 (PRD), "Systematic bias in dark siren
+statistical methods and its impact on Hubble constant measurement"
+
+Stage-L intake 2026-08-21 (symptom-card sweep during the C-SG cycle, rows #149–#150). Quotes are
+WebFetch-extracted (confirmed across two fetches where noted); raw-PDF cross-check before paper use.
+
+| # | warning/condition (location) | what it requires | our status | evidence |
+|---|---|---|---|---|
+| ABC25-a | §IV.1/App. A: magnitude-limited incompleteness in a **catalogue-only** (no completion term) statistical DS likelihood (Eqs. 7–9) biases H₀ **LOW**: ΔH₀ = −13.8 … −22.2 km/s/Mpc at 56%/24%/10% completeness (Table 1) | applies to estimators lacking a completion sector | `N-A`-pending — direction matches our low rail but the method structurally omits the completion sector our estimator has; not mappable 1:1 without a code-level comparison | `[LIT]` sweep 2026-08-21; quote confirmed across two fetches |
+| ABC25-b | the direction claim defers to App. A, not yet quote-verified from App. A itself | full derivation read | `UNCHECKED` | follow-up fetch needed |
+
+## Borghi et al. 2025 — arXiv:2509.18243 (A&A 2026), "Echoes from the dark: Galaxy catalog
+incompleteness in standard siren cosmology" (CHIMERA)
+
+| # | warning/condition (location) | what it requires | our status | evidence |
+|---|---|---|---|---|
+| B25-a | §4: a Gray-style catalogue+completion **mixture** estimator reports **unbiased H₀ within 1σ across all completeness configurations** tested ("high levels of incompleteness"; exact floor not yet recovered) | correct completion-term implementation + weighting | `UNCHECKED` against our code; stands as a **counter-precedent to ABC25-a** — the field does not agree incompleteness is inherently biasing for mixture estimators | `[LIT]` sweep 2026-08-21; §4.3/§4.5 full-text follow-up needed |
+| B25-b | §4.5: too-weak mass weighting at ~20% completeness introduces ~10 km/s/Mpc bias; too-strong does not | weighting-scheme correctness is their identified lever | `UNCHECKED` | same source |
+
+## VanWyngarden et al. 2025 — arXiv:2511.04786, "How Low Can You Go: Constraining the Effects of
+Catalog Incompleteness on Dark Siren Cosmology"
+
+| # | warning/condition (location) | what it requires | our status | evidence |
+|---|---|---|---|---|
+| VW25-a | §IV/VII: catalogue-only + no clustering + poor localization → H₀ biased **HIGH** (bright in-catalogue galaxies sit at higher z) | no completion term; clustering absent | `N-A`-pending — opposite direction, different mechanism; evidence that **incompleteness bias sign is not universal** across estimator designs | `[LIT]` sweep 2026-08-21 |
+
+**Documented field gap (Stage-L "the field has no answer", 2026-08-21):** no surveyed paper
+(Gray 2020/2023, Hitchhiker, ABC25, B25, VW25, Hanselman 2024, Palmese 2020) decomposes a mixture
+posterior's bias into catalogue-sector vs completion-sector **conditionals**, and none names
+chance-alignment/impostor catalogue-sector weighting as a distinct bias source in the dark-siren
+statistical-method context. The O2/O3 three-channel decomposition (ledger rows #149–#150: impostor
+−0.079 ⊕ tilt +0.055 ⊕ matched −0.085) therefore has **no literature precedent found** — it is
+recorded here as a gap, per the Stage-L provision, and is a candidate novel contribution for the
+paper. R3 (mixture-misspecification-under-truncation astrostatistics) lightly searched, OPEN; R4
+(gwcosmo/icarogw/CHIMERA issue trackers) not reached.
 
 ## Other sources — rows to be opened
 
