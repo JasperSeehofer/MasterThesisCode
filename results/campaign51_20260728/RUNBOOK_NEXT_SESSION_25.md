@@ -84,6 +84,19 @@ Nothing pending from the sentinel cycle — all 8 gate decisions are ruled and e
    needs recomputing against **−0.1083**. Direction is small and unfavourable; **not** asserted to
    survive.
 
+## 4b. Rescued 2026-08-21 — the ONLY G-1 artifacts, now banked
+
+`results/prod2d_closure_20260818/g1g2_diagnostics/` (3 CSVs, 1.6 MB, SHA-256 manifest +
+`PROVENANCE.md`). Row #145 item 8 records G-1's PASS as **UNSUPPORTED** because nothing was banked
+under `results/`; three runs' per-event diagnostics were in fact still in `/tmp` scratch, which does
+not survive a reboot. They are the only artifacts from which G-1 can be recomputed without a full
+re-run, and they are what confirmed the sentinel mechanism end-to-end on real per-event data
+(G-2 seed900101: exactly 2 of 69 events zero at every node ⇒ all 41 nodes at k=2 ⇒ the grid-midpoint
+artefact, matching banked `b0_seed900101.json`). **G-1 remains UNSUPPORTED, not resolved** — its
+as-run signature is the partial-mask mode, not B-F1's flat mode, and these are a *local* re-run of
+unknown correspondence to the historical verdict. See the provenance file before quoting anything
+from them.
+
 ## 5. Operational
 
 `--cpus-per-task=2` for correspondence arms; 5 h walltime and expect a straggler tail; subagents

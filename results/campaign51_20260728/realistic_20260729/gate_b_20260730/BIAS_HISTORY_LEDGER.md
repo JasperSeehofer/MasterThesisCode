@@ -1871,3 +1871,25 @@ had already written down.
 12. **NEXT ACTION, zero compute, before any CPU is spent** (pre-check O2): recompute the 12 banked
     B-SEL seeds with `L_cat_no_bh ≡ 0` — the pure-completion arm. If the impostor leg carries part
     of the −0.1083, C-SG's design must change before it runs.
+
+### Addendum to row #145 item 8 (2026-08-21) — the G-1 artifacts are RESCUED, and G-1 is still UNSUPPORTED
+
+Row #145 item 8 recorded G-1's PASS as UNSUPPORTED on the grounds that "no G-1 posterior, JSON or
+`event_likelihoods.csv` is banked anywhere under `results/`". That was true of the repository but
+not of the machine: three runs' per-event diagnostics were still in `/tmp` scratch (1.7 GB of
+surrounding working files) and would have been lost at the next reboot. They are now banked at
+`results/prod2d_closure_20260818/g1g2_diagnostics/` (1.6 MB, SHA-256 manifest + `PROVENANCE.md`):
+the **G-1 null gate itself** (seed 900001) and the two G-2 cost-pilot seeds (900101/900102, b0
+configuration).
+
+These are the artifacts that confirmed the sentinel mechanism end-to-end on real per-event data —
+G-2 seed900101 has exactly **2 of 69 events zero at every h-node**, so all 41 nodes carry sentinel
+multiplicity k=2 and the run emits the grid-midpoint artefact, matching banked `b0_seed900101.json`
+(`log_posterior` ≡ `-2e+300`) exactly.
+
+**G-1's status is UNCHANGED: UNSUPPORTED, not resolved.** Its as-run signature (`map_h = 0.730`,
+`sigma_h = 0.0000`) is the *partial-mask* mode, not the flat mode behind B-F1, so the "same
+mechanism as B-F1" inference remains unsupported; and these files are a **local** re-run whose
+correspondence to whatever produced the historical G-1 verdict is unknown. They make a
+recomputation *possible*; they do not settle the gate. Any number derived from them is
+provenance-limited and must say so.
