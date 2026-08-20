@@ -1363,3 +1363,30 @@ follow the scientific clues"*). Fleet 6383719: 70/80 COMPLETED (b0 25, bsig005 2
    in the WEIGHTING only (an order of magnitude below GLADE's empirical minimum). A separate
    real defect was flagged in `observed_realization.py`'s mass-error solve (sidecar width
    check 0.379 vs 0.25, ~21.7M rows at the floor) — recorded, not on this critical path.
+
+## Row #138 — 2026-08-20 — BASE TILT ATTRIBUTED (autonomous): population misspecification predicts 87% of the dark-class score; systematics-budget row 16 contradicted; B-OUT confirmation in flight
+
+1. **Derivation memo `docs/derivations/population_mismatch_dark_score.md`.** The score
+   identity E_true[∂_h ln p]|_truth = 0 is violated because the estimator's dark-class prior
+   is **constant comoving number density** (documented assumption, `bayesian_statistics.py:1192`)
+   while events are injected from the **Barausse M1 rate**. First-order prediction
+   Δscore(z) ≈ [d ln(w_model/w_true)/dz]·(dz*/dh) with **no free parameters** reproduces
+   **−0.555 vs the measured −0.635 (87%)** and the monotone z-growth (per-bin ratios
+   0.91–1.83 above z = 0.39). Only the ratio's SHAPE enters — normalisation cancels.
+2. **Why it was invisible for four campaigns:** every validation harness
+   (pp_coverage / calibration_gate / venue_transfer) GENERATES events from the population it
+   analyses, so w_model ≡ w_true and the effect is identically zero — a self-consistent
+   harness is structurally blind to a data-vs-model population mismatch. Same blindness
+   class as B_scale surviving every arm that held it fixed (rows #130–#131).
+3. **[RULE] Systematics budget row 16 is contradicted.** It records the M1 population-shape
+   choice as "affects rates/shape, not estimator calibration (P–P closes at injected
+   truth)". In the dark-dominated regime it is the LEADING term of the production H₀ bias.
+   Proposed re-grade: QUOTED-forecast-assumption → measured, dominant, calibration-affecting
+   systematic (author ruling required; the P–P parenthetical is item 2's blindness).
+4. **Fork presented (memo §6, none pre-decided):** (a) give the estimator the injected M1
+   dN/dz; (b) hierarchical marginalisation over rate-evolution parameters (the honest form
+   for a real analysis); (c) document as the dominant systematic with the measured
+   z-resolved size. All are MODELLING decisions — the estimator's mathematics is not
+   defective here; it is conditioned on the wrong population.
+5. **Pending:** B-OUT (job 6385173, 15 seeds + 2 B-F1 controls) is the pre-registered
+   discriminator — it must come back UNBIASED if this attribution is right.
