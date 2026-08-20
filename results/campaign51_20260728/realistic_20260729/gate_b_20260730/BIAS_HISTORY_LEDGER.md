@@ -1423,3 +1423,34 @@ follow the scientific clues"*). Fleet 6383719: 70/80 COMPLETED (b0 25, bsig005 2
    ⇒ a genuine estimator defect, then bisect the completion integrand. Implementation in
    flight; 3 timed-out A-2 seeds resubmitted at 3 h (job 6387104). Budget overrun disclosed:
    Option B ≈ 127 CPU-h vs the 120 ceiling; ceiling raised to 150 by this amendment.
+
+## Row #140 — 2026-08-20 — **INTERNAL MISNORMALIZATION CONFIRMED** in the completion leg (B-SEL, model-matched universe); population attribution downgraded; bisection opened
+
+1. **A-3 executed** (job 6387553, 12/15 seeds; pre-committed scorer): **B-SEL bias =
+   −0.1120 ± 0.0017 (66σ), mean_h 0.6180, railed 12/12, coverage 0/0/0** → registered band
+   **INTERNAL-MISNORMALIZATION**. Hosts were drawn from the estimator's OWN detected-dark
+   distribution w_pop·(1−f̄)·S̄_φ (built with production's own completeness +
+   `precompute_phi_marginal_survival` construction at h_true) and analysed by that same
+   estimator. **The completion leg is biased low even when the universe matches its model.**
+2. **Residual-mismatch bound (works AGAINST the finding):** the Fisher-quality filter still
+   drops ~10% of mirror events (n_eff 180/200) — but it drops the FARTHEST ones, leaving
+   fewer high-z events than the model expects, which pushes the posterior HIGH. The measured
+   bias is LOW, so this cannot explain it; the true defect is if anything larger.
+3. **[RULE] Row #138's population attribution is DOWNGRADED per its own §7 falsification
+   clause.** The M1-vs-comoving calculation still predicts 87% of production's dark-class
+   score and stands as a contributing term of unknown share, but an internally misnormalized
+   completion leg produces a comparable rail (−0.112) unaided, so the population mismatch
+   can no longer be assumed to own the base tilt.
+4. **Scope of the win:** production's base tilt is now (i) attributed to a leg, (ii)
+   reproduced outside production (B-OUT 0.6007 / B-SEL 0.6180 vs production C-C 0.6001),
+   and (iii) shown to be an ESTIMATOR DEFECT rather than a modelling choice — all with a
+   ~45 min/seed bed that needs no production run.
+5. **AMENDMENT A-4 registered pre-run (first bisection step):** **B-SELF** = B-SEL with
+   `--selection_in_completion_numerator fused` (a shipped flag; the off-basis numerator
+   carries no detection weight while its normalization does). Bands: CONVENTION-OWNS-IT
+   (|bias| ≤ max(0.005, 2·SE) + C68 in band) ⇒ the off/fused asymmetry IS the defect and the
+   fused form is derived-correct (→ /physics-change for the production default);
+   CONVENTION-PARTIAL (≤ ½ the B-SEL bias, still material); CONVENTION-NOT-IT (≥ ½) ⇒ next
+   targets are the z-integral measure/Jacobian and D̃^φ's α_G^φ/β_Ḡ^φ class composition.
+   Implementation in flight; 15 seeds ≈ 11 CPU-h (running total ≈ 150, at the amended
+   ceiling).
