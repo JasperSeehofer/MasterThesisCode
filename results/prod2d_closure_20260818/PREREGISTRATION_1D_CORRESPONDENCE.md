@@ -393,3 +393,47 @@ be the one whose numerator and denominator use the same detection model.
   integrand and the next bisection targets the measure/Jacobian of the z-integral and the
   α_G^φ/β_Ḡ^φ class composition of D̃^φ.
 - Cost: 15 seeds ≈ 11 CPU-h (running total ≈ 150 CPU-h, at the amended ceiling).
+
+## A-4 VERDICT (2026-08-20) — **CONVENTION-NOT-IT**: the selection asymmetry is not the defect
+
+Job 6389506: 11/15 seeds (4 TIMEOUT, resubmitted as 6393215 at a 5 h wall). Pre-committed
+scorer, A-4 bands:
+
+| arm | n | bias | mean_h | σ_h | band |
+|---|---|---|---|---|---|
+| B-SEL (off basis) | 12 | −0.1120 ± 0.0017 | 0.6180 | 0.0216 | INTERNAL-MISNORMALIZATION |
+| **B-SELF (fused basis)** | 11 | **−0.1163 ± 0.0010** | 0.6137 | 0.0182 | **CONVENTION-NOT-IT** |
+
+Putting the detection weight into the completion numerator — the fused convention, which in
+production was worth ≈ +0.17 of dark-class score — changes **nothing** in a model-matched
+universe (if anything the bias is marginally larger). The off-vs-fused numerator/denominator
+asymmetry is therefore NOT the internal misnormalization. Shortfall disclosed: the arm reads
+at 11/15 registered seeds; the SE (0.0010) and the 12/12-railed pattern leave no plausible
+route by which the missing four flip a −0.116 ± 0.001 result into the ≤ 0.005 band.
+
+## AMENDMENT A-5 (registered pre-run) — next bisection: the event-term measure
+
+Remaining candidates from the A-4 fallthrough, in derivational order:
+
+- **D-ii, the GW event term's measure (LEADING).** The completion numerator evaluates
+  `p_gw = norm.pdf(d_L(z;h)/d_L,det; μ_frac, σ_frac)` — a density in the dimensionless
+  DISTANCE RATIO — and integrates it against `dV_c/(1+z)·(1−f_k) dz`
+  (`bayesian_statistics.py:4852-4877`). A likelihood in the observable requires a density in
+  `d_obs`; converting between the two carries a factor that depends on `d_L(z;h)` and hence
+  on both z and h, so it does not drop out of a ratio taken across the z-integral. This is
+  the same "density-form vs ratio-form" term the venue mechanism study catalogued as D-ii
+  and measured as nearly inert IN A CATALOGUE-RESIDENT VENUE — a regime we now know is the
+  wrong one for this question (rows #136, #139).
+  **Instrument B-DEN (15 seeds):** B-SEL configuration with the completion numerator's event
+  term switched to the d_obs-density form. Bands: **MEASURE-OWNS-IT** if |bias| ≤
+  max(0.005, 2·SE) with C68 in the N=15 band; **MEASURE-PARTIAL** if |bias| ≤ ½·0.112;
+  **MEASURE-NOT-IT** otherwise.
+- **D̃^φ class composition (second).** For an event with no catalogue support the numerator
+  carries only the dark-class term while the denominator carries α_G^φ + β_Ḡ^φ. Instrument
+  and bands to be registered only if B-DEN falls through.
+
+**A14 compliance:** the D-ii attribution above is explicitly PROVISIONAL — a code-shape
+observation plus a dimensional argument, not a derivation. Before B-DEN's result may be
+attributed to it, the algebra (which measure the numerator is a density in, which the
+denominator is, and what the correct pairing implies for the h-slope) is written up as a
+memo in `docs/derivations/`, with its own falsifier, exactly as the B_scale item was.
