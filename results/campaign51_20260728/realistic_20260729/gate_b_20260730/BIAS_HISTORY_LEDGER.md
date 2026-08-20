@@ -1806,3 +1806,68 @@ zero-compute over the 130 banked CSVs.
 7. **Thread disposition: CLOSED.** Per hard rule 6 (measurement-before-gate), the cheap read
    collapsed the need for the expensive one: a campaign on an exonerated, machine-precision-inert
    non-cause was not opened.
+
+## Row #148 — 2026-08-20 — C-SG positive control REGISTERED (v2); its own pre-check returned NOT-READY on v1 and overturned two of the orchestrator's design choices outright
+
+The row #144 §6 settling measurement is registered as
+`results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md`. **Not yet run; not
+implemented.** v1 was submitted to an adversarial pre-check which returned **NOT-READY** with 11
+required amendments and 2 optional; all 13 are applied in v2. Every decisive finding was
+independently re-derived by the orchestrator before adoption — two of them refuted design choices I
+had already written down.
+
+1. **[RULE] The measurement kernel: my v1 had the direction BACKWARDS.** Verified to machine
+   precision (ratio = 1 to 1e-12 over random `d̂`, `σ_dL`, `d_L`):
+   `N(d_L(z;h)/d̂ ; 1, σ_dL/d̂) ≡ d̂ · N(d̂ ; d_L(z;h), σ_dL)`. The estimator's default `ratio` kernel
+   **is** the fixed-σ_dL linear Gaussian up to an h-independent constant, so **B-SEL's linear draw
+   was the matched one**, and v1's proposed ratio draw would have injected the `d_L(z;h) ∝ 1/h`
+   factor — the campaign's own predicted `E[score] ≈ −1/h` defect — straight into the generator.
+   v1's §4 sizing (`3σ²` = 0.0042 vs "the 0.005 band") was additionally a category error: a
+   dimensionless correction to a data-space normalization compared against an absolute h.
+2. **[RULE] v1 applied selection TWICE.** `S̄_φ(z;h) ≡ ∫φ(log₁₀M) S_4D(d_L(z;h), M(1+z)) dlog₁₀M`
+   (`bayesian_statistics.py:1932-1975`) **is** the marginal detection probability, dimensionless in
+   [0,1]. v1 drew `z ∝ w_pop(1−f̄)S̄_φ` — already conditioned on detection — then accepted again with
+   `p_det`. v2 uses design B: draw `(z, Ω)` jointly `∝ w_pop·(1−f_k(Ω;z))`, draw `log₁₀M ~ φ`, accept
+   **once** with `S_4D`, and write the drawn `M` to the CSV (which also fixes the ball-tree
+   candidate set being selected by a borrowed mass).
+3. **[RULE] v1's BAND C could not return INTERNAL-DEFECT.** A constant bias `b` displaces all three
+   arms equally, so the accuracy-form GATE S failed for exactly `|b| ≥ 0.005` — precisely when BAND C
+   would have said INTERNAL-DEFECT. Confirmed by enumeration. **GATE S is now a slope/intercept
+   regression** over all 31 F+δ seeds; the intercept offset *is* the bias estimate and is read
+   alongside the gate, never blocked by it.
+4. **[RULE] Two of four arms had targets a VACUOUS posterior hits exactly.** A flat log-posterior
+   returns `mean_h` = **0.7300000000** on `H_GRID_41` under **both** weight conventions — the B-F1
+   mechanism **survived the row #146 correction untouched** — and **0.6800000000** on `H_GRID_FULL`
+   under trapezoid, which equals C-SG-δ−'s `h_gen`. New **GATE V** (span ≥ 5 nats, `σ_h ≤ ½σ_prior`
+   per seed) plus a pinned scoring grid: `H_GRID_41` only, and `h_true=h_gen` for the δ arms
+   (`compute_seed_statistics` defaults to `H_TRUE`, `:2049`).
+5. **[RULE] "Dark-only universe" was FALSE.** `in_catalog`/`host_galaxy_index` are bookkeeping; the
+   ball-tree runs unconditionally (`:4443`). Measured on `bsel_seed900101` at h=0.73:
+   **128/174 events (73.6%)** have `L_cat_no_bh > 0`; impostor share of the per-event numerator has
+   median 6e-4 but 99th percentile 0.647 and max 0.821. C-SG supplies a **0%** in-catalogue share
+   against the estimator's assumed `f̄(z)` — a generator–model mismatch, not a scope limitation.
+6. **[RULE] The power transfer was biased, in my own favour.** `σ_seed = 0.0058` came from B-SEL,
+   which is floor-saturated (railed 12/12, coverage 0/0/0); saturation deflates scatter. Across the
+   banked fleet, **unrailed** arms give `σ_seed/σ_h = 0.50–1.07` (b0 0.0230, eden2 0.0185, bsig005
+   0.0102, eden05 0.0084) vs **railed** 0.15–0.27. C-SG is designed not to rail ⇒ expected `σ_seed`
+   **0.009–0.022**, at which v1's 0.005 band false-fails **11–38% (N=15)**, **24–52% (N=8)**, and
+   GATE S **22–77%**. **That is D-1's failure reproduced one cycle after A15 was adopted to end it.**
+   All bands are now deleted pending a **mandatory 4-seed pilot** that measures `σ̂_seed` first.
+7. **Primary statistic changed to the per-event score at `h_gen`** (pre-check O1): n = 3000 events
+   rather than 15 seed-means, no rail, no grid-midpoint coincidence, and it sidesteps the σ_seed
+   transfer entirely. `mean_h` is reported-only secondary.
+8. **Blindness list corrected from one item to six.** C-SG shares `w_pop`, `f_k`/`f̄`, `S̄_φ`/`S_4D`,
+   `P_det`, cosmology and the z-domain with the estimator — **including the M1-vs-comoving
+   population misspecification from which row #138 predicted 87% of the dark-class score** — plus
+   any h-independent misnormalization. An ESTIMATOR-SELF-CONSISTENT verdict is conditional on all
+   six **by name**.
+9. **v1 contained two contradictory readings of the same outcome**, one inherited verbatim from the
+   retrospective (which described a control on the *same* arm, whereas C-SG *replaces* B-SEL's
+   stages 3–5). Whichever result arrived, a supporting sentence already existed. v2 states one.
+10. **Numbers of record corrected** to row #146's **−0.1083** (v1 quoted −0.1120), and row #144's
+    ≥0.073 residual bound is marked **OPEN** — derived against −0.112, not recomputed.
+11. **Cost corrected:** A-3's own anchor scales to **≈51 CPU-h**, ≈69 at 2 cpus × 45 min — not v1's
+    "≈35". Workspace expires 2026-09-23.
+12. **NEXT ACTION, zero compute, before any CPU is spent** (pre-check O2): recompute the 12 banked
+    B-SEL seeds with `L_cat_no_bh ≡ 0` — the pure-completion arm. If the impostor leg carries part
+    of the −0.1083, C-SG's design must change before it runs.
