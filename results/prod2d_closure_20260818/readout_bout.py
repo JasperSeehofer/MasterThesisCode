@@ -63,7 +63,16 @@ def _summarize(arm: str, seeds: list[dict[str, Any]]) -> dict[str, Any]:
     lo, hi = _binomial_band(n)
     unbiased = abs(bias) <= max(MATERIALITY, 2.0 * se)
     covered = lo <= c68 <= hi
-    if unbiased and covered:
+    if arm == "bsel":
+        # AMENDMENT A-3 bands: the isolation test (model-matched in BOTH
+        # population and selection).
+        if unbiased and covered:
+            verdict = "ESTIMATOR-SELF-CONSISTENT"
+        elif abs(bias) >= MATERIALITY and abs(bias) > 2.0 * se:
+            verdict = "INTERNAL-MISNORMALIZATION"
+        else:
+            verdict = "MIXED"
+    elif unbiased and covered:
         verdict = "COMPLETION-UNBIASED"
     elif abs(bias) >= MATERIALITY and abs(bias) > 2.0 * se:
         verdict = "COMPLETION-BIASED-LOW" if bias < 0 else "COMPLETION-BIASED-HIGH"
@@ -98,7 +107,7 @@ def main() -> None:
     args = parser.parse_args()
 
     report: dict[str, Any] = {"truth_h": TRUTH_H, "arms": {}}
-    for arm in ("bout", "bf1"):
+    for arm in ("bout", "bf1", "bsel"):
         seeds = _load(arm, args.dir)
         if not seeds:
             report["arms"][arm] = {"arm": arm, "n_seeds": 0, "verdict": "NO-DATA"}
@@ -113,6 +122,20 @@ def main() -> None:
             f"R_low={summary['r_low']:.2f}  -> {summary['verdict']}"
         )
 
+    bsel = report["arms"].get("bsel", {})
+    if bsel.get("verdict") == "ESTIMATOR-SELF-CONSISTENT":
+        print(
+            "\nISOLATION TEST: B-SEL unbiased under the model-matched population AND "
+            "selection => the completion mathematics is exonerated; every observed tilt "
+            "is data-vs-model mismatch (population_mismatch_dark_score.md attribution stands)."
+        )
+    elif bsel.get("verdict") == "INTERNAL-MISNORMALIZATION":
+        print(
+            "\nISOLATION TEST: B-SEL BIASED under a fully model-matched universe => a genuine "
+            "internal misnormalization exists in the completion leg, reproducible at "
+            "~35 min/seed. Next: bisect the completion integrand (numerator vs D_tilde^phi "
+            "vs the (1-f)/S pairing)."
+        )
     bout = report["arms"].get("bout", {})
     if bout.get("verdict") == "COMPLETION-UNBIASED":
         print(
