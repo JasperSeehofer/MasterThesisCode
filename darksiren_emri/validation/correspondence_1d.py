@@ -1306,6 +1306,7 @@ def run_mirror_seed_inprocess(
     h_values: tuple[float, ...] = H_GRID_41,
     completeness_override: bool = False,
     injection_dir: str = INJECTION_POOL_DIR,
+    allow_low_pdet_coverage: bool = True,
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
 
@@ -1343,6 +1344,22 @@ def run_mirror_seed_inprocess(
             :class:`_UnityCompleteness` for the duration of this call (G-1
             only; restored in a ``finally``).
         injection_dir: The pinned injection pool (p_det grid input).
+        allow_low_pdet_coverage: Forwarded to ``BayesianStatistics.evaluate``
+            (default ``True``, harness-registered). Production's own
+            ``evaluate()`` STOPs (``RuntimeError``) if the P_det grid covers
+            < 95% of events' 4-sigma d_L windows -- a real production guard
+            against a stale/shallow injection pool. It fires harmlessly on
+            B-OUT (AMENDMENT A-2): the population-model host draw samples
+            the FULL :data:`POPULATION_Z_MAX` domain (unlike the
+            catalogue-resident draw, which stays within the pool's
+            calibrated depth by construction), so a materially larger
+            fraction of events sit near/beyond the injection pool's
+            detection horizon by design, not by defect. This is a
+            deliberate diagnostic run of the estimator on an
+            out-of-calibration universe (a fact of the B-OUT construction
+            worth reporting, not silencing) -- ``True`` is a no-op for
+            every G-1/G-2/B-0/B-sigma/E-DEN/B-F1 call (none of them ever
+            triggered the guard) and only changes behavior for B-OUT.
 
     Returns:
         ``(diagnostics_csv_path, elapsed_seconds)``.
@@ -1410,6 +1427,7 @@ def run_mirror_seed_inprocess(
             pdet_dl_bins=int(PRODUCTION_FLAGS["--pdet_dl_bins"]),
             pdet_mass_bins=int(PRODUCTION_FLAGS["--pdet_mass_bins"]),
             pdet_estimator=PRODUCTION_FLAGS["--pdet_estimator"],
+            allow_low_pdet_coverage=allow_low_pdet_coverage,
         )
         elapsed = time.time() - start
     finally:

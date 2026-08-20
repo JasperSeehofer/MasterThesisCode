@@ -8,14 +8,20 @@
 # area_scale) mapping and per-arm seed lists are OWNED by the harness's
 # ARM_SPECS/ARM_SEEDS registry -- this script's TASK_ARMS/TASK_SEEDS arrays
 # are built from the SAME registered seed-list arithmetic
-# (PREREGISTRATION_1D_CORRESPONDENCE.md v2 + AMENDMENT A-1) so the two
-# cannot silently drift:
+# (PREREGISTRATION_1D_CORRESPONDENCE.md v2 + AMENDMENT A-1 + AMENDMENT A-2)
+# so the two cannot silently drift:
 #   b0       (production-mapped, sigma_z=1.00, area=1.00): seeds 900101-900125 (N=25)
 #   bsig005  (starvation dose,    sigma_z=0.05, area=1.00): seeds 900101-900125 (N=25)
 #   bsig025  (starvation dose,    sigma_z=0.25, area=1.00): seeds 900101-900110 (N=10)
 #   eden05   (E-DEN, exploratory, sigma_z=1.00, area=0.50): seeds 900101-900110 (N=10)
 #   eden2    (E-DEN, exploratory, sigma_z=1.00, area=2.00): seeds 900101-900110 (N=10)
-# Total: 25 + 25 + 10 + 10 + 10 = 80 tasks -> --array=0-79.
+#   bout     (AMENDMENT A-2, population-model host draw, out-of-catalogue,
+#             ARM_HOST_MODE="population"):                  seeds 900101-900115 (N=15)
+#   bf1      (AMENDMENT A-2, B-0 config + f=1 completeness control,
+#             ARM_UNITY_COMPLETENESS=True):                 seeds 900101-900102 (N=2)
+# Total: 25 + 25 + 10 + 10 + 10 + 15 + 2 = 97 tasks -> --array=0-96
+# (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks, matching the prereg's
+# "17 seed-runs ~= 19 CPU-h" budget line).
 #
 # Walltime: pilot anchor (G-2, prereg §1 D-D) = 0.478 CPU-h/seed-run (~29 min
 # wall, single-process). --time=02:00:00 gives >4x margin per task (cluster-
@@ -45,7 +51,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --time=02:00:00
-#SBATCH --array=0-79
+#SBATCH --array=0-96
 
 set -euo pipefail
 
@@ -65,15 +71,17 @@ for s in $(seq 900101 900125); do TASK_ARMS+=("bsig005"); TASK_SEEDS+=("$s"); do
 for s in $(seq 900101 900110); do TASK_ARMS+=("bsig025"); TASK_SEEDS+=("$s"); done  # 10
 for s in $(seq 900101 900110); do TASK_ARMS+=("eden05");  TASK_SEEDS+=("$s"); done  # 10
 for s in $(seq 900101 900110); do TASK_ARMS+=("eden2");   TASK_SEEDS+=("$s"); done  # 10
+for s in $(seq 900101 900115); do TASK_ARMS+=("bout");    TASK_SEEDS+=("$s"); done  # 15 (AMENDMENT A-2)
+for s in $(seq 900101 900102); do TASK_ARMS+=("bf1");     TASK_SEEDS+=("$s"); done  # 2  (AMENDMENT A-2)
 
 N_TASKS=${#TASK_ARMS[@]}
-if [[ "$N_TASKS" -ne 80 ]]; then
-    echo "ERROR: task-list arithmetic drift -- built $N_TASKS tasks, expected 80." >&2
+if [[ "$N_TASKS" -ne 97 ]]; then
+    echo "ERROR: task-list arithmetic drift -- built $N_TASKS tasks, expected 97." >&2
     exit 1
 fi
 
 if [[ -z "${SLURM_ARRAY_TASK_ID:-}" ]]; then
-    echo "ERROR: SLURM_ARRAY_TASK_ID is not set (submit with --array=0-79)." >&2
+    echo "ERROR: SLURM_ARRAY_TASK_ID is not set (submit with --array=0-96)." >&2
     exit 1
 fi
 if (( SLURM_ARRAY_TASK_ID < 0 || SLURM_ARRAY_TASK_ID >= N_TASKS )); then
