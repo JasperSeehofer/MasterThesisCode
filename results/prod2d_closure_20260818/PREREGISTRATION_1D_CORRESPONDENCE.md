@@ -185,3 +185,101 @@ generator + G-1 + D-D cost pilot, then arms.
   ∝ 1/d_L²(z; h_true); sky localization recentred at the host with the donor's own (φ,θ)
   covariance (not a spherical rotation); donor mass columns unlinked (harmless to the 1D
   statistic); B-0 uses the pinned catalogue's own z_obs/z_err as-is.
+
+---
+
+## VERDICT (2026-08-20, appended after the arms fleet; branches presented as [RULE]s)
+
+**Execution:** job 6383719, 80 tasks → 70 COMPLETED (b0 25/25, bsig005 23/25 — 2 walltime
+stragglers, eden05 10/10, eden2 10/10), 10 FAILED = the entire bsig025 dose (separate
+defect, §"bsig025" below). B-D2 was not run (deferred behind its parity gate, as
+registered). Per the execution-completeness clause bsig025 is unreadable and bsig005 is
+read at 23/25 with the shortfall disclosed (it is a dose arm; B-0, the adjudicating
+correspondence arm, is complete).
+
+**Per-arm results (per-seed statistics; n_eff ≈ 68 of 200 drawn — amendment A-1):**
+
+| arm | n | bias (mean_h − 0.73) | SE | median σ_h | R_low | C50/C68/C90 |
+|---|---|---|---|---|---|---|
+| B-0 (σ_z as catalogue) | 25 | **+0.0245** | 0.0059 | 0.0248 | 0.36 | 0.48/0.64/0.72 |
+| B-σ 0.05× | 23 | **+0.0348** | 0.0078 | 0.0170 | 0.17 | 0.30/0.43/0.70 |
+| E-DEN 0.5× area | 10 | +0.0093 | 0.0027 | 0.0170 | 0.10 | 0.60/0.90/1.00 |
+| E-DEN 2× area | 10 | +0.0211 | 0.0096 | 0.0559 | 0.50 | 0.60/0.60/0.70 |
+
+**Registered branch outcomes:**
+
+- **S-CORR: CORRESPONDENCE-FAIL.** z = (0.6010 − 0.7545)/0.0084 ≈ **−18** (production 1D
+  mean vs the B-0 class, A-1 n_eff scaling). Production's 1D mean is nowhere in the mirror's
+  class — and the mirror is biased HIGH where production is LOW.
+- **S-RAIL: SCALE-CONFOUNDED** (registered named outcome). B-0 median σ_h = 0.0248 vs
+  production 1D σ_h = 0.00329 → **7.5×**, far outside the ×2 adjudication band. The
+  registered fallback (pooled aggregation) is ALSO unusable here: pooling is dominated by a
+  few near-delta per-seed posteriors — pooled B-0 gives +0.110 (MAP 0.82) at 25 seeds but
+  −0.052 (MAP at the 0.50 grid edge) on its own 10-seed subset, i.e. an unstable,
+  edge-piling product, not a statistic. Per-seed R_low = 0.36 (bimodal MAPs: 9/25 at 0.600,
+  16/25 in 0.735–0.82) is reported as the honest rail read: **NOT RAIL-REPRODUCED** by the
+  registered ≥0.90 threshold, and not the D-CLASS signature either (its R_low ≤ 0.10 clause
+  fails) ⇒ mechanically **MIXED**, with the scale confound as the stated reason.
+- **S-DECOMP: MIXED — and the starvation hypothesis is REFUTED IN DIRECTION.**
+  T_starv = bias(B-0) − bias(B-σ0.05) = **−0.010** (seed-matched: −0.002): sharpening the
+  host photo-z by 20× did NOT reduce the mirror's bias — it INCREASED it (+0.0245 →
+  +0.0348) and DEGRADED coverage (C68 0.64 → 0.43), the opposite of the registered
+  starvation signature (which required C68 recovery into [0.497, 0.863]). T_D2 unmeasured
+  (B-D2 deferred), so the form-component clause is unevaluated.
+
+## The structural finding (why the correspondence failed — and what it hands us)
+
+**The mirror universe is the OPPOSITE REGIME from production.** The generator draws hosts
+FROM the pinned catalogue, so 100% of mirror hosts are catalogue-resident; in production
+(iiib, n = 1588) only **76 events — 4.79% — have `in_catalog = True`.** Production's
+ensemble is ~95% out-of-catalogue, i.e. **completion-leg dominated**; the mirror's is 0%.
+The estimator's completeness model (f_k < 1: "some hosts are missing") is therefore violated
+by the mirror's universe in the strongest possible way, and G-1's exact recovery of truth
+under the f ≡ 1 shim is the control that shows it: with the model matched to the universe
+the mirror is unbiased; with real completeness on an all-in-catalogue universe it biases
+high. The bias the arms measured is thus a property of THIS mismatch, not of production —
+which is why S-CORR had to fail, and it is a harness-scope defect, not a production one.
+
+**Scientific value delivered anyway (three results that stand):**
+1. **The 1D bias in a catalogue-resident venue is not photo-z starvation** — 20× sharper z
+   makes bias and calibration worse. Whatever drives it is structural, and the G-1 control
+   localizes it to the completeness/completion treatment.
+2. **Candidate density is a strong lever** (E-DEN): halving localization area gives
+   +0.0093 with restored coverage (C68 0.90), doubling gives +0.0211 with σ_h ×3.3 and
+   R_low 0.50 — impostor density modulates both the bias and the railing behaviour.
+3. **Production's regime is now quantified: ~95% completion-leg-dominated.** For those
+   events p_i ≈ B_num(h)/D̃^φ(h) — a ratio of two integrals over the SAME population model,
+   which must be unbiased if the estimator is correct. The production 1D rail says it is
+   not. That is the sharpest statement of the base-tilt question yet, and it points at the
+   completion leg — the same leg that carried the un-derived B_scale factor (rows #130-#131).
+
+## AMENDMENT A-2 (registered BEFORE the follow-on runs)
+
+The correspondence question is re-posed in production's actual regime:
+
+- **B-OUT (new adjudicating arm, 15 seeds):** hosts drawn from the POPULATION model
+  (comoving rate × the estimator's own w_pop), NOT from the catalogue, and never added to
+  the candidate set — the production-typical out-of-catalogue event (real GLADE impostors
+  in the ball + completion leg). Registered read: bias, coverage, R_low, σ_h as above.
+  **Bands:** COMPLETION-UNBIASED if |bias| ≤ max(0.005, 2·SE) AND C68 ∈ [0.497, 0.863];
+  COMPLETION-BIASED-LOW if bias ≤ −0.005 with CI excluding 0 (the production-direction
+  signature — would make the completion leg the base-tilt owner and open a fresh
+  /physics-change hunt); COMPLETION-BIASED-HIGH if bias ≥ +0.005 with CI excluding 0;
+  MIXED otherwise. S-CORR is re-scored against THIS arm with the A-1 n_eff scaling.
+- **B-F1 (control, 2 seeds):** B-0 configuration with the f ≡ 1 completeness shim —
+  isolates completeness from the exact-z difference that separates G-1 from B-σ0.05.
+  Registered: |bias| ≤ max(0.005, 2·SE) confirms the completeness-mismatch attribution.
+- **Budget:** 17 seed-runs ≈ 19 CPU-h at the measured 0.478 CPU-h/seed-run; Option B total
+  then ≈ 107 CPU-h, inside the registered 120 ceiling.
+- bsig025 remains unread pending its defect fix (below); B-D2 remains deferred.
+
+## bsig025 defect (recorded, not adjudicated)
+
+All 10 bsig025 tasks failed identically: after the 0.25× re-scatter realization the
+production Fisher-quality filter passes **0 detections** (`d_L relative error < 0.1`),
+whereas the 0.05× dose passes 61 and B-0 passes ~68, so no diagnostics CSV is written and
+the runner raises. The realization sidecar for the failing dose shows its mass-width check
+off-nominal (normalized_residual_std 0.379 vs expected 0.25, with ~21.7M rows hitting the
+mass-width floor), so the leading hypothesis is a scale-dependent interaction in the
+re-scatter path's mass columns rather than anything in the z-kernel. Diagnosis is a separate
+mechanical item; the dose is REPORTED-ONLY and adjudicates nothing.
