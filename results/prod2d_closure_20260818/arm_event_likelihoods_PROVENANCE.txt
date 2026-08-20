@@ -1,0 +1,4 @@
+source: bwunicluster:/pfs/work9/workspace/scratch/st_ac147838-emri/work/<arm>_seed<seed>/seed<seed>/simulations/diagnostics/event_likelihoods.csv
+retrieved: 2026-08-20
+n_files: 130
+workspace_expiry: 2026-09-23

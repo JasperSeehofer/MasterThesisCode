@@ -1589,3 +1589,80 @@ directions, and finds a harness defect older than both.
    registration's question with a stronger claim carrying its own decisive band. CLAUDE.md
    makes AUTHOR approval non-transitive; nothing yet makes VERIFIER coverage non-transitive.
    Unaffected by all of the above: production's base tilt and every production-native read.
+
+## Row #145 — 2026-08-20 — HARNESS DEFECT: a log-space `-1e300` sentinel manufactures "truth" and "rail" in 25/123 mirror seeds; every catalogue-arm RAIL is an artefact; B-F1 corrected FAILS; B-OUT indictment WITHDRAWN
+
+Zero-compute forensic + full re-score of the banked correspondence fleet, audited by a 10-agent
+adversarial panel and a separate NOT-READY pre-check whose ten required amendments were applied
+before the verdict was read. Registered as **A-7** in `PREREGISTRATION_1D_CORRESPONDENCE.md`.
+**Two of the orchestrator's own claims were refuted by measurement and are withdrawn below.**
+
+1. **The defect.** `correspondence_1d.py:1965`/`:2479` floor a zero per-event likelihood **in log
+   space** at `-1.0e300`. Correctly stated (narrowed by measurement): this is *numerically
+   identical to the correct* `-inf` whenever ≥1 grid node survives — `max|Δmean_h| = 0.000e+00`
+   across all 98 such seeds. It matters only when **every** node is masked, i.e. when the seed
+   contains ≥1 event that is zero at every h. There, correct `-inf` gives all-NaN and fires the
+   harness's own `isfinite().any()` guard; the sentinel instead banks a finite, normalizable
+   posterior **silently**. Verified: `b0_900101`/`bf1_900101` have 0/46 finite nodes under `-inf`.
+2. **Blast radius 25/123 banked seeds (20.3%)** — catalogue-mode 25/70, population-mode **0/53**.
+   21 are exactly flat ⇒ `mean_h` = the midpoint of `H_GRID_41`, `(0.600+0.860)/2 =
+   0.7299999999999999`, **which coincides with H_TRUE**; `map_h = 0.600` (argmax tie-break) ⇒
+   `r_low = True`; `c50=c68=c90=True` (`_hpd_contains` tests the target at `:1925` before the
+   break at `:1927`; flat cumulative mass at truth = 0.50926). One seed reports "unbiased to four
+   decimals", "railed low" and "covered" **at once**, from grid geometry. The other 4 are
+   non-uniformly masked and *spuriously informative* (0.8087–0.8400).
+3. **[RULE] Every rail in every catalogue-mode arm is an artefact.** `R_low` → exactly **0.00**
+   under production's physics-floor in b0 (0.36), bsig005 (0.17), eden05 (0.10), eden2 (0.50) and
+   bf1 (1.00). Coverage inflated likewise. Any banked claim quoting C50/C68/C90 or R_low for these
+   arms is restated or withdrawn.
+4. **[RULE] B-F1, the positive control, FAILS when corrected** — **+0.0359 ± 0.0036**, coverage
+   **0/0/0**, `map_h` 0.765/0.760, against its recorded "0.7300, truth to four decimals, 1/1/1".
+   **PROVISIONAL at n = 2** (no power; per A15 it cannot carry a control verdict). B-F1 is a poor
+   control independently: with `f ≡ 1` the completion leg vanishes, so **100% of its events have
+   `g_frac = NaN`** and its universe contradicts its own likelihood.
+5. **[RULE] The B-OUT indictment is WITHDRAWN — my own claim, refuted by measurement.** B-OUT's
+   one-sided high-h masking is real (0 masked nodes at h ≤ 0.730 in 15/15 seeds, mean k ≈ 30 at
+   h = 0.860) but physics-floor moves `mean_h` by **≤1.1e-16**: those nodes genuinely carry zero
+   likelihood. **Row #139's "B-OUT reproduces production's dark rail" STANDS**, as does the
+   retrospective's corresponding sentence.
+6. **[RULE] "The zeros are underflow" is WITHDRAWN — also refuted by measurement.** The fleet's
+   smallest non-zero `combined_no_bh` is **4.876e-48**, ~302 orders above float64's smallest
+   normal; nothing below 1e-300 anywhere. The zeros are **structural**: all-zero events have
+   `L_cat_no_bh = B_num = 0` and **`g_frac = NaN`** (100%, vs a 3–6% baseline) — an empty
+   candidate set. **This is a generator/data defect, not a numerical one**, and it is the real
+   trigger. It occurs in 25/70 catalogue-mode and 0/60 population-mode seeds.
+7. **The bisection chain is UNAFFECTED.** B-SEL −0.1120 (n=12), B-SELF −0.1163 (n=11), B-DEN
+   −0.1193 (n=15): zero sentinel nodes in every banked seed, Δ ≡ 0 to ≤1.0e-15. **Row #140's
+   PROVISIONAL-WITH-A-BOUND is untouched.** But these three are **NULL-BY-CONSTRUCTION, not
+   controls** — the repair is provably a no-op before the run, so their agreement carries no bits.
+   **The campaign still has no working control, exactly as row #144 §6 states.**
+8. **G-1 (the STOP gate) is UNSUPPORTED, not proven vacuous.** No G-1 output is banked under
+   `results/`; a local `/tmp` diagnostic recomputes to +0.0050 but its as-run signature
+   (`map_h = 0.730`, `sigma_h = 0.0000`) is the partial-mask mode, not the flat mode, so the
+   "same mechanism as B-F1" inference is unsupported. Pending a re-run.
+9. **Production UNAFFECTED**, scope narrowed: the additive log-space sentinel exists only at
+   `:1965`/`:2479` and no production module imports those functions. The blanket "nowhere else in
+   `darksiren_emri/`" is withdrawn — a *multiplicative* `1e-300` clip is the repo-wide house
+   pattern (`posterior_combination.py:758`; ~18 sites in `validation/pp_coverage.py`), bounded at
+   log ≈ −690.8, no absorption. Post-fix baselines, dark-class 0.6001, score −0.635 ± 0.017: all
+   untouched.
+10. **Zero-compute recovery.** 130/142 arm work-roots retained their per-event
+    `event_likelihoods.csv`; retrieved (151 MB) with SHA-256 manifest + provenance stamp (A11) to
+    `results/prod2d_closure_20260818/arm_event_likelihoods/`. The whole fleet was re-scored without
+    re-running ~150 CPU-h. Cluster workspace expires **2026-09-23**.
+11. **Gates, all passed before any number was read:** R-0a (as-run provenance, **123/123**
+    bit-exact), R-0b (no-op identity, **79/79**), R-1 (CSV↔JSON pairing, 0 unverified).
+12. **PROCESS VIOLATION, disclosed:** the primary re-score was executed by a synthesis agent inside
+    the verification workflow *before* A-7 was finalized — dispatched to refute claims, it ran the
+    measurement. A-7 is therefore an **audited confirmatory recomputation, not a blind
+    measurement**. An independent second implementation (`rescore_sentinel.py`) reproduces it on
+    8 of 9 arms; the ninth differed only because the agent scored 15 bsel CSVs where 12 are banked.
+13. **Two further frozen convention defects, carried to the `/physics-change` presentation, not
+    fixed here:** `w = np.gradient(h_grid)` (`:1967`) is not trapezoid — it doubles the endpoint
+    weight at h = 0.600, the rail node (docstring at `:1943` is wrong); and `_hpd_contains` returns
+    True on reaching the target before testing `cum >= level`.
+14. **A15's standing is now decisive, not academic.** The orchestrator's own draft of A-7 twice
+    reproduced the very failure A15 was written to outlaw: a band calibrated against the wrong null
+    (`2·SE` for a paired difference whose sampling variance is exactly 0), and BAND O, whose two
+    branches were both pre-determined and which was withdrawn as undecidable. **A15 still awaits
+    the author's ruling** (row #144 §7).
