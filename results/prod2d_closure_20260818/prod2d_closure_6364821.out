@@ -1,0 +1,27 @@
+Loading bwUniCluster modules...
+  Loaded: compiler/gnu/14.2
+  Loaded: devel/cuda/12.8
+  Loaded: devel/python/3.13.3-gnu-14.2
+  Workspace: /pfs/work9/workspace/scratch/st_ac147838-emri
+=== prod2d_closure  job=6364821  node=uc3n025.localdomain  RUN_DIR=/pfs/work9/workspace/scratch/st_ac147838-emri/run_prod2d_20260818 ===
+18 registered cells; 18 workers; output -> /pfs/work9/workspace/scratch/st_ac147838-emri/run_prod2d_20260818
+vdeep_anchor_off: done in 8772s
+vdeep_off_sz0.002: done in 9330s
+vdeep_off_sz0.035: done in 9620s
+vdeep_off_sz0.010: done in 11555s
+vprod_anchor_off: done in 19302s
+
+============================= JOB FEEDBACK =============================
+
+NodeName=uc3n025
+Job ID: 6364821
+Cluster: uc3
+User/Group: st_ac147838/st_us-403333
+State: CANCELLED (exit code 0)
+Nodes: 1
+Cores per node: 18
+CPU Utilized: 00:00:00
+CPU Efficiency: 0.00% of 9-13:28:12 core-walltime
+Job Wall-clock time: 12:44:54
+Memory Utilized: 2.39 GB
+Memory Efficiency: 7.45% of 32.00 GB (32.00 GB/node)

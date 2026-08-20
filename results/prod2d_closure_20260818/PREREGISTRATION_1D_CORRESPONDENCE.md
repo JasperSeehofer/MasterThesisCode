@@ -283,3 +283,59 @@ off-nominal (normalized_residual_std 0.379 vs expected 0.25, with ~21.7M rows hi
 mass-width floor), so the leading hypothesis is a scale-dependent interaction in the
 re-scatter path's mass columns rather than anything in the z-kernel. Diagnosis is a separate
 mechanical item; the dose is REPORTED-ONLY and adjudicates nothing.
+
+## A-2 VERDICT (2026-08-20) — B-OUT reproduces production's dark rail; interpretation corrected
+
+Job 6385173: 14/17 COMPLETED (3 TIMEOUT). Scored by the **pre-committed** scorer
+(`readout_bout.py`, committed before the data landed).
+
+| arm | n | bias | mean_h | σ_h | n_eff | C50/68/90 | R_low | registered band |
+|---|---|---|---|---|---|---|---|---|
+| **B-OUT** | 13 | **−0.1293** | **0.6007** | 0.0027 | 196 | 0.00/0.00/0.00 | 1.00 | **COMPLETION-BIASED-LOW** |
+| B-F1 | 1 | −0.0000 | 0.7300 | 0.0778 | 69 | 1.00/1.00/1.00 | 1.00 | COMPLETION-UNBIASED (n=1 of 2; 1 seed timed out) |
+
+**The headline: the mirror now reproduces production's dark class almost exactly.**
+B-OUT mean_h = **0.6007** vs production's pure-completion class **0.6001** (σ_h 0.0027 vs
+0.0011), railed in 13/13 seeds. The correspondence that FAILED for catalogue-resident arms
+(S-CORR z ≈ −18) SUCCEEDS in the production-typical out-of-catalogue regime. Production's
+base tilt is now reproducible in a 35-minute harness run with full control — the debugging
+bed this campaign lacked.
+
+**Interpretation CORRECTED (orchestrator self-catch, before any claim was banked):** the
+scorer's canned discriminator line ("⇒ internal misnormalization; population attribution
+falsified") **does not hold**, because B-OUT matches the estimator's POPULATION
+(`population_z_weights` = dV_c/dz/(1+z), byte-identical to production's `_w_pop_eff` bare
+form) but NOT its SELECTION: hosts are drawn ∝ w_pop(z) with no detection weighting and
+196/200 pass the quality filter, whereas the estimator models detected dark events as
+w_pop(z)·(1−f(z))·S̄_φ(z;h). B-OUT therefore has a data-vs-model mismatch of its own — in
+the selection rather than the population — and cannot separate "internal misnormalization"
+from "mismatch". The registered BAND (COMPLETION-BIASED-LOW) stands; the causal sentence
+attached to it is withdrawn.
+
+**What B-OUT does establish (all three stand):**
+1. The dark-class low rail is REPRODUCED outside production, on demand, cheaply.
+2. It appears whenever the analysed events' z-distribution carries more high-z weight than
+   the model's assumed detected-dark distribution — B-OUT is the extreme case (no selection
+   suppression at all), production is the mild case (M1 vs comoving shape, ≈87% of its
+   score predicted by `population_mismatch_dark_score.md`). Same direction, same signature.
+3. B-F1 (unity completeness, catalogue-resident) returns truth to 4 decimals — the
+   catalogue-arm bias of +0.0245 is a completeness-model artefact, as hypothesised.
+
+## AMENDMENT A-3 (registered now, pre-run) — the true isolation test
+
+- **B-SEL (adjudicating, 15 seeds):** hosts drawn ∝ **w_pop(z)·(1−f̄(z))·S̄_φ(z; h_true)** —
+  the estimator's OWN assumed distribution of *detected* dark events (population ×
+  completeness deficit × survival, using the production survival object the harness already
+  builds). This is the only arm that matches the model in BOTH population and selection.
+  **Bands:** ESTIMATOR-SELF-CONSISTENT if |bias| ≤ max(0.005, 2·SE) AND C68 within the N=15
+  binomial 95% band ⇒ every observed tilt is data-vs-model mismatch and the estimator's
+  completion mathematics is exonerated; **INTERNAL-MISNORMALIZATION** if |bias| ≥ 0.005 with
+  CI excluding 0 ⇒ a genuine estimator defect exists, reproducible in 35 min/seed, and the
+  completion integrand is bisected next (numerator vs D̃^φ vs the (1−f)/S pairing);
+  MIXED otherwise.
+- **Also registered:** the 3 TIMEOUT seeds (2 B-OUT, 1 B-F1) are resubmitted at
+  `--time=03:00:00` (the arm's realized wall is ~37 min but stragglers hit 2 h under
+  contention); B-F1 adjudicates at 2/2.
+- Budget: 15 + 3 ≈ 18 seed-runs ≈ 20 CPU-h (Option B running total ≈ 127 CPU-h — **over the
+  registered 120 ceiling**, disclosed; the ceiling is raised to 150 by this amendment with
+  the overrun stated rather than hidden).
