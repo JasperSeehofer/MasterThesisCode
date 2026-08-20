@@ -36,7 +36,24 @@ nothing (−0.116, −0.119 vs −0.112) — consistent with the driver being ou
 is real and unit-proven — production's event term integrates over the data to 1.0316 vs 1.0 —
 but repairing it does not move the bias).
 
-## 1. The next step is registered and ready: **D-2**
+## 1. SUPERSEDED BY ROW #144 — read `docs/RETROSPECTIVE_D1_20260820.md` FIRST
+
+The D-1 void was **withdrawn** (its band false-fails 58% at n=174; observed p=0.225), row
+#140 is **reinstated PROVISIONAL-WITH-A-BOUND** (residual ≥0.073 survives the maximum
+possible survival-mismatch contribution), and the mirror's positive control (B-F1 / the G-1
+STOP gate) was found **VACUOUS** — a perfectly flat log-posterior, span 0.0 nats, so the
+harness has had no working control since G-0. **D-2 as written below is INADEQUATE** (it
+changes two things at once and inherits the broken control).
+
+**The actual next step:** build a positive control that CAN fail — an arm generated
+end-to-end by the estimator's own forward model (draw AND observation AND selection from the
+objects the likelihood integrates) plus an injected-bias variant proving the arm detects a
+known displacement. If it returns truth, B-SEL's residual ≥0.073 becomes a defect claim; if
+it returns a bias, the harness is the defect. Everything else is downstream of it. Also
+pending: **amendment A15** (power-calibrated gates, demonstrably-sensitive controls) awaits
+the author's ruling.
+
+## 1b. The superseded D-2 registration (kept for the record)
 
 Per AMENDMENT A-6 (end of the correspondence prereg): rebuild the mirror arm so **survival**
 matches the model — accept every drawn event (NO production quality filter) and assign each an
