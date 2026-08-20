@@ -1454,3 +1454,36 @@ follow the scientific clues"*). Fleet 6383719: 70/80 COMPLETED (b0 25, bsig005 2
    targets are the z-integral measure/Jacobian and D̃^φ's α_G^φ/β_Ḡ^φ class composition.
    Implementation in flight; 15 seeds ≈ 11 CPU-h (running total ≈ 150, at the amended
    ceiling).
+
+## Row #141 — 2026-08-20 — Bisection step 1: CONVENTION-NOT-IT; derivation identifies the completion numerator's DATA MEASURE (provisional, falsifier registered)
+
+1. **A-4 executed** (job 6389506, 11/15 seeds; 4 TIMEOUT resubmitted as 6393215 at 5 h):
+   **B-SELF = −0.1163 ± 0.0010** vs B-SEL's −0.1120 → **CONVENTION-NOT-IT**. Putting the
+   detection weight in the completion numerator (the fused convention, worth ≈ +0.17 of
+   dark-class score in production) changes NOTHING in a model-matched universe. The
+   numerator/denominator detection-weight asymmetry is excluded as the defect; the
+   production-side value of the fusion factor was a regime effect, not a normalization
+   repair. Shortfall disclosed (11/15); SE 0.0010 with 11/11 railed leaves no route to the
+   ≤ 0.005 band.
+2. **Derivation `docs/derivations/completion_numerator_data_measure.md`.** The completion
+   numerator's event term is `N(d_L(z;h)/d̂; μ, σ)` — a density in the distance RATIO, not in
+   the observable. Integrating it over the data space gives
+   ∫dd̂ p_gw ≈ **d_L(z;h)**, not 1, so the numerator's implicit normalization weights the
+   population by an extra d_L = a(z)/h while the denominator β_Ḡ^φ does not. Leading-order
+   consequence, parameter-free: **E[score] ≈ −1/h = −1.37** per event at truth; measured
+   −0.635 ± 0.017, same sign and order, with the difference attributable to the named
+   subleading terms.
+3. **Self-correction inside the derivation:** the naive "missing Jacobian tilts the
+   numerator" reading is WRONG — the GW factor pins d_L(z*) = d̂, so the missing factor
+   contributes no h-slope inside the numerator. The defect is the *pairing*: the denominator
+   is a broad integral in which the missing d_L ∝ 1/h does not cancel. This also explains
+   item 1 (fusing fixes the detection weighting, not the measure).
+4. **Consistency with banked data (all three hold):** catalogue-supported events show the
+   opposite pull (in-catalogue class 0.828, score +1.507) as predicted for kernel-pinned
+   integrals; the effect is identical in 2D (0.6004) as predicted for a distance-side defect;
+   it survives in the model-matched universe (B-SEL/B-SELF).
+5. **A14 compliance:** the attribution is PROVISIONAL. Falsifier registered as **B-DEN**
+   (A-5) with bands MEASURE-OWNS-IT / -PARTIAL / -NOT-IT; a MEASURE-NOT-IT result falsifies
+   the memo and moves the hunt to D̃^φ's class composition. The instrument touches a
+   physics-trigger file, so §6 of the memo is a `/physics-change` gate presentation and
+   **awaits the author** before implementation.
