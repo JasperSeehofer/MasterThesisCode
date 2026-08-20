@@ -1666,3 +1666,31 @@ before the verdict was read. Registered as **A-7** in `PREREGISTRATION_1D_CORRES
     (`2·SE` for a paired difference whose sampling variance is exactly 0), and BAND O, whose two
     branches were both pre-determined and which was withdrawn as undecidable. **A15 still awaits
     the author's ruling** (row #144 §7).
+
+### Addendum to row #145 (2026-08-20, same session) — the root cause does NOT reach production
+
+Row #145 item 9 established that the *sentinel* cannot touch production (different code path). Item
+6 then identified the real trigger as a **generator/data defect**: events whose likelihood is zero
+at every h, all carrying `g_frac = NaN` (an empty candidate set). That raised a scope question the
+row did not answer — **does the generator defect itself reach production?** — and this project's
+own standing lesson is that a direction argument is not a check. Measured on the banked production
+diagnostics:
+
+| run | events × nodes | zero cells | events with ≥1 zero | events ALL-zero | `g_frac` NaN |
+|---|---|---|---|---|---|
+| postfix iiib | 1588 × 41 | **0** | **0** | **0** | **0.0%** |
+| postfix joint_r1 | 1588 × 41 | **0** | **0** | **0** | **0.0%** |
+| frozeng iiib | 1588 × 41 | **0** | **0** | **0** | **0.0%** |
+| battery v0_iiib | 1588 × 2 | **0** | **0** | **0** | **0.0%** |
+| counterfactual v0_iiib | 1588 × 2 | **0** | **0** | **0** | **0.0%** |
+
+**[RULE] The empty-candidate-set / `g_frac = NaN` defect is MIRROR-SPECIFIC.** Production produces
+no zero-likelihood cell at all, so neither the sentinel nor its upstream trigger can have touched
+the post-fix baselines, the dark-class 0.6001, or the score −0.635 ± 0.017. The scope statement of
+row #145 item 9 is now confirmed by measurement on both levels, not only for the combine.
+
+This also **sharpens the open thread** (row #145 item 6, runbook 24 §2): the question is not "why
+does the pipeline sometimes produce hostless events" — production never does — but specifically
+**why the MIRROR places a host in the catalogue that the ball-tree lookup then fails to recover**,
+in 25/70 catalogue-mode seeds and 0/60 population-mode seeds. That is a defect in the mirror's own
+host-draw/lookup correspondence, and it is a prerequisite for the row #144 §6 positive control.

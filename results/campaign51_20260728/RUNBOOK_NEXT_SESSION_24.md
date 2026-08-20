@@ -51,7 +51,7 @@ are *not* underflow (fleet min non-zero 4.876e-48, ~302 orders above the subnorm
 PROVISIONAL-WITH-A-BOUND is untouched**; and all production numbers (the additive sentinel exists
 nowhere else, and no production module imports these functions).
 
-## 2. THE ROOT CAUSE IS UPSTREAM AND IS STILL OPEN
+## 2. THE ROOT CAUSE IS UPSTREAM, MIRROR-SPECIFIC, AND STILL OPEN
 
 Every all-zero event has `L_cat_no_bh = 0`, `B_num = 0` **and `g_frac = NaN`** — an empty candidate
 set / undefined catalogue–completion mixing fraction — in **100%** of cases, against a 3–6%
@@ -59,9 +59,17 @@ baseline. 25/70 catalogue-mode seeds, **0/60 population-mode**. **This is a gene
 not a numerical one.** The proposed fixes stop the harness silently banking a fabricated posterior
 when it happens; they do not stop it happening.
 
-**Why the mirror places a host in the catalogue that the ball-tree lookup then fails to recover is
-the open question**, and gate-presentation item 7 proposes it as the next thread **ahead of** the
-row #144 §6 positive control — because that control would inherit the defect.
+**MEASURED, same session: the defect does NOT reach production.** All five banked production
+diagnostics (postfix iiib/joint_r1, frozeng iiib, battery v0_iiib, counterfactual v0_iiib; 1588
+events each) have **0 zero cells, 0 all-zero events and 0.0% `g_frac` NaN**. So neither the
+sentinel nor its upstream trigger touched the post-fix baselines, the dark class 0.6001, or the
+score −0.635 ± 0.017. See the addendum to ledger row #145.
+
+That sharpens the open thread rather than closing it: the question is **not** "why does the
+pipeline produce hostless events" — production never does — but specifically **why the MIRROR
+places a host in the catalogue that the ball-tree lookup then fails to recover**, in 25/70
+catalogue-mode seeds and 0/60 population-mode seeds. Gate-presentation item 7 proposes this as the
+next thread **ahead of** the row #144 §6 positive control, because that control would inherit it.
 
 ## 3. Open author decisions (8, all in the gate presentation §6)
 
