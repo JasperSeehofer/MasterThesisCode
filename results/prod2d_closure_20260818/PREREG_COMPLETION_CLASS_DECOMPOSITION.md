@@ -101,3 +101,46 @@ production tilt is a data-vs-model mismatch. This is now the top-ranked derivati
 
 Caveats §"Registered caveats" apply: class membership correlates with regime, so this is
 attribution (who carries the slope), not leg-ownership proof.
+
+**ADDENDUM (same free read, 2026-08-20) — the tilt is a HIGH-REDSHIFT phenomenon, and a
+convention ledger for it:**
+
+*Redshift localization (iiib C-C, quintiles of event z at h=0.73):*
+
+| z bin | n | score d ln p_i/dh | d ln B_num/dh |
+|---|---|---|---|
+| 0.075–0.392 | 121 | **+0.014** | −1.221 |
+| 0.392–0.559 | 121 | −0.465 | −1.701 |
+| 0.559–0.659 | 121 | −0.742 | −1.978 |
+| 0.659–0.753 | 121 | −0.902 | −2.138 |
+| 0.753–1.018 | 121 | **−1.081** | −2.317 |
+
+The dark-class score is **consistent with zero below z ≈ 0.4 and falls monotonically to
+−1.08 by z ≈ 0.9**. (For contrast: C-A, median z = 0.071, has score **+1.507**.) The base
+tilt is therefore generated in the DEEP part of the completion leg, not uniformly.
+
+*Convention ledger for the same class (score at truth, iiib):* production now (derived
+B_scale, off-basis) **−0.635**; with the old B_scale (2026-08-17 runs, off) −0.449; with
+B_scale AND selection fused into the completion numerator −0.286; implied derived-form +
+fused ≈ −0.45. So each selection-normalization factor studied so far is worth ≈ +0.17 of
+score, and **the residual −0.45…−0.64 per event is owned by none of them** — it is the base
+tilt proper. (The B_scale arithmetic cross-validates the removal: −0.449 − 0.186 = −0.635,
+matching the postfix measurement.)
+
+*Third candidate, newly evidenced:* the injection pool (`injection_pool_mix200k_20260728`,
+707 files, z ≤ 1.5, d_L ≤ 10.7 Gpc) has detected fractions 45% below 4.5 Gpc, **1.9% in
+4.5–7.2 Gpc and 0% above 7.2 Gpc** — while the C-C events reach z ≈ 1.0 (d_L ≈ 6.9 Gpc).
+The selection object S̄_φ is thus estimated from a very sparse detected subsample exactly
+in the redshift range where the score bias lives.
+
+**Ranked candidates for the base tilt (each derivable/testable, none adjudicated):**
+1. **Population/selection misspecification at depth** — the injected EMRI population
+   (Barausse M1 rate) vs the estimator's assumed dark population (comoving volume ×
+   completeness), diverging most at high z. **B-OUT tests it** (draws from the estimator's
+   own population: unbiased ⇒ the estimator is self-consistent ⇒ production's tilt is
+   data-vs-model).
+2. **Selection-estimate quality at depth** — S̄_φ/p_det from a pool with ~2% detected
+   fraction in the relevant shell (and exactly zero beyond 7.2 Gpc, a hard cut the numerator
+   does not share under the off convention).
+3. **Residual internal misnormalization** of the completion numerator/denominator pair
+   beyond B_scale and the fusion factor (the two already-quantified ≈ +0.17 pieces).
