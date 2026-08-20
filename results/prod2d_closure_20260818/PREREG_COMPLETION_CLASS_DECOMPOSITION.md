@@ -54,3 +54,50 @@ SLOPE at the full-sample mean (the additive attribution of the tilt).
 ## VERDICT
 
 *(append-only after execution)*
+
+**VERDICT (2026-08-20, appended after execution; [RULE]s to the author):**
+
+**Band fired: COMPLETION-CARRIES** (both venues, both channels).
+
+| venue | class | n (%) | 1D mean | 1D σ_h | 1D MAP | 1D slope share | 2D mean |
+|---|---|---|---|---|---|---|---|
+| iiib | C-A in-catalogue | 76 (4.8%) | 0.8279 | 0.0298 | 0.86 | −0.91 | 0.7821 |
+| iiib | C-B impostor-only | 907 (57.1%) | 0.6160 | 0.0141 | 0.61 | −0.04 | 0.8441 |
+| iiib | **C-C pure completion** | **605 (38.1%)** | **0.6001** | **0.0011** | **0.60** | **+1.95** | **0.6004** |
+| joint_r1 | C-A | 76 (4.8%) | 0.8187 | 0.0372 | 0.86 | −1.17 | 0.8125 |
+| joint_r1 | C-B | 1021 (64.3%) | 0.6080 | 0.0100 | 0.60 | +0.30 | 0.7945 |
+| joint_r1 | **C-C** | **491 (30.9%)** | **0.6004** | **0.0021** | **0.60** | **+1.87** | **0.6011** |
+
+Full-sample means: 1D 0.6010/0.6020, 2D 0.6771/0.6788. C-C reproduces the full-sample 1D
+mean to 0.001 and carries ~195% of its slope (the catalogue-supported classes pull the
+other way — the production posterior is a balance point, as the gate review predicted).
+**Identical in the 2D channel** (C-C 0.6004/0.6011): the base tilt is NOT mass-channel
+structure.
+
+**The mechanism, stated as a testable defect (free-read follow-up, same data):** for the
+pure-completion class the per-event score at TRUTH is
+
+    d ln p_i/dh |_(h=0.73) = **−0.635 ± 0.017** (iiib; sd 0.417 over 605 events)
+                             **−0.565 ± 0.020** (joint_r1; sd 0.440 over 491)
+
+i.e. **37σ / 28σ from zero**. A correctly normalized likelihood has zero expected score at
+truth when the data come from its own model; this one does not, and 605 events convert a
+−0.6/event score into a −384 nats/h ensemble slope ⇒ the delta-like rail at the grid edge
+(σ_h = 0.0011). Decomposition (identity verified to machine precision, B_num − D̃^φ = p_i):
+d ln B_num,i/dh = −1.871 per event vs the GLOBAL d ln D̃^φ/dh = −1.236 — the completion
+NUMERATOR falls with h faster than the selection normalization that is supposed to cancel
+it, by 0.635 per event.
+
+**Interpretation (two candidates, and the experiment that separates them — already
+registered as A-2's B-OUT):**
+(i) **internal misnormalization** of the completion leg (numerator/denominator not a
+matched pair in h — the same defect class as the removed B_scale, which lived on this exact
+leg), or (ii) **population/selection misspecification** — the injected universe's detected
+n(z) differs from the estimator's assumed population × completeness, so the score is
+non-zero at truth even for a self-consistent estimator.
+**B-OUT decides it:** it draws dark hosts FROM the estimator's own population model, so a
+non-zero score there ⇒ (i) internal defect; a zero score ⇒ (ii) misspecification and the
+production tilt is a data-vs-model mismatch. This is now the top-ranked derivation target.
+
+Caveats §"Registered caveats" apply: class membership correlates with regime, so this is
+attribution (who carries the slope), not leg-ownership proof.
