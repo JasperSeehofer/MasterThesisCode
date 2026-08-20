@@ -324,3 +324,37 @@ Gates: T (α_G_φ, D̃_φ h-only across events to ≤2e-6; β_Ḡ > 0 everywhere
 reproduces −0.1083 ≤ 5e-5). REPORTED-ONLY: analytic tilt slope and ×n amplification per seed;
 matched-channel per-seed stats; b0 catalogue-sector corroboration (`L_cat/r_Malm`, 25 seeds) —
 EXPLORATORY, convention not independently verified, carries no verdict.
+
+## PRE-CHECK O3 — VERDICT (2026-08-21, gates T + F2 PASS)
+
+> **bias_matched = −0.0846, per-seed sd 0.0329, SEM 0.0095 ⇒ MATCHED-INCONSISTENT.** The tilt
+> `ln(D̃/β_Ḡ)` is measured at −0.133/h per event (≈ −24 nats/h per seed) and owns the pure−matched
+> gap. Three-channel decomposition of −0.1083: **matched −0.0846 ⊕ tilt ≈+0.055 ⊕ impostor −0.079**.
+> EXPLORATORY: b0's catalogue-sector conditional is **+0.0402** — opposite sign. Ledger row #150.
+
+## C-SG v3 — DESIGN CHANGE (2026-08-21, mandated by O2's fired band; append-only)
+
+**The generator is UNCHANGED from v2 design B (§2–§4).** What changes is the scoring, per O2+O3:
+
+1. **PRIMARY channel = the MATCHED channel** `L_matched = B_num/β_Ḡ_φ` — the model-matched
+   conditional for C-SG's dark-detected draw. The primary statistic (per-event score at `h_gen`,
+   §6) and **BAND C** now apply to this channel. Rationale: the full mixture provably carries a
+   −0.079-scale impostor-leg mismatch (O2) that would swamp any internal-defect signal BAND C
+   exists to detect; the matched channel is the completion leg's own conditional self-consistency
+   test, and it is the channel in which B-SEL measures −0.0846 (O3).
+2. **SECONDARY, reported-only:** the full-mixture posterior (its offset from the matched channel
+   measures C-SG's impostor + composition mismatch, to compare against B-SEL's structure) and the
+   pure channel `B_num/D̃_φ` (tilt bookkeeping).
+3. **The reading, restated for the matched channel:** ESTIMATOR-SELF-CONSISTENT (matched-channel
+   score ≈ 0) ⇒ B-SEL's −0.0846 is owned by its residual generator-side caveats (pixel f̄-vs-f_k,
+   donor rows, σ borrowing, quality filter) — and each becomes individually testable per §8's
+   falsifier. INTERNAL-DEFECT (matched-channel score reproduces the −0.08 scale) ⇒ the completion
+   leg's misnormalization is banked as an estimator defect with the production-facing consequence
+   that follows. MIXED per the pilot's bands. **The branch comparison is a fresh [RULE] for the
+   author in either case.**
+4. **Diagnostics obligation:** every C-SG seed banks the same per-event diagnostics CSV columns
+   (`alpha_G_phi`, `D_tilde_phi`, `B_num`, `L_cat_no_bh`, …) so all three channels are recomputable
+   at zero compute, exactly as O2/O3 were.
+5. Pilot mandate, GATE V/H/Q/D, GATE S regression, and the post-pilot band-setting discipline are
+   unchanged — with GATE S and BAND C evaluated on the matched channel. GATE V's vacuity targets
+   apply to the matched-channel posterior.

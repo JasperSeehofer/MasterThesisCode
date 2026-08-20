@@ -1893,3 +1893,70 @@ mechanism as B-F1" inference remains unsupported; and these files are a **local*
 correspondence to whatever produced the historical G-1 verdict is unknown. They make a
 recomputation *possible*; they do not settle the gate. Any number derived from them is
 provenance-limited and must say so.
+
+## Row #149 — 2026-08-21 — Pre-check O2 (free read): IMPOSTOR-SUBSTANTIAL — the impostor catalogue leg carries 73% of B-SEL's −0.1083; C-SG's registered design-change trigger FIRES
+
+Autonomous overnight session under the author's 2026-08-21 grant ("please continue autonomously
+over night", verbatim; itemisation orchestrator-derived). Scorer + materiality bands committed
+BEFORE the data was read (`decompose_impostor_leg.py`, commit `9d91ecf8`); A15 statement: a
+deterministic paired read carries no statistical band, so the bands are materiality thresholds
+referenced to C-SG's resolution (0.0023 = its best 15-seed SE) and to 10% of the effect (0.0110).
+
+1. **Δ_bias = +0.0791883246 ⇒ IMPOSTOR-SUBSTANTIAL.** Setting `L_cat_no_bh ≡ 0` (exact
+   subtraction, identity verified against the banked `combined_no_bh` at the columns' 7-sig-fig
+   storage precision) moves the 12-seed fleet from −0.1083 to **−0.0291**. Positive in 12/12 seeds
+   (+0.030 … +0.164). The pure arm un-rails (r_low 2/12 vs 12/12) and c68 recovers in 5/12.
+   **Independently recomputed** by a separately-implemented agent script to 10 decimals (the
+   agent was forbidden from reading the scorer).
+2. **Two gate failures on the first run, both diagnosed to the cell and amended with disclosure**
+   (prereg O2 GATE AMENDMENT 1): (a) GATE I's 1e-9 tolerance ignored that
+   `bayesian_statistics.py:4365` stores `alpha_G_phi`/`r_Malm`/`D_tilde_phi` at 7 significant
+   figures (measured quantization bound 4.9e-7/column; observed 5.0–5.5e-7); tolerance re-derived
+   to 2e-6; propagation to Δ_bias ≲ 1e-5, 4600× below the band. (b) GATE P's registered quantiles
+   were the pre-check verifier's convention `α·L/(α·L+B)` over active events — reproduced exactly,
+   all 8 targets — while the assembly-true β-convention share is LARGER (max 0.923 vs 0.821,
+   5 events >0.5 vs 2). "Verifier output is evidence, not authority", again, in both directions.
+3. **[RULE-PENDING, author] Rows #137/#140 re-grade.** The registered band consequence: the
+   "pure completion carries it" attribution language must be revisited — the completion CLASS
+   carried the rail, but 73% of the arm-level bias flows through the impostor catalogue leg
+   active in ~74% of events. NOT re-ruled here; queued for the author.
+4. **[RULE-PENDING, author] Row #144's ≥0.073 residual bound is OVERTAKEN.** Headline-swap
+   recompute against −0.1083 gives ≈0.069–0.071 (agent-derived, orchestrator-checked arithmetic:
+   0.1083 − 0.0390 = 0.0693), with the disclosed caveat that TV(s) and the 34–62% fraction were
+   never banked and their σ_h inputs predate the row #146 combine fix. More decisively: O2
+   measures the NON-impostor channel at −0.0291 — BELOW the claimed ≥0.073 "residual internal
+   component" — so the bound's premise (survival-mismatch is the only non-internal channel) is
+   refuted by measurement. Queued for the author with row #144.
+5. **[DO, executed] The §9 trigger fires: C-SG's design must change before it runs.** → row #150.
+
+## Row #150 — 2026-08-21 — Pre-check O3 (free read): MATCHED-INCONSISTENT — the completion leg fails its own dark-sector score-zero test at −0.0846 ± 0.0095; O2's mild pure-channel bias was partial cancellation; C-SG v3 scoring design set
+
+Registered pre-data as O3 (same commit discipline; bands appended below the C-SG freeze line
+before the scorer ran).
+
+1. **Derivation registered first:** `D̃_φ = α_G_φ + β_Ḡ_φ` (`bayesian_statistics.py:2427`) splits
+   the mixture normalization into catalogue and dark sectors. B-SEL draws dark-detected events, so
+   its model-matched conditional is `L_matched = B_num/β_Ḡ_φ`; O2's pure channel `B_num/D̃_φ`
+   differs by the event-independent tilt `−ln(1−w̃_G(h))`, amplified ×n per seed.
+2. **bias_matched = −0.0846, per-seed sd 0.0329, SEM 0.0095 ⇒ MATCHED-INCONSISTENT** (band edge
+   0.0110). Gates T (h-only-ness of α/D̃ to ≤2e-6; β_Ḡ>0) and F2 (full-channel −0.1083 reproduced)
+   PASS. The tilt is measured at −0.133/h per event (ln D̃/β_Ḡ), ≈ −24 nats/h per seed, and owns
+   the pure−matched gap (+0.025…+0.085, width-dependent as expected).
+3. **The three-channel decomposition of B-SEL's −0.1083 (all deterministic, banked):**
+   matched-channel violation **−0.0846** ⊕ mixture-tilt pullback **≈+0.055** ⊕ impostor-leg drag
+   **−0.079** ⇒ full −0.1083. O2's −0.0291 "pure" residual is NOT a small internal defect — it is
+   a −0.0846 defect-candidate partially cancelled by the dark-fraction normalization slope.
+4. **EXPLORATORY (no verdict): b0's catalogue-sector conditional** (`L_cat/r_Malm`, 25 seeds) is
+   biased **+0.0402** — opposite sign to the dark sector. The two sector conditionals disagree in
+   opposite directions; the mixture bias is composition-dependent, matching the arm phenomenology
+   (100%-catalogue arms +0.03, 100%-dark arms −0.11…−0.13, production 4.79% in-catalogue railing
+   dark).
+5. **What remains open — exactly C-SG's question, now sharpened:** whether −0.0846 is an estimator
+   internal defect or is owned by B-SEL's residual generator-side caveats (sky-marginal f̄ vs
+   per-pixel f_k in the draw, donor-row sky/covariances, σ_frac borrowing, quality filter). C-SG
+   v3 removes all of these by construction and scores THE MATCHED CHANNEL as primary. BAND C
+   moves to that channel; the full-mixture and pure channels become reported secondaries.
+6. **[DO, executed] C-SG v3 design-change block appended below the freeze line** (generator =
+   design B unchanged; scoring channels changed per items 2–5; pilot mandate unchanged; bands
+   still set post-pilot). Implementation proceeds tonight; the BAND C branch comparison remains a
+   fresh **[RULE]** for the author when data exists.
