@@ -1,8 +1,10 @@
 # Proposed research-cycle amendments — from the 2026-08-19/20 campaign
 
-**Status:** PROPOSAL. Every item carries a tag; nothing is applied to
-`.claude/skills/research-cycle/SKILL.md` until the author rules. Evidence base: ledger rows
-#127–#140 (three fronts, five cluster fleets, two blindness failures, five withdrawn claims).
+**Status:** **RATIFIED 2026-08-20** — the author ratified A10–A14 and the two attached harness
+rules (dataset checksum pins; the subagent blocking-wait rule); applied to
+`.claude/skills/research-cycle/SKILL.md` and `CLAUDE.md` as of this commit. **Numbering note:** first drafted as A8–A12, renumbered to **A10–A14** on ratification —
+`docs/RESEARCH_CYCLE.md` already owned A1–A9 (A8 adopted 2026-08-14, A9 proposed). Evidence base: ledger rows #127–#140 (three fronts, five cluster fleets, two blindness
+failures, five withdrawn claims).
 
 **Framing.** The campaign's two big findings were both *invisible to the method that was
 running*, not merely unnoticed. That is the interesting failure mode: the cycle's discipline
@@ -33,7 +35,7 @@ make the blindnesses *visible cheaply* rather than to re-run the gate every time
 
 ---
 
-## [RULE] A8 — Invariance & blindness declaration (stage 2, pre-registration)
+## [RULE] A10 — Invariance & blindness declaration (stage 2, pre-registration)
 
 Every pre-registration gains a short mandatory section with two lists:
 
@@ -50,7 +52,7 @@ that its conclusions are conditional on the unaudited invariants — by name. Co
 Had this existed, `B_scale` would have appeared on the invariants list of every 2D
 counterfactual since 2026-08-04 with `NEVER` beside it.
 
-## [RULE] A9 — Provenance freshness for every number entering a budget (stage 5/6)
+## [RULE] A11 — Provenance freshness for every number entering a budget (stage 5/6)
 
 Any quantity quoted into a budget, band, or verdict carries a four-field stamp:
 `{value, source (commit/artifact), date, configuration-of-record}`. A stamp whose
@@ -68,7 +70,7 @@ carries a checksum pin at each consumer with a STOP gate. A stale local galaxy c
 (July 1 vs the July 27 catalogue of record) silently fed every local analysis until a
 fidelity gate caught it; there was no pin because nothing required one.
 
-## [DO] A10 — The score-zero test as a standing first diagnostic
+## [DO] A12 — The score-zero test as a standing first diagnostic
 
 Add to stage 4 (measure/refute) as the FIRST thing tried on any estimator-bias question,
 before instruments are built:
@@ -82,7 +84,7 @@ This is what finally cracked the campaign: `−0.635 ± 0.017` (37 σ) on the da
 class-resolved (the pure-completion class carries ~195% of the slope) and z-resolved (≈0
 below z ≈ 0.4, −1.08 by z ≈ 0.9). It cost nothing and could have been run on day one.
 
-## [RULE] A11 — Engagement gate on every counterfactual instrument
+## [RULE] A13 — Engagement gate on every counterfactual instrument
 
 No null from an instrument is interpretable until the instrument is shown to change the
 output: a registered engagement threshold (e.g. "≥ 10% of the relevant events move by
@@ -95,7 +97,7 @@ scalar kernel would have passed bit-identity and continuity gates and returned a
 same amendment covers the labelled-arm risk (an arm labelled `fused` silently running `off`
 would fake a clean verdict) — the switch's runtime value is asserted per arm.
 
-## [RULE] A12 — An attribution ships with its own falsifier
+## [RULE] A14 — An attribution ships with its own falsifier
 
 Any memo or verdict that ATTRIBUTES an effect to a cause must, in the same document and
 before the attribution is banked, register the experiment that would falsify it, with bands.
@@ -124,12 +126,12 @@ written without one and had to be undercut by a later measurement instead.
 
 | # | Tag | Item | Cost |
 |---|---|---|---|
-| A8 | [RULE] | Invariance & blindness declaration in every prereg | minutes/cycle |
-| A9 | [RULE] | Provenance stamps on budget inputs + checksum pins on unversioned data | minutes/cycle; one-off pin work |
-| A10 | [DO] | Score-zero test as the standing first diagnostic | zero compute |
-| A11 | [RULE] | Engagement gate + dispatch-path check on every instrument | already de facto; codifies it |
-| A12 | [RULE] | Attributions ship with their own falsifier | zero |
+| A10 | [RULE] | Invariance & blindness declaration in every prereg | minutes/cycle |
+| A11 | [RULE] | Provenance stamps on budget inputs + checksum pins on unversioned data | minutes/cycle; one-off pin work |
+| A12 | [DO] | Score-zero test as the standing first diagnostic | zero compute |
+| A13 | [RULE] | Engagement gate + dispatch-path check on every instrument | already de facto; codifies it |
+| A14 | [RULE] | Attributions ship with their own falsifier | zero |
 
-If ratified, I apply A8–A12 to `SKILL.md` as numbered stage amendments and add the two
+If ratified, I apply A10–A14 to `SKILL.md` as numbered stage amendments and add the two
 harness rules (checksum pins; the subagent blocking-wait rule from the vault debrief) to
 `CLAUDE.md` in the same commit.

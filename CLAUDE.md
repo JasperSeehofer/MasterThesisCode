@@ -39,6 +39,10 @@ assign per agent from this routing table:
 
 State the chosen tiering (one line) when proposing a workflow so the author can veto overkill.
 
+**Subagent waiting (2026-08-20):** subagents must never end a turn to "wait for a completion
+notification" on a process the harness does not track — every wait is a blocking foreground
+command. Evidence: five parking incidents across three agents in one session.
+
 ### Install uv
 
 ```bash
@@ -87,6 +91,12 @@ Note: `fastemriwaveforms` installs as the `few` Python package — `import few`,
 ### Reproducible simulation runs
 
 Pass `--seed <int>` to fix the random state; when omitted, a random seed is chosen, logged, and recorded — with `git_commit`, `timestamp`, and all CLI args — in `run_metadata.json` in the working directory, so any result ties back to the exact code and parameters that produced it. Cluster per-task seeding (`BASE_SEED + SLURM_ARRAY_TASK_ID`) is owned by the `/cluster` skill.
+
+**Dataset pinning (2026-08-20):** any multi-GB input not in version control (galaxy
+catalogues, cluster outputs) carries a checksum pin at each consumer, STOP-gated on mismatch —
+machine-to-machine copies of "the same" file are not the same file. Evidence: a stale local
+galaxy catalogue silently fed every local analysis until a fidelity gate caught it; the
+cluster copy of record differed.
 
 ## Dev Workflow
 

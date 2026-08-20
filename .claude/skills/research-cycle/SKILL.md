@@ -125,6 +125,56 @@ OPEN / N-A / UNCHECKED — every row cites evidence or says UNCHECKED.
     eras requires a paired/stratified per-event read **alongside** the aggregate.
     Opposing sub-population effects cancel in the mean and manufacture spurious
     agreement. The paired read is free; the retraction is not.
+11. **Declare invariants and structural blindness at pre-registration (stage 2).**
+    [A10] Every prereg lists (a) **Invariants** — everything held fixed across
+    every arm, one line each with a last-audited date or `NEVER` — and (b)
+    **Structural blindness** — one sentence naming the defect class this design
+    cannot detect by construction. A `NEVER`-audited, load-bearing invariant
+    either gets audited this cycle, or the VERDICT states its conclusions are
+    conditional on it, by name. Evidence: `B_scale` (+0.12 posterior mean, twice
+    the bias under study) survived four campaigns because every arm held it
+    fixed — no amount of fan-out would have found it.
+12. **Stamp provenance freshness on every number entering a budget (stage 4/5).**
+    [A11] Any quantity quoted into a budget, band, or verdict carries `{value,
+    source (commit/artifact), date, configuration-of-record}`. A stamp whose
+    configuration no longer matches the current one is STALE and may not be
+    quoted as a point value — re-measure it, or carry it as an explicit band
+    with the staleness disclosed. Evidence: `s_Edd = -0.020` sat in a code
+    comment, was frozen into a prereg and a ratified decision, and was wrong by
+    an order of magnitude and sign (re-measured: `+0.0012`) six weeks after the
+    repo's own gate record had flagged it. Attached harness rule (`CLAUDE.md`):
+    every multi-GB input not in version control carries a checksum pin at each
+    consumer with a STOP gate.
+13. **Run the score-zero test first, before building instruments (stage 3).**
+    [A12] For data drawn from the estimator's own model, `E[∂_θ ln L]` at truth
+    is zero. Compute the per-event score at truth over the relevant event class
+    before building any other instrument; a non-zero mean at high significance
+    localizes a misnormalization, and reading it further by class and by
+    covariate localizes it further — all on banked data, zero compute.
+    Evidence: this is what cracked the campaign — `−0.635 ± 0.017` (37σ) on the
+    dark class, then class-resolved (~195% of the slope on one class) and
+    z-resolved (≈0 below z≈0.4, −1.08 by z≈0.9).
+14. **Gate every counterfactual instrument on engagement and dispatch path
+    (stage 3).** [A13] No null from an instrument is interpretable until it is
+    shown to move the output: register an engagement threshold (e.g. "≥10% of
+    relevant events move by ≥1e-6 relative", or a table ratio ≠ 1), score it,
+    STOP-gate on failure, and confirm the switch reaches every dispatch path
+    production actually uses — assert the switch's runtime value per arm.
+    Evidence: production dispatches through a batch kernel; an instrument
+    patched only into the scalar kernel would have passed bit-identity and
+    continuity gates and returned a confident false "no effect" — caught
+    pre-execution by a verifier.
+15. **An attribution ships with its own falsifier (stage 5/6).** [A14] Any memo
+    or verdict that attributes an effect to a cause registers, in the same
+    document and before the attribution is banked, the experiment that would
+    falsify it, with bands. An unrun falsifier means the attribution stays
+    explicitly provisional. Evidence, both directions: the population-
+    misspecification memo registered its falsifier in §7 and was cleanly
+    downgraded when it ran; the earlier impostor-overlap reading had none and
+    had to be undercut by a later measurement instead.
+
+Full rationale for A10–A14: `.claude/skills/research-cycle/PROPOSED_AMENDMENTS_20260820.md`
+(author-ratified 2026-08-20).
 
 ### Model & effort policy (RUNBOOK-6 §2)
 
@@ -193,5 +243,5 @@ in-session Gates A–C; run it at go/kill/pivot points, i.e. alongside stage 5.
 
 The cycle is itself append-only-governed: every change to it adds a row to the
 **Amendment ledger** at the end of `docs/RESEARCH_CYCLE.md`. No silent edits.
-Rules tagged `[A1]`/`[A2]`/`[A3]` above are session-earned amendments — the
-ledger carries the evidence that earned them.
+Rules tagged `[A1]`/`[A2]`/`[A3]`/`[A10]`/`[A11]`/`[A12]`/`[A13]`/`[A14]` above are
+session-earned amendments — the ledger carries the evidence that earned them.
