@@ -226,3 +226,30 @@ open by row #147 item 6. No production code changes.
 ---
 
 *(FREEZE LINE — after this file is committed, no edits above this line; append VERDICT blocks below.)*
+
+---
+
+## PRE-CHECK O2 — BAND REGISTRATION (appended pre-data, 2026-08-21)
+
+Scorer: `decompose_impostor_leg.py`, committed before `delta_bias` was ever computed. Decision
+statistic: `Δ_bias = mean₁₂(mean_h_pure) − mean₁₂(mean_h_full)` under the row #146 corrected
+combine on `H_GRID_41`, where `pure` sets `L_cat_no_bh ≡ 0` by exact subtraction
+(`combined − (α_G_φ/r_Malm)·L_cat/D̃_φ`).
+
+**A15 statement:** this is a deterministic paired recomputation on fixed banked data — the paired
+difference's sampling variance is exactly zero, so *no statistical band is applied* (the A-7
+counter-example recorded in A15's evidence is exactly the mistake being avoided). The bands are
+**materiality thresholds referenced to the downstream decision** (does C-SG's design change?):
+
+| band | condition | consequence |
+|---|---|---|
+| IMPOSTOR-SUBSTANTIAL | \|Δ_bias\| ≥ 0.0110 (10% of 0.1083) | rows #137/#140 "pure completion carries it" language revisited AND C-SG design change |
+| IMPOSTOR-MATERIAL | \|Δ_bias\| ≥ 0.0023 (C-SG's best 15-seed SE, 0.009/√15) | C-SG design change before it runs |
+| IMPOSTOR-IMMATERIAL | \|Δ_bias\| < 0.0023 | §5's mismatch quantified below C-SG resolution; C-SG proceeds unchanged |
+
+Validity: GATE I (identity ≤1e-9 rel, all cells), GATE F (full-arm fleet bias reproduces −0.1083
+to ≤5e-5; in-scorer moments ≡ `compute_seed_statistics` to ≤1e-12), GATE P (§0 item 5 impostor-share
+quantiles reproduced on seed900101@0.73). Gates fail ⇒ Δ_bias may not be read. Design-time
+sightings disclosed in the scorer docstring. REPORTED-ONLY: pure-arm map/σ_h/r_low/c68, per-event
+score-at-truth decomposition, physics-floor exclusion counts, the 3 unbanked bsel CSV dirs
+(900113–900115) which carry no banked JSON and are not scored.
