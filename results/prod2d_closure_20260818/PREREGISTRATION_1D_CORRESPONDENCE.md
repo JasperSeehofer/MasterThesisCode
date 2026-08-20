@@ -339,3 +339,57 @@ attached to it is withdrawn.
 - Budget: 15 + 3 ≈ 18 seed-runs ≈ 20 CPU-h (Option B running total ≈ 127 CPU-h — **over the
   registered 120 ceiling**, disclosed; the ceiling is raised to 150 by this amendment with
   the overrun stated rather than hidden).
+
+## A-3 VERDICT (2026-08-20) — **INTERNAL-MISNORMALIZATION** (the campaign's decisive result)
+
+Job 6387553: 12/15 B-SEL seeds banked (3 TIMEOUT). Scored by the pre-committed scorer.
+
+| arm | n | bias | mean_h | σ_h | n_eff | C50/68/90 | R_low | band |
+|---|---|---|---|---|---|---|---|---|
+| **B-SEL** (model-matched population AND selection) | 12 | **−0.1120 ± 0.0017** | 0.6180 | 0.0216 | 180 | 0.00/0.00/0.00 | 1.00 | **INTERNAL-MISNORMALIZATION** |
+| B-OUT (population-matched only) | 15 | −0.1293 | 0.6007 | 0.0027 | 196 | 0.00/0.00/0.00 | 1.00 | COMPLETION-BIASED-LOW |
+| B-F1 (unity completeness, catalogue) | 2 | −0.0000 | 0.7300 | 0.0778 | 67 | 1.00/1.00/1.00 | 1.00 | COMPLETION-UNBIASED |
+
+**Reading:** hosts drawn from the estimator's OWN detected-dark distribution
+(w_pop·(1−f̄)·S̄_φ, built with production's own completeness and φ-survival construction)
+and analysed by that same estimator still yield **−0.112 ± 0.0017 (66σ)**, railed in 12/12
+seeds with zero coverage. **The completion leg is biased low even when the universe matches
+its model.** That is an estimator defect, not a data-vs-model artefact, and it is now
+reproducible at ~45 min/seed with no production run in the loop.
+
+**Residual-mismatch bound (checked, works AGAINST the finding):** the production Fisher
+quality filter still removes ~10% of mirror events (n_eff 180/200) by a distance-correlated
+criterion the estimator's selection does not model. But that filter removes the FARTHEST
+events, i.e. it leaves fewer high-z events than the model expects — which pushes the
+posterior HIGH. The measured bias is LOW, so this residual mismatch cannot explain it and
+in fact makes the defect slightly larger than measured. Second-order residuals (per-pixel
+f_k vs the f̄ used in the host weighting) are disclosed and not adjudicated.
+
+**Consequence for row #138 (population attribution) — DOWNGRADED, per its own §7:** the
+memo predicted 87% of production's dark-class score from the M1-vs-comoving population
+mismatch, and registered that a biased model-matched arm would falsify it as the owner.
+B-SEL is that arm. Both effects can coexist, but the population mismatch can no longer be
+assumed to own the tilt: an internally misnormalized completion leg produces a comparable
+rail (−0.112) on its own. The memo's attribution is superseded by direct experiment; its
+derivation and the measured population ratio stand as a contributing term of unknown share.
+
+## AMENDMENT A-4 (registered pre-run) — first bisection step, a flag flip
+
+Under the runs-of-record basis (`--selection_in_completion_numerator off`) the completion
+NUMERATOR carries no detection weight while its normalization β_Ḡ^φ does — an asymmetry
+whose fused form already exists as a shipped flag ([P1]/[P2], commit 2b10b8b8) and which
+this campaign measured to be worth ≈ +0.17 of dark-class score in production (row #137's
+convention ledger). In a MODEL-MATCHED universe the correctly normalized likelihood should
+be the one whose numerator and denominator use the same detection model.
+
+- **B-SELF ("bself", 15 seeds):** B-SEL configuration with
+  `--selection_in_completion_numerator fused`. **Bands:** **CONVENTION-OWNS-IT** if
+  |bias| ≤ max(0.005, 2·SE) AND C68 within the N=15 binomial band ⇒ the off-basis
+  numerator/denominator asymmetry IS the internal misnormalization, and the fused
+  convention is the derived-correct one (⇒ a /physics-change proposal for the production
+  default, with the production off-vs-fused counterfactual already banked as its bed);
+  **CONVENTION-PARTIAL** if |bias| falls to ≤ ½·|bias(B-SEL)| but stays material;
+  **CONVENTION-NOT-IT** if |bias| ≥ ½·|bias(B-SEL)| ⇒ the defect is elsewhere in the
+  integrand and the next bisection targets the measure/Jacobian of the z-integral and the
+  α_G^φ/β_Ḡ^φ class composition of D̃^φ.
+- Cost: 15 seeds ≈ 11 CPU-h (running total ≈ 150 CPU-h, at the amended ceiling).
