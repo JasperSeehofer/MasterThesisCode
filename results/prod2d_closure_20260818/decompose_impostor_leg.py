@@ -88,21 +88,30 @@ ARMS_DIR = REPO_ROOT / "results/prod2d_closure_20260818/correspondence_arms"
 CSV_ROOT = REPO_ROOT / "results/prod2d_closure_20260818/arm_event_likelihoods"
 
 BIAS_OF_RECORD = -0.1083  # ledger row #146, fully corrected, N=12
-GATE_I_TOL = 1.0e-9
+# GATE AMENDMENT 1 (see prereg): alpha_G_phi/r_Malm/D_tilde_phi are stored at 7
+# significant figures (bayesian_statistics.py:4365 `_seven_sf`); per-column max
+# quantization error 4.9e-7, three columns -> 2e-6 bound. Observed 5.0-5.5e-7.
+GATE_I_TOL = 2.0e-6
 GATE_F_FLEET_TOL = 5.0e-5
 GATE_F_MOMENT_TOL = 1.0e-12
 BAND_SUBSTANTIAL = 0.0110
 BAND_MATERIAL = 0.0023
 
-# Section 0 item 5 targets (bsel_seed900101, h = 0.73) and tolerances.
+# Section 0 item 5 targets (bsel_seed900101, h = 0.73) and tolerances, under the
+# REGISTRATION-TIME VERIFIER'S convention (GATE AMENDMENT 1): share =
+# alpha_G_phi*L_cat/(alpha_G_phi*L_cat + B_num) -- no 1/r_Malm -- with quantiles
+# over ACTIVE events (L_cat > 0) only. This is a provenance assertion; the
+# assembly-true beta-convention shares are reported separately as descriptive
+# numbers of record.
 GATE_P_TARGETS: dict[str, tuple[float, float]] = {
     "n_active": (128.0, 0.0),
     "n_events": (174.0, 0.0),
-    "share_median": (6.0e-4, 5.0e-4),
-    "share_p90": (0.057, 0.005),
-    "share_p99": (0.647, 0.010),
-    "share_max": (0.821, 0.010),
-    "share_mean": (0.034, 0.005),
+    "share_median": (6.0e-4, 5.0e-5),
+    "share_p90": (0.057, 0.001),
+    "share_p99": (0.647, 0.001),
+    "share_max": (0.821, 0.001),
+    "share_mean": (0.034, 0.001),
+    "n_above_half": (2.0, 0.0),
 }
 
 
@@ -199,27 +208,56 @@ def score_at_truth(vals: npt.NDArray[np.float64]) -> dict[str, Any]:
     }
 
 
-def gate_p(df: pd.DataFrame) -> dict[str, Any]:
-    """Provenance: impostor-share stats on bsel_seed900101 at h = 0.73."""
-    at = df[np.isclose(df["h"].to_numpy(np.float64), 0.73)]
-    beta = at["alpha_G_phi"].to_numpy(np.float64) / at["r_Malm"].to_numpy(np.float64)
-    cat = beta * at["L_cat_no_bh"].to_numpy(np.float64) / at["D_tilde_phi"].to_numpy(np.float64)
-    comb = at["combined_no_bh"].to_numpy(np.float64)
-    share = np.divide(cat, comb, out=np.zeros_like(cat), where=comb > 0.0)
-    measured: dict[str, float] = {
-        "n_active": float((at["L_cat_no_bh"].to_numpy(np.float64) > 0.0).sum()),
-        "n_events": float(at.shape[0]),
+def _share_stats(share: npt.NDArray[np.float64]) -> dict[str, float]:
+    return {
         "share_median": float(np.median(share)),
         "share_p90": float(np.percentile(share, 90)),
         "share_p99": float(np.percentile(share, 99)),
         "share_max": float(share.max()),
         "share_mean": float(share.mean()),
+        "n_above_half": float((share > 0.5).sum()),
+    }
+
+
+def gate_p(df: pd.DataFrame) -> dict[str, Any]:
+    """Provenance: impostor-share stats on bsel_seed900101 at h = 0.73.
+
+    GATE AMENDMENT 1: asserts the section 0 item 5 numbers under the
+    REGISTRATION-TIME VERIFIER'S convention (alpha, no 1/r_Malm, active events
+    only) as a provenance check, and reports the assembly-true beta-convention
+    shares (verified by GATES I+F against the banked combined column) as the
+    descriptive numbers of record.
+    """
+    at = df[np.isclose(df["h"].to_numpy(np.float64), 0.73)]
+    alpha = at["alpha_G_phi"].to_numpy(np.float64)
+    lcat = at["L_cat_no_bh"].to_numpy(np.float64)
+    b_num = at["B_num"].to_numpy(np.float64)
+    r_malm = at["r_Malm"].to_numpy(np.float64)
+    active = lcat > 0.0
+
+    share_verifier = (alpha * lcat) / (alpha * lcat + b_num)
+    share_beta = (alpha / r_malm * lcat) / (alpha / r_malm * lcat + b_num)
+
+    measured: dict[str, float] = {
+        "n_active": float(active.sum()),
+        "n_events": float(at.shape[0]),
+        **_share_stats(share_verifier[active]),
     }
     rows = {
         k: {"measured": measured[k], "target": t, "tol": tol, "pass": abs(measured[k] - t) <= tol}
         for k, (t, tol) in GATE_P_TARGETS.items()
     }
-    return {"rows": rows, "pass": all(r["pass"] for r in rows.values())}
+    return {
+        "convention_note": (
+            "targets asserted under the registration-time verifier's convention "
+            "(alpha*L/(alpha*L+B), active events only); beta convention is the "
+            "assembly-true share"
+        ),
+        "rows": rows,
+        "beta_convention_active_events": _share_stats(share_beta[active]),
+        "beta_convention_all_events": _share_stats(share_beta),
+        "pass": all(r["pass"] for r in rows.values()),
+    }
 
 
 def main() -> int:

@@ -253,3 +253,74 @@ quantiles reproduced on seed900101@0.73). Gates fail ⇒ Δ_bias may not be read
 sightings disclosed in the scorer docstring. REPORTED-ONLY: pure-arm map/σ_h/r_low/c68, per-event
 score-at-truth decomposition, physics-floor exclusion counts, the 3 unbanked bsel CSV dirs
 (900113–900115) which carry no banked JSON and are not scored.
+
+### O2 GATE AMENDMENT 1 (2026-08-21, pre-read of Δ_bias; both failures diagnosed to the cell)
+
+First run: GATE F **PASS** (fleet bias −0.10830227, dev 2.3e-6 from record; moments ≡
+`compute_seed_statistics` to 0.0), GATES I and P **FAIL**. Per registration Δ_bias was not read as
+a verdict. Diagnoses, each verified to the mechanism:
+
+1. **GATE I** — max relative identity error is uniformly 5.0–5.5e-7 on all 12 seeds. Cause:
+   `bayesian_statistics.py:4365` writes `alpha_G_phi`, `r_Malm`, `D_tilde_phi` (the `_seven_sf`
+   tuple) at **7 significant figures**; 7-sf quantization has max rel error 4.9e-7 (measured), three
+   quantized columns compound to the observed level. The identity **holds at the storage precision
+   of the banked columns** — a convention error would be O(1). Tolerance re-set to **2e-6** (3×
+   per-column bound). Propagation to the decision statistic: worst-case per-event
+   δln(pure) ≤ 1.5e-6·(cat/pure) ≤ 2e-5 (max share 0.923), summed effect on Δ_bias ≲ 1e-5 —
+   **4600× below the 0.0023 MATERIAL band**; the bands are unaffected.
+2. **GATE P** — the §0 item 5 quantiles were reproduced **exactly** (all seven, to the quoted
+   digit: med 6.02e-4, p90 0.0568, p99 0.647, max 0.821, mean 0.0335, 2 events >0.5) under the
+   registration-time verifier's convention: `α_G_φ·L_cat/(α_G_φ·L_cat + B_num)` — **omitting the
+   1/r_Malm factor** — with quantiles over the **128 active events only**. The assembly-true share
+   (β_G_φ = α_G_φ/r_Malm, verified by GATES I+F against the banked `combined` column) is *larger*:
+   active-events med 1.57e-3, p90 0.136, p99 0.822, **max 0.923, 5 events >0.5**. GATE P is re-set
+   to assert the verifier's numbers under the verifier's convention (provenance), and the
+   β-convention shares become the descriptive numbers of record ("verifier output is evidence, not
+   authority" — the prereg's §0 item 5 understated the impostor share).
+
+Scorer updated accordingly and re-run; no band or decision statistic was changed.
+
+---
+
+## PRE-CHECK O2 — VERDICT (2026-08-21, all gates PASS, independently recomputed)
+
+Gates: I PASS (max rel 5.5e-7 ≤ 2e-6), F PASS (fleet bias −0.10830227, dev 2.3e-6; moments ≡
+`compute_seed_statistics` exactly), P PASS (all 8 targets). Independent recompute by a separately
+implemented agent script (forbidden from reading the scorer) reproduced every per-seed mean and the
+fleet numbers to 10 decimals.
+
+> **Δ_bias = +0.0791883246 ⇒ IMPOSTOR-SUBSTANTIAL.** The impostor catalogue leg carries **73.1%**
+> of B-SEL's −0.1083 (pure-completion arm: −0.0291). Positive in **12/12 seeds** (range +0.030 to
+> +0.164). The pure arm un-rails (map 0.600–0.850, r_low 2/12 vs 12/12), c68 recovers in 5/12, and
+> the mean per-event score at truth moves −0.28 → −0.06. Consequences per the registered band:
+> **(a)** rows #137/#140's "pure completion carries it" attribution must be revisited; **(b) C-SG's
+> design must change before it runs** (→ pre-check O3 and the v3 scoring-channel design below).
+> Assembly-true impostor share (β convention, of record, seed900101@0.73, active events): med
+> 1.57e-3, p90 0.136, p99 0.822, max 0.923, 5 events >0.5 — larger than §0 item 5's α-convention
+> figures.
+
+## PRE-CHECK O3 — BAND REGISTRATION (appended pre-data, 2026-08-21)
+
+Motivated by O2's structure, registered before any O3 number was computed. The mixture
+normalization splits as `D̃_φ = α_G_φ + β_Ḡ_φ` (`bayesian_statistics.py:2427`). B-SEL draws events
+**conditioned on dark-detected**, so the model-matched conditional likelihood for its draw is the
+dark-sector conditional `L_matched = B_num/β_Ḡ_φ = B_num/(D̃_φ − α_G_φ)`; O2's pure channel
+`B_num/D̃_φ` differs by the event-independent tilt `ln(D̃/β_Ḡ)(h) = −ln(1−w̃_G(h))`, amplified ×n
+in the seed posterior — the registered candidate owner of O2's −0.0291 residual. If the completion
+leg is internally self-consistent and B-SEL's draw matches the model's dark-detected density,
+`E[∂_h ln L_matched] = 0` at truth.
+
+Scorer: `decompose_matched_channel.py`, committed pre-data. Statistic:
+`bias_matched = mean₁₂(mean_h_matched) − 0.73` (row #146 combine, `H_GRID_41`). Same A15
+deterministic-read statement as O2; same materiality scale:
+
+| band | condition | meaning |
+|---|---|---|
+| MATCHED-CONSISTENT | \|bias\| < 0.0023 | completion leg self-consistent at C-SG resolution on B-SEL data; C-SG v3 confirms with a clean generator |
+| MATCHED-SMALL | 0.0023 ≤ \|bias\| < 0.0110 | residual at C-SG resolution; a-priori attributable to B-SEL's known generator-side caveats (f_k-vs-f̄ pixel mismatch, donor rows, σ draw); C-SG v3 adjudicates |
+| MATCHED-INCONSISTENT | \|bias\| ≥ 0.0110 | completion leg itself carries a substantial defect; rows #137/#140 partially reinstated in the matched channel |
+
+Gates: T (α_G_φ, D̃_φ h-only across events to ≤2e-6; β_Ḡ > 0 everywhere), F2 (full-channel fleet
+reproduces −0.1083 ≤ 5e-5). REPORTED-ONLY: analytic tilt slope and ×n amplification per seed;
+matched-channel per-seed stats; b0 catalogue-sector corroboration (`L_cat/r_Malm`, 25 seeds) —
+EXPLORATORY, convention not independently verified, carries no verdict.
