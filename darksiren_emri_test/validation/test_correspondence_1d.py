@@ -176,11 +176,12 @@ def test_arm_specs_registered_mapping() -> None:
         "bf1": (1.0, 1.0),
         "bsel": (1.0, 1.0),
         "bself": (1.0, 1.0),
+        "bden": (1.0, 1.0),
     }
 
 
 def test_arm_host_mode_and_completeness_registered_mapping() -> None:
-    """AMENDMENT A-2/A-3/A-4: bout/bsel/bself are the population-draw arms; bf1 the only f=1 control."""
+    """AMENDMENT A-2/A-3/A-4/A-5: bout/bsel/bself/bden are the population-draw arms; bf1 the only f=1 control."""
     assert c1d.ARM_HOST_MODE == {
         "b0": "catalogue",
         "bsig005": "catalogue",
@@ -191,6 +192,7 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
         "bf1": "catalogue",
         "bsel": "population_selected",
         "bself": "population_selected",
+        "bden": "population_selected",
     }
     assert c1d.ARM_UNITY_COMPLETENESS == {
         "b0": False,
@@ -202,6 +204,7 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
         "bf1": True,
         "bsel": False,
         "bself": False,
+        "bden": False,
     }
     # Every ARM_SPECS key has an entry in both registries (no silent fallback
     # to the default for a registered arm).
@@ -212,6 +215,12 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
     assert c1d.ARM_HOST_MODE["bself"] == c1d.ARM_HOST_MODE["bsel"]
     assert c1d.ARM_UNITY_COMPLETENESS["bself"] == c1d.ARM_UNITY_COMPLETENESS["bsel"]
     assert c1d.ARM_SPECS["bself"] == c1d.ARM_SPECS["bsel"]
+    # AMENDMENT A-5: bden is otherwise IDENTICAL to bsel (host mode,
+    # completeness override, specs) -- only ARM_EVENT_MEASURE differs.
+    assert c1d.ARM_HOST_MODE["bden"] == c1d.ARM_HOST_MODE["bsel"]
+    assert c1d.ARM_UNITY_COMPLETENESS["bden"] == c1d.ARM_UNITY_COMPLETENESS["bsel"]
+    assert c1d.ARM_SPECS["bden"] == c1d.ARM_SPECS["bsel"]
+    assert c1d.ARM_SELECTION_CELL["bden"] == c1d.ARM_SELECTION_CELL["bsel"]
 
 
 def test_arm_selection_cell_registered_mapping() -> None:
@@ -231,6 +240,7 @@ def test_arm_selection_cell_registered_mapping() -> None:
         "bf1": "off",
         "bsel": "off",
         "bself": "fused",
+        "bden": "off",
     }
     assert set(c1d.ARM_SELECTION_CELL) == set(c1d.ARM_SPECS)
     non_bself = {k: v for k, v in c1d.ARM_SELECTION_CELL.items() if k != "bself"}
@@ -238,6 +248,31 @@ def test_arm_selection_cell_registered_mapping() -> None:
     assert c1d.ARM_SELECTION_CELL["bself"] == "fused"
     # Matches the runs-of-record basis every pre-A-4 arm is registered against.
     assert c1d.PRODUCTION_FLAGS["--selection_in_completion_numerator"] == "off"
+
+
+def test_arm_event_measure_registered_mapping() -> None:
+    """AMENDMENT A-5: every pre-A-5 arm defaults to "ratio"; only bden is "data".
+
+    This is the byte-identical-behaviour guarantee for every existing arm --
+    a regression here means an existing arm's `completion_event_measure`
+    silently changed.
+    """
+    assert c1d.ARM_EVENT_MEASURE == {
+        "b0": "ratio",
+        "bsig005": "ratio",
+        "bsig025": "ratio",
+        "eden05": "ratio",
+        "eden2": "ratio",
+        "bout": "ratio",
+        "bf1": "ratio",
+        "bsel": "ratio",
+        "bself": "ratio",
+        "bden": "data",
+    }
+    assert set(c1d.ARM_EVENT_MEASURE) == set(c1d.ARM_SPECS)
+    non_bden = {k: v for k, v in c1d.ARM_EVENT_MEASURE.items() if k != "bden"}
+    assert set(non_bden.values()) == {"ratio"}
+    assert c1d.ARM_EVENT_MEASURE["bden"] == "data"
 
 
 def test_arm_seeds_registered_paired_discipline() -> None:
@@ -251,11 +286,12 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     assert len(c1d.ARM_SEEDS["bf1"]) == 2
     assert len(c1d.ARM_SEEDS["bsel"]) == 15
     assert len(c1d.ARM_SEEDS["bself"]) == 15
+    assert len(c1d.ARM_SEEDS["bden"]) == 15
     total = sum(len(v) for v in c1d.ARM_SEEDS.values())
-    # 25 + 25 + 10 + 10 + 10 + 15 + 2 + 15 + 15 = 127, the fleet task-list
+    # 25 + 25 + 10 + 10 + 10 + 15 + 2 + 15 + 15 + 15 = 142, the fleet task-list
     # arithmetic (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks + 15 AMENDMENT
-    # A-3 tasks + 15 AMENDMENT A-4 tasks).
-    assert total == 127
+    # A-3 tasks + 15 AMENDMENT A-4 tasks + 15 AMENDMENT A-5 tasks).
+    assert total == 142
     for arm, seeds in c1d.ARM_SEEDS.items():
         assert seeds[0] == 900101, arm
         assert list(seeds) == sorted(seeds), arm
@@ -276,6 +312,7 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     assert c1d.ARM_SEEDS["bsel"] == c1d.ARM_SEEDS["b0"][:15]
     assert c1d.ARM_SEEDS["bsel"] == c1d.ARM_SEEDS["bout"]
     assert c1d.ARM_SEEDS["bself"] == c1d.ARM_SEEDS["bsel"]
+    assert c1d.ARM_SEEDS["bden"] == c1d.ARM_SEEDS["bsel"]
 
 
 def test_run_arm_seed_threads_selection_cell_to_evaluate_call(
@@ -338,8 +375,10 @@ def test_run_arm_seed_threads_selection_cell_to_evaluate_call(
         injection_dir: str = c1d.INJECTION_POOL_DIR,
         allow_low_pdet_coverage: bool = True,
         selection_in_completion_numerator: str = "off",
+        completion_event_measure: str = "ratio",
     ) -> tuple[Path, float]:
         captured["selection_in_completion_numerator"] = selection_in_completion_numerator
+        captured["completion_event_measure"] = completion_event_measure
         rows = [{"event_idx": 0, "h": h, "combined_no_bh": 1.0 + h} for h in h_values]
         work_root.mkdir(parents=True, exist_ok=True)
         diag_csv = work_root / "diag.csv"
@@ -367,6 +406,90 @@ def test_run_arm_seed_threads_selection_cell_to_evaluate_call(
     assert c1d.ARM_SELECTION_CELL["bself"] == "fused"
     # Every other arm is provably unchanged (still "off").
     assert all(v == "off" for k, v in c1d.ARM_SELECTION_CELL.items() if k != "bself")
+
+
+def test_run_arm_seed_threads_event_measure_to_evaluate_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """AMENDMENT A-5 plumbing proof: ARM_EVENT_MEASURE[arm] actually reaches
+    the ``completion_event_measure`` kwarg :func:`run_arm_seed` passes to
+    :func:`run_mirror_seed_inprocess` -- for EVERY registered arm, not just
+    bden. This is the load-bearing check that bden does not silently fall
+    back to "ratio" (which would produce a false MEASURE-NOT-IT verdict) and
+    that no pre-A-5 arm's behaviour changed.
+
+    Same stub topology as
+    ``test_run_arm_seed_threads_selection_cell_to_evaluate_call`` -- see that
+    test's docstring for what is stubbed and why.
+    """
+    captured: dict[str, str] = {}
+
+    def _fake_host_pool_for_sigma_scale(
+        self: c1d.MirrorUniverseGenerator, work_root: Path, seed: int, sigma_z_scale: float
+    ) -> tuple[c1d.HostPool, str | None, object]:
+        pool = c1d.HostPool(
+            phiS=np.array([0.1]),
+            qS=np.array([1.0]),
+            z=np.array([0.1]),
+            z_error=np.array([0.01]),
+            n=1,
+        )
+        return pool, None, object()
+
+    def _fake_draw_realization(
+        self: c1d.MirrorUniverseGenerator, seed: int, **kwargs: object
+    ) -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "SNR": [30.0],
+                "luminosity_distance": [1.0],
+                "phiS": [0.1],
+                "qS": [1.0],
+                "host_galaxy_index": [-1],
+                "in_catalog": [False],
+            }
+        )
+
+    def _fake_run_mirror_seed_inprocess(
+        work_root: Path,
+        events: pd.DataFrame,
+        seed: int,
+        galaxy_catalog: object,
+        h_values: tuple[float, ...] = c1d.H_GRID_41,
+        completeness_override: bool = False,
+        injection_dir: str = c1d.INJECTION_POOL_DIR,
+        allow_low_pdet_coverage: bool = True,
+        selection_in_completion_numerator: str = "off",
+        completion_event_measure: str = "ratio",
+    ) -> tuple[Path, float]:
+        captured["completion_event_measure"] = completion_event_measure
+        rows = [{"event_idx": 0, "h": h, "combined_no_bh": 1.0 + h} for h in h_values]
+        work_root.mkdir(parents=True, exist_ok=True)
+        diag_csv = work_root / "diag.csv"
+        pd.DataFrame(rows).to_csv(diag_csv, index=False)
+        return diag_csv, 0.01
+
+    monkeypatch.setattr(
+        c1d.MirrorUniverseGenerator, "host_pool_for_sigma_scale", _fake_host_pool_for_sigma_scale
+    )
+    monkeypatch.setattr(c1d.MirrorUniverseGenerator, "draw_realization", _fake_draw_realization)
+    monkeypatch.setattr(c1d, "build_bsel_selection_objects", lambda: (None, None))
+    monkeypatch.setattr(c1d, "run_mirror_seed_inprocess", _fake_run_mirror_seed_inprocess)
+    monkeypatch.setattr(c1d, "check_reduced_catalogue_pin", lambda: True)
+
+    for arm, expected in c1d.ARM_EVENT_MEASURE.items():
+        captured.clear()
+        out_dir = tmp_path / f"out_{arm}"
+        record_path = c1d.run_arm_seed(tmp_path / f"work_{arm}", arm, 900101, out_dir)
+        assert captured["completion_event_measure"] == expected, arm
+        record = json.loads(record_path.read_text())
+        assert record["event_measure"] == expected, arm
+        assert record["arm"] == arm
+
+    # The one arm the amendment actually changes.
+    assert c1d.ARM_EVENT_MEASURE["bden"] == "data"
+    # Every other arm is provably unchanged (still "ratio").
+    assert all(v == "ratio" for k, v in c1d.ARM_EVENT_MEASURE.items() if k != "bden")
 
 
 def test_run_arm_seed_unknown_arm_raises(tmp_path: Path) -> None:
@@ -605,14 +728,10 @@ class _FakeIncompleteness:
     reading the pinned completeness cache.
     """
 
-    def f_bar(
-        self, z: float | np.ndarray, h: float = c1d.H_TRUE
-    ) -> float | np.ndarray:
+    def f_bar(self, z: float | np.ndarray, h: float = c1d.H_TRUE) -> float | np.ndarray:
         return np.clip(np.asarray(z, dtype=np.float64), 0.0, 1.0)
 
-    def f_k(
-        self, z: float | np.ndarray, k: int, h: float = c1d.H_TRUE
-    ) -> float | np.ndarray:
+    def f_k(self, z: float | np.ndarray, k: int, h: float = c1d.H_TRUE) -> float | np.ndarray:
         return self.f_bar(z, h)
 
     def ang2pix(self, phi: float, theta: float) -> int:
@@ -785,7 +904,10 @@ def test_bsel_draw_realization_records_host_z_quantiles_diagnostic(
     table = _fake_phi_survival_table()
     assert gen.last_diagnostics == {}
     gen.draw_realization(
-        seed=17, host_mode="population_selected", completeness=completeness, phi_survival_table=table
+        seed=17,
+        host_mode="population_selected",
+        completeness=completeness,
+        phi_survival_table=table,
     )
     diag = gen.last_diagnostics
     assert diag["quantile_levels"] == [0.05, 0.25, 0.5, 0.75, 0.95]

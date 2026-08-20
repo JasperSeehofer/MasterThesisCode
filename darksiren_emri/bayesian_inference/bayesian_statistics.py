@@ -3185,6 +3185,11 @@ class BayesianStatistics:
     # PREREGISTRATION_TILT_BATTERY.md §1). "point" (default) is byte-identical
     # to the pre-flag path.
     _sigma4d_mass_kernel: str = "point"
+    # B-DEN falsifier instrument (docs/derivations/
+    # completion_numerator_data_measure.md §6; AMENDMENT A-5,
+    # results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md).
+    # "ratio" (default) is byte-identical to the pre-flag path.
+    _completion_event_measure: str = "ratio"
 
     def __init__(self) -> None:
         self.h_values = []
@@ -3228,6 +3233,10 @@ class BayesianStatistics:
         # "on"/"point" => the pre-flag production path, byte-identical.
         self._eddington_m: str = "on"
         self._sigma4d_mass_kernel: str = "point"
+        # B-DEN falsifier instrument (docs/derivations/
+        # completion_numerator_data_measure.md §6; AMENDMENT A-5). "ratio"
+        # (default) => the pre-flag production path, byte-identical.
+        self._completion_event_measure: str = "ratio"
 
     def evaluate(
         self,
@@ -3307,6 +3316,17 @@ class BayesianStatistics:
         # (the erf-sum inner-M machinery, matched to production's own D_g
         # kernel).
         sigma4d_mass_kernel: str = "point",
+        # B-DEN falsifier instrument (docs/derivations/
+        # completion_numerator_data_measure.md §6; AMENDMENT A-5, results/
+        # prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md):
+        # "ratio" (default) is byte-identical to the pre-flag path — the
+        # completion numerator's GW event term is a density in the
+        # dimensionless distance ratio d_L(z;h)/d_L,det. "data" replaces it
+        # with the same Gaussian measurement model expressed as a density in
+        # the observable d_L,det, so the numerator normalizes to the same
+        # measure as the completion denominator (MFG 2019 arXiv:1809.02063
+        # Eqs. (5)-(7)).
+        completion_event_measure: str = "ratio",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3450,6 +3470,25 @@ class BayesianStatistics:
                 "kernel (results/prod2d_closure_20260818/"
                 "PREREGISTRATION_TILT_BATTERY.md §1 instrument J). Not a "
                 "production posterior."
+            )
+        # B-DEN falsifier instrument (docs/derivations/
+        # completion_numerator_data_measure.md §6; AMENDMENT A-5). Validated
+        # here the same way the other instrument flags above are.
+        _completion_event_measure = str(completion_event_measure)
+        if _completion_event_measure not in ("ratio", "data"):
+            raise ValueError(
+                "completion_event_measure must be 'ratio' or 'data', got "
+                f"{completion_event_measure!r}"
+            )
+        self._completion_event_measure = _completion_event_measure
+        if _completion_event_measure == "data":
+            _LOGGER.warning(
+                "INSTRUMENTATION ACTIVE: --completion_event_measure=data — the "
+                "completion numerator's GW event term is evaluated as a "
+                "density in the observable d_L,det instead of the "
+                "dimensionless distance ratio (docs/derivations/"
+                "completion_numerator_data_measure.md §6). This is the B-DEN "
+                "falsifier instrument, not a production posterior."
             )
         # G4: deterministic seed for the with-BH-mass MC denominator (threaded to
         # single_host_likelihood workers; per-call streams derived per host).
@@ -4841,6 +4880,19 @@ class BayesianStatistics:
             _comp_cov_3d = np.linalg.inv(_comp_cov_inv_3d)
             _comp_sigma_dLfrac = float(np.sqrt(_comp_cov_3d[2, 2]))
             _comp_mean_dLfrac = float(_comp_mean_3d[2])
+            # B-DEN falsifier instrument precondition (docs/derivations/
+            # completion_numerator_data_measure.md §6): the 'data' event-measure
+            # mapping loc=d_L, scale=sigma_frac*d_L is the delta-method image of
+            # d_L/d_hat ~ N(mu_frac, sigma_frac) ONLY at mu_frac == 1 exactly.
+            # mu_frac is hardcoded to 1 in _means_3d's construction (~:3992) --
+            # verified once per event here, not assumed, so a future change to
+            # that construction cannot silently corrupt the 'data' path.
+            if getattr(self, "_completion_event_measure", "ratio") == "data":
+                assert _comp_mean_dLfrac == 1.0, (
+                    "completion_event_measure='data' assumes _comp_mean_dLfrac == 1.0 "
+                    f"(the ratio's mean is hardcoded to 1 in _means_3d); got "
+                    f"{_comp_mean_dLfrac!r} -- the data-measure mapping needs re-deriving."
+                )
             # Change 5.3: the completion numerator weights the incompleteness at the
             # EVENT's sky pixel, (1 - f_{k(Omega_e)}(z)). p_GW delta-collapses the sky
             # integral, so f is evaluated at the single pixel containing the detection
@@ -4867,11 +4919,35 @@ class BayesianStatistics:
                 # over dΩ = sinθ dθ dφ picks up sinθ at the (narrow) beam position.
                 # Eq. (32) in Gray et al. (2020), arXiv:1908.06050; derivation:
                 # docs/derivations/G2a_completion_sky_marginal_4pi.md Eq. (10).
-                p_gw: npt.NDArray[np.float64] = (
-                    norm.pdf(d_L_fraction, loc=_comp_mean_dLfrac, scale=_comp_sigma_dLfrac)
-                    * np.sin(self.detection.theta)
-                    / (4.0 * np.pi)
-                )
+                # [PHYSICS] B-DEN falsifier instrument (default OFF, byte-identical
+                # 'ratio' path): docs/derivations/completion_numerator_data_measure.md
+                # §2, §6; MFG (2019) arXiv:1809.02063 Eqs. (5)-(7). The 'ratio' form
+                # below is a density in the dimensionless distance ratio d_L/d_L,det,
+                # integrated against dz — NOT a density in the observable, so
+                # integral dd_L,det p_gw != 1 (it is proportional to d_L(z;h), see the
+                # memo §2). '_comp_mean_dLfrac' is always exactly 1.0 (hardcoded in
+                # _means_3d construction, bayesian_statistics.py ~:3992: the ratio's
+                # mean is centred at unity, no bias/centering offset to carry over,
+                # verified once per event above), so the 'data' form's mean maps to
+                # d_L(z;h) exactly, not d_L(z;h)/_comp_mean_dLfrac -- verified, not
+                # assumed (memo §6 New).
+                _event_measure = getattr(self, "_completion_event_measure", "ratio")
+                if _event_measure == "data":
+                    p_gw: npt.NDArray[np.float64] = (
+                        norm.pdf(
+                            _comp_det_d_L,
+                            loc=d_L,
+                            scale=_comp_sigma_dLfrac * d_L,
+                        )
+                        * np.sin(self.detection.theta)
+                        / (4.0 * np.pi)
+                    )
+                else:
+                    p_gw = (
+                        norm.pdf(d_L_fraction, loc=_comp_mean_dLfrac, scale=_comp_sigma_dLfrac)
+                        * np.sin(self.detection.theta)
+                        / (4.0 * np.pi)
+                    )
                 dVc: npt.NDArray[np.float64] = np.atleast_1d(
                     np.asarray(comoving_volume_element(z, h=h_eval), dtype=np.float64)
                 )

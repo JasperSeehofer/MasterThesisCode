@@ -331,6 +331,19 @@ class Arguments:
         return str(self._parsed_arguments.eddington_m)
 
     @property
+    def completion_event_measure(self) -> str:
+        """B-DEN falsifier instrument (docs/derivations/
+        completion_numerator_data_measure.md §6; AMENDMENT A-5,
+        results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md).
+        'ratio' (default) is byte-identical to the pre-flag behaviour: the
+        completion numerator's GW event term is a density in the
+        dimensionless distance ratio d_L(z;h)/d_L,det. 'data' replaces it
+        with the same Gaussian measurement model expressed as a density in
+        the observable d_L,det. Never a production posterior.
+        """
+        return str(self._parsed_arguments.completion_event_measure)
+
+    @property
     def sigma4d_mass_kernel(self) -> str:
         """Tilt-ledger battery instrument J (results/prod2d_closure_20260818/
         PREREGISTRATION_TILT_BATTERY.md §1, P2 registered kernel):
@@ -915,6 +928,25 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "over the Eddington-shifted per-galaxy mass prior "
             "E_{M~N(M_eff_g, sigma_g^2)}[S_4D(d_L_g, M(1+z_g))], sigma_g = "
             "the catalogue BH_MASS_ERROR column. Never a production posterior."
+        ),
+    )
+    parser.add_argument(
+        "--completion_event_measure",
+        type=str,
+        choices=["ratio", "data"],
+        default="ratio",
+        help=(
+            "B-DEN falsifier instrument (docs/derivations/"
+            "completion_numerator_data_measure.md §6; AMENDMENT A-5, results/"
+            "prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md). "
+            "'ratio' (default) is byte-identical to the pre-flag behaviour: the "
+            "completion numerator's GW event term N(d_L(z;h)/d_L,det; 1, "
+            "sigma_frac) is a density in the dimensionless distance ratio. "
+            "'data' replaces it with N(d_L,det; d_L(z;h), sigma_frac*d_L(z;h)) "
+            "-- the same Gaussian measurement model expressed as a density in "
+            "the observable, so the numerator normalizes to the completion "
+            "denominator's measure (MFG 2019 arXiv:1809.02063 Eqs. (5)-(7)). "
+            "Never a production posterior."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

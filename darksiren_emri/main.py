@@ -207,6 +207,7 @@ def main() -> None:
             completion_b_scale=arguments.completion_b_scale,
             eddington_m=arguments.eddington_m,
             sigma4d_mass_kernel=arguments.sigma4d_mass_kernel,
+            completion_event_measure=arguments.completion_event_measure,
         )
 
     if arguments.snr_analysis:
@@ -1398,6 +1399,10 @@ def evaluate(
     # "point" (defaults) are byte-identical to the pre-flag path.
     eddington_m: str = "on",
     sigma4d_mass_kernel: str = "point",
+    # B-DEN falsifier instrument (docs/derivations/
+    # completion_numerator_data_measure.md §6; AMENDMENT A-5): "ratio"
+    # (default) is byte-identical to the pre-flag path.
+    completion_event_measure: str = "ratio",
 ) -> None:
     from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1428,6 +1433,7 @@ def evaluate(
         completion_b_scale=completion_b_scale,
         eddington_m=eddington_m,
         sigma4d_mass_kernel=sigma4d_mass_kernel,
+        completion_event_measure=completion_event_measure,
     )
 
 

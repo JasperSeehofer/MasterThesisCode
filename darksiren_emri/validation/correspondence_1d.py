@@ -123,6 +123,23 @@ detection model.
   in place of B-SEL's ``"off"``. Isolates the numerator/denominator
   detection-model convention as the single varied axis between the two arms.
 
+**AMENDMENT A-5 (2026-08-20, next bisection step: the event-term measure).**
+``docs/derivations/completion_numerator_data_measure.md`` §2/§6 (author
+approval 2026-08-20): the completion numerator's GW event term is a density
+in the dimensionless distance ratio ``d_L(z;h)/d_L,det`` -- which does NOT
+integrate to 1 over the observable, unlike the completion denominator's
+measure. This is the falsifier instrument B-DEN registered by the
+prereg's AMENDMENT A-5.
+
+- **B-DEN** (:data:`ARM_SPECS` key ``"bden"``, 15 seeds): B-SEL's
+  configuration verbatim -- same :data:`ARM_HOST_MODE`
+  (``"population_selected"``), same :data:`ARM_UNITY_COMPLETENESS`
+  (``False``), same :data:`ARM_SELECTION_CELL` (``"off"``), same
+  :data:`ARM_SEEDS` -- with ONLY ``completion_event_measure="data"``
+  (:data:`ARM_EVENT_MEASURE`) in place of B-SEL's ``"ratio"``. Isolates the
+  completion numerator's event-term measure as the single varied axis
+  between the two arms.
+
 ---
 
 **What this instrument is (G-0/G-1/G-2 base build).** The Option-B measurement registered in
@@ -378,6 +395,7 @@ ARM_SPECS: dict[str, tuple[float, float]] = {
     "bf1": (1.0, 1.0),
     "bsel": (1.0, 1.0),
     "bself": (1.0, 1.0),
+    "bden": (1.0, 1.0),
 }
 # AMENDMENT A-2/A-3: per-arm host-draw mode. "catalogue" (default, all
 # pre-A-2 arms) draws hosts FROM the pinned catalogue's HostPool (D-B item
@@ -398,6 +416,7 @@ ARM_HOST_MODE: dict[str, Literal["catalogue", "population", "population_selected
     "bf1": "catalogue",
     "bsel": "population_selected",
     "bself": "population_selected",
+    "bden": "population_selected",
 }
 # AMENDMENT A-2: per-arm completeness override. True (bf1 only) monkeypatches
 # the real GLADE completeness object with the P14 f=1 shim
@@ -416,6 +435,7 @@ ARM_UNITY_COMPLETENESS: dict[str, bool] = {
     "bf1": True,
     "bsel": False,
     "bself": False,
+    "bden": False,
 }
 # AMENDMENT A-4: per-arm ``selection_in_completion_numerator`` convention
 # (mirrors production's own flag of the same name,
@@ -437,6 +457,30 @@ ARM_SELECTION_CELL: dict[str, str] = {
     "bf1": "off",
     "bsel": "off",
     "bself": "fused",
+    "bden": "off",
+}
+# B-DEN falsifier instrument (docs/derivations/completion_numerator_data_measure.md
+# §6; AMENDMENT A-5, results/prod2d_closure_20260818/
+# PREREGISTRATION_1D_CORRESPONDENCE.md). Mirrors production's own
+# ``--completion_event_measure`` flag. Every pre-A-5 arm defaults to "ratio"
+# -- the runs-of-record basis (:data:`PRODUCTION_FLAGS` predates this flag
+# entirely) -- so this registry introduces NO behaviour change for any
+# existing arm; only "bden" (A-5's falsifier instrument) is "data". "bden"
+# is otherwise IDENTICAL to "bsel" (same ARM_SPECS, ARM_HOST_MODE=
+# "population_selected", ARM_UNITY_COMPLETENESS=False, ARM_SELECTION_CELL=
+# "off", same seed list) -- the completion numerator's event-term measure is
+# the ONLY axis this arm varies relative to bsel.
+ARM_EVENT_MEASURE: dict[str, str] = {
+    "b0": "ratio",
+    "bsig005": "ratio",
+    "bsig025": "ratio",
+    "eden05": "ratio",
+    "eden2": "ratio",
+    "bout": "ratio",
+    "bf1": "ratio",
+    "bsel": "ratio",
+    "bself": "ratio",
+    "bden": "data",
 }
 # Registered paired-seed discipline (prereg §1 D-C, extended by AMENDMENT
 # A-2/A-3): b0/bsig005 get the adjudicating N=25; bsig025/eden05/eden2 are
@@ -456,6 +500,7 @@ ARM_SEEDS: dict[str, tuple[int, ...]] = {
     "bf1": tuple(range(900101, 900103)),
     "bsel": tuple(range(900101, 900116)),
     "bself": tuple(range(900101, 900116)),
+    "bden": tuple(range(900101, 900116)),
 }
 
 
@@ -795,7 +840,9 @@ def selected_population_z_weights(
         FIXB_PATHA_PACKAGE.md §3.2 (``S_bar_phi`` definition).
     """
     if h not in phi_survival_table:
-        raise KeyError(f"phi_survival_table has no entry for h={h!r}; keys={sorted(phi_survival_table)}")
+        raise KeyError(
+            f"phi_survival_table has no entry for h={h!r}; keys={sorted(phi_survival_table)}"
+        )
     z_arr = np.asarray(z, dtype=np.float64)
     w_pop = population_z_weights(z_arr, h=h)
     f_bar = np.asarray(completeness.f_bar(z_arr, h), dtype=np.float64)
@@ -1683,6 +1730,7 @@ def run_mirror_seed_inprocess(
     selection_in_completion_numerator: str = PRODUCTION_FLAGS[
         "--selection_in_completion_numerator"
     ],
+    completion_event_measure: str = "ratio",
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
 
@@ -1744,6 +1792,15 @@ def run_mirror_seed_inprocess(
             ``bself`` arm passes ``"fused"`` (via :data:`ARM_SELECTION_CELL`),
             isolating the numerator/denominator detection-model convention
             from B-SEL's otherwise-identical configuration.
+        completion_event_measure: Forwarded verbatim to
+            ``BayesianStatistics.evaluate`` (AMENDMENT A-5, docs/derivations/
+            completion_numerator_data_measure.md §6). Default ``"ratio"`` is
+            byte-identical to every call site that does not pass this kwarg
+            explicitly (G-1, G-2, and every pre-A-5 fleet arm). Only
+            ``run_arm_seed``'s ``bden`` arm passes ``"data"`` (via
+            :data:`ARM_EVENT_MEASURE`), isolating the completion numerator's
+            event-term measure from B-SEL's otherwise-identical
+            configuration.
 
     Returns:
         ``(diagnostics_csv_path, elapsed_seconds)``.
@@ -1804,6 +1861,7 @@ def run_mirror_seed_inprocess(
             normalization_mode=PRODUCTION_FLAGS["--normalization_mode"],
             host_z_kernel=PRODUCTION_FLAGS["--host_z_kernel"],
             selection_in_completion_numerator=selection_in_completion_numerator,
+            completion_event_measure=completion_event_measure,
             catalogue_mass_overlap=PRODUCTION_FLAGS["--catalogue_mass_overlap"],
             completion_b_scale=PRODUCTION_FLAGS["--completion_b_scale"],
             pdet_dl_bins=int(PRODUCTION_FLAGS["--pdet_dl_bins"]),
@@ -2153,7 +2211,7 @@ def run_arm_seed(
             run (catalogue variant + CRB-CSV write + diagnostics output).
         arm: One of :data:`ARM_SPECS`' keys
             (``b0``/``bsig005``/``bsig025``/``eden05``/``eden2``/``bout``/
-            ``bf1``/``bsel``/``bself``).
+            ``bf1``/``bsel``/``bself``/``bden``).
         seed: Realization seed. Expected to be a member of
             ``ARM_SEEDS[arm]`` per the registered paired-seed discipline
             (prereg §1 D-C) -- not enforced here (kept testable with
@@ -2176,6 +2234,7 @@ def run_arm_seed(
     host_mode = ARM_HOST_MODE.get(arm, "catalogue")
     unity_completeness = ARM_UNITY_COMPLETENESS.get(arm, False)
     selection_cell = ARM_SELECTION_CELL.get(arm, "off")
+    event_measure = ARM_EVENT_MEASURE.get(arm, "ratio")
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{arm}_seed{seed}.json"
     if out_path.is_file():
@@ -2223,6 +2282,7 @@ def run_arm_seed(
         h_values=H_GRID_FULL,
         completeness_override=unity_completeness,
         selection_in_completion_numerator=selection_cell,
+        completion_event_measure=event_measure,
     )
     stats = compute_seed_statistics(diag_csv, seed, h_grid=H_GRID_41)
     h_grid, log_posterior = compute_full_log_posterior_vector(diag_csv, h_grid=H_GRID_FULL)
@@ -2254,6 +2314,12 @@ def run_arm_seed(
         # can verify which convention a given JSON was scored under without
         # cross-referencing ARM_SELECTION_CELL.
         "selection_cell": selection_cell,
+        # AMENDMENT A-5: which completion_event_measure convention produced
+        # this row -- "ratio" for every pre-A-5 arm (byte-identical to the
+        # runs-of-record basis), "data" only for bden, so a reader can verify
+        # which convention a given JSON was scored under without
+        # cross-referencing ARM_EVENT_MEASURE.
+        "event_measure": event_measure,
         "host_in_catalogue_fraction": host_in_catalogue_fraction,
         "n_events_drawn": cfg.n_events,
         "n_eff": stats.n_events,
@@ -2303,7 +2369,10 @@ def _cli() -> int:
         "--arm",
         choices=tuple(ARM_SPECS),
         default=None,
-        help="Fleet arm (--stage arm only): b0/bsig005/bsig025/eden05/eden2/bout/bf1/bsel/bself.",
+        help=(
+            "Fleet arm (--stage arm only): "
+            "b0/bsig005/bsig025/eden05/eden2/bout/bf1/bsel/bself/bden."
+        ),
     )
     parser.add_argument(
         "--out-dir",
