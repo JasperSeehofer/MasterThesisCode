@@ -1537,3 +1537,55 @@ follow the scientific clues"*). Fleet 6383719: 70/80 COMPLETED (b0 25, bsig005 2
 5. **D-2 registered and triggered:** rebuild with no quality filter and analytic σ_dL/d_L,
    re-verify D-1 ≤ 0.05 as a pre-flight gate, then re-run the isolation test with the A-3
    bands. No estimator bisection until that returns.
+
+## Row #144 — 2026-08-20 — RETROSPECTIVE: the D-1 void is WITHDRAWN (its band had no power); row #140 reinstated PROVISIONAL-WITH-A-BOUND; the mirror's positive control found VACUOUS
+
+Six-agent adversarial retrospective (`docs/RETROSPECTIVE_D1_20260820.md`), every decisive
+number re-verified by the orchestrator. It overturns TWO of my rulings, in opposite
+directions, and finds a harness defect older than both.
+
+1. **[RULE] The row #143 void is WITHDRAWN.** D-1's registered band (≤0.05 max CDF gap) sat
+   BELOW the null's expected fluctuation at its own sample size: at n = 174, E[D_null] =
+   0.0659 and D_crit(5%) = 0.1029, so a 0.05 band **false-fails 58% of the time on a
+   perfectly matched sample**. D-1's observed 0.0792 has **p = 0.225** — consistent with a
+   perfect match. The threshold was imported from row #137's provenance check at n = 1588,
+   where the same number is too LOOSE (p = 0.0013 for 0.048). MIRROR-MISMATCHED was not
+   evidence of mismatch.
+2. **[RULE] Row #140 is reinstated as PROVISIONAL-WITH-A-BOUND.** Using the campaign's own
+   z-resolved dark-class score as the sensitivity kernel, |∫s dΔF| ≤ D·TV(s) caps any
+   survival mismatch of the observed size at 34–62% of the ensemble slope, leaving a residual
+   **≥ 0.073** — 15× the self-consistency band. The mismatch would need a mean z-shift of
+   ≈0.17 to own the effect; the measured shift is +0.018.
+3. **Row #143 item 2 RETRACTED ("the driver was outside the estimator all along").** On the
+   unsaturated scale the three bisection arms were never inert: σ_h 0.0216 → 0.0182 → 0.0150,
+   i.e. ensemble slope **46 → 55 → 67 nats/h (+44%)**. `mean_h` is floor-saturated at the 0.60
+   grid edge in all three (coverage 0/0/0), which compressed a 44% response into an apparent
+   6% "nothing moves". The estimator's internals ARE load-bearing.
+4. **NEW DEFECT — the mirror's positive control is vacuous (verified directly).** Both B-F1
+   seeds have `max(log_posterior) − min(log_posterior) = 0.0` EXACTLY across all 46 nodes (a
+   real arm spans 13.85 nats). Its "0.7300, truth to four decimals" is what the pipeline emits
+   when the likelihood has no h-dependence — and it is not even this grid's flat-posterior
+   moment (0.6776), so the reported value comes from another path and needs its own bug hunt.
+   The `_UnityCompleteness` shim behind it is the SAME one used by **G-1, the mirror's STOP
+   gate** (`correspondence_1d.py:1843, 2049`) ⇒ G-1's PASS was vacuous, row #136's B-F1 claim
+   is unsupported, and the harness has run since G-0 with no working positive control.
+5. **D-2 as registered is INADEQUATE** — it changes two things at once (removes the quality
+   filter AND swaps donor rows for analytic errors matched to the estimator's own model),
+   re-creating self-consistency blindness by construction, and it inherits the broken control.
+   **Superseded** by the settling measurement below.
+6. **Settling measurement (registered as the next front):** build a positive control that CAN
+   fail — an arm generated end-to-end by the estimator's own forward model (draw AND
+   observation AND selection from the objects the likelihood integrates), plus an
+   injected-bias variant proving the arm detects a known displacement. If it returns truth,
+   B-SEL's residual ≥ 0.073 becomes a defect claim; if it returns a bias, the harness is the
+   defect. All remaining bisection is downstream of that control.
+7. **Proposed amendment A15** (`docs/RETROSPECTIVE_D1_20260820.md`, author ruling pending):
+   power-calibrated gates and demonstrably-sensitive controls — no threshold without its null
+   distribution and false-fail rate at the actual N; no control until shown capable of
+   failing. A13 demands an instrument move the output; A15 is the same demand one level up,
+   for the gates and controls that adjudicate instruments.
+8. **Process finding:** amendments A-3…A-6 were filed as inline `AMENDMENT (registered now,
+   pre-run)` blocks and inherited the v1 verifier stamp by proximity, though A-3 replaced the
+   registration's question with a stronger claim carrying its own decisive band. CLAUDE.md
+   makes AUTHOR approval non-transitive; nothing yet makes VERIFIER coverage non-transitive.
+   Unaffected by all of the above: production's base tilt and every production-native read.
