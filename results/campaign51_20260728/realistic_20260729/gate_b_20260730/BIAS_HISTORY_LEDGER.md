@@ -1487,3 +1487,27 @@ follow the scientific clues"*). Fleet 6383719: 70/80 COMPLETED (b0 25, bsig005 2
    the memo and moves the hunt to D̃^φ's class composition. The instrument touches a
    physics-trigger file, so §6 of the memo is a `/physics-change` gate presentation and
    **awaits the author** before implementation.
+
+## Row #142 — 2026-08-20 — B-DEN: MEASURE-NOT-IT; memo falsified as owner; the A-3 premise itself downgraded to PROVISIONAL
+
+1. **A-5 executed** (job 6393386, 15/15): **B-DEN = −0.1193 ± 0.0005** → **MEASURE-NOT-IT**.
+   `docs/derivations/completion_numerator_data_measure.md` is FALSIFIED as the owner per its
+   own §5 falsifier. Its §2 defect is REAL and numerically proven at unit level (production's
+   event term integrates over the data to d_L(1+3σ²) = 1.0316 vs 1.0 for the corrected form)
+   — but repairing it does not move the bias, as the memo's own saddle-point caveat allowed.
+2. **The decisive pattern:** −0.1120 (B-SEL) → −0.1163 (B-SELF, fused) → −0.1193 (B-DEN,
+   data measure). Three independent internal-normalization repairs, each leaving the bias
+   unchanged or marginally worse, inside a universe believed to be model-matched. That is not
+   a normalization bug's signature.
+3. **[RULE] The A-3 "INTERNAL-MISNORMALIZATION" verdict (row #140) is DOWNGRADED to
+   PROVISIONAL.** Identified premise failure: B-SEL matches the model at DRAW time
+   (hosts ∝ w_pop·(1−f̄)·S̄_φ) but not necessarily at SURVIVAL time — each event then takes a
+   donor Fisher row resampled from real events and ~10% are removed by the production quality
+   filter, neither of which is in the estimator's selection model. Amendment A10 applied to
+   our own harness: its structural blindness is draw-time vs survival-time matching.
+4. **AMENDMENT A-6 registered:** D-1, a zero-compute diagnostic comparing the SURVIVING
+   mirror events' z-distribution against the model's detected-dark density (bands: max CDF
+   gap ≤ 0.05 ⇒ MIRROR-MATCHED and the row #140 verdict is restored; > 0.05 ⇒ MIRROR-MISMATCHED
+   and that verdict is void). D-2 (rebuild survival-matched) only if needed. **No further
+   estimator bisection until D-1 returns** — three eliminations without movement is the
+   registered trigger to question the premise, not the next term.

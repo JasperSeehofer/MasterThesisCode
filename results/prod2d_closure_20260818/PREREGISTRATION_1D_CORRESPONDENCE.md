@@ -437,3 +437,54 @@ observation plus a dimensional argument, not a derivation. Before B-DEN's result
 attributed to it, the algebra (which measure the numerator is a density in, which the
 denominator is, and what the correct pairing implies for the h-slope) is written up as a
 memo in `docs/derivations/`, with its own falsifier, exactly as the B_scale item was.
+
+## A-5 VERDICT (2026-08-20) — **MEASURE-NOT-IT**, and a pattern that re-opens the premise
+
+Job 6393386, 15/15 seeds, pre-committed bands:
+
+| arm | what it repairs | n | bias |
+|---|---|---|---|
+| B-SEL | (baseline, model-matched) | 12 | −0.1120 ± 0.0017 |
+| B-SELF | detection weight into the numerator (fused) | 11 | −0.1163 ± 0.0010 |
+| **B-DEN** | **the event term's data measure** | **15** | **−0.1193 ± 0.0005** |
+
+`completion_numerator_data_measure.md` is **FALSIFIED as the owner** per its own §5. Its §2
+claim stands and is numerically proven (the ratio form integrates over the data to
+d_L(1+3σ²) = 1.0316, the corrected form to 1.0) — the missing normalization is REAL, but
+repairing it does not move the bias, exactly as the memo's own saddle-point caveat warned it
+might not.
+
+**The pattern (three eliminations, monotone):** −0.1120 → −0.1163 → −0.1193. Every repair
+that should improve the estimator's internal normalization leaves the bias unchanged or
+marginally WORSE. Three independent normalization defects have now been fixed inside a
+"model-matched" universe with no effect. That is not the signature of a normalization bug;
+it is the signature of **a residual data-vs-model mismatch in the mirror itself** — i.e. the
+A-3 premise (that B-SEL is model-matched) may be false.
+
+**Where B-SEL can still be mismatched (identified, not yet measured):** hosts are drawn from
+w_pop·(1−f̄)·S̄_φ, but each event then receives a donor Fisher row resampled SNR-weighted from
+real production events, and afterwards ~10% are removed by the production quality filter.
+Neither the donor assignment nor the quality filter is part of the estimator's selection
+model, so the REALIZED distribution of surviving mirror events need not equal
+w_pop·(1−f̄)·S̄_φ even though the DRAWN distribution does. The A-3 verdict
+"INTERNAL-MISNORMALIZATION" is therefore **downgraded to PROVISIONAL** pending the check
+below. (This is amendment A10 applied to our own harness: its structural blindness is that
+it matches the model at draw time, not at survival time.)
+
+## AMENDMENT A-6 (registered pre-run) — test the premise before bisecting further
+
+- **D-1 (free diagnostic, zero compute):** re-run one banked B-SEL seed's generator with
+  per-event bookkeeping and record the z-distribution of SURVIVING events, then compare it
+  to the model's own detected-dark density w_pop·(1−f̄)·S̄_φ normalized on the same range.
+  **Bands:** MIRROR-MATCHED if the max CDF gap ≤ 0.05 (the tolerance already used for the
+  pool-vs-events provenance check, row #137) ⇒ the mirror is model-matched at survival and
+  the internal-misnormalization verdict is restored; **MIRROR-MISMATCHED** if > 0.05 ⇒ the
+  A-3 verdict is void and the bias measured by B-SEL/B-SELF/B-DEN is (at least partly) the
+  mirror's own mismatch, not the estimator's defect.
+- **D-2 (only if MIRROR-MISMATCHED):** rebuild the arm so that survival, not drawing, matches
+  the model — accept every drawn event (no quality filter) and give each an analytic σ_dL/d_L
+  consistent with the model's assumed measurement error, rather than a resampled donor row.
+  Re-run the isolation test on that universe.
+- **No further estimator bisection until D-1 returns.** Three eliminations with no movement
+  is the registered trigger (proposal §"Explicitly NOT proposed") to question the premise
+  rather than the next term.
