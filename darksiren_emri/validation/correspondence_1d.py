@@ -1,6 +1,64 @@
-r"""Option-B 1D production-correspondence harness (G-0 fidelity + generator + G-1/G-2).
+r"""Option-B 1D production-correspondence harness (G-0/G-1/G-2 + arms fleet + AMENDMENT A-2).
 
-**What this instrument is.** The Option-B measurement registered in
+**AMENDMENT A-2 (2026-08-20, registered in the prereg's append-only VERDICT
+section after the b0/bsig005/bsig025/eden05/eden2 fleet ran).** The arms
+fleet found the mirror universe was drawing 100% in-catalogue hosts, the
+OPPOSITE regime from production (~4.79% in-catalogue, ~95%
+completion-leg-dominated) -- S-CORR mechanically had to fail. A-2 re-poses
+the correspondence question in production's actual regime with two new
+arms, both added here:
+
+- **B-OUT** (:data:`ARM_SPECS` key ``"bout"``, 15 seeds): hosts drawn from
+  the POPULATION model the estimator's own completion leg assumes --
+  :func:`draw_population_redshifts`, the bare form of the nested closure
+  ``_w_pop_eff`` (``bayesian_statistics.py:5775-5783``,
+  ``w_pop(z) = dV_c/dz(z, h_true) / (1+z)``) -- rather than from the pinned
+  catalogue, and NEVER inserted into the candidate set (``host_galaxy_index
+  = -1``, ``in_catalog = False`` -- the exact production "dark"/completion-
+  leg bookkeeping convention, ``bayesian_statistics.py:4485``). Real GLADE
+  galaxies falling in the localization ball are the only candidates
+  (impostors only); the catalogue file itself is never modified. See
+  :meth:`MirrorUniverseGenerator.draw_realization`'s ``host_mode="population"``
+  branch.
+- **B-F1** (:data:`ARM_SPECS` key ``"bf1"``, 2 seeds): the B-0 configuration
+  (catalogue-resident hosts, ``sigma_z_scale=1.0``) run under the P14 ``f=1``
+  completeness shim (:class:`_UnityCompleteness`, already used by G-1) --
+  isolates completeness from the exact-z difference that separates G-1 from
+  B-sigma-0.05x.
+
+**Population-model choice, registered here (scientifically load-bearing,
+flagged for review).** The completion leg's population weight is
+``w_pop(z) = dV_c/dz(z, h) / (1+z)`` (``comoving_volume_element(z, h) /
+(1+z)``, the SAME functional form used throughout ``bayesian_statistics.py``
+for D(h)/beta_Gbar(h)/the in-catalogue volume-deconvolved kernel -- Gray et
+al. 2020, arXiv:1908.06050, Eq. A.10/33; the module's ``_w_pop_eff`` is its
+per-call, completeness-multiplied nested-closure instance). B-OUT's host
+draw uses this BARE form (no completeness factor -- population draws are
+model draws of the true universe, not observed-catalogue density) evaluated
+at the mirror truth :data:`H_TRUE` (D-B item c/d convention: the mirror's
+true cosmology is h_true, matching how B-0's true d_L is
+``dist(host_z, h_true)``). **Domain choice:** ``z in [1e-6,
+HOST_DRAW_Z_MAX]`` (:data:`POPULATION_Z_MAX`), NOT the h-dependent detection
+horizon ``z_max(h) = dist_to_redshift(get_dl_max(h), h)`` production's D(h)/
+beta_Gbar(h) integrals actually use. Reason: ``get_dl_max`` requires a
+constructed ``SimulationDetectionProbability`` (the ~20-25 min/h injection-
+pool selection-grid cost the G-2 cost decomposition already flags as the
+per-h dominant cost) -- building one JUST to draw hosts before evaluate()
+duplicates that exact cost. Production's own comment
+(``bayesian_statistics.py:1238-1240``, the issue #30 selection-domain-cap
+note) records that ``z_max(h) <= ~1.33`` for every ``h`` in the registered
+prior range ``[0.60, 0.86]``, strictly inside ``HOST_DRAW_Z_MAX = 1.5`` --
+so this domain is a documented, cheap, conservative SUPERSET of every
+h-dependent completion-leg integration window actually used at the h values
+this harness probes, not an independent/looser choice. It is also the SAME
+domain the in-catalogue host draw already respects by construction (every
+pinned-catalogue host satisfies ``z < HOST_DRAW_Z_MAX`` by the pruning in
+:func:`~darksiren_emri.galaxy_catalogue.handler.GalaxyCatalogueHandler`),
+so B-OUT and B-0/B-sigma/E-DEN draw from directly comparable z-support.
+
+---
+
+**What this instrument is (G-0/G-1/G-2 base build).** The Option-B measurement registered in
 ``results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md`` (v2):
 decompose the production 1D base tilt into information-starvation vs
 form-defect components. Gate G-0 (prereg §4, the STOP gate that must pass
@@ -95,7 +153,7 @@ from darksiren_emri.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     InternalCatalogColumns,
 )
-from darksiren_emri.physical_relations import dist_vectorized
+from darksiren_emri.physical_relations import comoving_volume_element, dist_vectorized
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -192,21 +250,87 @@ R_LOW_THRESHOLD = 0.605  # DS-6 rail statistic (prereg S-RAIL)
 # effectively delta-function redshift. Flagged for review.
 EXACT_Z_ERROR_FLOOR = 1.0e-6
 
+# Host-draw weighting floor (harness bug fix, 2026-08-20 diagnosis of the
+# bsig025 fleet failure, job 6383719). realize_observed_catalogue's z-floor
+# CLIP (GALAXY_CATALOG_REDSHIFT_LOWER_LIMIT = 1e-5, point mass, no redraw --
+# observed_realization.py:23-25/332, an author-accepted approximation of the
+# REALIZATION, not a claim about the host population) produces a handful of
+# rows pinned to the identical z=1e-5 value; how many depends on
+# sigma_z_scale (354 rows at 0.05, 4188 at 0.25, per the job-6383719 sidecar
+# logs -- monotone increasing but not linearly). _host_draw_weights (below)
+# weights purely by 1/d_L(z)^2 with only a numerical divide-by-zero guard
+# (1e-6 Gpc, ~1 kpc) -- since d_L(z=1e-5, h=0.73) ~ 4.1e-5 Gpc (~41 kpc) sits
+# ABOVE that guard, the clip never engages and these realization-artifact
+# rows get weight ~4e7-1e8x a typical host. Empirically the REAL (baseline,
+# unscattered) GLADE pool's closest galaxy sits at z ~ 0.00195 -- two orders
+# of magnitude above the technical clip -- so flooring the WEIGHTING z at
+# 1e-3 (an order of magnitude below the real population's minimum, two
+# orders above the realization clip) leaves every genuine host's weight
+# untouched while capping the clipped-artifact rows down to roughly par with
+# the closest real galaxies instead of ~40000x above them. This resolves the
+# observed pathology: at sigma_z_scale=0.25 the artifact rows' combined
+# weight (pre-fix) swamped the entire 200-event weighted-without-replacement
+# draw, placing every mirror event at a near-zero true d_L against an
+# unrelated (donor-row, ABSOLUTE) sigma_dL -- distance_relative_error >> 0.1
+# for all 200 events -> 0 detections after use_detection() quality
+# filtering -> the harness's own "expected diagnostics CSV not found" guard.
+# Only the WEIGHT is floored here; the actual event PLACEMENT (draw_realization
+# item c, true_d_L from the drawn host's own z) is untouched -- a host that
+# does get drawn near the realization floor should still legitimately fail
+# the quality filter on its own merits, just not for ALL 200 events at once.
+HOST_DRAW_WEIGHT_Z_FLOOR = 1.0e-3
+
 # ── Fleet arm registry (cluster-fleet CLI stage, prereg §2 arm doses) ────────
 # arm -> (sigma_z_scale, area_scale), verbatim from the task spec's registered
 # mapping. b0 = B-0 (production-mapped); bsig005/bsig025 = B-sigma starvation
-# ladder (0.05x/0.25x); eden05/eden2 = E-DEN (area x0.5/x2, exploratory).
+# ladder (0.05x/0.25x); eden05/eden2 = E-DEN (area x0.5/x2, exploratory);
+# bout = B-OUT (AMENDMENT A-2, population-model host draw -- sigma_z_scale/
+# area_scale carried here only for schema uniformity with the run_arm_seed
+# record; B-OUT's host draw ignores host_pool/sigma_z_scale entirely, see
+# ARM_HOST_MODE below); bf1 = B-F1 (AMENDMENT A-2, B-0 config + f=1
+# completeness control, see ARM_UNITY_COMPLETENESS below).
 ARM_SPECS: dict[str, tuple[float, float]] = {
     "b0": (1.0, 1.0),
     "bsig005": (0.05, 1.0),
     "bsig025": (0.25, 1.0),
     "eden05": (1.0, 0.5),
     "eden2": (1.0, 2.0),
+    "bout": (1.0, 1.0),
+    "bf1": (1.0, 1.0),
 }
-# Registered paired-seed discipline (prereg §1 D-C): b0/bsig005 get the
-# adjudicating N=25; bsig025/eden05/eden2 are the N=10 reported-only doses.
-# All arm seed lists start at the SAME 900101 anchor (paired across arms by
-# construction, so a B-sigma/E-DEN seed at index i is the same universe
+# AMENDMENT A-2: per-arm host-draw mode. "catalogue" (default, all pre-A-2
+# arms) draws hosts FROM the pinned catalogue's HostPool (D-B item a);
+# "population" (bout only) draws hosts from the estimator's own completion-
+# leg population model (draw_population_redshifts + isotropic sky) and NEVER
+# inserts them into the candidate set (module docstring, AMENDMENT A-2).
+ARM_HOST_MODE: dict[str, Literal["catalogue", "population"]] = {
+    "b0": "catalogue",
+    "bsig005": "catalogue",
+    "bsig025": "catalogue",
+    "eden05": "catalogue",
+    "eden2": "catalogue",
+    "bout": "population",
+    "bf1": "catalogue",
+}
+# AMENDMENT A-2: per-arm completeness override. True (bf1 only) monkeypatches
+# the real GLADE completeness object with the P14 f=1 shim
+# (:class:`_UnityCompleteness`, the SAME mechanism G-1 uses) for the duration
+# of that arm's evaluate() call -- the B-F1 completeness control.
+ARM_UNITY_COMPLETENESS: dict[str, bool] = {
+    "b0": False,
+    "bsig005": False,
+    "bsig025": False,
+    "eden05": False,
+    "eden2": False,
+    "bout": False,
+    "bf1": True,
+}
+# Registered paired-seed discipline (prereg §1 D-C, extended by AMENDMENT
+# A-2): b0/bsig005 get the adjudicating N=25; bsig025/eden05/eden2 are the
+# N=10 reported-only doses; bout is the AMENDMENT A-2 adjudicating arm
+# (N=15); bf1 is the AMENDMENT A-2 completeness control (N=2). All arm seed
+# lists start at the SAME 900101 anchor (paired across arms by construction,
+# so a B-sigma/E-DEN/B-OUT/B-F1 seed at index i is the same universe
 # construction seed as B-0's seed at index i).
 ARM_SEEDS: dict[str, tuple[int, ...]] = {
     "b0": tuple(range(900101, 900126)),
@@ -214,6 +338,8 @@ ARM_SEEDS: dict[str, tuple[int, ...]] = {
     "bsig025": tuple(range(900101, 900111)),
     "eden05": tuple(range(900101, 900111)),
     "eden2": tuple(range(900101, 900111)),
+    "bout": tuple(range(900101, 900116)),
+    "bf1": tuple(range(900101, 900103)),
 }
 
 
@@ -404,6 +530,99 @@ def build_exact_z_catalogue(
     return output_csv_path
 
 
+# ── AMENDMENT A-2: population-model host draw (B-OUT) ────────────────────────
+# Domain: see the module docstring's "Population-model choice" section for
+# the full registered justification (h_true evaluation, [1e-6, HOST_DRAW_Z_MAX]
+# domain vs the h-dependent completion horizon).
+POPULATION_Z_MIN: float = 1.0e-6
+POPULATION_Z_MAX: float = HOST_DRAW_Z_MAX
+_POPULATION_Z_GRID_N = 4001
+
+
+def population_z_weights(z: npt.NDArray[np.float64], h: float = H_TRUE) -> npt.NDArray[np.float64]:
+    """The estimator's own completion-leg population weight, bare form.
+
+    ``w_pop(z) = dV_c/dz(z, h) / (1+z)`` -- byte-identical functional form to
+    the production nested closure ``_w_pop_eff``
+    (``bayesian_statistics.py:5775-5783``) with its ``f_k`` completeness
+    factor OMITTED (a population draw of the true universe, not the observed
+    catalogue's completeness-weighted density; the module docstring's
+    "Population-model choice" section registers this).
+
+    Args:
+        z: Redshift grid/values.
+        h: Dimensionless Hubble parameter (default: the mirror truth
+            :data:`H_TRUE`).
+
+    Returns:
+        ``w_pop(z)``, same shape as ``z``.
+
+    References:
+        Gray et al. (2020), arXiv:1908.06050, Eq. (A.10)/(33).
+    """
+    z_arr = np.asarray(z, dtype=np.float64)
+    return np.asarray(comoving_volume_element(z_arr, h=h), dtype=np.float64) / (1.0 + z_arr)
+
+
+def draw_population_redshifts(
+    rng: np.random.Generator,
+    n: int,
+    h: float = H_TRUE,
+    z_min: float = POPULATION_Z_MIN,
+    z_max: float = POPULATION_Z_MAX,
+    n_grid: int = _POPULATION_Z_GRID_N,
+) -> npt.NDArray[np.float64]:
+    """Inverse-CDF draw of ``n`` redshifts from :func:`population_z_weights`.
+
+    Deterministic given ``rng``'s state (single ``rng.uniform`` call):
+    builds a trapezoid-quadrature CDF on a dense ``z`` grid, then
+    linearly interpolates ``n`` uniform draws through it.
+
+    Args:
+        rng: Seeded generator (consumes exactly ``n`` uniform draws).
+        n: Number of redshifts to draw.
+        h: Dimensionless Hubble parameter for :func:`population_z_weights`
+            (default: :data:`H_TRUE`).
+        z_min: Lower domain bound (default :data:`POPULATION_Z_MIN`).
+        z_max: Upper domain bound (default :data:`POPULATION_Z_MAX`).
+        n_grid: Quadrature/interpolation grid resolution.
+
+    Returns:
+        Drawn redshifts, shape ``(n,)``.
+    """
+    z_grid = np.linspace(z_min, z_max, n_grid, dtype=np.float64)
+    w = population_z_weights(z_grid, h=h)
+    segment_mass = 0.5 * (w[1:] + w[:-1]) * np.diff(z_grid)
+    cdf = np.concatenate(([0.0], np.cumsum(segment_mass)))
+    total = cdf[-1]
+    if total <= 0.0:
+        raise ValueError("population_z_weights integrates to <= 0 over [z_min, z_max]")
+    cdf = cdf / total
+    u = rng.uniform(0.0, 1.0, size=n)
+    return np.interp(u, cdf, z_grid)
+
+
+def draw_isotropic_sky(
+    rng: np.random.Generator, n: int
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Isotropic sky direction draw: ``phiS ~ U(0, 2pi)``, ``cos(qS) ~ U(-1, 1)``.
+
+    ``qS`` is the ecliptic polar angle (colatitude) in ``[0, pi]``; uniform
+    ``cos(qS)`` is the standard isotropic-on-sphere construction (equal
+    solid-angle density per unit ``(phiS, cos qS)``).
+
+    Args:
+        rng: Seeded generator (consumes exactly ``2*n`` uniform draws).
+        n: Number of directions to draw.
+
+    Returns:
+        ``(phiS, qS)``, each shape ``(n,)``.
+    """
+    phi_s = rng.uniform(0.0, 2.0 * np.pi, size=n)
+    q_s = np.arccos(1.0 - 2.0 * rng.uniform(0.0, 1.0, size=n))
+    return phi_s, q_s
+
+
 class MirrorUniverseGenerator:
     """D-B real-catalogue mirror-universe draw.
 
@@ -467,13 +686,25 @@ class MirrorUniverseGenerator:
         machinery's rate-table construction, out of scope for this harness's
         n=200 pilot cost budget.
 
+        The redshift is floored at :data:`HOST_DRAW_WEIGHT_Z_FLOOR` (1e-3)
+        before computing the weighting distance -- a bug fix (2026-08-20,
+        job 6383719 diagnosis, see the constant's module-level comment): the
+        B-sigma arm's ``realize_observed_catalogue`` z-floor point-mass clip
+        (1e-5, a documented realization artifact, not a real host) otherwise
+        acquires a pathologically dominant 1/d_L^2 weight (~4e7-1e8x a
+        typical host) that swamps the WHOLE weighted-without-replacement
+        draw at doses (sigma_z_scale=0.25) where enough rows hit the clip.
+        This floor sits an order of magnitude below the real GLADE pool's
+        empirical minimum z (~0.00195), so genuine hosts are unaffected.
+
         Args:
             pool: The host pool.
 
         Returns:
             Normalized weights, shape ``(pool.n,)``.
         """
-        d_l = dist_vectorized(pool.z, h=H_TRUE)
+        z_for_weight = np.clip(pool.z, HOST_DRAW_WEIGHT_Z_FLOOR, None)
+        d_l = dist_vectorized(z_for_weight, h=H_TRUE)
         w = 1.0 / np.clip(d_l, 1.0e-6, None) ** 2
         total = w.sum()
         return w / total if total > 0 else np.full(pool.n, 1.0 / pool.n)
@@ -521,7 +752,12 @@ class MirrorUniverseGenerator:
         handler = _load_galaxy_catalog_handler(out)
         return _host_pool_from_handler(handler), out, handler
 
-    def draw_realization(self, seed: int, host_pool: HostPool | None = None) -> pd.DataFrame:
+    def draw_realization(
+        self,
+        seed: int,
+        host_pool: HostPool | None = None,
+        host_mode: Literal["catalogue", "population"] = "catalogue",
+    ) -> pd.DataFrame:
         """Draw one mirror-universe realization: ``n_events`` synthetic CRB rows.
 
         Args:
@@ -531,14 +767,25 @@ class MirrorUniverseGenerator:
                 determinism test).
             host_pool: Pre-resolved host pool (reuse across seeds at the same
                 dose via :meth:`host_pool_for_sigma_scale`); defaults to the
-                pinned baseline (``sigma_z_scale == 1.0``, B-0).
+                pinned baseline (``sigma_z_scale == 1.0``, B-0). Ignored when
+                ``host_mode == "population"``.
+            host_mode: ``"catalogue"`` (default, D-B item a): draws hosts
+                FROM ``host_pool``, detectability-weighted, and stamps them
+                as in-catalogue (``host_galaxy_index >= 0``,
+                ``in_catalog=True``). ``"population"`` (AMENDMENT A-2, B-OUT):
+                draws host redshift from :func:`draw_population_redshifts`
+                and an isotropic sky direction from :func:`draw_isotropic_sky`
+                -- NEVER a pinned-catalogue host -- and stamps
+                ``host_galaxy_index=-1``, ``in_catalog=False`` (the exact
+                production "dark"/completion-leg convention,
+                ``bayesian_statistics.py:4485``), so the host is never a
+                candidate-set member by construction.
 
         Returns:
             A DataFrame with the SAME columns/order as
             :data:`CRB_CSV_PATH` (:attr:`config.crb_reference_csv`), the
             mirror-universe's ``n_events`` synthetic events.
         """
-        pool = host_pool if host_pool is not None else _load_host_pool(REDUCED_CATALOGUE_PATH)
         n = self.config.n_events
         rng = np.random.default_rng(seed)
 
@@ -548,12 +795,26 @@ class MirrorUniverseGenerator:
         row_idx = rng.choice(len(self._donor_rows), size=n, replace=False, p=row_p)
         rows = self._donor_rows.iloc[row_idx].reset_index(drop=True).copy()
 
-        # (a) detectability-weighted host draw, without replacement.
-        host_w = self._host_draw_weights(pool)
-        host_idx = rng.choice(pool.n, size=n, replace=False, p=host_w)
-        host_z = pool.z[host_idx]
-        host_phiS = pool.phiS[host_idx]
-        host_qS = pool.qS[host_idx]
+        if host_mode == "catalogue":
+            pool = host_pool if host_pool is not None else _load_host_pool(REDUCED_CATALOGUE_PATH)
+            # (a) detectability-weighted host draw, without replacement.
+            host_w = self._host_draw_weights(pool)
+            host_idx = rng.choice(pool.n, size=n, replace=False, p=host_w)
+            host_z = pool.z[host_idx]
+            host_phiS = pool.phiS[host_idx]
+            host_qS = pool.qS[host_idx]
+            host_index_col = host_idx.astype(np.int64)
+            in_catalog_col = True
+        elif host_mode == "population":
+            # (a) AMENDMENT A-2 (B-OUT): population-model host draw, never a
+            # pinned-catalogue member -- see the module docstring's
+            # "Population-model choice" section.
+            host_z = draw_population_redshifts(rng, n, h=H_TRUE)
+            host_phiS, host_qS = draw_isotropic_sky(rng, n)
+            host_index_col = np.full(n, -1, dtype=np.int64)
+            in_catalog_col = False
+        else:
+            raise ValueError(f"unknown host_mode {host_mode!r}; expected 'catalogue'/'population'")
 
         # (c) true d_L from host z at h_true; observed d_L about it.
         true_d_L = dist_vectorized(host_z, h=H_TRUE)
@@ -595,8 +856,8 @@ class MirrorUniverseGenerator:
         rows["luminosity_distance"] = obs_d_L
         rows["phiS"] = obs_phiS
         rows["qS"] = obs_qS
-        rows["host_galaxy_index"] = host_idx.astype(np.int64)
-        rows["in_catalog"] = True
+        rows["host_galaxy_index"] = host_index_col
+        rows["in_catalog"] = in_catalog_col
         return rows
 
 
@@ -1491,7 +1752,8 @@ def run_arm_seed(
         work_root: Per-task scratch directory for the sandboxed evaluate()
             run (catalogue variant + CRB-CSV write + diagnostics output).
         arm: One of :data:`ARM_SPECS`' keys
-            (``b0``/``bsig005``/``bsig025``/``eden05``/``eden2``).
+            (``b0``/``bsig005``/``bsig025``/``eden05``/``eden2``/``bout``/
+            ``bf1``).
         seed: Realization seed. Expected to be a member of
             ``ARM_SEEDS[arm]`` per the registered paired-seed discipline
             (prereg §1 D-C) -- not enforced here (kept testable with
@@ -1511,6 +1773,8 @@ def run_arm_seed(
     if arm not in ARM_SPECS:
         raise KeyError(f"unknown arm {arm!r}; registered arms: {sorted(ARM_SPECS)}")
     sigma_z_scale, area_scale = ARM_SPECS[arm]
+    host_mode = ARM_HOST_MODE.get(arm, "catalogue")
+    unity_completeness = ARM_UNITY_COMPLETENESS.get(arm, False)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{arm}_seed{seed}.json"
     if out_path.is_file():
@@ -1525,26 +1789,43 @@ def run_arm_seed(
     cfg = config or CorrespondenceConfig(sigma_z_scale=sigma_z_scale, area_scale=area_scale)
     catalogue_pin_ok = check_reduced_catalogue_pin()
     gen = MirrorUniverseGenerator(cfg)
+    # bout (host_mode="population") still resolves the pinned-catalogue
+    # handler (for the REAL GLADE candidate structure evaluate() searches --
+    # impostors only, AMENDMENT A-2) but host_pool itself is ignored by
+    # draw_realization's population branch.
     host_pool, _observed_path, handler = gen.host_pool_for_sigma_scale(
         work_root / "catalogue", seed, sigma_z_scale=sigma_z_scale
     )
-    events = gen.draw_realization(seed, host_pool=host_pool)
+    events = gen.draw_realization(seed, host_pool=host_pool, host_mode=host_mode)
     diag_csv, elapsed = run_mirror_seed_inprocess(
         work_root / f"seed{seed}",
         events,
         seed,
         galaxy_catalog=handler,
         h_values=H_GRID_FULL,
-        completeness_override=False,
+        completeness_override=unity_completeness,
     )
     stats = compute_seed_statistics(diag_csv, seed, h_grid=H_GRID_41)
     h_grid, log_posterior = compute_full_log_posterior_vector(diag_csv, h_grid=H_GRID_FULL)
+
+    # AMENDMENT A-2 sanity assertion (B-OUT): the host must NEVER be a
+    # candidate-set member by construction -- host_galaxy_index == -1 is
+    # production's own "dark"/completion-leg convention
+    # (bayesian_statistics.py:4485), so this fraction is the exact,
+    # zero-extra-cost check that the population draw never smuggled a
+    # catalogue-resident host in. Recorded for every arm (not just bout) so
+    # the JSON is directly comparable across the fleet: b0/bsig*/eden*/bf1
+    # (host_mode="catalogue") must read 1.0; bout must read ~0.0.
+    host_in_catalogue_fraction = float((events["host_galaxy_index"].to_numpy() >= 0).mean())
 
     record: dict[str, Any] = {
         "arm": arm,
         "seed": seed,
         "sigma_z_scale": sigma_z_scale,
         "area_scale": area_scale,
+        "host_mode": host_mode,
+        "unity_completeness": unity_completeness,
+        "host_in_catalogue_fraction": host_in_catalogue_fraction,
         "n_events_drawn": cfg.n_events,
         "n_eff": stats.n_events,
         "mean_h": stats.mean_h,
@@ -1586,7 +1867,7 @@ def _cli() -> int:
         "--arm",
         choices=tuple(ARM_SPECS),
         default=None,
-        help="Fleet arm (--stage arm only): b0/bsig005/bsig025/eden05/eden2.",
+        help="Fleet arm (--stage arm only): b0/bsig005/bsig025/eden05/eden2/bout/bf1.",
     )
     parser.add_argument(
         "--out-dir",

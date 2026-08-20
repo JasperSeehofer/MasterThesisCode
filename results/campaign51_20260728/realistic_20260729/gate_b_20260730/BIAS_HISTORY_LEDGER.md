@@ -1334,3 +1334,32 @@ follow the scientific clues"*). Fleet 6383719: 70/80 COMPLETED (b0 25, bsig005 2
    out-of-catalogue event) with bands COMPLETION-UNBIASED / -BIASED-LOW / -BIASED-HIGH /
    MIXED, plus control **B-F1** (2 seeds, f≡1 shim). ≈19 CPU-h ⇒ Option B total ≈107 of the
    120 ceiling. Implementation + bsig025 diagnosis in flight.
+
+## Row #137 — 2026-08-20 — BASE TILT LOCALIZED (autonomous): completion class carries it; score-bias at truth 37σ, high-z localized; population misspecification promoted to leading candidate
+
+1. **Registered free read** (`PREREG_COMPLETION_CLASS_DECOMPOSITION.md`, prereg-first)
+   fired **COMPLETION-CARRIES** in both venues and BOTH channels: the pure-completion class
+   (no catalogue support; 605/1588 iiib, 491/1588 joint_r1) sits at 1D mean **0.6001**,
+   σ_h **0.0011**, MAP 0.600 and carries **~195%** of the full-sample slope; the
+   catalogue-supported classes pull the other way (C-A in-catalogue 0.828) — production's
+   posterior is a balance point. 2D identical (C-C 0.6004) ⇒ the base tilt is NOT
+   mass-channel structure.
+2. **Stated as a defect:** the dark-class per-event SCORE at truth is **−0.635 ± 0.017**
+   (iiib, 37σ) / −0.565 ± 0.020 (joint_r1, 28σ). A correctly normalized likelihood has zero
+   expected score at truth under its own model. Decomposition (identity-verified):
+   d ln B_num/dh = −1.871 vs global d ln D̃^φ/dh = −1.236 — the completion numerator falls
+   faster in h than the normalization meant to cancel it.
+3. **Localization:** score ≈ 0 below z ≈ 0.4, monotone to **−1.08 at z ≈ 0.9** — a DEEP
+   completion-leg phenomenon. Convention ledger: B_scale was worth +0.19, the fusion factor
+   +0.16; the residual −0.45…−0.64/event is owned by neither.
+4. **Provenance cleared:** production events vs the pool's stratum-'a' (population-measure)
+   rows agree (mean z 0.485 vs 0.473, max CDF gap 0.048). **Population misspecification is
+   now the leading candidate:** the estimator assumes constant comoving number density
+   (documented, `bayesian_statistics.py:1192`) while events are injected from the Barausse
+   M1 rate — z-shapes differ up to ~2×, and by ≈1.5×→1.0× exactly across the band where the
+   score bias grows. **B-OUT (A-2, in flight) is the discriminator.**
+5. bsig025 failure DIAGNOSED + fixed (harness): realization z-clip rows (z = 1e-5) acquired
+   ~4×10⁷ weight under the 1/d_L² host-draw proxy and swamped the draw; fix = z-floor 1e-3
+   in the WEIGHTING only (an order of magnitude below GLADE's empirical minimum). A separate
+   real defect was flagged in `observed_realization.py`'s mass-error solve (sidecar width
+   check 0.379 vs 0.25, ~21.7M rows at the floor) — recorded, not on this critical path.

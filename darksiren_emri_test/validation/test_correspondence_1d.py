@@ -172,18 +172,50 @@ def test_arm_specs_registered_mapping() -> None:
         "bsig025": (0.25, 1.0),
         "eden05": (1.0, 0.5),
         "eden2": (1.0, 2.0),
+        "bout": (1.0, 1.0),
+        "bf1": (1.0, 1.0),
     }
 
 
+def test_arm_host_mode_and_completeness_registered_mapping() -> None:
+    """AMENDMENT A-2: bout is the only population-draw arm; bf1 the only f=1 control."""
+    assert c1d.ARM_HOST_MODE == {
+        "b0": "catalogue",
+        "bsig005": "catalogue",
+        "bsig025": "catalogue",
+        "eden05": "catalogue",
+        "eden2": "catalogue",
+        "bout": "population",
+        "bf1": "catalogue",
+    }
+    assert c1d.ARM_UNITY_COMPLETENESS == {
+        "b0": False,
+        "bsig005": False,
+        "bsig025": False,
+        "eden05": False,
+        "eden2": False,
+        "bout": False,
+        "bf1": True,
+    }
+    # Every ARM_SPECS key has an entry in both registries (no silent fallback
+    # to the default for a registered arm).
+    assert set(c1d.ARM_HOST_MODE) == set(c1d.ARM_SPECS)
+    assert set(c1d.ARM_UNITY_COMPLETENESS) == set(c1d.ARM_SPECS)
+
+
 def test_arm_seeds_registered_paired_discipline() -> None:
-    """Paired-seed discipline (prereg §1 D-C): counts + shared 900101 anchor."""
+    """Paired-seed discipline (prereg §1 D-C + AMENDMENT A-2): counts + shared anchor."""
     assert len(c1d.ARM_SEEDS["b0"]) == 25
     assert len(c1d.ARM_SEEDS["bsig005"]) == 25
     assert len(c1d.ARM_SEEDS["bsig025"]) == 10
     assert len(c1d.ARM_SEEDS["eden05"]) == 10
     assert len(c1d.ARM_SEEDS["eden2"]) == 10
+    assert len(c1d.ARM_SEEDS["bout"]) == 15
+    assert len(c1d.ARM_SEEDS["bf1"]) == 2
     total = sum(len(v) for v in c1d.ARM_SEEDS.values())
-    assert total == 80  # 25 + 25 + 10 + 10 + 10, the fleet task-list arithmetic
+    # 25 + 25 + 10 + 10 + 10 + 15 + 2 = 97, the fleet task-list arithmetic
+    # (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks).
+    assert total == 97
     for arm, seeds in c1d.ARM_SEEDS.items():
         assert seeds[0] == 900101, arm
         assert list(seeds) == sorted(seeds), arm
@@ -193,6 +225,10 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     # construction), and it is a prefix of the N=25 arms' range.
     assert c1d.ARM_SEEDS["bsig025"] == c1d.ARM_SEEDS["eden05"] == c1d.ARM_SEEDS["eden2"]
     assert c1d.ARM_SEEDS["bsig025"] == c1d.ARM_SEEDS["b0"][:10]
+    # bout (N=15) and bf1 (N=2) are prefixes of the N=25 range too (same
+    # paired-seed discipline extended to the AMENDMENT A-2 arms).
+    assert c1d.ARM_SEEDS["bout"] == c1d.ARM_SEEDS["b0"][:15]
+    assert c1d.ARM_SEEDS["bf1"] == c1d.ARM_SEEDS["b0"][:2]
 
 
 def test_run_arm_seed_unknown_arm_raises(tmp_path: Path) -> None:
@@ -273,3 +309,140 @@ def test_area_scale_scales_sky_covariance(tmp_path_factory: pytest.TempPathFacto
     d_theta_1 = (events1["qS"].to_numpy() - pool.qS[host_idx])[unclipped]
     d_theta_2 = (events2["qS"].to_numpy() - pool.qS[host_idx])[unclipped]
     np.testing.assert_allclose(d_theta_2, d_theta_1 * np.sqrt(scale), atol=1e-10)
+
+
+# ── AMENDMENT A-2: population-model host draw (B-OUT) tests ─────────────────
+
+
+def test_population_z_weights_matches_w_pop_eff_form() -> None:
+    """w_pop(z) = dV_c/dz(z, h) / (1+z), the bare _w_pop_eff functional form."""
+    z = np.array([0.05, 0.3, 0.8, 1.4])
+    w = c1d.population_z_weights(z, h=0.73)
+    expected = c1d.comoving_volume_element(z, h=0.73) / (1.0 + z)
+    np.testing.assert_allclose(w, expected)
+    assert np.all(w > 0.0)
+
+
+def test_draw_population_redshifts_is_deterministic() -> None:
+    rng_a = np.random.default_rng(2026)
+    rng_b = np.random.default_rng(2026)
+    z_a = c1d.draw_population_redshifts(rng_a, 500)
+    z_b = c1d.draw_population_redshifts(rng_b, 500)
+    np.testing.assert_array_equal(z_a, z_b)
+
+
+def test_draw_population_redshifts_within_domain() -> None:
+    rng = np.random.default_rng(7)
+    z = c1d.draw_population_redshifts(rng, 2000)
+    assert z.min() >= c1d.POPULATION_Z_MIN
+    assert z.max() <= c1d.POPULATION_Z_MAX
+
+
+def test_draw_population_redshifts_matches_w_pop_quantiles() -> None:
+    """Coarse quantile check: drawn z's median matches the w_pop CDF's median.
+
+    A full KS test against a fine reference CDF built independently from
+    :func:`population_z_weights` (same functional form the harness draws
+    from, so this is a self-consistency/implementation check on the
+    inverse-CDF machinery, not an independent physics check).
+    """
+    rng = np.random.default_rng(11)
+    n = 20000
+    z = c1d.draw_population_redshifts(rng, n)
+
+    z_ref = np.linspace(c1d.POPULATION_Z_MIN, c1d.POPULATION_Z_MAX, 20001)
+    w_ref = c1d.population_z_weights(z_ref, h=c1d.H_TRUE)
+    seg = 0.5 * (w_ref[1:] + w_ref[:-1]) * np.diff(z_ref)
+    cdf_ref = np.concatenate(([0.0], np.cumsum(seg)))
+    cdf_ref /= cdf_ref[-1]
+
+    for q in (0.1, 0.25, 0.5, 0.75, 0.9):
+        expected = float(np.interp(q, cdf_ref, z_ref))
+        drawn = float(np.quantile(z, q))
+        # w_pop(z) ~ z^2 near the origin and turns over near z~1 -- the
+        # quantile spacing is O(0.01-0.1) over this domain; a coarse
+        # tolerance (Monte Carlo noise at n=20000 plus grid discretization)
+        # is the registered check, not exact agreement.
+        assert abs(drawn - expected) < 0.05, (q, drawn, expected)
+
+
+def test_draw_isotropic_sky_domain_and_moments() -> None:
+    rng = np.random.default_rng(3)
+    n = 20000
+    phi, q = c1d.draw_isotropic_sky(rng, n)
+    assert phi.min() >= 0.0
+    assert phi.max() <= 2.0 * np.pi
+    assert q.min() >= 0.0
+    assert q.max() <= np.pi
+    # Isotropic: cos(qS) uniform on [-1, 1] -> mean(cos(qS)) ~ 0.
+    assert abs(float(np.mean(np.cos(q)))) < 0.02
+    # phiS uniform on [0, 2pi] -> mean ~ pi.
+    assert abs(float(np.mean(phi)) - np.pi) < 0.1
+
+
+def test_draw_isotropic_sky_is_deterministic() -> None:
+    rng_a = np.random.default_rng(99)
+    rng_b = np.random.default_rng(99)
+    phi_a, q_a = c1d.draw_isotropic_sky(rng_a, 100)
+    phi_b, q_b = c1d.draw_isotropic_sky(rng_b, 100)
+    np.testing.assert_array_equal(phi_a, phi_b)
+    np.testing.assert_array_equal(q_a, q_b)
+
+
+def test_bout_draw_realization_never_injects_host_into_candidates(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """B-OUT: host_galaxy_index=-1 / in_catalog=False for EVERY event.
+
+    This is the exact production "dark"/completion-leg bookkeeping
+    convention (bayesian_statistics.py:4485) -- host_galaxy_index=-1 means
+    the drawn host is, by construction, never a candidate-set member
+    (candidates come only from the real GLADE BallTree search, keyed on
+    position/redshift, never on this column).
+    """
+    n = 300
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    events = gen.draw_realization(seed=42, host_mode="population")
+
+    assert (events["host_galaxy_index"].to_numpy() == -1).all()
+    assert not events["in_catalog"].any()
+    host_in_catalogue_fraction = float((events["host_galaxy_index"].to_numpy() >= 0).mean())
+    assert host_in_catalogue_fraction == 0.0
+
+
+def test_bout_draw_realization_host_pool_argument_is_ignored(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """host_pool is accepted but unused in the population branch (no crash, no leakage)."""
+    n = 50
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool(n_pool=n)
+    events = gen.draw_realization(seed=1, host_pool=pool, host_mode="population")
+    assert (events["host_galaxy_index"].to_numpy() == -1).all()
+
+
+def test_bout_draw_realization_is_deterministic(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 40
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    a = gen.draw_realization(seed=5, host_mode="population")
+    b = gen.draw_realization(seed=5, host_mode="population")
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_draw_realization_unknown_host_mode_raises(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 10
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    with pytest.raises(ValueError):
+        gen.draw_realization(seed=1, host_mode="not_a_real_mode")  # type: ignore[arg-type]

@@ -144,3 +144,30 @@ in the redshift range where the score bias lives.
    does not share under the off convention).
 3. **Residual internal misnormalization** of the completion numerator/denominator pair
    beyond B_scale and the fusion factor (the two already-quantified ≈ +0.17 pieces).
+
+**ADDENDUM 2 (2026-08-20) — provenance cleared, population misspecification promoted to
+leading candidate:**
+
+- **Pool vs simulation: CONSISTENT.** Comparing production's detected events to the pool's
+  **stratum-'a'** rows (the population-measure stratum the estimator's pool-marginal legs
+  are built from, `simulation_detection_probability.py:355-380`, issue #51 bookkeeping):
+  mean z 0.485 vs 0.473, quantiles agreeing to ≤ 0.02 throughout, max CDF gap 0.048. No
+  provenance mismatch — candidate 2 (selection-estimate quality) is NOT excluded, but the
+  pool is drawn from the same universe as the events. (The naive all-strata comparison is
+  invalid — strata b/c are variance-reduction over-samples; that check must always be
+  stratum-'a'-only.)
+- **Estimator population vs injected population: MISMATCHED, and it is a documented
+  modelling assumption.** The estimator's dark-class prior is constant comoving number
+  density × dV_c/dz/(1+z) (`bayesian_statistics.py:1192` — "Modeling assumption (still in
+  force): constant comoving number density"; used at :1590/:1666), while events are
+  injected from the Barausse M1 EMRI rate. Normalized z-densities differ by a factor
+  varying ~0.35 → 1.83 → 0.79 across z ∈ [0.02, 1.5] (≈ 1.5 → 1.0 across the band
+  0.4 ≤ z ≤ 1.0 where the score bias grows). A population whose z-shape is wrong produces
+  exactly a score bias that vanishes where the shapes agree and grows where they diverge —
+  the measured signature.
+- **Candidate ranking updated:** (1) **population misspecification** (comoving-density
+  assumption vs injected M1 rate) — leading, documented, derivable, and testable by B-OUT;
+  (2) selection-estimate quality at depth (pool detection fraction 1.9% in 4.5–7.2 Gpc);
+  (3) residual internal misnormalization. **B-OUT decides between (1) and (3):** it draws
+  hosts from the estimator's OWN comoving population, so an unbiased B-OUT ⇒ the estimator
+  is self-consistent ⇒ production's base tilt is the population mismatch (1).
