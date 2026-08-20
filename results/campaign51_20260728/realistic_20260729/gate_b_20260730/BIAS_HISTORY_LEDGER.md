@@ -1390,3 +1390,36 @@ follow the scientific clues"*). Fleet 6383719: 70/80 COMPLETED (b0 25, bsig005 2
    defective here; it is conditioned on the wrong population.
 5. **Pending:** B-OUT (job 6385173, 15 seeds + 2 B-F1 controls) is the pre-registered
    discriminator — it must come back UNBIASED if this attribution is right.
+
+## Row #139 — 2026-08-20 — B-OUT REPRODUCES production's dark rail; my population attribution NOT confirmed (interpretation self-corrected); A-3 registers the true isolation test
+
+1. **A-2 executed** (job 6385173, 14/17; scored by the pre-committed scorer): **B-OUT
+   bias = −0.1293, mean_h = 0.6007, σ_h = 0.0027, railed in 13/13 seeds, coverage 0/0/0** →
+   registered band **COMPLETION-BIASED-LOW**. **B-F1** (unity completeness, catalogue
+   universe) = **0.7300, truth to 4 dp**, coverage 1/1/1 (n = 1 of 2; one seed timed out).
+2. **Headline: production's dark-class rail is now REPRODUCED outside production** —
+   B-OUT 0.6007 vs production C-C 0.6001 (σ_h 0.0027 vs 0.0011). The correspondence that
+   failed for catalogue-resident arms (S-CORR z ≈ −18) SUCCEEDS in the production-typical
+   out-of-catalogue regime. The tilt is now a 35-min/seed controllable bed.
+3. **Interpretation self-corrected BEFORE banking any claim:** the scorer's canned line
+   ("⇒ internal misnormalization; population attribution falsified") is **WITHDRAWN**.
+   B-OUT matches the estimator's POPULATION (`population_z_weights` = dV_c/dz/(1+z),
+   byte-identical to production's `_w_pop_eff` bare form) but NOT its SELECTION: hosts are
+   drawn with no detection weighting and 196/200 pass, while the estimator models detected
+   dark events as w_pop·(1−f)·S̄_φ. B-OUT therefore carries its own data-vs-model mismatch
+   and cannot separate the two hypotheses. The registered BAND stands; the causal sentence
+   does not. (Row #138's population attribution is therefore still standing but NOT yet
+   confirmed — B-SEL decides.)
+4. **Unified statement supported by everything so far:** the completion leg's h-posterior is
+   governed by how well the analysed events' z-distribution matches the model's assumed
+   DETECTED-dark distribution; an excess of high-z events relative to that model rails the
+   posterior low. Production is the mild case (M1-vs-comoving shape, ≈87% of its score
+   predicted, row #138); B-OUT is the extreme case (no selection suppression).
+5. **AMENDMENT A-3 registered pre-run:** **B-SEL** (15 seeds) draws hosts
+   ∝ w_pop(z)·(1−f̄(z))·S̄_φ(z; h_true) — matching the model in BOTH population and
+   selection. Bands: **ESTIMATOR-SELF-CONSISTENT** (|bias| ≤ max(0.005, 2·SE) + C68 in the
+   N=15 band) ⇒ the completion mathematics is exonerated and every observed tilt is
+   data-vs-model mismatch; **INTERNAL-MISNORMALIZATION** (|bias| ≥ 0.005, CI excluding 0)
+   ⇒ a genuine estimator defect, then bisect the completion integrand. Implementation in
+   flight; 3 timed-out A-2 seeds resubmitted at 3 h (job 6387104). Budget overrun disclosed:
+   Option B ≈ 127 CPU-h vs the 120 ceiling; ceiling raised to 150 by this amendment.
