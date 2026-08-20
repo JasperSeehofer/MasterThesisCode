@@ -175,11 +175,12 @@ def test_arm_specs_registered_mapping() -> None:
         "bout": (1.0, 1.0),
         "bf1": (1.0, 1.0),
         "bsel": (1.0, 1.0),
+        "bself": (1.0, 1.0),
     }
 
 
 def test_arm_host_mode_and_completeness_registered_mapping() -> None:
-    """AMENDMENT A-2/A-3: bout/bsel are the population-draw arms; bf1 the only f=1 control."""
+    """AMENDMENT A-2/A-3/A-4: bout/bsel/bself are the population-draw arms; bf1 the only f=1 control."""
     assert c1d.ARM_HOST_MODE == {
         "b0": "catalogue",
         "bsig005": "catalogue",
@@ -189,6 +190,7 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
         "bout": "population",
         "bf1": "catalogue",
         "bsel": "population_selected",
+        "bself": "population_selected",
     }
     assert c1d.ARM_UNITY_COMPLETENESS == {
         "b0": False,
@@ -199,11 +201,43 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
         "bout": False,
         "bf1": True,
         "bsel": False,
+        "bself": False,
     }
     # Every ARM_SPECS key has an entry in both registries (no silent fallback
     # to the default for a registered arm).
     assert set(c1d.ARM_HOST_MODE) == set(c1d.ARM_SPECS)
     assert set(c1d.ARM_UNITY_COMPLETENESS) == set(c1d.ARM_SPECS)
+    # AMENDMENT A-4: bself is otherwise IDENTICAL to bsel (host mode,
+    # completeness override, specs) -- only ARM_SELECTION_CELL differs.
+    assert c1d.ARM_HOST_MODE["bself"] == c1d.ARM_HOST_MODE["bsel"]
+    assert c1d.ARM_UNITY_COMPLETENESS["bself"] == c1d.ARM_UNITY_COMPLETENESS["bsel"]
+    assert c1d.ARM_SPECS["bself"] == c1d.ARM_SPECS["bsel"]
+
+
+def test_arm_selection_cell_registered_mapping() -> None:
+    """AMENDMENT A-4: every pre-A-4 arm defaults to "off"; only bself is "fused".
+
+    This is the byte-identical-behaviour guarantee for every existing arm --
+    a regression here means an existing arm's `selection_in_completion_numerator`
+    silently changed.
+    """
+    assert c1d.ARM_SELECTION_CELL == {
+        "b0": "off",
+        "bsig005": "off",
+        "bsig025": "off",
+        "eden05": "off",
+        "eden2": "off",
+        "bout": "off",
+        "bf1": "off",
+        "bsel": "off",
+        "bself": "fused",
+    }
+    assert set(c1d.ARM_SELECTION_CELL) == set(c1d.ARM_SPECS)
+    non_bself = {k: v for k, v in c1d.ARM_SELECTION_CELL.items() if k != "bself"}
+    assert set(non_bself.values()) == {"off"}
+    assert c1d.ARM_SELECTION_CELL["bself"] == "fused"
+    # Matches the runs-of-record basis every pre-A-4 arm is registered against.
+    assert c1d.PRODUCTION_FLAGS["--selection_in_completion_numerator"] == "off"
 
 
 def test_arm_seeds_registered_paired_discipline() -> None:
@@ -216,11 +250,12 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     assert len(c1d.ARM_SEEDS["bout"]) == 15
     assert len(c1d.ARM_SEEDS["bf1"]) == 2
     assert len(c1d.ARM_SEEDS["bsel"]) == 15
+    assert len(c1d.ARM_SEEDS["bself"]) == 15
     total = sum(len(v) for v in c1d.ARM_SEEDS.values())
-    # 25 + 25 + 10 + 10 + 10 + 15 + 2 + 15 = 112, the fleet task-list
+    # 25 + 25 + 10 + 10 + 10 + 15 + 2 + 15 + 15 = 127, the fleet task-list
     # arithmetic (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks + 15 AMENDMENT
-    # A-3 tasks).
-    assert total == 112
+    # A-3 tasks + 15 AMENDMENT A-4 tasks).
+    assert total == 127
     for arm, seeds in c1d.ARM_SEEDS.items():
         assert seeds[0] == 900101, arm
         assert list(seeds) == sorted(seeds), arm
@@ -230,15 +265,108 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     # construction), and it is a prefix of the N=25 arms' range.
     assert c1d.ARM_SEEDS["bsig025"] == c1d.ARM_SEEDS["eden05"] == c1d.ARM_SEEDS["eden2"]
     assert c1d.ARM_SEEDS["bsig025"] == c1d.ARM_SEEDS["b0"][:10]
-    # bout (N=15), bf1 (N=2) and bsel (N=15) are prefixes of the N=25 range
-    # too (same paired-seed discipline extended to the AMENDMENT A-2/A-3
-    # arms). bout and bsel share the IDENTICAL seed range (same universe
-    # construction seed at each index -- the true isolation test's paired
-    # discipline against B-OUT).
+    # bout (N=15), bf1 (N=2), bsel (N=15) and bself (N=15) are prefixes of the
+    # N=25 range too (same paired-seed discipline extended to the AMENDMENT
+    # A-2/A-3/A-4 arms). bout/bsel/bself share the IDENTICAL seed range (same
+    # universe construction seed at each index -- the true isolation test's
+    # paired discipline against B-OUT, extended by A-4's bisection step
+    # against B-SEL).
     assert c1d.ARM_SEEDS["bout"] == c1d.ARM_SEEDS["b0"][:15]
     assert c1d.ARM_SEEDS["bf1"] == c1d.ARM_SEEDS["b0"][:2]
     assert c1d.ARM_SEEDS["bsel"] == c1d.ARM_SEEDS["b0"][:15]
     assert c1d.ARM_SEEDS["bsel"] == c1d.ARM_SEEDS["bout"]
+    assert c1d.ARM_SEEDS["bself"] == c1d.ARM_SEEDS["bsel"]
+
+
+def test_run_arm_seed_threads_selection_cell_to_evaluate_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """AMENDMENT A-4 plumbing proof: ARM_SELECTION_CELL[arm] actually reaches
+    the ``selection_in_completion_numerator`` kwarg :func:`run_arm_seed`
+    passes to :func:`run_mirror_seed_inprocess` -- for EVERY registered arm,
+    not just bself. This is the load-bearing check that bself does not
+    silently fall back to "off" (which would produce a false
+    CONVENTION-NOT-IT verdict) and that no pre-A-4 arm's behaviour changed.
+
+    Stubs everything upstream of the (arm -> kwarg) wiring itself
+    (``MirrorUniverseGenerator.host_pool_for_sigma_scale``/``draw_realization``,
+    ``build_bsel_selection_objects``, the pinned-catalogue md5 check) so the
+    test needs no real GLADE catalogue/injection pool and runs in well under
+    a second; :func:`run_mirror_seed_inprocess` is stubbed at its call site
+    (module-global lookup, so the monkeypatch is visible to
+    :func:`run_arm_seed`) purely to CAPTURE the kwarg it was given -- the
+    function's own body (verified by direct source inspection, not
+    re-exercised here) forwards that same value, completely unconditionally
+    and with no intervening default, straight into
+    ``BayesianStatistics.evaluate(selection_in_completion_numerator=...)``.
+    """
+    captured: dict[str, str] = {}
+
+    def _fake_host_pool_for_sigma_scale(
+        self: c1d.MirrorUniverseGenerator, work_root: Path, seed: int, sigma_z_scale: float
+    ) -> tuple[c1d.HostPool, str | None, object]:
+        pool = c1d.HostPool(
+            phiS=np.array([0.1]),
+            qS=np.array([1.0]),
+            z=np.array([0.1]),
+            z_error=np.array([0.01]),
+            n=1,
+        )
+        return pool, None, object()
+
+    def _fake_draw_realization(
+        self: c1d.MirrorUniverseGenerator, seed: int, **kwargs: object
+    ) -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "SNR": [30.0],
+                "luminosity_distance": [1.0],
+                "phiS": [0.1],
+                "qS": [1.0],
+                "host_galaxy_index": [-1],
+                "in_catalog": [False],
+            }
+        )
+
+    def _fake_run_mirror_seed_inprocess(
+        work_root: Path,
+        events: pd.DataFrame,
+        seed: int,
+        galaxy_catalog: object,
+        h_values: tuple[float, ...] = c1d.H_GRID_41,
+        completeness_override: bool = False,
+        injection_dir: str = c1d.INJECTION_POOL_DIR,
+        allow_low_pdet_coverage: bool = True,
+        selection_in_completion_numerator: str = "off",
+    ) -> tuple[Path, float]:
+        captured["selection_in_completion_numerator"] = selection_in_completion_numerator
+        rows = [{"event_idx": 0, "h": h, "combined_no_bh": 1.0 + h} for h in h_values]
+        work_root.mkdir(parents=True, exist_ok=True)
+        diag_csv = work_root / "diag.csv"
+        pd.DataFrame(rows).to_csv(diag_csv, index=False)
+        return diag_csv, 0.01
+
+    monkeypatch.setattr(
+        c1d.MirrorUniverseGenerator, "host_pool_for_sigma_scale", _fake_host_pool_for_sigma_scale
+    )
+    monkeypatch.setattr(c1d.MirrorUniverseGenerator, "draw_realization", _fake_draw_realization)
+    monkeypatch.setattr(c1d, "build_bsel_selection_objects", lambda: (None, None))
+    monkeypatch.setattr(c1d, "run_mirror_seed_inprocess", _fake_run_mirror_seed_inprocess)
+    monkeypatch.setattr(c1d, "check_reduced_catalogue_pin", lambda: True)
+
+    for arm, expected in c1d.ARM_SELECTION_CELL.items():
+        captured.clear()
+        out_dir = tmp_path / f"out_{arm}"
+        record_path = c1d.run_arm_seed(tmp_path / f"work_{arm}", arm, 900101, out_dir)
+        assert captured["selection_in_completion_numerator"] == expected, arm
+        record = json.loads(record_path.read_text())
+        assert record["selection_cell"] == expected, arm
+        assert record["arm"] == arm
+
+    # The one arm the amendment actually changes.
+    assert c1d.ARM_SELECTION_CELL["bself"] == "fused"
+    # Every other arm is provably unchanged (still "off").
+    assert all(v == "off" for k, v in c1d.ARM_SELECTION_CELL.items() if k != "bself")
 
 
 def test_run_arm_seed_unknown_arm_raises(tmp_path: Path) -> None:

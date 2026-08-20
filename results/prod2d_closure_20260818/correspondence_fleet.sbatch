@@ -22,12 +22,17 @@
 #   bsel     (AMENDMENT A-3, population x (1-completeness) x survival host
 #             draw -- the true isolation test,
 #             ARM_HOST_MODE="population_selected"):          seeds 900101-900115 (N=15)
-# Total: 25 + 25 + 10 + 10 + 10 + 15 + 2 + 15 = 112 tasks -> --array=0-111
-# (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks + 15 AMENDMENT A-3 tasks,
-# matching the prereg's AMENDMENT A-3 "15 + 3 ~= 18 seed-runs ~= 20 CPU-h"
-# budget line -- the +3 TIMEOUT resubmits are handled by re-running this
-# same idempotent script for the affected (arm, seed) pairs, not by a
-# separate task-list entry).
+#   bself    (AMENDMENT A-4, B-SEL configuration verbatim + first bisection
+#             step -- selection_in_completion_numerator="fused" in place of
+#             B-SEL's "off", ARM_SELECTION_CELL["bself"]="fused"):
+#                                                              seeds 900101-900115 (N=15)
+# Total: 25 + 25 + 10 + 10 + 10 + 15 + 2 + 15 + 15 = 127 tasks -> --array=0-126
+# (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks + 15 AMENDMENT A-3 tasks + 15
+# AMENDMENT A-4 tasks, matching the prereg's AMENDMENT A-3 "15 + 3 ~= 18
+# seed-runs ~= 20 CPU-h" budget line -- the +3 TIMEOUT resubmits are handled
+# by re-running this same idempotent script for the affected (arm, seed)
+# pairs, not by a separate task-list entry -- and AMENDMENT A-4's "15 seeds
+# ~= 11 CPU-h" budget line).
 #
 # Walltime: pilot anchor (G-2, prereg §1 D-D) = 0.478 CPU-h/seed-run (~29 min
 # wall, single-process). --time=02:00:00 gives >4x margin per task (cluster-
@@ -57,7 +62,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --time=02:00:00
-#SBATCH --array=0-111
+#SBATCH --array=0-126
 
 set -euo pipefail
 
@@ -80,15 +85,16 @@ for s in $(seq 900101 900110); do TASK_ARMS+=("eden2");   TASK_SEEDS+=("$s"); do
 for s in $(seq 900101 900115); do TASK_ARMS+=("bout");    TASK_SEEDS+=("$s"); done  # 15 (AMENDMENT A-2)
 for s in $(seq 900101 900102); do TASK_ARMS+=("bf1");     TASK_SEEDS+=("$s"); done  # 2  (AMENDMENT A-2)
 for s in $(seq 900101 900115); do TASK_ARMS+=("bsel");    TASK_SEEDS+=("$s"); done  # 15 (AMENDMENT A-3)
+for s in $(seq 900101 900115); do TASK_ARMS+=("bself");   TASK_SEEDS+=("$s"); done  # 15 (AMENDMENT A-4)
 
 N_TASKS=${#TASK_ARMS[@]}
-if [[ "$N_TASKS" -ne 112 ]]; then
-    echo "ERROR: task-list arithmetic drift -- built $N_TASKS tasks, expected 112." >&2
+if [[ "$N_TASKS" -ne 127 ]]; then
+    echo "ERROR: task-list arithmetic drift -- built $N_TASKS tasks, expected 127." >&2
     exit 1
 fi
 
 if [[ -z "${SLURM_ARRAY_TASK_ID:-}" ]]; then
-    echo "ERROR: SLURM_ARRAY_TASK_ID is not set (submit with --array=0-111)." >&2
+    echo "ERROR: SLURM_ARRAY_TASK_ID is not set (submit with --array=0-126)." >&2
     exit 1
 fi
 if (( SLURM_ARRAY_TASK_ID < 0 || SLURM_ARRAY_TASK_ID >= N_TASKS )); then

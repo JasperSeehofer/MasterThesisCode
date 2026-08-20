@@ -106,6 +106,23 @@ own. A-3 closes that gap:
   given the same pinned injection pool/cache and ``h``, so the two objects
   are functionally identical even though not the same instance.
 
+**AMENDMENT A-4 (2026-08-20, first bisection step, a flag flip).** Under the
+runs-of-record basis (``selection_in_completion_numerator="off"``) the
+completion NUMERATOR carries no detection weight while its normalization
+carries detection weight -- an asymmetry whose fused form already exists as
+a shipped production flag ([P1]/[P2], commit ``2b10b8b8``). In a
+MODEL-MATCHED universe (which B-SEL already is) the correctly normalized
+likelihood should be the one whose numerator and denominator use the same
+detection model.
+
+- **B-SELF** (:data:`ARM_SPECS` key ``"bself"``, 15 seeds): B-SEL's
+  configuration verbatim -- same :data:`ARM_HOST_MODE`
+  (``"population_selected"``), same :data:`ARM_UNITY_COMPLETENESS`
+  (``False``), same :data:`ARM_SEEDS` -- with ONLY
+  ``selection_in_completion_numerator="fused"`` (:data:`ARM_SELECTION_CELL`)
+  in place of B-SEL's ``"off"``. Isolates the numerator/denominator
+  detection-model convention as the single varied axis between the two arms.
+
 ---
 
 **What this instrument is (G-0/G-1/G-2 base build).** The Option-B measurement registered in
@@ -360,6 +377,7 @@ ARM_SPECS: dict[str, tuple[float, float]] = {
     "bout": (1.0, 1.0),
     "bf1": (1.0, 1.0),
     "bsel": (1.0, 1.0),
+    "bself": (1.0, 1.0),
 }
 # AMENDMENT A-2/A-3: per-arm host-draw mode. "catalogue" (default, all
 # pre-A-2 arms) draws hosts FROM the pinned catalogue's HostPool (D-B item
@@ -379,6 +397,7 @@ ARM_HOST_MODE: dict[str, Literal["catalogue", "population", "population_selected
     "bout": "population",
     "bf1": "catalogue",
     "bsel": "population_selected",
+    "bself": "population_selected",
 }
 # AMENDMENT A-2: per-arm completeness override. True (bf1 only) monkeypatches
 # the real GLADE completeness object with the P14 f=1 shim
@@ -396,6 +415,28 @@ ARM_UNITY_COMPLETENESS: dict[str, bool] = {
     "bout": False,
     "bf1": True,
     "bsel": False,
+    "bself": False,
+}
+# AMENDMENT A-4: per-arm ``selection_in_completion_numerator`` convention
+# (mirrors production's own flag of the same name,
+# ``bayesian_statistics.py:3010``). Every pre-A-4 arm defaults to "off" --
+# the runs-of-record basis (:data:`PRODUCTION_FLAGS`) -- so this registry
+# introduces NO behaviour change for any existing arm; only "bself" (the
+# first bisection step, PREREGISTRATION_1D_CORRESPONDENCE.md AMENDMENT A-4)
+# is "fused". "bself" is otherwise IDENTICAL to "bsel" (same ARM_SPECS,
+# ARM_HOST_MODE="population_selected", ARM_UNITY_COMPLETENESS=False, same
+# seed list) -- the completion numerator/denominator detection-model
+# convention is the ONLY axis this arm varies relative to bsel.
+ARM_SELECTION_CELL: dict[str, str] = {
+    "b0": "off",
+    "bsig005": "off",
+    "bsig025": "off",
+    "eden05": "off",
+    "eden2": "off",
+    "bout": "off",
+    "bf1": "off",
+    "bsel": "off",
+    "bself": "fused",
 }
 # Registered paired-seed discipline (prereg §1 D-C, extended by AMENDMENT
 # A-2/A-3): b0/bsig005 get the adjudicating N=25; bsig025/eden05/eden2 are
@@ -414,6 +455,7 @@ ARM_SEEDS: dict[str, tuple[int, ...]] = {
     "bout": tuple(range(900101, 900116)),
     "bf1": tuple(range(900101, 900103)),
     "bsel": tuple(range(900101, 900116)),
+    "bself": tuple(range(900101, 900116)),
 }
 
 
@@ -1638,6 +1680,9 @@ def run_mirror_seed_inprocess(
     completeness_override: bool = False,
     injection_dir: str = INJECTION_POOL_DIR,
     allow_low_pdet_coverage: bool = True,
+    selection_in_completion_numerator: str = PRODUCTION_FLAGS[
+        "--selection_in_completion_numerator"
+    ],
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
 
@@ -1691,6 +1736,14 @@ def run_mirror_seed_inprocess(
             worth reporting, not silencing) -- ``True`` is a no-op for
             every G-1/G-2/B-0/B-sigma/E-DEN/B-F1 call (none of them ever
             triggered the guard) and only changes behavior for B-OUT.
+        selection_in_completion_numerator: Forwarded verbatim to
+            ``BayesianStatistics.evaluate`` (AMENDMENT A-4). Default is
+            :data:`PRODUCTION_FLAGS`'s registered ``"off"`` -- byte-identical
+            to every call site that does not pass this kwarg explicitly
+            (G-1, G-2, and every pre-A-4 fleet arm). Only ``run_arm_seed``'s
+            ``bself`` arm passes ``"fused"`` (via :data:`ARM_SELECTION_CELL`),
+            isolating the numerator/denominator detection-model convention
+            from B-SEL's otherwise-identical configuration.
 
     Returns:
         ``(diagnostics_csv_path, elapsed_seconds)``.
@@ -1750,9 +1803,7 @@ def run_mirror_seed_inprocess(
             pdet_z_resolved=True,
             normalization_mode=PRODUCTION_FLAGS["--normalization_mode"],
             host_z_kernel=PRODUCTION_FLAGS["--host_z_kernel"],
-            selection_in_completion_numerator=PRODUCTION_FLAGS[
-                "--selection_in_completion_numerator"
-            ],
+            selection_in_completion_numerator=selection_in_completion_numerator,
             catalogue_mass_overlap=PRODUCTION_FLAGS["--catalogue_mass_overlap"],
             completion_b_scale=PRODUCTION_FLAGS["--completion_b_scale"],
             pdet_dl_bins=int(PRODUCTION_FLAGS["--pdet_dl_bins"]),
@@ -2102,7 +2153,7 @@ def run_arm_seed(
             run (catalogue variant + CRB-CSV write + diagnostics output).
         arm: One of :data:`ARM_SPECS`' keys
             (``b0``/``bsig005``/``bsig025``/``eden05``/``eden2``/``bout``/
-            ``bf1``/``bsel``).
+            ``bf1``/``bsel``/``bself``).
         seed: Realization seed. Expected to be a member of
             ``ARM_SEEDS[arm]`` per the registered paired-seed discipline
             (prereg §1 D-C) -- not enforced here (kept testable with
@@ -2124,6 +2175,7 @@ def run_arm_seed(
     sigma_z_scale, area_scale = ARM_SPECS[arm]
     host_mode = ARM_HOST_MODE.get(arm, "catalogue")
     unity_completeness = ARM_UNITY_COMPLETENESS.get(arm, False)
+    selection_cell = ARM_SELECTION_CELL.get(arm, "off")
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{arm}_seed{seed}.json"
     if out_path.is_file():
@@ -2170,6 +2222,7 @@ def run_arm_seed(
         galaxy_catalog=handler,
         h_values=H_GRID_FULL,
         completeness_override=unity_completeness,
+        selection_in_completion_numerator=selection_cell,
     )
     stats = compute_seed_statistics(diag_csv, seed, h_grid=H_GRID_41)
     h_grid, log_posterior = compute_full_log_posterior_vector(diag_csv, h_grid=H_GRID_FULL)
@@ -2195,6 +2248,12 @@ def run_arm_seed(
         # referencing ARM_HOST_MODE.
         "host_draw_mode": host_mode,
         "unity_completeness": unity_completeness,
+        # AMENDMENT A-4: which selection_in_completion_numerator convention
+        # produced this row -- "off" for every pre-A-4 arm (byte-identical
+        # to the runs-of-record basis), "fused" only for bself, so a reader
+        # can verify which convention a given JSON was scored under without
+        # cross-referencing ARM_SELECTION_CELL.
+        "selection_cell": selection_cell,
         "host_in_catalogue_fraction": host_in_catalogue_fraction,
         "n_events_drawn": cfg.n_events,
         "n_eff": stats.n_events,
@@ -2244,7 +2303,7 @@ def _cli() -> int:
         "--arm",
         choices=tuple(ARM_SPECS),
         default=None,
-        help="Fleet arm (--stage arm only): b0/bsig005/bsig025/eden05/eden2/bout/bf1/bsel.",
+        help="Fleet arm (--stage arm only): b0/bsig005/bsig025/eden05/eden2/bout/bf1/bsel/bself.",
     )
     parser.add_argument(
         "--out-dir",
