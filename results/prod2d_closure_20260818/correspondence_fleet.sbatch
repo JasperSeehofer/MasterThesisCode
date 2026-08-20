@@ -19,9 +19,15 @@
 #             ARM_HOST_MODE="population"):                  seeds 900101-900115 (N=15)
 #   bf1      (AMENDMENT A-2, B-0 config + f=1 completeness control,
 #             ARM_UNITY_COMPLETENESS=True):                 seeds 900101-900102 (N=2)
-# Total: 25 + 25 + 10 + 10 + 10 + 15 + 2 = 97 tasks -> --array=0-96
-# (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks, matching the prereg's
-# "17 seed-runs ~= 19 CPU-h" budget line).
+#   bsel     (AMENDMENT A-3, population x (1-completeness) x survival host
+#             draw -- the true isolation test,
+#             ARM_HOST_MODE="population_selected"):          seeds 900101-900115 (N=15)
+# Total: 25 + 25 + 10 + 10 + 10 + 15 + 2 + 15 = 112 tasks -> --array=0-111
+# (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks + 15 AMENDMENT A-3 tasks,
+# matching the prereg's AMENDMENT A-3 "15 + 3 ~= 18 seed-runs ~= 20 CPU-h"
+# budget line -- the +3 TIMEOUT resubmits are handled by re-running this
+# same idempotent script for the affected (arm, seed) pairs, not by a
+# separate task-list entry).
 #
 # Walltime: pilot anchor (G-2, prereg §1 D-D) = 0.478 CPU-h/seed-run (~29 min
 # wall, single-process). --time=02:00:00 gives >4x margin per task (cluster-
@@ -51,7 +57,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --time=02:00:00
-#SBATCH --array=0-96
+#SBATCH --array=0-111
 
 set -euo pipefail
 
@@ -73,15 +79,16 @@ for s in $(seq 900101 900110); do TASK_ARMS+=("eden05");  TASK_SEEDS+=("$s"); do
 for s in $(seq 900101 900110); do TASK_ARMS+=("eden2");   TASK_SEEDS+=("$s"); done  # 10
 for s in $(seq 900101 900115); do TASK_ARMS+=("bout");    TASK_SEEDS+=("$s"); done  # 15 (AMENDMENT A-2)
 for s in $(seq 900101 900102); do TASK_ARMS+=("bf1");     TASK_SEEDS+=("$s"); done  # 2  (AMENDMENT A-2)
+for s in $(seq 900101 900115); do TASK_ARMS+=("bsel");    TASK_SEEDS+=("$s"); done  # 15 (AMENDMENT A-3)
 
 N_TASKS=${#TASK_ARMS[@]}
-if [[ "$N_TASKS" -ne 97 ]]; then
-    echo "ERROR: task-list arithmetic drift -- built $N_TASKS tasks, expected 97." >&2
+if [[ "$N_TASKS" -ne 112 ]]; then
+    echo "ERROR: task-list arithmetic drift -- built $N_TASKS tasks, expected 112." >&2
     exit 1
 fi
 
 if [[ -z "${SLURM_ARRAY_TASK_ID:-}" ]]; then
-    echo "ERROR: SLURM_ARRAY_TASK_ID is not set (submit with --array=0-96)." >&2
+    echo "ERROR: SLURM_ARRAY_TASK_ID is not set (submit with --array=0-111)." >&2
     exit 1
 fi
 if (( SLURM_ARRAY_TASK_ID < 0 || SLURM_ARRAY_TASK_ID >= N_TASKS )); then

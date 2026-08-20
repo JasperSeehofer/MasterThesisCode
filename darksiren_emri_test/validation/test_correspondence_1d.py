@@ -174,11 +174,12 @@ def test_arm_specs_registered_mapping() -> None:
         "eden2": (1.0, 2.0),
         "bout": (1.0, 1.0),
         "bf1": (1.0, 1.0),
+        "bsel": (1.0, 1.0),
     }
 
 
 def test_arm_host_mode_and_completeness_registered_mapping() -> None:
-    """AMENDMENT A-2: bout is the only population-draw arm; bf1 the only f=1 control."""
+    """AMENDMENT A-2/A-3: bout/bsel are the population-draw arms; bf1 the only f=1 control."""
     assert c1d.ARM_HOST_MODE == {
         "b0": "catalogue",
         "bsig005": "catalogue",
@@ -187,6 +188,7 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
         "eden2": "catalogue",
         "bout": "population",
         "bf1": "catalogue",
+        "bsel": "population_selected",
     }
     assert c1d.ARM_UNITY_COMPLETENESS == {
         "b0": False,
@@ -196,6 +198,7 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
         "eden2": False,
         "bout": False,
         "bf1": True,
+        "bsel": False,
     }
     # Every ARM_SPECS key has an entry in both registries (no silent fallback
     # to the default for a registered arm).
@@ -204,7 +207,7 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
 
 
 def test_arm_seeds_registered_paired_discipline() -> None:
-    """Paired-seed discipline (prereg §1 D-C + AMENDMENT A-2): counts + shared anchor."""
+    """Paired-seed discipline (prereg §1 D-C + AMENDMENT A-2/A-3): counts + shared anchor."""
     assert len(c1d.ARM_SEEDS["b0"]) == 25
     assert len(c1d.ARM_SEEDS["bsig005"]) == 25
     assert len(c1d.ARM_SEEDS["bsig025"]) == 10
@@ -212,10 +215,12 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     assert len(c1d.ARM_SEEDS["eden2"]) == 10
     assert len(c1d.ARM_SEEDS["bout"]) == 15
     assert len(c1d.ARM_SEEDS["bf1"]) == 2
+    assert len(c1d.ARM_SEEDS["bsel"]) == 15
     total = sum(len(v) for v in c1d.ARM_SEEDS.values())
-    # 25 + 25 + 10 + 10 + 10 + 15 + 2 = 97, the fleet task-list arithmetic
-    # (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks).
-    assert total == 97
+    # 25 + 25 + 10 + 10 + 10 + 15 + 2 + 15 = 112, the fleet task-list
+    # arithmetic (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks + 15 AMENDMENT
+    # A-3 tasks).
+    assert total == 112
     for arm, seeds in c1d.ARM_SEEDS.items():
         assert seeds[0] == 900101, arm
         assert list(seeds) == sorted(seeds), arm
@@ -225,10 +230,15 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     # construction), and it is a prefix of the N=25 arms' range.
     assert c1d.ARM_SEEDS["bsig025"] == c1d.ARM_SEEDS["eden05"] == c1d.ARM_SEEDS["eden2"]
     assert c1d.ARM_SEEDS["bsig025"] == c1d.ARM_SEEDS["b0"][:10]
-    # bout (N=15) and bf1 (N=2) are prefixes of the N=25 range too (same
-    # paired-seed discipline extended to the AMENDMENT A-2 arms).
+    # bout (N=15), bf1 (N=2) and bsel (N=15) are prefixes of the N=25 range
+    # too (same paired-seed discipline extended to the AMENDMENT A-2/A-3
+    # arms). bout and bsel share the IDENTICAL seed range (same universe
+    # construction seed at each index -- the true isolation test's paired
+    # discipline against B-OUT).
     assert c1d.ARM_SEEDS["bout"] == c1d.ARM_SEEDS["b0"][:15]
     assert c1d.ARM_SEEDS["bf1"] == c1d.ARM_SEEDS["b0"][:2]
+    assert c1d.ARM_SEEDS["bsel"] == c1d.ARM_SEEDS["b0"][:15]
+    assert c1d.ARM_SEEDS["bsel"] == c1d.ARM_SEEDS["bout"]
 
 
 def test_run_arm_seed_unknown_arm_raises(tmp_path: Path) -> None:
@@ -446,3 +456,219 @@ def test_draw_realization_unknown_host_mode_raises(
     gen = c1d.MirrorUniverseGenerator(cfg)
     with pytest.raises(ValueError):
         gen.draw_realization(seed=1, host_mode="not_a_real_mode")  # type: ignore[arg-type]
+
+
+# ── AMENDMENT A-3: estimator-self-consistent host draw (B-SEL) tests ────────
+#
+# These use SYNTHETIC completeness/survival test doubles (never the real
+# GLADE from_cache_or_build()/precompute_phi_marginal_survival() objects,
+# which need the pinned completeness cache + injection pool and are NOT
+# fast) so the sampler MACHINERY (determinism, domain, the direction of the
+# selection effect, weight positivity) is exercised in well under a second,
+# pool-free. build_bsel_selection_objects() itself (which DOES need the
+# pinned inputs) is exercised only by the fleet CLI (--stage arm --arm
+# bsel), not by this test module -- same convention as G-0/G-1/G-2.
+
+
+class _FakeIncompleteness:
+    """Test double satisfying ``CompletenessModel``: ``f_bar(z) = clip(z, 0, 1)``
+    -- completeness DECREASES with z (i.e. ``1 - f_bar`` INCREASES with z),
+    mimicking the real catalogue's less-complete-at-high-z behaviour without
+    reading the pinned completeness cache.
+    """
+
+    def f_bar(
+        self, z: float | np.ndarray, h: float = c1d.H_TRUE
+    ) -> float | np.ndarray:
+        return np.clip(np.asarray(z, dtype=np.float64), 0.0, 1.0)
+
+    def f_k(
+        self, z: float | np.ndarray, k: int, h: float = c1d.H_TRUE
+    ) -> float | np.ndarray:
+        return self.f_bar(z, h)
+
+    def ang2pix(self, phi: float, theta: float) -> int:
+        return 0
+
+    def get_completeness_at_redshift(
+        self, z: float | np.ndarray, h: float = c1d.H_TRUE
+    ) -> float | np.ndarray:
+        return self.f_bar(z, h)
+
+
+def _fake_phi_survival_table(
+    h: float = c1d.H_TRUE, z_max: float = 1.0
+) -> dict[float, tuple[np.ndarray, np.ndarray]]:
+    """Test double survival table: ``S_bar_phi(z) = exp(-3z)`` -- declines
+    with z, mimicking real detection survival's falloff, without building a
+    ``SimulationDetectionProbability``/injection-pool grid.
+    """
+    z_grid = np.linspace(0.0, z_max, 500)
+    s_phi = np.exp(-3.0 * z_grid)
+    return {h: (z_grid, s_phi)}
+
+
+def test_selected_population_z_weights_finite_nonneg() -> None:
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    z = np.linspace(c1d.POPULATION_Z_MIN, c1d.POPULATION_Z_MAX, 1000)
+    w = c1d.selected_population_z_weights(z, completeness, table, h=c1d.H_TRUE)
+    assert w.shape == z.shape
+    assert np.all(np.isfinite(w))
+    assert np.all(w >= 0.0)
+    assert w.sum() > 0.0
+    # Beyond the survival table's domain (z > z_max=1.0 here), S_bar_phi is
+    # read as 0 (production's "undetectable beyond the table" convention),
+    # so the weight is exactly 0 there.
+    assert np.all(w[z > 1.0] == 0.0)
+
+
+def test_selected_population_z_weights_missing_h_raises() -> None:
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    with pytest.raises(KeyError):
+        c1d.selected_population_z_weights(np.array([0.1]), completeness, table, h=0.9)
+
+
+def test_draw_selected_population_redshifts_is_deterministic() -> None:
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    rng_a = np.random.default_rng(2026)
+    rng_b = np.random.default_rng(2026)
+    z_a = c1d.draw_selected_population_redshifts(rng_a, 500, completeness, table)
+    z_b = c1d.draw_selected_population_redshifts(rng_b, 500, completeness, table)
+    np.testing.assert_array_equal(z_a, z_b)
+
+
+def test_draw_selected_population_redshifts_within_domain() -> None:
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    rng = np.random.default_rng(7)
+    z = c1d.draw_selected_population_redshifts(rng, 2000, completeness, table)
+    assert z.min() >= c1d.POPULATION_Z_MIN
+    assert z.max() <= c1d.POPULATION_Z_MAX
+
+
+def test_selected_population_draw_median_below_bare_population_draw() -> None:
+    """The registered expectation (AMENDMENT A-3): selection suppresses high z.
+
+    ``1 - f_bar`` increases with z (less complete at high z) but
+    ``S_bar_phi`` decreases with z (harder to detect at high z) more
+    steeply over this test double's domain -- net effect: the weighted
+    (population x (1-completeness) x survival) draw's median sits BELOW the
+    bare population draw's median, exactly the "selection suppresses high
+    z" signature the amendment's isolation-test logic depends on.
+    """
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    n = 20000
+    rng_weighted = np.random.default_rng(123)
+    z_weighted = c1d.draw_selected_population_redshifts(rng_weighted, n, completeness, table)
+    rng_unweighted = np.random.default_rng(123)
+    z_unweighted = c1d.draw_population_redshifts(rng_unweighted, n)
+    assert float(np.median(z_weighted)) < float(np.median(z_unweighted))
+
+
+def test_inverse_cdf_draw_helper_deterministic_and_within_domain() -> None:
+    """The shared inverse-CDF machinery (:func:`_inverse_cdf_draw`) underlying
+    both :func:`draw_population_redshifts` (B-OUT) and
+    :func:`draw_selected_population_redshifts` (B-SEL): deterministic given
+    the same rng state, and every draw stays within the supplied grid's
+    domain (implies the internal CDF normalization is well-formed)."""
+    rng_a = np.random.default_rng(42)
+    rng_b = np.random.default_rng(42)
+    z_grid = np.linspace(0.0, 2.0, 200)
+    w = np.exp(-z_grid)  # arbitrary positive, non-normalized weight
+    z_a = c1d._inverse_cdf_draw(rng_a, 1000, z_grid, w)
+    z_b = c1d._inverse_cdf_draw(rng_b, 1000, z_grid, w)
+    np.testing.assert_array_equal(z_a, z_b)
+    assert z_a.min() >= z_grid[0]
+    assert z_a.max() <= z_grid[-1]
+
+
+def test_inverse_cdf_draw_helper_raises_on_nonpositive_weights() -> None:
+    rng = np.random.default_rng(1)
+    z_grid = np.linspace(0.0, 1.0, 50)
+    with pytest.raises(ValueError):
+        c1d._inverse_cdf_draw(rng, 10, z_grid, np.zeros_like(z_grid))
+
+
+def test_bsel_draw_realization_requires_selection_objects(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """host_mode='population_selected' without completeness/phi_survival_table raises."""
+    n = 10
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    with pytest.raises(ValueError):
+        gen.draw_realization(seed=1, host_mode="population_selected")
+
+
+def test_bsel_draw_realization_never_injects_host_into_candidates(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """B-SEL, like B-OUT: host_galaxy_index=-1 / in_catalog=False for EVERY event."""
+    n = 300
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    events = gen.draw_realization(
+        seed=42,
+        host_mode="population_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+    )
+    assert (events["host_galaxy_index"].to_numpy() == -1).all()
+    assert not events["in_catalog"].any()
+
+
+def test_bsel_draw_realization_is_deterministic(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 40
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    a = gen.draw_realization(
+        seed=5, host_mode="population_selected", completeness=completeness, phi_survival_table=table
+    )
+    b = gen.draw_realization(
+        seed=5, host_mode="population_selected", completeness=completeness, phi_survival_table=table
+    )
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_bsel_draw_realization_records_host_z_quantiles_diagnostic(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """last_diagnostics carries both quantile sets, weighted strictly below
+    unweighted at the median (the registered selection-suppresses-high-z
+    signature, task spec item 2)."""
+    n = 2000
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    assert gen.last_diagnostics == {}
+    gen.draw_realization(
+        seed=17, host_mode="population_selected", completeness=completeness, phi_survival_table=table
+    )
+    diag = gen.last_diagnostics
+    assert diag["quantile_levels"] == [0.05, 0.25, 0.5, 0.75, 0.95]
+    weighted = diag["host_z_quantiles_weighted"]
+    unweighted = diag["host_z_quantiles_unweighted_population"]
+    assert len(weighted) == 5
+    assert len(unweighted) == 5
+    median_idx = diag["quantile_levels"].index(0.5)
+    assert weighted[median_idx] < unweighted[median_idx]
+    # A "catalogue"-mode draw does not touch last_diagnostics (reset to {}
+    # at the top of every draw_realization call).
+    pool = _make_host_pool(n_pool=n)
+    gen.draw_realization(seed=17, host_pool=pool, host_mode="catalogue")
+    assert gen.last_diagnostics == {}

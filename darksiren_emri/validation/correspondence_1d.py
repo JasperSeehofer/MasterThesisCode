@@ -58,6 +58,56 @@ so B-OUT and B-0/B-sigma/E-DEN draw from directly comparable z-support.
 
 ---
 
+**AMENDMENT A-3 (2026-08-20, registered in the prereg's append-only VERDICT
+section BEFORE this arm ran).** A-2's B-OUT reproduced production's dark
+rail, but the orchestrator self-catch showed B-OUT matches the estimator's
+POPULATION (bare ``w_pop(z)``) but NOT its SELECTION (the estimator models
+*detected* dark events as ``w_pop(z) * (1 - f_bar(z)) * S_bar_phi(z;h)``, not
+bare ``w_pop(z)``) -- B-OUT therefore has a data-vs-model mismatch of its
+own. A-3 closes that gap:
+
+- **B-SEL** (:data:`ARM_SPECS` key ``"bsel"``, 15 seeds): hosts drawn from
+  :func:`draw_selected_population_redshifts`, weighted by
+  :func:`selected_population_z_weights` = ``w_pop(z) * (1 - f_bar(z;h_true))
+  * S_bar_phi(z;h_true)`` -- the estimator's OWN assumed distribution of
+  *detected* dark events, matching the model in BOTH population and
+  selection. Never a candidate-set member (same ``host_galaxy_index=-1``/
+  ``in_catalog=False`` convention as B-OUT). See
+  :meth:`MirrorUniverseGenerator.draw_realization`'s
+  ``host_mode="population_selected"`` branch.
+
+  **The weighting objects, precisely (scientifically load-bearing).**
+  ``f_bar(z;h)`` is :meth:`~darksiren_emri.galaxy_catalogue.pixel_completeness.PixelCompleteness.f_bar`
+  on the object :func:`~darksiren_emri.galaxy_catalogue.pixel_completeness.from_cache_or_build`
+  returns -- the IDENTICAL call production's ``evaluate()`` makes
+  (``bayesian_statistics.py:3704``). ``S_bar_phi(z;h_true)`` is read from the
+  table :func:`~darksiren_emri.bayesian_inference.bayesian_statistics.precompute_phi_marginal_survival`
+  returns for ``h_values=[H_TRUE]`` -- the IDENTICAL function production's
+  ``evaluate()`` calls (``bayesian_statistics.py:3773``) over a freshly
+  constructed :class:`~darksiren_emri.bayesian_inference.simulation_detection_probability.SimulationDetectionProbability`
+  built with the SAME constructor arguments production's ``evaluate()`` uses
+  (``bayesian_statistics.py:3654-3673``: ``injection_data_dir``,
+  ``snr_threshold=SNR_THRESHOLD``, ``dl_bins``/``mass_bins``/``estimator`` at
+  the registered :data:`PRODUCTION_FLAGS` values, ``pdet_z_resolved=True``).
+  This is the SAME MECHANISM the estimator's own context build uses, not an
+  independent re-derivation -- but it is a SEPARATE object (a second
+  construction), not the literal same Python instance ``evaluate()`` builds
+  internally later: :func:`build_bsel_selection_objects` (below) is called
+  BEFORE any mirror event is drawn (:func:`run_arm_seed`'s bsel branch),
+  since neither construction depends on the mirror's synthetic events -- only
+  on the pinned injection pool/completeness cache and ``h_true`` (the G-2
+  cost-decomposition note already flagged these per-(h, catalogue) tables as
+  event-set-independent). ``evaluate()`` then rebuilds its own instance
+  internally when the realization is analysed (no injection point exists in
+  its public API to hand it a pre-built ``SimulationDetectionProbability``) --
+  the construction cost is paid twice, registered/disclosed rather than
+  optimized away (the amendment's own text: "the draw is cheap; the ordering
+  is what matters", not the total cost). Both constructions are deterministic
+  given the same pinned injection pool/cache and ``h``, so the two objects
+  are functionally identical even though not the same instance.
+
+---
+
 **What this instrument is (G-0/G-1/G-2 base build).** The Option-B measurement registered in
 ``results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md`` (v2):
 decompose the production 1D base tilt into information-starvation vs
@@ -141,17 +191,26 @@ from darksiren_emri.bayesian_inference.bayesian_statistics import (
     BayesianStatistics,
     path_a_completion_numerators,
     path_a_mixture_objects,
+    precompute_phi_marginal_survival,
+)
+from darksiren_emri.bayesian_inference.simulation_detection_probability import (
+    SimulationDetectionProbability,
 )
 from darksiren_emri.constants import (
     HOST_DRAW_Z_MAX,
     M_SOURCE_FRAME_MAX,
     M_SOURCE_FRAME_MIN,
+    SNR_THRESHOLD,
     H,
 )
 from darksiren_emri.cosmological_model import Model1CrossCheck
 from darksiren_emri.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     InternalCatalogColumns,
+)
+from darksiren_emri.galaxy_catalogue.pixel_completeness import (
+    CompletenessModel,
+    from_cache_or_build,
 )
 from darksiren_emri.physical_relations import comoving_volume_element, dist_vectorized
 
@@ -288,7 +347,10 @@ HOST_DRAW_WEIGHT_Z_FLOOR = 1.0e-3
 # area_scale carried here only for schema uniformity with the run_arm_seed
 # record; B-OUT's host draw ignores host_pool/sigma_z_scale entirely, see
 # ARM_HOST_MODE below); bf1 = B-F1 (AMENDMENT A-2, B-0 config + f=1
-# completeness control, see ARM_UNITY_COMPLETENESS below).
+# completeness control, see ARM_UNITY_COMPLETENESS below); bsel = B-SEL
+# (AMENDMENT A-3, population x (1-completeness) x survival host draw --
+# sigma_z_scale/area_scale carried here only for schema uniformity, same as
+# bout; see ARM_HOST_MODE below).
 ARM_SPECS: dict[str, tuple[float, float]] = {
     "b0": (1.0, 1.0),
     "bsig005": (0.05, 1.0),
@@ -297,13 +359,18 @@ ARM_SPECS: dict[str, tuple[float, float]] = {
     "eden2": (1.0, 2.0),
     "bout": (1.0, 1.0),
     "bf1": (1.0, 1.0),
+    "bsel": (1.0, 1.0),
 }
-# AMENDMENT A-2: per-arm host-draw mode. "catalogue" (default, all pre-A-2
-# arms) draws hosts FROM the pinned catalogue's HostPool (D-B item a);
-# "population" (bout only) draws hosts from the estimator's own completion-
-# leg population model (draw_population_redshifts + isotropic sky) and NEVER
-# inserts them into the candidate set (module docstring, AMENDMENT A-2).
-ARM_HOST_MODE: dict[str, Literal["catalogue", "population"]] = {
+# AMENDMENT A-2/A-3: per-arm host-draw mode. "catalogue" (default, all
+# pre-A-2 arms) draws hosts FROM the pinned catalogue's HostPool (D-B item
+# a); "population" (bout only) draws hosts from the estimator's own
+# completion-leg population model (draw_population_redshifts + isotropic
+# sky) and NEVER inserts them into the candidate set (module docstring,
+# AMENDMENT A-2); "population_selected" (bsel only, AMENDMENT A-3) draws
+# hosts from the estimator's own assumed distribution of DETECTED dark
+# events (draw_selected_population_redshifts + isotropic sky), likewise
+# never inserted into the candidate set.
+ARM_HOST_MODE: dict[str, Literal["catalogue", "population", "population_selected"]] = {
     "b0": "catalogue",
     "bsig005": "catalogue",
     "bsig025": "catalogue",
@@ -311,11 +378,15 @@ ARM_HOST_MODE: dict[str, Literal["catalogue", "population"]] = {
     "eden2": "catalogue",
     "bout": "population",
     "bf1": "catalogue",
+    "bsel": "population_selected",
 }
 # AMENDMENT A-2: per-arm completeness override. True (bf1 only) monkeypatches
 # the real GLADE completeness object with the P14 f=1 shim
 # (:class:`_UnityCompleteness`, the SAME mechanism G-1 uses) for the duration
-# of that arm's evaluate() call -- the B-F1 completeness control.
+# of that arm's evaluate() call -- the B-F1 completeness control. bsel uses
+# the REAL completeness object both for its host-draw weighting (via
+# build_bsel_selection_objects) AND for its evaluate() call -- False here,
+# same as every other non-bf1 arm.
 ARM_UNITY_COMPLETENESS: dict[str, bool] = {
     "b0": False,
     "bsig005": False,
@@ -324,14 +395,16 @@ ARM_UNITY_COMPLETENESS: dict[str, bool] = {
     "eden2": False,
     "bout": False,
     "bf1": True,
+    "bsel": False,
 }
 # Registered paired-seed discipline (prereg §1 D-C, extended by AMENDMENT
-# A-2): b0/bsig005 get the adjudicating N=25; bsig025/eden05/eden2 are the
-# N=10 reported-only doses; bout is the AMENDMENT A-2 adjudicating arm
-# (N=15); bf1 is the AMENDMENT A-2 completeness control (N=2). All arm seed
-# lists start at the SAME 900101 anchor (paired across arms by construction,
-# so a B-sigma/E-DEN/B-OUT/B-F1 seed at index i is the same universe
-# construction seed as B-0's seed at index i).
+# A-2/A-3): b0/bsig005 get the adjudicating N=25; bsig025/eden05/eden2 are
+# the N=10 reported-only doses; bout is the AMENDMENT A-2 adjudicating arm
+# (N=15); bf1 is the AMENDMENT A-2 completeness control (N=2); bsel is the
+# AMENDMENT A-3 adjudicating arm (N=15, the true isolation test). All arm
+# seed lists start at the SAME 900101 anchor (paired across arms by
+# construction, so a B-sigma/E-DEN/B-OUT/B-F1/B-SEL seed at index i is the
+# same universe construction seed as B-0's seed at index i).
 ARM_SEEDS: dict[str, tuple[int, ...]] = {
     "b0": tuple(range(900101, 900126)),
     "bsig005": tuple(range(900101, 900126)),
@@ -340,6 +413,7 @@ ARM_SEEDS: dict[str, tuple[int, ...]] = {
     "eden2": tuple(range(900101, 900111)),
     "bout": tuple(range(900101, 900116)),
     "bf1": tuple(range(900101, 900103)),
+    "bsel": tuple(range(900101, 900116)),
 }
 
 
@@ -564,6 +638,44 @@ def population_z_weights(z: npt.NDArray[np.float64], h: float = H_TRUE) -> npt.N
     return np.asarray(comoving_volume_element(z_arr, h=h), dtype=np.float64) / (1.0 + z_arr)
 
 
+def _inverse_cdf_draw(
+    rng: np.random.Generator,
+    n: int,
+    z_grid: npt.NDArray[np.float64],
+    w: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Shared inverse-CDF sampler: ``n`` draws from weights ``w`` on ``z_grid``.
+
+    Trapezoid-quadrature CDF on ``z_grid``, then linear interpolation of
+    ``n`` uniform draws through it. Deterministic given ``rng``'s state
+    (consumes exactly ``n`` uniform draws). Shared by
+    :func:`draw_population_redshifts` (B-OUT, AMENDMENT A-2) and
+    :func:`draw_selected_population_redshifts` (B-SEL, AMENDMENT A-3) so both
+    arms' host-z draws use byte-identical inverse-CDF machinery -- only the
+    weight function differs.
+
+    Args:
+        rng: Seeded generator (consumes exactly ``n`` uniform draws).
+        n: Number of redshifts to draw.
+        z_grid: Quadrature/interpolation grid, shape ``(n_grid,)``.
+        w: Non-negative weight at each ``z_grid`` node, shape ``(n_grid,)``.
+
+    Returns:
+        Drawn redshifts, shape ``(n,)``.
+
+    Raises:
+        ValueError: If ``w`` integrates to <= 0 over ``z_grid``.
+    """
+    segment_mass = 0.5 * (w[1:] + w[:-1]) * np.diff(z_grid)
+    cdf = np.concatenate(([0.0], np.cumsum(segment_mass)))
+    total = cdf[-1]
+    if total <= 0.0:
+        raise ValueError("weights integrate to <= 0 over the domain")
+    cdf = cdf / total
+    u = rng.uniform(0.0, 1.0, size=n)
+    return np.interp(u, cdf, z_grid)
+
+
 def draw_population_redshifts(
     rng: np.random.Generator,
     n: int,
@@ -574,9 +686,9 @@ def draw_population_redshifts(
 ) -> npt.NDArray[np.float64]:
     """Inverse-CDF draw of ``n`` redshifts from :func:`population_z_weights`.
 
-    Deterministic given ``rng``'s state (single ``rng.uniform`` call):
-    builds a trapezoid-quadrature CDF on a dense ``z`` grid, then
-    linearly interpolates ``n`` uniform draws through it.
+    Deterministic given ``rng``'s state (single ``rng.uniform`` call via
+    :func:`_inverse_cdf_draw`): builds a trapezoid-quadrature CDF on a dense
+    ``z`` grid, then linearly interpolates ``n`` uniform draws through it.
 
     Args:
         rng: Seeded generator (consumes exactly ``n`` uniform draws).
@@ -592,14 +704,173 @@ def draw_population_redshifts(
     """
     z_grid = np.linspace(z_min, z_max, n_grid, dtype=np.float64)
     w = population_z_weights(z_grid, h=h)
-    segment_mass = 0.5 * (w[1:] + w[:-1]) * np.diff(z_grid)
-    cdf = np.concatenate(([0.0], np.cumsum(segment_mass)))
-    total = cdf[-1]
-    if total <= 0.0:
-        raise ValueError("population_z_weights integrates to <= 0 over [z_min, z_max]")
-    cdf = cdf / total
-    u = rng.uniform(0.0, 1.0, size=n)
-    return np.interp(u, cdf, z_grid)
+    return _inverse_cdf_draw(rng, n, z_grid, w)
+
+
+# ── AMENDMENT A-3: estimator-self-consistent host draw (B-SEL) ──────────────
+# The estimator's OWN assumed density of DETECTED dark (out-of-catalogue)
+# events -- see the module docstring's "AMENDMENT A-3" section for the full
+# registered justification of which objects are reused and how.
+
+
+def selected_population_z_weights(
+    z: npt.NDArray[np.float64],
+    completeness: CompletenessModel,
+    phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    h: float = H_TRUE,
+) -> npt.NDArray[np.float64]:
+    r"""``w_pop(z) * (1 - f_bar(z;h)) * S_bar_phi(z;h)`` -- B-SEL's host weight.
+
+    The estimator's own assumed distribution of *detected* dark events: the
+    bare population weight (:func:`population_z_weights`) times the
+    catalogue-incompleteness deficit (``1 - f_bar``, ``f_bar`` from
+    ``completeness``) times the phi-marginal detection survival
+    (``S_bar_phi``, read off ``phi_survival_table`` by linear interpolation,
+    ``0`` outside the tabulated ``z`` domain -- production's own
+    "undetectable beyond the table's z_max" convention). Both ``completeness``
+    and ``phi_survival_table`` are expected to come from
+    :func:`build_bsel_selection_objects` (module docstring "AMENDMENT A-3").
+
+    Args:
+        z: Redshift grid/values.
+        completeness: A ``CompletenessModel``-satisfying object (production's
+            ``f_bar(z, h)`` accessor).
+        phi_survival_table: ``h -> (z_grid, S_bar_phi(z_grid))``, the output
+            of :func:`~darksiren_emri.bayesian_inference.bayesian_statistics.precompute_phi_marginal_survival`.
+        h: Dimensionless Hubble parameter (default: :data:`H_TRUE`); must be
+            a key of ``phi_survival_table``.
+
+    Returns:
+        Non-negative weights, same shape as ``z`` (clipped at 0 to absorb
+        float noise; the product of a probability, a [0,1] deficit, and a
+        [0,1] survival is non-negative by construction).
+
+    Raises:
+        KeyError: If ``h`` is not a key of ``phi_survival_table``.
+
+    References:
+        Gray et al. (2020), arXiv:1908.06050, Eqs. (29), (33).
+        FIXB_PATHA_PACKAGE.md §3.2 (``S_bar_phi`` definition).
+    """
+    if h not in phi_survival_table:
+        raise KeyError(f"phi_survival_table has no entry for h={h!r}; keys={sorted(phi_survival_table)}")
+    z_arr = np.asarray(z, dtype=np.float64)
+    w_pop = population_z_weights(z_arr, h=h)
+    f_bar = np.asarray(completeness.f_bar(z_arr, h), dtype=np.float64)
+    z_grid, s_phi = phi_survival_table[h]
+    s_interp = np.interp(z_arr, z_grid, s_phi, left=0.0, right=0.0)
+    w = w_pop * (1.0 - f_bar) * s_interp
+    return np.clip(w, 0.0, None)
+
+
+def draw_selected_population_redshifts(
+    rng: np.random.Generator,
+    n: int,
+    completeness: CompletenessModel,
+    phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    h: float = H_TRUE,
+    z_min: float = POPULATION_Z_MIN,
+    z_max: float = POPULATION_Z_MAX,
+    n_grid: int = _POPULATION_Z_GRID_N,
+) -> npt.NDArray[np.float64]:
+    """Inverse-CDF draw of ``n`` redshifts from :func:`selected_population_z_weights`.
+
+    The B-SEL host-z draw (AMENDMENT A-3): population x (1-completeness) x
+    survival, matching the estimator's OWN model of detected dark events in
+    both population and selection (contrast :func:`draw_population_redshifts`,
+    B-OUT's bare-population draw).
+
+    Args:
+        rng: Seeded generator (consumes exactly ``n`` uniform draws).
+        n: Number of redshifts to draw.
+        completeness: See :func:`selected_population_z_weights`.
+        phi_survival_table: See :func:`selected_population_z_weights`.
+        h: Dimensionless Hubble parameter (default: :data:`H_TRUE`).
+        z_min: Lower domain bound (default :data:`POPULATION_Z_MIN`).
+        z_max: Upper domain bound (default :data:`POPULATION_Z_MAX`).
+        n_grid: Quadrature/interpolation grid resolution.
+
+    Returns:
+        Drawn redshifts, shape ``(n,)``.
+    """
+    z_grid = np.linspace(z_min, z_max, n_grid, dtype=np.float64)
+    w = selected_population_z_weights(z_grid, completeness, phi_survival_table, h=h)
+    return _inverse_cdf_draw(rng, n, z_grid, w)
+
+
+@functools.lru_cache(maxsize=4)
+def build_bsel_selection_objects(
+    h_true: float = H_TRUE,
+    injection_dir: str = INJECTION_POOL_DIR,
+    pdet_dl_bins: int = 60,
+    pdet_mass_bins: int = 40,
+    pdet_estimator: str = "local_linear",
+    allow_low_pdet_coverage: bool = True,
+    z_max_cap: float = HOST_DRAW_Z_MAX,
+) -> tuple[CompletenessModel, dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]]:
+    r"""Build (completeness, S_bar_phi table) at ``h_true`` -- B-SEL's weighting objects.
+
+    Calls the SAME production construction functions, with the SAME
+    arguments, that ``BayesianStatistics.evaluate()`` calls internally
+    (``bayesian_statistics.py:3654-3673`` for the
+    :class:`~darksiren_emri.bayesian_inference.simulation_detection_probability.SimulationDetectionProbability`
+    constructor, ``:3704`` for :func:`~darksiren_emri.galaxy_catalogue.pixel_completeness.from_cache_or_build`,
+    ``:3773`` for :func:`~darksiren_emri.bayesian_inference.bayesian_statistics.precompute_phi_marginal_survival`)
+    -- restructured to run BEFORE any mirror event is drawn, per AMENDMENT
+    A-3's registered ordering ("the draw is cheap; the ordering is what
+    matters"): neither construction depends on the mirror's synthetic
+    events, only on the pinned injection pool/completeness cache and
+    ``h_true``, so this pays the (event-set-independent, per the G-2 cost
+    finding) detection-probability-grid construction cost a SECOND time
+    relative to the ``evaluate()`` call that follows the draw (no injection
+    point exists in ``evaluate()``'s public API to hand it a pre-built
+    ``SimulationDetectionProbability`` instance) -- registered/disclosed, not
+    optimized away. ``functools.lru_cache``-d (harness-side reuse only, not a
+    production change): a process that runs multiple bsel seeds pays this
+    cost once.
+
+    Args:
+        h_true: The mirror-universe truth (default: :data:`H_TRUE`); the
+            ONLY h-value the survival table is tabulated at.
+        injection_dir: The pinned injection pool (default:
+            :data:`INJECTION_POOL_DIR`).
+        pdet_dl_bins: :data:`PRODUCTION_FLAGS`\ ``["--pdet_dl_bins"]`` value.
+        pdet_mass_bins: :data:`PRODUCTION_FLAGS`\ ``["--pdet_mass_bins"]`` value.
+        pdet_estimator: :data:`PRODUCTION_FLAGS`\ ``["--pdet_estimator"]`` value.
+        allow_low_pdet_coverage: Forwarded to ``SimulationDetectionProbability``
+            (default ``True``, harness-registered -- same convention as
+            :func:`run_mirror_seed_inprocess`'s B-OUT note: the population
+            draw's full-domain support sits near/beyond the injection pool's
+            calibrated depth by construction, not by defect).
+        z_max_cap: Analysis-depth cap forwarded to
+            :func:`~darksiren_emri.bayesian_inference.bayesian_statistics.precompute_phi_marginal_survival`
+            (default :data:`HOST_DRAW_Z_MAX`, matching
+            ``cosmological_model.max_redshift``'s default of 1.5 -- the SAME
+            ``REDSHIFT_UPPER_LIMIT`` production's own ``evaluate()`` call
+            uses when it rebuilds this table internally).
+
+    Returns:
+        ``(completeness, phi_survival_table)`` -- ``phi_survival_table`` has
+        exactly one key, ``h_true``.
+    """
+    completeness: CompletenessModel = from_cache_or_build()
+    detection_probability = SimulationDetectionProbability(
+        injection_data_dir=injection_dir,
+        snr_threshold=SNR_THRESHOLD,
+        dl_bins=pdet_dl_bins,
+        mass_bins=pdet_mass_bins,
+        estimator=pdet_estimator,  # type: ignore[arg-type]
+        expected_z_max=HOST_DRAW_Z_MAX,
+        allow_shallow_pool=allow_low_pdet_coverage,
+        pdet_z_resolved=True,
+    )
+    detection_probability._get_or_build_grid(h_true)
+    phi_survival_table = precompute_phi_marginal_survival(
+        h_values=[h_true],
+        detection_probability_obj=detection_probability,
+        z_max_cap=z_max_cap,
+    )
+    return completeness, phi_survival_table
 
 
 def draw_isotropic_sky(
@@ -664,6 +935,11 @@ class MirrorUniverseGenerator:
     def __init__(self, config: CorrespondenceConfig) -> None:
         self.config = config
         self._donor_rows: pd.DataFrame = pd.read_csv(config.crb_reference_csv)
+        # AMENDMENT A-3 (B-SEL) diagnostic sidecar: populated only by
+        # draw_realization's "population_selected" branch; empty otherwise.
+        # See draw_realization's docstring / run_arm_seed's "host_z_quantiles"
+        # record.
+        self.last_diagnostics: dict[str, Any] = {}
 
     @staticmethod
     def _host_draw_weights(pool: HostPool) -> npt.NDArray[np.float64]:
@@ -756,7 +1032,10 @@ class MirrorUniverseGenerator:
         self,
         seed: int,
         host_pool: HostPool | None = None,
-        host_mode: Literal["catalogue", "population"] = "catalogue",
+        host_mode: Literal["catalogue", "population", "population_selected"] = "catalogue",
+        completeness: CompletenessModel | None = None,
+        phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]
+        | None = None,
     ) -> pd.DataFrame:
         """Draw one mirror-universe realization: ``n_events`` synthetic CRB rows.
 
@@ -768,7 +1047,7 @@ class MirrorUniverseGenerator:
             host_pool: Pre-resolved host pool (reuse across seeds at the same
                 dose via :meth:`host_pool_for_sigma_scale`); defaults to the
                 pinned baseline (``sigma_z_scale == 1.0``, B-0). Ignored when
-                ``host_mode == "population"``.
+                ``host_mode`` is ``"population"`` or ``"population_selected"``.
             host_mode: ``"catalogue"`` (default, D-B item a): draws hosts
                 FROM ``host_pool``, detectability-weighted, and stamps them
                 as in-catalogue (``host_galaxy_index >= 0``,
@@ -780,6 +1059,22 @@ class MirrorUniverseGenerator:
                 production "dark"/completion-leg convention,
                 ``bayesian_statistics.py:4485``), so the host is never a
                 candidate-set member by construction.
+                ``"population_selected"`` (AMENDMENT A-3, B-SEL): same
+                bookkeeping convention as ``"population"``, but the host
+                redshift is drawn from :func:`draw_selected_population_redshifts`
+                (population x (1-completeness) x survival, requires
+                ``completeness``/``phi_survival_table``) instead of the bare
+                population weight -- see the module docstring's "AMENDMENT
+                A-3" section. Also populates :attr:`last_diagnostics` with
+                the drawn host-z quantiles (weighted) AND a same-seed
+                B-OUT-style unweighted comparison draw's quantiles, so the
+                readout can quantify how much the selection weighting moved
+                the distribution.
+            completeness: Required (only) for ``host_mode="population_selected"``
+                -- see :func:`build_bsel_selection_objects`.
+            phi_survival_table: Required (only) for
+                ``host_mode="population_selected"`` -- see
+                :func:`build_bsel_selection_objects`.
 
         Returns:
             A DataFrame with the SAME columns/order as
@@ -788,6 +1083,7 @@ class MirrorUniverseGenerator:
         """
         n = self.config.n_events
         rng = np.random.default_rng(seed)
+        self.last_diagnostics = {}
 
         # (b) SNR-weighted row draw, without replacement.
         snr = self._donor_rows["SNR"].to_numpy(dtype=np.float64)
@@ -813,8 +1109,43 @@ class MirrorUniverseGenerator:
             host_phiS, host_qS = draw_isotropic_sky(rng, n)
             host_index_col = np.full(n, -1, dtype=np.int64)
             in_catalog_col = False
+        elif host_mode == "population_selected":
+            # (a) AMENDMENT A-3 (B-SEL): the estimator's OWN assumed
+            # distribution of DETECTED dark events -- see the module
+            # docstring's "AMENDMENT A-3" section.
+            if completeness is None or phi_survival_table is None:
+                raise ValueError(
+                    "host_mode='population_selected' requires both completeness "
+                    "and phi_survival_table (build via build_bsel_selection_objects)"
+                )
+            host_z = draw_selected_population_redshifts(
+                rng, n, completeness, phi_survival_table, h=H_TRUE
+            )
+            host_phiS, host_qS = draw_isotropic_sky(rng, n)
+            host_index_col = np.full(n, -1, dtype=np.int64)
+            in_catalog_col = False
+            # Diagnostic-only comparison draw: a FRESH generator seeded
+            # IDENTICALLY (same seed, task spec item 2's "same rng") draws
+            # the B-OUT-style UNWEIGHTED w_pop(z) sample -- never consumed by
+            # the realization itself (a separate stream, so it cannot
+            # perturb the weighted draw above), purely so the readout can
+            # show how much the selection weighting moved the host-z
+            # distribution relative to the bare population draw.
+            diag_rng = np.random.default_rng(seed)
+            unweighted_diag_z = draw_population_redshifts(diag_rng, n, h=H_TRUE)
+            _levels = (0.05, 0.25, 0.5, 0.75, 0.95)
+            self.last_diagnostics = {
+                "quantile_levels": list(_levels),
+                "host_z_quantiles_weighted": [float(np.quantile(host_z, q)) for q in _levels],
+                "host_z_quantiles_unweighted_population": [
+                    float(np.quantile(unweighted_diag_z, q)) for q in _levels
+                ],
+            }
         else:
-            raise ValueError(f"unknown host_mode {host_mode!r}; expected 'catalogue'/'population'")
+            raise ValueError(
+                f"unknown host_mode {host_mode!r}; expected "
+                "'catalogue'/'population'/'population_selected'"
+            )
 
         # (c) true d_L from host z at h_true; observed d_L about it.
         true_d_L = dist_vectorized(host_z, h=H_TRUE)
@@ -1771,7 +2102,7 @@ def run_arm_seed(
             run (catalogue variant + CRB-CSV write + diagnostics output).
         arm: One of :data:`ARM_SPECS`' keys
             (``b0``/``bsig005``/``bsig025``/``eden05``/``eden2``/``bout``/
-            ``bf1``).
+            ``bf1``/``bsel``).
         seed: Realization seed. Expected to be a member of
             ``ARM_SEEDS[arm]`` per the registered paired-seed discipline
             (prereg §1 D-C) -- not enforced here (kept testable with
@@ -1807,14 +2138,31 @@ def run_arm_seed(
     cfg = config or CorrespondenceConfig(sigma_z_scale=sigma_z_scale, area_scale=area_scale)
     catalogue_pin_ok = check_reduced_catalogue_pin()
     gen = MirrorUniverseGenerator(cfg)
-    # bout (host_mode="population") still resolves the pinned-catalogue
-    # handler (for the REAL GLADE candidate structure evaluate() searches --
-    # impostors only, AMENDMENT A-2) but host_pool itself is ignored by
-    # draw_realization's population branch.
+    # bout/bsel (host_mode="population"/"population_selected") still resolve
+    # the pinned-catalogue handler (for the REAL GLADE candidate structure
+    # evaluate() searches -- impostors only, AMENDMENT A-2/A-3) but
+    # host_pool itself is ignored by draw_realization's population(_selected)
+    # branches.
     host_pool, _observed_path, handler = gen.host_pool_for_sigma_scale(
         work_root / "catalogue", seed, sigma_z_scale=sigma_z_scale
     )
-    events = gen.draw_realization(seed, host_pool=host_pool, host_mode=host_mode)
+    if host_mode == "population_selected":
+        # AMENDMENT A-3 (B-SEL): build the completeness/S_bar_phi weighting
+        # objects BEFORE drawing the realization -- see the module
+        # docstring's "AMENDMENT A-3" section and
+        # :func:`build_bsel_selection_objects`'s docstring for exactly which
+        # production construction calls this reuses and why the ordering
+        # (not the total cost) is what the amendment requires.
+        completeness_obj, phi_survival_table = build_bsel_selection_objects()
+        events = gen.draw_realization(
+            seed,
+            host_pool=host_pool,
+            host_mode=host_mode,
+            completeness=completeness_obj,
+            phi_survival_table=phi_survival_table,
+        )
+    else:
+        events = gen.draw_realization(seed, host_pool=host_pool, host_mode=host_mode)
     diag_csv, elapsed = run_mirror_seed_inprocess(
         work_root / f"seed{seed}",
         events,
@@ -1833,7 +2181,7 @@ def run_arm_seed(
     # zero-extra-cost check that the population draw never smuggled a
     # catalogue-resident host in. Recorded for every arm (not just bout) so
     # the JSON is directly comparable across the fleet: b0/bsig*/eden*/bf1
-    # (host_mode="catalogue") must read 1.0; bout must read ~0.0.
+    # (host_mode="catalogue") must read 1.0; bout/bsel must read ~0.0.
     host_in_catalogue_fraction = float((events["host_galaxy_index"].to_numpy() >= 0).mean())
 
     record: dict[str, Any] = {
@@ -1842,6 +2190,10 @@ def run_arm_seed(
         "sigma_z_scale": sigma_z_scale,
         "area_scale": area_scale,
         "host_mode": host_mode,
+        # AMENDMENT A-3 (task spec item 2): an explicitly named alias of
+        # host_mode, so a bsel JSON is self-describing without cross-
+        # referencing ARM_HOST_MODE.
+        "host_draw_mode": host_mode,
         "unity_completeness": unity_completeness,
         "host_in_catalogue_fraction": host_in_catalogue_fraction,
         "n_events_drawn": cfg.n_events,
@@ -1859,6 +2211,13 @@ def run_arm_seed(
         "git_commit": _git_commit(),
         "catalogue_pin_ok": catalogue_pin_ok,
     }
+    if host_mode == "population_selected":
+        # AMENDMENT A-3 diagnostic (task spec item 2): weighted (B-SEL) vs
+        # unweighted-w_pop (B-OUT-style, same seed) host-z quantiles --
+        # quantifies how much the selection weighting moved the drawn
+        # distribution. See MirrorUniverseGenerator.draw_realization's
+        # "population_selected" branch for how this is built.
+        record["host_z_quantiles"] = gen.last_diagnostics
     out_path.write_text(json.dumps(record, indent=2))
     _LOGGER.info(
         "arm=%s seed=%d: wrote %s (elapsed=%.1fs, n_eff=%d, mean_h=%.4f)",
@@ -1885,7 +2244,7 @@ def _cli() -> int:
         "--arm",
         choices=tuple(ARM_SPECS),
         default=None,
-        help="Fleet arm (--stage arm only): b0/bsig005/bsig025/eden05/eden2/bout/bf1.",
+        help="Fleet arm (--stage arm only): b0/bsig005/bsig025/eden05/eden2/bout/bf1/bsel.",
     )
     parser.add_argument(
         "--out-dir",
