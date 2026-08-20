@@ -63,7 +63,18 @@ def _summarize(arm: str, seeds: list[dict[str, Any]]) -> dict[str, Any]:
     lo, hi = _binomial_band(n)
     unbiased = abs(bias) <= max(MATERIALITY, 2.0 * se)
     covered = lo <= c68 <= hi
-    if arm == "bsel":
+    if arm == "bself":
+        # AMENDMENT A-4 bands: fused-convention bisection, referenced to B-SEL's
+        # measured bias (0.1120). CONVENTION-OWNS-IT means the off-basis
+        # numerator/denominator asymmetry IS the internal misnormalization.
+        bsel_bias = 0.1120
+        if unbiased and covered:
+            verdict = "CONVENTION-OWNS-IT"
+        elif abs(bias) <= 0.5 * bsel_bias:
+            verdict = "CONVENTION-PARTIAL"
+        else:
+            verdict = "CONVENTION-NOT-IT"
+    elif arm == "bsel":
         # AMENDMENT A-3 bands: the isolation test (model-matched in BOTH
         # population and selection).
         if unbiased and covered:
@@ -107,7 +118,7 @@ def main() -> None:
     args = parser.parse_args()
 
     report: dict[str, Any] = {"truth_h": TRUTH_H, "arms": {}}
-    for arm in ("bout", "bf1", "bsel"):
+    for arm in ("bout", "bf1", "bsel", "bself"):
         seeds = _load(arm, args.dir)
         if not seeds:
             report["arms"][arm] = {"arm": arm, "n_seeds": 0, "verdict": "NO-DATA"}
@@ -122,6 +133,26 @@ def main() -> None:
             f"R_low={summary['r_low']:.2f}  -> {summary['verdict']}"
         )
 
+    bself = report["arms"].get("bself", {})
+    if bself.get("n_seeds"):
+        v = bself.get("verdict")
+        if v == "CONVENTION-OWNS-IT":
+            print(
+                "\nBISECTION: the off-basis numerator/denominator asymmetry IS the internal "
+                "misnormalization; the fused convention is derived-correct => /physics-change "
+                "proposal for the production default (banked off-vs-fused counterfactual is its bed)."
+            )
+        elif v == "CONVENTION-PARTIAL":
+            print(
+                "\nBISECTION: the convention owns PART of the defect (bias more than halved but "
+                "still material) => fused is a component, not the whole; continue bisecting the "
+                "z-integral measure/Jacobian and D_tilde^phi's class composition."
+            )
+        elif v == "CONVENTION-NOT-IT":
+            print(
+                "\nBISECTION: the convention does NOT own it => next targets are the z-integral "
+                "measure/Jacobian and the alpha_G^phi/beta_Gbar^phi class composition of D_tilde^phi."
+            )
     bsel = report["arms"].get("bsel", {})
     if bsel.get("verdict") == "ESTIMATOR-SELF-CONSISTENT":
         print(
