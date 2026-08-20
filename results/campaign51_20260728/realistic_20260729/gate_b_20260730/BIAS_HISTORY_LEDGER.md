@@ -1302,3 +1302,35 @@ form; mixed form is a defect; flip scoped to the φ-convention assembly when ado
 default flip is BATCHED with the Option B base-tilt resolution — one re-baseline instead of
 two; at that point the E×J interaction requires the cheap s_Edd re-measure at the new
 configuration (disclosed in memo §5/P7).
+
+## Row #136 — 2026-08-20 — Correspondence arms READ OUT (autonomous): starvation REFUTED in the mirror; mirror-vs-production REGIME MISMATCH found (100% vs 4.79% in-catalogue); A-2 registers the production-regime arm
+
+**Executed under the author's autonomy grant** (verbatim: *"you are now autonomous. please
+follow the scientific clues"*). Fleet 6383719: 70/80 COMPLETED (b0 25, bsig005 23, eden 20),
+10 FAILED = the whole bsig025 dose (defect recorded, REPORTED-ONLY, off critical path).
+
+1. **Registered branches (all [RULE]s, presented not adjudicated):** S-CORR
+   **CORRESPONDENCE-FAIL** (z ≈ −18); S-RAIL **SCALE-CONFOUNDED** (mirror σ_h 0.0248 vs
+   production 1D 0.00329 = 7.5×; the registered pooled fallback is unusable — near-delta
+   per-seed posteriors make the product edge-piling and seed-count-unstable: +0.110 at 25
+   seeds vs −0.052 on its own 10-seed subset); S-DECOMP **MIXED** with the **starvation
+   hypothesis REFUTED IN DIRECTION** — 20× sharper host photo-z made bias WORSE
+   (+0.0245 → +0.0348) and coverage WORSE (C68 0.64 → 0.43).
+2. **Structural finding (the day's clue):** the mirror draws hosts FROM the catalogue ⇒
+   100% in-catalogue, while **production has 76/1588 = 4.79%** — production's ensemble is
+   ~95% out-of-catalogue, i.e. COMPLETION-LEG DOMINATED. The estimator's completeness model
+   is violated by the mirror universe (G-1's f≡1 control recovers truth exactly), so the
+   arms' bias is harness-scope, not production-scope — and the correspondence question must
+   be re-posed in production's regime. For production's dominant class
+   p_i ≈ B_num(h)/D̃^φ(h): a ratio of two integrals over the SAME population model, which an
+   unbiased estimator must get right. The 1D rail says it does not — the sharpest form of
+   the base-tilt question so far, and it points at the completion leg (the same leg that
+   carried the un-derived B_scale, rows #130-#131).
+3. **Results that stand regardless:** (i) the catalogue-resident-venue 1D bias is NOT
+   photo-z starvation; (ii) candidate density is a strong lever (E-DEN: 0.5× area →
+   +0.0093 with C68 0.90 restored; 2× area → +0.0211, σ_h ×3.3, R_low 0.50).
+4. **AMENDMENT A-2 registered pre-run:** arm **B-OUT** (15 seeds; hosts drawn from the
+   population model, never inserted in the candidate set — the production-typical
+   out-of-catalogue event) with bands COMPLETION-UNBIASED / -BIASED-LOW / -BIASED-HIGH /
+   MIXED, plus control **B-F1** (2 seeds, f≡1 shim). ≈19 CPU-h ⇒ Option B total ≈107 of the
+   120 ceiling. Implementation + bsig025 diagnosis in flight.
