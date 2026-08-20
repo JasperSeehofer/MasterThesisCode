@@ -137,17 +137,18 @@ def main() -> None:
             "vs the (1-f)/S pairing)."
         )
     bout = report["arms"].get("bout", {})
-    if bout.get("verdict") == "COMPLETION-UNBIASED":
+    if bout.get("n_seeds"):
+        # WITHDRAWN (2026-08-20, ledger row #139): B-OUT matches the estimator's
+        # POPULATION but not its SELECTION (hosts drawn with no detection
+        # weighting; ~196/200 pass), so it carries a data-vs-model mismatch of
+        # its own and CANNOT separate internal misnormalization from mismatch.
+        # Its registered band stands; no causal claim is emitted from it. The
+        # isolation test is B-SEL (A-3) above.
         print(
-            "\nDISCRIMINATOR: B-OUT unbiased under the estimator's own population => "
-            "the estimator is self-consistent; production's base tilt is the "
-            "data-vs-model population mismatch (population_mismatch_dark_score.md CONFIRMED)."
-        )
-    elif bout.get("verdict", "").startswith("COMPLETION-BIASED"):
-        print(
-            "\nDISCRIMINATOR: B-OUT BIASED under the estimator's own population => "
-            "a residual internal misnormalization exists; the population-mismatch "
-            "attribution is FALSIFIED as the sole owner."
+            "\nNOTE: B-OUT's band is reported without a causal reading (row #139) — it "
+            "matches the model's population but not its selection. It does establish that "
+            "production's dark-class rail is REPRODUCED outside production "
+            f"(B-OUT mean_h {bout.get('mean_h', float('nan')):.4f} vs production C-C 0.6001)."
         )
 
     out_path = os.path.join(
