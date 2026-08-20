@@ -23,7 +23,7 @@ cycle end, the amendments that earned their keep are named there and credited he
 | A2 — paired read with class-summed comparisons | per-event read beside every aggregate | 0 |
 | A3 — harness acceptance criteria | 2-channel, production-N, multi-candidate SBC | 0 |
 | A4 — evidence correction on A1/A3 | corrected precedent numbers | 0 |
-| A5 — Stage L external consult | literature rings R0–R4, `[LIT]` intake, gate item 6 | 0 |
+| A5 — Stage L external consult | literature rings R0–R4, `[LIT]` intake, gate item 6 | 1 |
 | A6 — periodic assumption & performance audit | cadence/trigger re-validation ritual | 0 |
 | A7 — campaign readout report | comprehension-first report before stage-5 decision | 0 |
 | A8 — branch-referent / two-sidedness / execution-completeness / band-derivation | registration-time checks | 0 |
@@ -44,3 +44,4 @@ cycle end, the amendments that earned their keep are named there and credited he
 - 2026-08-21 A1 +1 — pre-check O3 (matched-channel read) overturned O2's "small residual" reading (−0.0291 was cancellation, the matched channel is −0.0846) on the same banked data, again pre-compute — ledger row #150, `decompose_matched_channel.py`
 - 2026-08-21 A12 +1 — the score-zero frame (E[∂_h ln L_matched]=0 for the dark-conditional) is what defined the matched channel and localized the completion-leg violation; the per-event score-at-truth read (−0.28 → −0.06) carried the O2 readout — ledger rows #149–#150
 - 2026-08-21 A15 +1 — forced the O2/O3 band design to state that a deterministic paired read has no sampling null, preventing a repeat of the A-7 `max(0.005, 2·SE)` mistake; materiality bands were derived from C-SG's resolution instead — prereg O2/O3 band registrations
+- 2026-08-21 A5 +1 — independence-preserving Stage-L sweep found our venue sits BELOW Gray 2020's own validated completeness floor (G20-d) and that the O2/O3 per-sector decomposition has no literature precedent (documented field gap → candidate novel contribution) — docs/LITERATURE_WARNINGS.md, commit a80ce4b2
