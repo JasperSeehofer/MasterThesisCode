@@ -1,9 +1,12 @@
 # Runbook — next session (written 2026-08-20, supersedes RUNBOOK_NEXT_SESSION_23)
 
-**Read first:** ledger row **#145**, then `PREREGISTRATION_1D_CORRESPONDENCE.md` AMENDMENT **A-7**
-+ its VERDICT, then `docs/derivations/GATE_PRESENTATION_SENTINEL_COMBINE_20260820.md` (8 open
-author decisions). Rows #127–#144 and `docs/RETROSPECTIVE_D1_20260820.md` remain the background;
-do NOT redo any of it.
+**Read first:** ledger rows **#145 → #146 → #147** (and the two addenda to #145), then
+`PREREGISTRATION_1D_CORRESPONDENCE.md` AMENDMENTS **A-7** and **A-8** with their VERDICTs. Rows
+#127–#144 and `docs/RETROSPECTIVE_D1_20260820.md` remain the background; do NOT redo any of it.
+
+**All 8 decisions of `docs/derivations/GATE_PRESENTATION_SENTINEL_COMBINE_20260820.md` §6 are RULED
+and EXECUTED** ("please continue, approved"). **The next front is the row #144 §6 positive
+control — it is UNBLOCKED (row #147).**
 
 ## 0. What changed on 2026-08-20 (after runbook 23)
 
@@ -95,16 +98,21 @@ closed in one zero-compute pass:
   undecidable from banked data — the declared structural blindness — and the CONTROL-SAFE branch
   does not require it. Documented as a mirror-fidelity limitation, not a mechanism.
 
-## 3. Open author decisions (8, all in the gate presentation §6)
+## 3. Decisions — all 8 RULED and EXECUTED (nothing pending from this cycle)
 
-`docs/derivations/GATE_PRESENTATION_SENTINEL_COMBINE_20260820.md`:
-**[DO]** 1 sentinel fix · 2 trapezoid-weight fix · 7 open the `g_frac`-NaN thread first.
-**[RULE]** 3 corrected numbers supersede published · 4 all catalogue-arm rails are artefacts ·
-5 B-F1's "truth to four decimals" withdrawn, the control fails · 6 G-1's PASS recorded UNSUPPORTED.
-**[RULE]** 8 **amendment A15** — still pending from row #144 §7.
+`docs/derivations/GATE_PRESENTATION_SENTINEL_COMBINE_20260820.md` §6, author ruling "please
+continue, approved":
+**[DO]** 1 sentinel fix **DONE** · 2 trapezoid-weight fix **DONE** (row #146) · 7 `g_frac`-NaN
+thread **OPENED AND CLOSED**, CONTROL-SAFE (row #147).
+**[RULE]** 3 corrected numbers supersede published **RATIFIED** · 4 all catalogue-arm rails are
+artefacts **RATIFIED** · 5 B-F1's "truth to four decimals" withdrawn, the control fails
+**RATIFIED** · 6 G-1's PASS recorded UNSUPPORTED **RATIFIED** · 8 **A15 ADOPTED** into
+`docs/RESEARCH_CYCLE.md`, with the NULL-BY-CONSTRUCTION corollary.
 
-Carried over from runbook 23 §5, still open: systematics-budget **row 16** re-grade; the **fix
-fork** for the base tilt; whether to **un-gate the landscape/T1 round**.
+**Still open, carried from runbook 23 §5** (author decisions, NOT covered by the above):
+systematics-budget **row 16** re-grade · the **fix fork** for the base tilt · whether to **un-gate
+the landscape/T1 round**. **New, from row #146 item 6:** row #144's residual bound (≥0.073) was
+derived against −0.112 and needs recomputing against the corrected **−0.1083**.
 
 ## 4. Method lessons banked this session
 
