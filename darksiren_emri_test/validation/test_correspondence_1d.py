@@ -922,3 +922,94 @@ def test_bsel_draw_realization_records_host_z_quantiles_diagnostic(
     pool = _make_host_pool(n_pool=n)
     gen.draw_realization(seed=17, host_pool=pool, host_mode="catalogue")
     assert gen.last_diagnostics == {}
+
+
+# ── AMENDMENT A-6 D-1 diagnostic: pool-free (same convention as the bsel
+# draw-realization tests above -- monkeypatch build_bsel_selection_objects
+# with a fake completeness/survival table instead of touching the pinned
+# injection pool/completeness cache) ─────────────────────────────────────
+
+
+def test_max_cdf_gap_zero_for_sample_drawn_from_the_model_density() -> None:
+    """A large sample drawn (inverse-CDF) FROM the model density itself has
+    a max CDF gap that shrinks with n (KS statistic sanity check)."""
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    z_grid = np.linspace(0.0, 1.0, 2000)
+    density = c1d.selected_population_z_weights(z_grid, completeness, table, h=c1d.H_TRUE)
+    rng = np.random.default_rng(11)
+    sample = c1d._inverse_cdf_draw(rng, 20000, z_grid, density)
+    gap = c1d._max_cdf_gap(sample, z_grid, density)
+    assert 0.0 <= gap < 0.02
+
+
+def test_max_cdf_gap_large_for_a_shifted_sample() -> None:
+    """A sample concentrated away from the model density's support scores a
+    large gap -- sanity check that the statistic actually detects mismatch."""
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    z_grid = np.linspace(0.0, 1.0, 2000)
+    density = c1d.selected_population_z_weights(z_grid, completeness, table, h=c1d.H_TRUE)
+    shifted_sample = np.full(500, 0.95)
+    gap = c1d._max_cdf_gap(shifted_sample, z_grid, density)
+    assert gap > 0.5
+
+
+def test_max_cdf_gap_empty_sample_is_nan() -> None:
+    z_grid = np.linspace(0.0, 1.0, 10)
+    density = np.ones_like(z_grid)
+    assert np.isnan(c1d._max_cdf_gap(np.array([]), z_grid, density))
+
+
+def test_run_d1_premise_check_pool_free(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The D-1 diagnostic end to end, without the pinned injection pool.
+
+    Monkeypatches :func:`~darksiren_emri.validation.correspondence_1d.build_bsel_selection_objects`
+    with the same fake completeness/survival-table doubles the bsel draw-
+    realization tests use above -- runs in well under a second.
+    """
+    n = 200
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    monkeypatch.setattr(c1d, "build_bsel_selection_objects", lambda: (completeness, table))
+
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    result = c1d.run_d1_premise_check(seed=900101, n_model_grid=500, config=cfg)
+
+    assert result.arm == "bsel"
+    assert result.seed == 900101
+    assert result.n_drawn == n
+    assert 0 <= result.n_surviving <= n
+    assert result.survival_fraction == pytest.approx(result.n_surviving / n)
+    assert result.verdict in ("MIRROR-MATCHED", "MIRROR-MISMATCHED")
+    assert (result.verdict == "MIRROR-MATCHED") == (
+        result.max_cdf_gap_surviving_vs_model <= c1d.D1_CDF_GAP_BAND
+    )
+    assert result.drawn_vs_model_anomaly == (
+        result.max_cdf_gap_drawn_vs_model > c1d.D1_CDF_GAP_BAND
+    )
+    for key in ("drawn", "surviving", "model"):
+        assert len(result.z_quantiles[key]) == 5
+    assert result.quantile_levels == [0.05, 0.25, 0.5, 0.75, 0.95]
+    assert result.elapsed_s >= 0.0
+
+
+def test_run_d1_premise_check_is_deterministic(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    n = 100
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    monkeypatch.setattr(c1d, "build_bsel_selection_objects", lambda: (completeness, table))
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+
+    a = c1d.run_d1_premise_check(seed=42, n_model_grid=300, config=cfg)
+    b = c1d.run_d1_premise_check(seed=42, n_model_grid=300, config=cfg)
+
+    assert a.n_surviving == b.n_surviving
+    assert a.max_cdf_gap_surviving_vs_model == pytest.approx(b.max_cdf_gap_surviving_vs_model)
+    assert a.z_quantiles == b.z_quantiles

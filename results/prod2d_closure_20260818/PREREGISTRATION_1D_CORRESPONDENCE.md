@@ -488,3 +488,46 @@ it matches the model at draw time, not at survival time.)
 - **No further estimator bisection until D-1 returns.** Three eliminations with no movement
   is the registered trigger (proposal §"Explicitly NOT proposed") to question the premise
   rather than the next term.
+
+## D-1 VERDICT (2026-08-20) — **MIRROR-MISMATCHED**: the A-3 premise fails, the A-3 verdict is void
+
+Seed 900101, B-SEL configuration, generative + filtering path only (~7 s):
+
+| quantity | value |
+|---|---|
+| drawn / surviving | 200 / 174 (survival 0.87) |
+| **max CDF gap, SURVIVING vs model (band-bearing)** | **0.0792 → MIRROR-MISMATCHED (> 0.05)** |
+| max CDF gap, DRAWN vs model (control) | 0.0336 — no anomaly; the draw is correct by construction |
+
+z-quantiles (drawn / surviving / model): 0.05 → 0.170/0.206/0.193 · 0.50 →
+0.432/0.461/0.443 · 0.95 → 0.753/0.760/0.762. **The surviving population sits at
+systematically higher z than the model's detected-dark density predicts** — the donor-row
+resampling plus the production quality filter preferentially remove low-z events, which the
+estimator's selection model does not know about.
+
+**Consequence (registered band, applied):** the A-3 verdict
+"INTERNAL-MISNORMALIZATION" (row #140) is **VOID as stated**. The −0.112/−0.116/−0.119
+measured by B-SEL / B-SELF / B-DEN is at least partly the mirror's own survival-time
+mismatch, not demonstrably the estimator's internal defect. This also explains the monotone
+pattern that triggered the check: three internal-normalization repairs could not move a bias
+whose driver was outside the estimator.
+
+**What still stands, untouched by this:** production's base tilt itself (dark class 0.6001,
+score −0.635 ± 0.017 at truth, high-z localized); B_scale's removal (an independently
+derived defect); the s_Edd re-measurement; J_α; the f-treatment closure; and the general
+mechanism that an excess of high-z events relative to the model's assumed detected
+distribution rails the posterior low — which D-1 has now demonstrated a THIRD time, in the
+mirror's own survival step.
+
+## D-2 (registered, triggered) — rebuild the arm so SURVIVAL matches the model
+
+Per A-6: accept every drawn event (no production quality filter) and assign each an analytic
+σ_dL/d_L consistent with the estimator's assumed measurement model, instead of a resampled
+donor Fisher row. Then re-run the isolation test on that universe.
+**Bands (unchanged in spirit from A-3, re-registered here):** ESTIMATOR-SELF-CONSISTENT if
+|bias| ≤ max(0.005, 2·SE) with C68 in the N=15 binomial band ⇒ the estimator's completion
+mathematics is exonerated and every tilt observed so far is data-vs-model mismatch;
+INTERNAL-MISNORMALIZATION if |bias| ≥ 0.005 with the CI excluding 0 ⇒ a genuine defect
+survives a survival-matched universe, and THEN the bisection resumes (D̃^φ class composition
+first). **Pre-flight gate:** D-1 must return max CDF gap ≤ 0.05 on the rebuilt arm BEFORE any
+seed is analysed — the premise is verified first this time, not assumed.

@@ -1511,3 +1511,29 @@ follow the scientific clues"*). Fleet 6383719: 70/80 COMPLETED (b0 25, bsig005 2
    and that verdict is void). D-2 (rebuild survival-matched) only if needed. **No further
    estimator bisection until D-1 returns** — three eliminations without movement is the
    registered trigger to question the premise, not the next term.
+
+## Row #143 — 2026-08-20 — D-1: **MIRROR-MISMATCHED** — the A-3 premise fails; row #140's verdict is VOID; D-2 rebuilds survival-matched
+
+1. **D-1 executed** (zero-compute generative check, seed 900101): surviving-vs-model max CDF
+   gap **0.0792 > 0.05 → MIRROR-MISMATCHED**; drawn-vs-model 0.0336 (control clean, so the
+   draw is right and only SURVIVAL is wrong). Survival 174/200. The surviving events sit at
+   systematically higher z than the model's detected-dark density — the donor-row resampling
+   and the production quality filter remove low-z events, and the estimator's selection model
+   knows about neither.
+2. **[RULE] Row #140's "INTERNAL-MISNORMALIZATION" verdict is VOID as stated.** The
+   −0.112/−0.116/−0.119 from B-SEL/B-SELF/B-DEN cannot be attributed to an estimator defect;
+   at least part is the mirror's own survival-time mismatch. This retroactively explains the
+   monotone pattern (three internal repairs moving nothing): the driver was outside the
+   estimator all along.
+3. **Method note (amendment A10, applied to ourselves):** the A-3 registration declared the
+   arm "model-matched" without declaring WHICH stage was matched. It matched at draw time and
+   not at survival time, and no gate checked the difference. The new D-2 registration makes
+   the premise a scored PRE-FLIGHT gate rather than an assumption.
+4. **Unaffected by this ruling:** production's base tilt (dark class 0.6001; score
+   −0.635 ± 0.017; high-z localized), B_scale's removal, the s_Edd re-measurement, J_α, the
+   f-treatment closure. The recurring mechanism — an excess of high-z events relative to the
+   model's assumed detected distribution rails the posterior low — has now been demonstrated
+   a THIRD time, here in the mirror's own survival step.
+5. **D-2 registered and triggered:** rebuild with no quality filter and analytic σ_dL/d_L,
+   re-verify D-1 ≤ 0.05 as a pre-flight gate, then re-run the isolation test with the A-3
+   bands. No estimator bisection until that returns.

@@ -205,6 +205,7 @@ References:
 """
 
 import argparse
+import dataclasses
 import functools
 import hashlib
 import json
@@ -222,6 +223,7 @@ import numpy.typing as npt
 import pandas as pd
 
 from darksiren_emri.bayesian_inference.bayesian_statistics import (
+    FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD,
     BayesianStatistics,
     path_a_completion_numerators,
     path_a_mixture_objects,
@@ -2133,6 +2135,313 @@ def run_g2_cost_pilot(
     )
 
 
+# ── D-1 diagnostic (AMENDMENT A-6, prereg VERDICT section): does the B-SEL ──
+# mirror match the estimator's model AT SURVIVAL TIME, not just at draw
+# time? (results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md,
+# "AMENDMENT A-6 (registered pre-run) -- test the premise before bisecting
+# further".) Zero-compute diagnostic: generator + the SAME quality filter
+# BayesianStatistics.__init__ applies, no evaluate() call.
+
+D1_CDF_GAP_BAND: float = 0.05  # AMENDMENT A-6's registered tolerance (row #137).
+D1_QUANTILE_LEVELS: tuple[float, ...] = (0.05, 0.25, 0.5, 0.75, 0.95)
+D1_OUTPUT_PATH: str = "results/prod2d_closure_20260818/d1_premise_check.json"
+
+
+def _cumulative_trapezoid(
+    y: npt.NDArray[np.float64], x: npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    """Cumulative trapezoidal integral of ``y`` over ``x``, ``cum[0] == 0``.
+
+    A tiny local helper so this module does not add a ``scipy`` dependency
+    (:func:`scipy.integrate.cumulative_trapezoid`) for a single call site.
+
+    Args:
+        y: Integrand values, shape ``(n,)``.
+        x: Strictly increasing abscissas, shape ``(n,)``.
+
+    Returns:
+        Cumulative integral, shape ``(n,)``, ``cum[0] == 0``.
+    """
+    dx = np.diff(x)
+    avg = (y[1:] + y[:-1]) / 2.0
+    return np.concatenate(([0.0], np.cumsum(avg * dx)))
+
+
+def _normalized_model_cdf(
+    z_grid: npt.NDArray[np.float64], density_grid: npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    """Normalize a (non-negative) density on ``z_grid`` to a CDF in ``[0, 1]``.
+
+    Args:
+        z_grid: Strictly increasing redshift grid.
+        density_grid: Non-negative density values on ``z_grid``.
+
+    Returns:
+        CDF values on ``z_grid``, ``cdf[0] == 0``, ``cdf[-1] == 1``.
+
+    Raises:
+        ValueError: If the density integrates to (numerically) zero over
+            ``z_grid`` -- the model support is degenerate and no CDF can be
+            formed.
+    """
+    cum = _cumulative_trapezoid(density_grid, z_grid)
+    total = cum[-1]
+    if not np.isfinite(total) or total <= 0.0:
+        raise ValueError(
+            f"model density integrates to {total!r} over the grid -- degenerate support"
+        )
+    return np.asarray(cum / total, dtype=np.float64)
+
+
+def _max_cdf_gap(
+    sample_z: npt.NDArray[np.float64],
+    z_grid: npt.NDArray[np.float64],
+    density_grid: npt.NDArray[np.float64],
+) -> float:
+    """Max |CDF gap| (Kolmogorov-Smirnov statistic) between a sample and a model density.
+
+    Standard two-sided KS construction: the model CDF (from
+    :func:`_normalized_model_cdf`) is evaluated at each sorted sample point,
+    and compared against BOTH the left- and right-continuous empirical CDF
+    at that point (the empirical step function jumps exactly at each sample
+    value, so both sides of the jump must be checked to find the true max
+    gap).
+
+    Args:
+        sample_z: Sample redshifts (unsorted; sorted internally). May be
+            empty (returns ``nan``).
+        z_grid: Strictly increasing redshift grid the model density is
+            tabulated on; must cover ``sample_z``'s range (points outside
+            are clamped to the grid's own CDF endpoints, 0 or 1).
+        density_grid: Non-negative model density values on ``z_grid``.
+
+    Returns:
+        The max |CDF gap|, or ``nan`` if ``sample_z`` is empty.
+    """
+    z_sorted = np.sort(np.asarray(sample_z, dtype=np.float64))
+    n = z_sorted.size
+    if n == 0:
+        return float("nan")
+    cdf_grid = _normalized_model_cdf(z_grid, density_grid)
+    model_at_points = np.interp(z_sorted, z_grid, cdf_grid, left=0.0, right=1.0)
+    emp_upper = np.arange(1, n + 1, dtype=np.float64) / n
+    emp_lower = np.arange(0, n, dtype=np.float64) / n
+    gap = np.maximum(np.abs(emp_upper - model_at_points), np.abs(emp_lower - model_at_points))
+    return float(np.max(gap))
+
+
+@dataclass
+class D1PremiseCheckResult:
+    """AMENDMENT A-6 D-1: B-SEL mirror-vs-model correspondence AT SURVIVAL TIME.
+
+    Answers: does the mirror match the estimator's model at SURVIVAL time,
+    not just at draw time? B-SEL/B-SELF/B-DEN draw hosts from
+    ``w_pop(z)*(1-f_bar(z))*S_bar_phi(z;h_true)`` (the estimator's own
+    assumed distribution of detected dark events), but (a) each event then
+    takes a donor Fisher row resampled SNR-weighted from real production
+    events and (b) production's quality filter
+    (``BayesianStatistics.__init__``, ``bayesian_statistics.py:3668-3676``,
+    ``use_detection``/``bayesian_statistics.py:5388-5401``: SNR >=
+    :data:`~darksiren_emri.constants.SNR_THRESHOLD` AND
+    ``d_L_uncertainty/d_L < FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD``)
+    removes ~10% of drawn events. Neither step is part of the estimator's
+    selection model, so the REALIZED distribution of SURVIVING mirror events
+    need not equal the model density even though the DRAWN distribution does
+    by construction.
+
+    Attributes:
+        arm: Always ``"bsel"`` (the arm this diagnostic tests; B-SELF/B-DEN
+            share the identical host-draw mechanism per their own docstrings
+            so the same premise question applies to them, but only bsel is
+            measured here per the registered scope).
+        seed: The single probed seed (default 900101, B-SEL's first
+            registered seed, :data:`ARM_SEEDS`\\ ``["bsel"][0]``).
+        n_drawn: Number of hosts drawn (200, the registered D-C dose).
+        n_surviving: Number of DRAWN events passing the quality filter --
+            THIS is production's own ``n_eff`` decision rule, reproduced
+            exactly (not re-derived): SNR threshold then
+            ``distance_relative_error`` threshold, both evaluated on the
+            SAME per-event quantities (``rows["SNR"]``, the donor row's own
+            ``d_L_uncertainty``, and the realization's noisy ``obs_d_L``)
+            that ``Detection``/``use_detection`` would compute from the
+            identical CRB row.
+        survival_fraction: ``n_surviving / n_drawn``.
+        max_cdf_gap_surviving_vs_model: **Band-bearing.** Max |CDF gap|
+            between the SURVIVING events' empirical z-distribution and the
+            model's own normalized detected-dark density
+            (:func:`selected_population_z_weights`) on the same support.
+        verdict: ``"MIRROR-MATCHED"`` if
+            ``max_cdf_gap_surviving_vs_model <= `` :data:`D1_CDF_GAP_BAND`
+            (0.05, the pool-vs-events provenance-check tolerance, row #137)
+            else ``"MIRROR-MISMATCHED"`` -- the registered AMENDMENT A-6
+            bands.
+        max_cdf_gap_drawn_vs_model: **Context only, NOT band-bearing.** The
+            same statistic for the full DRAWN sample (before filtering) vs
+            the model density -- expected small by construction (the draw
+            uses inverse-CDF sampling directly from this density). A large
+            value here indicates a SEPARATE bug in the draw/quadrature
+            itself, not a survival-time effect; see
+            :attr:`drawn_vs_model_anomaly`.
+        drawn_vs_model_anomaly: ``True`` iff ``max_cdf_gap_drawn_vs_model >``
+            :data:`D1_CDF_GAP_BAND` -- flags the draw-time anomaly described
+            above.
+        z_quantiles: ``{"drawn": [...], "surviving": [...], "model": [...]}``,
+            each a list aligned with :attr:`quantile_levels`.
+        quantile_levels: The probability levels :attr:`z_quantiles` is
+            reported at (:data:`D1_QUANTILE_LEVELS`).
+        elapsed_s: Wall-clock seconds for the diagnostic (generator + filter
+            + model evaluation only -- no ``evaluate()`` call, expected
+            minutes not the ~29-45 min/seed full arm cost).
+        git_commit: Repository commit the diagnostic ran at.
+    """
+
+    arm: str
+    seed: int
+    n_drawn: int
+    n_surviving: int
+    survival_fraction: float
+    max_cdf_gap_surviving_vs_model: float
+    verdict: Literal["MIRROR-MATCHED", "MIRROR-MISMATCHED"]
+    max_cdf_gap_drawn_vs_model: float
+    drawn_vs_model_anomaly: bool
+    z_quantiles: dict[str, list[float]]
+    quantile_levels: list[float]
+    elapsed_s: float
+    git_commit: str
+
+
+def run_d1_premise_check(
+    seed: int = 900101,
+    n_model_grid: int = 2001,
+    config: CorrespondenceConfig | None = None,
+) -> D1PremiseCheckResult:
+    r"""Run the AMENDMENT A-6 D-1 diagnostic for one B-SEL seed.
+
+    Reuses the SAME generative building blocks the ``bsel`` arm's
+    :func:`run_arm_seed` uses -- :func:`build_bsel_selection_objects`
+    (production's own completeness/``S_bar_phi`` construction) and
+    :func:`draw_selected_population_redshifts` (the host-z draw) -- but
+    replicates only the ``population_selected`` prefix of
+    :meth:`MirrorUniverseGenerator.draw_realization` (the SNR-weighted donor
+    row draw, then the host-z/sky draw, then the noisy ``d_L`` placement)
+    so the drawn host redshift ``z`` can be kept as a named local array
+    (:meth:`~MirrorUniverseGenerator.draw_realization` does not return it --
+    only the resulting CRB-row DataFrame). The two draws consume the SAME
+    seeded ``rng`` in the SAME order :meth:`draw_realization` does (row draw
+    before host-z draw, per its own "(b) ... (a) ..." comments), so the
+    events/host-z pairing here is exactly what a real ``bsel`` seed run at
+    this ``seed`` would produce -- this function does NOT call
+    :meth:`draw_realization` itself only because that function does not
+    expose ``host_z``.
+
+    Then applies production's OWN quality filter
+    (``BayesianStatistics.__init__``, ``bayesian_statistics.py:3668-3676``)
+    verbatim: SNR >= :data:`~darksiren_emri.constants.SNR_THRESHOLD`, then
+    ``distance_relative_error = d_L_uncertainty / d_L <``
+    ``FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD`` (the exact
+    ``use_detection`` predicate, ``bayesian_statistics.py:5388-5401``) --
+    does NOT run ``evaluate()``.
+
+    Args:
+        seed: The probed seed (default 900101, B-SEL's first registered
+            seed).
+        n_model_grid: Resolution of the ``z`` grid the model density
+            (:func:`selected_population_z_weights`) is evaluated on for the
+            CDF-gap/quantile computation.
+        config: Optional override (default: the registered ``n_events=200``,
+            B-SEL's ``ARM_SPECS`` dose ``(1.0, 1.0)`` -- ``sigma_z_scale``/
+            ``area_scale`` are irrelevant to this diagnostic's host-z draw,
+            carried only for schema parity).
+
+    Returns:
+        The :class:`D1PremiseCheckResult`.
+    """
+    t0 = time.time()
+    cfg = config or CorrespondenceConfig(sigma_z_scale=1.0, area_scale=1.0)
+    n = cfg.n_events
+    gen = MirrorUniverseGenerator(cfg)
+    completeness_obj, phi_survival_table = build_bsel_selection_objects()
+
+    rng = np.random.default_rng(seed)
+    # (b) SNR-weighted donor-row draw, without replacement -- IDENTICAL to
+    # draw_realization's item (b), consumed FIRST from the same rng stream.
+    snr = gen._donor_rows["SNR"].to_numpy(dtype=np.float64)
+    row_p = snr / snr.sum()
+    row_idx = rng.choice(len(gen._donor_rows), size=n, replace=False, p=row_p)
+    rows = gen._donor_rows.iloc[row_idx].reset_index(drop=True).copy()
+
+    # (a) AMENDMENT A-3 (B-SEL) host-z draw, consumed SECOND -- IDENTICAL to
+    # draw_realization's "population_selected" branch.
+    host_z = draw_selected_population_redshifts(
+        rng, n, completeness_obj, phi_survival_table, h=H_TRUE
+    )
+    draw_isotropic_sky(rng, n)  # sky draw: consumed for rng-stream parity, unused here.
+
+    # (c) true d_L from host z at h_true; observed d_L about it -- IDENTICAL
+    # to draw_realization's item (c) distance placement.
+    true_d_L = dist_vectorized(host_z, h=H_TRUE)
+    sigma_dL = np.sqrt(
+        rows["delta_luminosity_distance_delta_luminosity_distance"].to_numpy(dtype=np.float64)
+    )
+    obs_d_L = true_d_L + rng.normal(size=n) * sigma_dL
+    obs_d_L = np.clip(obs_d_L, 1.0e-6, None)
+    snr_col = rows["SNR"].to_numpy(dtype=np.float64)
+
+    # Production's OWN quality filter, verbatim (bayesian_statistics.py
+    # :3668-3676 SNR filter + :5388-5401 use_detection's distance_relative_error
+    # threshold) -- this IS how the real arm decides n_eff.
+    passes_snr = snr_col >= SNR_THRESHOLD
+    distance_relative_error = sigma_dL / obs_d_L
+    passes_quality = distance_relative_error < FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD
+    surviving_mask = passes_snr & passes_quality
+
+    drawn_z = host_z
+    surviving_z = host_z[surviving_mask]
+    n_surviving = int(surviving_mask.sum())
+
+    z_grid = np.linspace(POPULATION_Z_MIN, POPULATION_Z_MAX, n_model_grid, dtype=np.float64)
+    model_density = selected_population_z_weights(
+        z_grid, completeness_obj, phi_survival_table, h=H_TRUE
+    )
+    model_cdf = _normalized_model_cdf(z_grid, model_density)
+
+    gap_surviving = _max_cdf_gap(surviving_z, z_grid, model_density)
+    gap_drawn = _max_cdf_gap(drawn_z, z_grid, model_density)
+    verdict: Literal["MIRROR-MATCHED", "MIRROR-MISMATCHED"] = (
+        "MIRROR-MATCHED" if gap_surviving <= D1_CDF_GAP_BAND else "MIRROR-MISMATCHED"
+    )
+    anomaly = bool(gap_drawn > D1_CDF_GAP_BAND)
+
+    model_quantiles = [float(np.interp(q, model_cdf, z_grid)) for q in D1_QUANTILE_LEVELS]
+    surviving_quantiles = (
+        [float(np.quantile(surviving_z, q)) for q in D1_QUANTILE_LEVELS]
+        if n_surviving > 0
+        else [float("nan")] * len(D1_QUANTILE_LEVELS)
+    )
+    z_quantiles = {
+        "drawn": [float(np.quantile(drawn_z, q)) for q in D1_QUANTILE_LEVELS],
+        "surviving": surviving_quantiles,
+        "model": model_quantiles,
+    }
+
+    elapsed = time.time() - t0
+    return D1PremiseCheckResult(
+        arm="bsel",
+        seed=seed,
+        n_drawn=n,
+        n_surviving=n_surviving,
+        survival_fraction=n_surviving / n if n > 0 else float("nan"),
+        max_cdf_gap_surviving_vs_model=gap_surviving,
+        verdict=verdict,
+        max_cdf_gap_drawn_vs_model=gap_drawn,
+        drawn_vs_model_anomaly=anomaly,
+        z_quantiles=z_quantiles,
+        quantile_levels=list(D1_QUANTILE_LEVELS),
+        elapsed_s=elapsed,
+        git_commit=_git_commit(),
+    )
+
+
 # ── Fleet arm-runner stage (cluster fleet execution, task spec item 1) ──────
 
 
@@ -2358,7 +2667,7 @@ def run_arm_seed(
 
 def _cli() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--stage", choices=("g0", "g1", "g2", "arm"), default="g0")
+    parser.add_argument("--stage", choices=("g0", "g1", "g2", "arm", "d1"), default="g0")
     parser.add_argument(
         "--work-root",
         default="/tmp/correspondence_1d_g0",
@@ -2389,6 +2698,32 @@ def _cli() -> int:
         out_path = run_arm_seed(Path(args.work_root), args.arm, args.seed, Path(args.out_dir))
         print(json.dumps({"out_path": str(out_path)}, indent=2))
         return 0
+
+    if args.stage == "d1":
+        # AMENDMENT A-6 D-1: default seed 900101 (bsel's first registered
+        # seed) unless the caller explicitly passed --seed.
+        d1_seed = args.seed if "--seed" in sys.argv else 900101
+        d1 = run_d1_premise_check(seed=d1_seed)
+        out_path = Path(D1_OUTPUT_PATH)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(dataclasses.asdict(d1), indent=2))
+        print(
+            json.dumps(
+                {
+                    "verdict": d1.verdict,
+                    "max_cdf_gap_surviving_vs_model": d1.max_cdf_gap_surviving_vs_model,
+                    "max_cdf_gap_drawn_vs_model": d1.max_cdf_gap_drawn_vs_model,
+                    "drawn_vs_model_anomaly": d1.drawn_vs_model_anomaly,
+                    "n_drawn": d1.n_drawn,
+                    "n_surviving": d1.n_surviving,
+                    "survival_fraction": d1.survival_fraction,
+                    "z_quantiles": d1.z_quantiles,
+                    "out_path": str(out_path),
+                },
+                indent=2,
+            )
+        )
+        return 0 if d1.verdict == "MIRROR-MATCHED" else 1
 
     if args.stage == "g0":
         result = run_g0_fidelity_pilot(Path(args.work_root), seed=args.seed)
