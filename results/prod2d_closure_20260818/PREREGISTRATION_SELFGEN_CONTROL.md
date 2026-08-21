@@ -865,3 +865,29 @@ scorer reports.)*
 
 *(S7 executes next: seeds 910105, 910113 end-to-end under `fused`, gates L7/V7, committed
 driver `o7_spot_check.py`.)*
+
+## O7 — VERDICT (2026-08-22; both spot-checks TRANSFER-HOLDS; the fleet claim CLOSES — banked PENDING the A20 review)
+
+**Execution (registered venue, local sequential):** R7 instrument banked pre-data (previous
+block); S7 seeds 910105 and 910113 end-to-end under `fused`, fresh work roots, committed driver
+`o7_spot_check.py`. **Gates:** L7 PASS ×2 (fused line present, off-cell line absent — excerpt
+`o7_work/L7_LOG_EXCERPT.txt`), V7 PASS ×2 (fused B_num differs from banked off on 100% of rows).
+
+**Primary [MEASURED]:**
+- S_fused(910105) = −0.134336 vs r_prod −0.134338 → **delta +1.941e-6** ⇒ TRANSFER-HOLDS
+- S_fused(910113) = +0.194956 vs r_prod +0.194954 → **delta +1.941e-6** ⇒ TRANSFER-HOLDS
+
+The three end-to-end seeds now measured (910101 O6, 910105, 910113 — spanning the full off-score
+range −0.2648…+0.0828) share the IDENTICAL delta +1.941e-6 to 10 significant figures: the
+transfer error is a uniform deterministic storage offset (the A20/O6-diagnosed 7-sf CSV term),
+not a seed-dependent residual.
+
+**The registered fleet claim [MEASURED, by transfer]:** *the fused-cell fleet matched score at
+h_gen = 0.73 is the R7 reference fleet: S̄₁₅(fused) = **+0.007602 ± 0.018362** (0.41σ from
+zero) — the fused cell nulls the matched-channel violation at fleet level, per-seed transfer
+error bounded by the 1e-4 band and measured at +1.94e-6.* Row #158 item 3 (the O6 A20
+amendment-2 OPEN item) is thereby CLOSED, pending the A20 clean-context review of this verdict
+and the author's morning ratification (row #160: rulings stay author-gated).
+
+**Costing (realized):** R7 ~25 min; S7 2 × ~31 min wall, ~9 GB; all local — within the
+registered line.

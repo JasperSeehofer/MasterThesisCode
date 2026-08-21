@@ -1,0 +1,7 @@
+# GATE L7 log-evidence excerpt
+## s7_910105.log:
+1
+0
+## s7_910113.log:
+1
+0

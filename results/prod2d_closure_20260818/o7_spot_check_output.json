@@ -1,0 +1,78 @@
+{
+  "registered_in": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, O7 -- FLEET TRANSFER CLOSE: REGISTRATION (2026-08-22, row #159 item 1), arm S7",
+  "spot_seeds": [
+    910105,
+    910113
+  ],
+  "seed_selection_criterion": "registered pre-data: the two extremes of the banked off-cell score range (910105 most negative -0.2648; 910113 sign-flip outlier +0.0828)",
+  "results": [
+    {
+      "seed": 910105,
+      "gates": {
+        "GATE_L7": {
+          "gate": "GATE_L7",
+          "fused_line_present": true,
+          "off_cell_line_absent": true,
+          "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, O7 -- FLEET TRANSFER CLOSE: REGISTRATION (2026-08-22, row #159 item 1), arm S7, gates",
+          "pass": true
+        },
+        "GATE_V7": {
+          "gate": "GATE_V7",
+          "key_mismatch": false,
+          "differ_fraction": 1.0,
+          "min_differ_fraction": 0.99,
+          "n_rows_compared": 9200,
+          "pass": true,
+          "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, O7 -- FLEET TRANSFER CLOSE: REGISTRATION (2026-08-22, row #159 item 1), arm S7, gates"
+        }
+      },
+      "S_fused": -0.13433645830573504,
+      "primary": {
+        "statistic": "S_fused(910105) - r_prod(910105)",
+        "value": 1.9411451646078604e-06,
+        "band_tol": 0.0001,
+        "subtracts": "r_prod(910105) = -0.13433839945089965",
+        "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, O7 -- FLEET TRANSFER CLOSE: REGISTRATION (2026-08-22, row #159 item 1), arm S7; r_prod from the banked o7_reference_fleet_output.json (A18)"
+      },
+      "band": "TRANSFER-HOLDS",
+      "wall_time_s": 1925.4521660804749
+    },
+    {
+      "seed": 910113,
+      "gates": {
+        "GATE_L7": {
+          "gate": "GATE_L7",
+          "fused_line_present": true,
+          "off_cell_line_absent": true,
+          "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, O7 -- FLEET TRANSFER CLOSE: REGISTRATION (2026-08-22, row #159 item 1), arm S7, gates",
+          "pass": true
+        },
+        "GATE_V7": {
+          "gate": "GATE_V7",
+          "key_mismatch": false,
+          "differ_fraction": 1.0,
+          "min_differ_fraction": 0.99,
+          "n_rows_compared": 9200,
+          "pass": true,
+          "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, O7 -- FLEET TRANSFER CLOSE: REGISTRATION (2026-08-22, row #159 item 1), arm S7, gates"
+        }
+      },
+      "S_fused": 0.19495574448769845,
+      "primary": {
+        "statistic": "S_fused(910113) - r_prod(910113)",
+        "value": 1.9411451621931253e-06,
+        "band_tol": 0.0001,
+        "subtracts": "r_prod(910113) = 0.19495380334253626",
+        "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, O7 -- FLEET TRANSFER CLOSE: REGISTRATION (2026-08-22, row #159 item 1), arm S7; r_prod from the banked o7_reference_fleet_output.json (A18)"
+      },
+      "band": "TRANSFER-HOLDS",
+      "wall_time_s": 3723.8117763996124
+    }
+  ],
+  "fleet_claim": {
+    "closes": true,
+    "statement": "S_bar_15(fused) = r_bar_prod(15) +/- SEM(15) = +0.007602 +/- 0.018362 by measured transfer",
+    "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, O7 -- FLEET TRANSFER CLOSE: REGISTRATION (2026-08-22, row #159 item 1), arm S7, 'The fleet claim (registered wording)'"
+  },
+  "reuse_disclosure": "o6_fused_seed_test._run_arm reused verbatim; its module SEED constant is set per spot-check seed (the one disclosed deviation)."
+}
