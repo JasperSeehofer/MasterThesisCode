@@ -1,0 +1,56 @@
+{
+  "registered_in": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, CONFIRMATION RUN O6 -- REGISTRATION (2026-08-21, ledger row #157 item 2), 'Registered reference (A18)' paragraph",
+  "instrument": "o6_reference_derivation.py",
+  "seed": 910101,
+  "arm": "csgf",
+  "h_gen": 0.73,
+  "h_lo": 0.725,
+  "h_hi": 0.735,
+  "redshift_upper_limit_used": 1.5,
+  "production_quad_n": 50,
+  "aligned_trapz_n": 1500,
+  "integration_limit_sigma_multiplier": 4.0,
+  "zero_evaluate_note": "This instrument never calls BayesianStatistics.evaluate(); B_num/beta_Gbar_phi are re-derived from the pinned production leaf functions (precompute_phi_marginal_survival, precompute_phi_selection_integrals) and a deterministic draw_csg_realization redraw, exactly as o4_pairing_test.py's Run phase does.",
+  "r_prod_910101": {
+    "mean_score": -0.02669443370359812,
+    "sem_score": 0.06138092471578188,
+    "n_used": 200,
+    "n_skipped": 0,
+    "h_lo": 0.725,
+    "h_hi": 0.735,
+    "reference": "PREREGISTRATION_SELFGEN_CONTROL.md CONFIRMATION RUN O6, 'Registered reference (A18)' -- r_prod(910101), the PRIMARY registered reference O6's S(F6) is scored against.",
+    "subtracts": null
+  },
+  "r_A_910101_REPORTED_ONLY": {
+    "mean_score": -0.026676909990144694,
+    "sem_score": 0.06138059469063433,
+    "n_used": 200,
+    "n_skipped": 0,
+    "h_lo": 0.725,
+    "h_hi": 0.735,
+    "reference": "PREREGISTRATION_SELFGEN_CONTROL.md CONFIRMATION RUN O6, 'Registered reference (A18)' -- r_A(910101), REPORTED-ONLY companion (O4's aligned arm A with S_bar_phi restored); review fleet numbers: restored S_bar_15 = +0.007604 +- 0.018361, per-seed shift +0.124925, sd 0.004625.",
+    "subtracts": null
+  },
+  "b_num_ratio_diagnostic_vs_banked_off_cell": {
+    "per_h": {
+      "0.725": {
+        "n_events": 200,
+        "n_finite_ratio": 200,
+        "ratio_mean": 0.34212571511581513,
+        "ratio_std": 0.22452391685481524,
+        "ratio_min": 0.02208890488488848,
+        "ratio_max": 0.9418627994788871
+      },
+      "0.735": {
+        "n_events": 200,
+        "n_finite_ratio": 200,
+        "ratio_mean": 0.34243195395072734,
+        "ratio_std": 0.2245471843403875,
+        "ratio_min": 0.02213865266166212,
+        "ratio_max": 0.9418334326467886
+      }
+    },
+    "note": "Diagnostic only (r_prod-numerator vs banked OFF-cell B_num column, seed 910101): the banked column never applies S_bar_phi (production 'off' semantics), so a ratio != 1 is EXPECTED and is the mechanism's own signature, not an error. Does not feed r_prod, r_A, or any registered band."
+  },
+  "git_commit": "08f97d8438785c05ca3aeaeeed3fbc208bf82ffb"
+}

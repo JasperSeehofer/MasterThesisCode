@@ -1371,6 +1371,7 @@ def run_csg_arm_seed(
     out_dir: Path,
     n_events: int = 200,
     config: CSGConfig | None = None,
+    selection_in_completion_numerator: str | None = None,
 ) -> Path:
     r"""Run one C-SG ``(arm, seed)`` task: draw, evaluate, score, bank.
 
@@ -1393,6 +1394,13 @@ def run_csg_arm_seed(
         n_events: Events per realization (D-C parity default: 200).
         config: Optional :class:`CSGConfig` override (default: derived from
             ``n_events``).
+        selection_in_completion_numerator: Optional completion-cell override
+            forwarded to
+            :func:`~darksiren_emri.validation.correspondence_1d.run_mirror_seed_inprocess`
+            (O6 plumbing passthrough, PREREGISTRATION_SELFGEN_CONTROL.md
+            "CONFIRMATION RUN O6"). ``None`` (default) omits the kwarg so the
+            callee's pinned production default (``PRODUCTION_FLAGS``' ``"off"``)
+            applies — byte-identical to the pre-O6 behavior.
 
     Returns:
         The (written-or-pre-existing) JSON path.
@@ -1434,13 +1442,23 @@ def run_csg_arm_seed(
     # prereg section 5 -- NOT removed for C-SG, same as B-SEL).
     handler = c1d._load_galaxy_catalog_handler(REDUCED_CATALOGUE_PATH)
 
-    diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
-        work_root / f"seed{seed}",
-        rows,
-        seed,
-        galaxy_catalog=handler,
-        h_values=H_GRID_FULL,
-    )
+    if selection_in_completion_numerator is None:
+        diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
+            work_root / f"seed{seed}",
+            rows,
+            seed,
+            galaxy_catalog=handler,
+            h_values=H_GRID_FULL,
+        )
+    else:
+        diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
+            work_root / f"seed{seed}",
+            rows,
+            seed,
+            galaxy_catalog=handler,
+            h_values=H_GRID_FULL,
+            selection_in_completion_numerator=selection_in_completion_numerator,
+        )
 
     channel_scores = csg_channel_scores(diag_csv, seed, h_grid=H_GRID_41, h_true=h_gen)
     mats = csg_channel_matrices(diag_csv, H_GRID_41)

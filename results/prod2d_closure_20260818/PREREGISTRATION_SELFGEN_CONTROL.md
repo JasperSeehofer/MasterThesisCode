@@ -606,3 +606,148 @@ UNEARNED, and the registered A19 falsifier for DEFECT-HARDENED FIRES:**
    legs, not a numerator patch); expected matched score ≈ 0. Then the production-facing fork: the
    runs-of-record basis is the off cell — whether production switches basis is a physics-change
    [RULE] with the full gate protocol.
+
+## CONFIRMATION RUN O6 — REGISTRATION (2026-08-21, author-approved: ledger row #157 item 2; pre-data)
+
+**Authorization:** row #157 item 2, author's selection verbatim: "Approved — register & run". Row
+#157 item 1 ratified the defect label (IMPLEMENTATION-CONVENTION DEFECT, off-cell S̄_φ omission);
+this run is its registered confirmation. A21 governs this text: any premise correction discovered
+during implementation STOPS the run; this registration is amended and bands re-derived BEFORE any
+`evaluate()` executes.
+
+**Question:** does the REAL `fused` cell — `selection_in_completion_numerator="fused"`, executed
+end-to-end inside `BayesianStatistics.evaluate()` (both legs: the numerator via
+`completion_numerator_integrand_sel_1d`, `bayesian_statistics.py:4992-5007`, and the normalizer
+`β̄_Ḡ_φ` via `precompute_phi_selection_integrals`, `:2019-2066`, both reading the SAME
+`precompute_phi_marginal_survival` table) — null the matched-channel violation for a C-SG-F seed,
+as the identified mechanism predicts? This is an end-to-end code-path run, NOT a numerator patch:
+O4's restored arm simulated S̄_φ restoration in a standalone harness; O6 runs the in-tree cell.
+
+**Seed (registered choice):** **910101** — the first registered F seed (registry start, prereg
+§4), pilot-batch member, locally regenerable. Chosen by registry order, not by score.
+
+**Arms (exact text; the executed configuration may not deviate from this table — A21):**
+
+| arm | what runs | purpose |
+|---|---|---|
+| **D6 (off replica, gate)** | `run_csg_arm_seed(work_root=FRESH_DIR, "csgf", 910101, ...)` with the new `selection_in_completion_numerator` passthrough parameter present but set to `None` (→ pinned production `"off"`), in a **fresh work root** so the idempotent-skip cannot substitute cached artifacts (the O4/A20 3/15-cached finding) | proves the plumbing edit is inert on the off path AND re-proves regeneration determinism for this seed |
+| **F6 (fused, primary)** | same call with `selection_in_completion_numerator="fused"`, fresh work root | the measurement |
+
+The only code change permitted for O6 is the plumbing passthrough: `run_csg_arm_seed`
+(`selfgen_control.py:1367-1478`) gains an optional `selection_in_completion_numerator: str | None
+= None` forwarded verbatim to `run_mirror_seed_inprocess` (`correspondence_1d.py:1723-1733`, which
+already accepts it and defaults to the pinned `"off"`). `None` preserves byte-identical current
+behavior. No physics-trigger file is edited.
+
+**Primary statistic:** `S(F6)` = the per-event matched-channel score for seed 910101 at
+h_gen = 0.73, central difference at 0.725/0.735, computed by the SAME committed
+`csg_channel_scores`/`score_at_h_gen` path every C-SG shard used, read from arm F6's record.
+
+**Registered reference (A18; derived pre-data by instrument, value appended below before any
+`evaluate()` runs):** `r_prod(910101)` = a harness replica of the fused-cell numerator at
+PRODUCTION settings — per-event window `[z(d̂−4σ;h), min(z(d̂+4σ;h), 1.5)]`, GL-50 quadrature,
+S̄_φ applied via endpoint-clamped `np.interp` on the `precompute_phi_marginal_survival` grid (a
+literal convention copy of `completion_numerator_integrand_sel_1d`), divided by the SAME
+`β̄_Ḡ_φ`, scored by the same `score_at_h_gen`. REPORTED-ONLY companion: `r_A(910101)` = O4's
+aligned arm A with S̄_φ restored (full-domain trapezoid) — the orchestrator's independent
+re-derivation of the A20 review's restored-arm value for this seed (review fleet numbers:
+restored S̄₁₅ = +0.007604 ± 0.018361; per-seed shift +0.124925, sd 0.004625). The instrument
+(`o6_reference_derivation.py`) is zero-`evaluate()` (banked-CSV inputs) — costing line: < 5 min
+wall, < 2 GB RSS, local.
+
+**Bands (applied to `S(F6)`; both reachable, see axis-leverage):**
+
+| band | condition | meaning |
+|---|---|---|
+| **MECHANISM-CONFIRMED** | \|S(F6) − r_prod(910101)\| ≤ **1e-4** | the real fused cell behaves exactly as the identified mechanism predicts; the off-cell S̄_φ omission account is complete at production numerics |
+| **REPLICA-BROKEN** | else | the in-tree fused cell and the harness replica of its own convention disagree ⇒ the mechanism account (or the replica) is incomplete — STOP; zero-compute factorial audit of the discrepancy BEFORE any interpretation; no label change may be argued from this outcome |
+
+δ = 1e-4 derivation: the O4/A20 harness reproduced the banked `B_num` column to 3.4e-15 relative
+and GATE R4's registered fallback for multiprocessing float-order is 1e-12 relative; propagated to
+the log-derivative score both are < 1e-6. 1e-4 is ~100× above that noise floor and ~1250× below
+the axis effect (+0.1249). SECONDARY, REPORTED-ONLY (explicitly NOT a band): \|S(F6)\| vs the
+frozen SELF-CONSISTENT edge 0.037339 — at single-seed level this is a realization statement, not
+a fleet null (per-seed realization scatter σ̂ ≈ 0.075; seed 910101's own restored expectation is
+≈ −0.029, i.e. a clean-mechanism seed may sit nonzero); the fleet-level "score ≈ 0" claim is NOT
+adjudicated by one seed and is not registered here.
+
+**Axis-leverage statement (A17):** the registered axis (off→fused numerator S̄_φ convention) has
+MEASURED per-seed leverage +0.1249 ± 0.0046 (A20 review, orchestrator-re-derived on a 3-seed
+locus: shifts +0.120…+0.127). Band half-widths 1e-4 (primary) ⇒ leverage/width ≈ 1250×; the
+banked off-cell score for this seed (−0.154062) sits 1540 half-widths from r_prod's predicted
+locus (≈ −0.029): both bands are reachable and the primary band CAN fail. The identity statistic's
+noise floor (≤1e-6, above) is 100× below the half-width.
+
+**Validity gates (scored before the statistic is read; any failure ⇒ VOID, not a band):**
+
+- **GATE D6 (off replica):** arm D6's `B_num` diagnostics column vs the banked
+  `csgf_seed910101/event_likelihoods.csv`: bit-exact, or ≤ 1e-12 relative under the registered
+  multiprocessing-float-order fallback. Wall time must exceed 60 s (anti-idempotent-skip check —
+  a 0.3 ms "regeneration" is the cached-artifact signature).
+- **GATE T6 (normalizer invariance):** arm F6's column-derived `D̃_φ − α_G_φ` at 0.725/0.735
+  equals the banked off-run values to 2e-6 relative — the cell switch must not move the
+  normalizer leg (it is built unconditionally under `absolute_marginal`).
+- **GATE L6 (cell identity, zero compute):** arm F6's log does NOT contain the off-cell
+  "not a production posterior" counterfactual line; its run metadata records
+  `selection_in_completion_numerator="fused"`; arm D6's log DOES contain the off-cell line.
+- **GATE V6 (anti-vacuity):** arm F6's `B_num` column differs from arm D6's on > 99% of rows
+  (the numerator must actually have changed; guards a silent fall-through to the off dispatch).
+
+**A19 falsifiers:**
+
+- MECHANISM-CONFIRMED is falsified by (i) any gate failure (⇒ VOID); (ii) a zero-compute code
+  audit exhibiting a convention difference between `o6_reference_derivation.py`'s replica and
+  `completion_numerator_integrand_sel_1d` (replica-circularity: identity can hold while replica
+  and cell share an error — the audit is the check, and it is REQUIRED before the verdict is
+  banked); (iii) the fused numerator's S̄_φ table failing code-identity with the table
+  `precompute_phi_selection_integrals` integrates (would void the "both legs, same S̄_φ" claim).
+- REPLICA-BROKEN is falsified by showing the discrepancy is owned by multiprocessing summation
+  order (re-run arm F6 single-process; if the identity then holds to 1e-12, the primary band
+  re-fires under the registered fallback).
+
+**Costing line (A6/A17):** 2 × `evaluate()` (arms D6, F6): anchor 0.478 CPU-h/seed, ~29–45 min
+wall each single-process (n=200), peak RSS ≈ 9 GB each. **Venue: LOCAL dev box (30 GB),
+sequential, 1-wide** (the O4 OOM was 12-wide; 1-wide fits with >3× headroom); cluster fallback =
+the `o4_fleet.sbatch` pattern if the box is contended. Instruments < 5 min. Total ≈ 1.5–2 h wall.
+
+**A10 note:** all six shared physics invariants remain fixed; O6 varies exactly one axis — the
+numerator's completion cell (`off`→`fused`) — through the production dispatch itself.
+
+**A18 note:** every O6 output JSON carries machine-readable `reference` fields naming what each
+statistic subtracts: the primary subtracts `r_prod(910101)` (provenance: this registration +
+`o6_reference_derivation_output.json`); the reported-only secondary subtracts 0 with the frozen
+edge 0.037339 named.
+
+*(O6 scorer + instrument committed before any arm runs; reference values appended below pre-data;
+VERDICT appended when it reports.)*
+
+## O6 — REFERENCE-VALUE REGISTRATION (2026-08-21, appended pre-data; no `evaluate()` has run)
+
+Instrument `o6_reference_derivation.py` (zero-`evaluate()`, banked-CSV inputs; wall < 3 min,
+RSS ≪ 2 GB, local — within the registered costing line):
+
+- **r_prod(910101) = −0.02669443370359812** (the registered primary reference; A18 provenance:
+  `o6_reference_derivation_output.json`).
+- r_A(910101) = −0.02667690999014469 (REPORTED-ONLY companion). Consistency: shift from the
+  banked off-cell score −0.154063 is **+0.12737** — inside the A20 review's independently-derived
+  per-seed shift range (+0.120…+0.127, fleet +0.124925 sd 0.004625) — the orchestrator's own
+  re-derivation corroborating the review's restored-arm value for this seed; r_prod − r_A =
+  1.75e-5, consistent with O4's measured window/quadrature leverages.
+- **Bands now numeric:** MECHANISM-CONFIRMED iff S(F6) ∈ [−0.026794, −0.026594]; else
+  REPLICA-BROKEN; any gate failure ⇒ VOID.
+
+**Registered falsifier audits (A19 items ii/iii) — executed pre-data, both PASS:**
+(ii) the harness replica (`o6_reference_derivation.py:103-132`) is a convention-faithful copy of
+the in-tree fused dispatch (`bayesian_statistics.py:4992-5007` + `:5120-5179`): same window incl.
+1e-6 floor / 1.5 cap / degenerate→0, `fixed_quad` n=50 (`_HOST_QUAD_N` env-clean: no `MTC_*` set),
+endpoint-clamped `np.interp`; (iii) `_phi_survival_table` is passed as the SAME OBJECT to
+`precompute_phi_selection_integrals` (`:3813-3821`) — numerator and normalizer read one S̄_φ table.
+
+**Disclosed instrumentation details (band-inert, A21 note):** GATE L6's log capture attaches to
+the ROOT logger, not a `darksiren_emri`-named logger — `bayesian_statistics.py`'s `_LOGGER` is
+the root logger, so a named-logger handler would never see the gate lines; the gate's registered
+content conditions are unchanged. The instrument's per-event B_num-ratio diagnostic compares
+against the banked off-cell column (diagnostic-only; feeds no band). `run_csg_arm_seed`'s
+passthrough parameter landed in-tree before the scripts (same session, registered scope).
+
+*(D6/F6 execute next; VERDICT appended when the committed scorer reports.)*

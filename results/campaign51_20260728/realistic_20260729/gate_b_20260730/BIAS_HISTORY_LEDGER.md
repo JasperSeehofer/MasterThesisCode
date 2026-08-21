@@ -2169,3 +2169,28 @@ decisions (label disposition, the fused end-to-end confirmation seed, the produc
 were NOT in that list and remain **OPEN** — to be confirmed or ruled at the next session start
 (runbook 27 §1). Session context refreshed at the author's prompt immediately after this row —
 consistent with A20's own role/context finding.
+
+## Row #157 — 2026-08-21 — Author rulings on row #155's three campaign decisions: defect label RATIFIED, fused end-to-end confirmation seed APPROVED, production-basis fork DEFERRED to a joint decision with the impostor-leg question
+
+Put to the author as three tagged items at session start per runbook 27 §1 (structured
+question cards; item text and option wording orchestrator-derived; the author's selections
+verbatim in quotes):
+
+1. **[RULE] Label disposition — "Ratified as proposed":** rows #140/#151's provisional
+   INTERNAL-DEFECT candidate resolves to **IMPLEMENTATION-CONVENTION DEFECT (off-cell S̄_φ
+   omission), mechanism identified and quantified**. The 6.05σ matched-channel score stands as
+   MEASURED; "deeper estimator math" is withdrawn (row #155 item 5 now RULED).
+2. **[DO] Fused end-to-end confirmation seed — "Approved — register & run":** ONE C-SG-F seed
+   end-to-end under `fused` (both legs, not a numerator patch; expected matched score ≈ 0).
+   A21 applies: arm text registered exactly, bands re-derived pre-data, axis-leverage statement
+   (A17) and costing line included; A20 review before any ruling on the outcome.
+3. **[RULE] Production-basis fork — "Defer, decide jointly later":** runs-of-record REMAIN on
+   the off cell for now; the off→fused switch (physics-change-gated, `bayesian_statistics.py`
+   trigger, full 6-item gate package) is to be decided **jointly with the impostor-leg
+   question** — the dominant production channel — after the fused confirmation seed reports,
+   via a reviewable physics-change proposal. Banked caveat carried: fixing the off cell does
+   NOT cure the H₀ rail.
+
+Carried unchanged from runbook 27 §1 item 4: landscape/T1 un-gate chain (mechanism → fused
+confirmation → fix fork → landscape), systematics row 16 re-grade, workspace `emri` expiry
+2026-09-23.
