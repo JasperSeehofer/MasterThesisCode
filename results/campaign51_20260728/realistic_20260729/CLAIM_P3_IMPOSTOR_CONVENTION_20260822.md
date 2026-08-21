@@ -93,3 +93,43 @@ blindness + A21 identity discipline). No measurement runs before the prereg is c
 
 ---
 *(committed line — append only below)*
+
+## APPENDED 2026-08-22 — Stage 1: information forecast + Refute-by correction (inventory-driven)
+
+**Inventory finding [DOC, agent-verified paths]:** the §1 Refute-by clause assumed a
+zero-`evaluate()` banked-column rescore. The inventory refutes that premise: the banked B-SEL
+CSVs (`arm_event_likelihoods/bsel_seed*/…/event_likelihoods.csv`, 12 banked seeds) are
+per-(event, h) AGGREGATES — the per-host terms FULL-F needs (`w_pop`, `S̄_φ`, `1/imp_k` per
+candidate) are never stored. `decompose_impostor_leg.py` is an algebraic subtraction on the
+banked `L_cat_no_bh` column, not a rescorer. The FULL-chain harness
+(`results/mechanism_study_20260813/l4_afull_premeasure.py`) computes per-host terms FRESH per
+seed via `venue_transfer._draw_seed_realization` and can be pointed at a different seed fleet
+without estimator changes.
+
+**Corrected Refute-by (supersedes §1's, per A21 discipline — corrected at stage 1, before any
+prereg):** point the FULL-chain harness machinery at the 12 banked B-SEL seeds; compute the
+catalogue leg under BOTH conventions (coded denominator-only vs paired FULL-F selected-prior);
+re-read the O2-style impostor decomposition under each. Fresh compute, cost to be measured by a
+1-seed pilot with a costing line (A6/A17) BEFORE the fleet.
+
+**Stage-1 forecast (what a perfect analysis could say):**
+- **Structural bound [DOC/[INFER]]:** the fork re-weights the catalogue leg; its reachable
+  effect on the headline bias is bounded by the leg's total removal effect — **[0, +0.079]**
+  (row #149's O2 measurement is the limiting case "catalogue leg → 0"). The fork cannot touch
+  candidate membership or photo-z kernels.
+- **Power:** the 12-seed fleet SEM on the headline is ~0.019 ⇒ the fleet resolves the effect at
+  ≥2σ only if the convention moves the bias by ≳0.04 — i.e. ≳50% of the removal effect. A
+  smaller true effect lands in a REPORTED-BOUND branch, not a null claim. The stage-2 prereg
+  MUST carry this as its axis-leverage statement (A17) and register the sub-resolvable branch
+  as first-class.
+- **Sign context [DOC]:** on the venue arm the coded convention's cost was POSITIVE
+  (+0.0373 MAP) while the impostor drag is NEGATIVE (−0.079) — the prereg registers arms that
+  can distinguish "fork reduces |bias|" from "fork increases |bias|" without preferring either.
+- **Paired per-event read (rule 10/[A2]):** the M-4 per-event mover list is not persisted but is
+  regenerable free from the on-disk `off_iiib/fused_iiib` CSVs — the prereg includes it as a
+  secondary read.
+
+**Stage-1 exit → stage 2 next:** pre-registration of the two-convention 12-seed measurement
+(1-seed pilot + costing line first; A10 invariants; structural blindness: this design cannot
+detect convention errors COMMON to both arms, e.g. an error inside `S̄_φ` itself — the same
+blind spot disclosed in O6/O7).
