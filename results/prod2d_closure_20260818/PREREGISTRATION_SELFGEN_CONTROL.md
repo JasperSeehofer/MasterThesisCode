@@ -564,3 +564,45 @@ PAIRING-PARTIAL carries both.
 rows #149–#151 held fixed; the six shared physics invariants remain fixed and named.
 
 *(O4 scorer committed before it runs; VERDICT appended below when it reports.)*
+
+## PRE-CHECK O4 — VERDICT (2026-08-21; as-run band VOID-BY-DEVIATION; mechanism IDENTIFIED)
+
+**Execution:** 15/15 F seeds (4 local survivors + 11 cluster, job 6441957, after a local OOM taught
+the ~9 GB/seed lesson); GATE R4 bit-exact 15/15 across BOTH venues; GATE T4 15/15. Merged by
+`o4_merge_shards.py` via the committed scorer's own reduction. As-run: S̄(A) = −0.117321 ≈
+production −0.117318; factorial: window +0.0006, quadrature/clamp ~1e-6 ⇒ bands fired
+**DEFECT-HARDENED**.
+
+**A20 review (first application; `A20_REVIEW_O4_20260821.md`, banked verbatim) — the band is
+UNEARNED, and the registered A19 falsifier for DEFECT-HARDENED FIRES:**
+
+1. **VOID-BY-DEVIATION:** the executed arm A dropped the REGISTERED S̄_φ zero-extension ("outside
+   [1e-6, z_max(h)] the selection factor is exactly 0") on a post-registration "corrected premise"
+   (production's `off` cell never queries S̄_φ) — disclosed in a docstring, **bands never
+   re-derived**. The registered arm, restored: **S̄₁₅ = +0.0076 ± 0.0184 (0.41σ from zero) ⇒
+   PAIRING-OWNS-IT**. Per-seed shift +0.1249 ± 0.0012 = 106.5% of the banked score.
+   **Orchestrator re-derivation:** 3-seed locus rerun reproduces the as-run shard scores exactly
+   and the restored shifts (+0.120…+0.127).
+2. **The mechanism, named:** the completion numerator under the pinned runs-of-record basis
+   (`PRODUCTION_FLAGS: selection_in_completion_numerator="off"`, verified) **omits the S̄_φ
+   survival factor its own normalizer β̄_Ḡ_φ carries and the generator applies at accept time** —
+   the legacy pre-#118 cell, labelled *"not a production posterior"* by the estimator's own log
+   line in every C-SG shard; the `fused` cell is the in-tree fix (rows #117–#118).
+3. **O5 (free cross-check, banked B-SELF = mirror generator + fused cell, 11 seeds):** matched
+   score **−0.0637 ± 0.0188**, bias −0.0364 — the omission owns ~⅔ of the mirror arm's violation;
+   the 3.4σ residual is provisionally attributed to B-SELF's known generator caveats, consistent
+   with the clean-generator restored-arm null.
+4. **Registration failures recorded against the orchestrator (A15-class):** the domain/quadrature
+   axis had ~6000× too little leverage to reach any band but DEFECT-HARDENED (computable in one
+   line pre-data — an axis-leverage calculation now joins the A17 checklist); A1's GL-50
+   full-domain arm is numerically invalid (<1 node/σ); R4's two-venue bit-exactness is one
+   determinism check, powerless against a shared regeneration error; 3/15 R4 rows compared cached,
+   not regenerated, artifacts.
+5. **What is BANKED (restated, typed MEASURED):** the 6.05σ non-zero matched-channel score is a
+   real, reproducible numerator/normalizer mismatch **of the `off` cell, mechanism identified
+   (missing S̄_φ)** — not a deeper estimator-math defect. The INTERNAL-DEFECT label resolves to
+   **IMPLEMENTATION-CONVENTION DEFECT (off-cell S̄_φ omission)**, pending the author's ratification.
+6. **Registered next measurement (author [DO]):** ONE C-SG-F seed end-to-end under `fused` (both
+   legs, not a numerator patch); expected matched score ≈ 0. Then the production-facing fork: the
+   runs-of-record basis is the off cell — whether production switches basis is a physics-change
+   [RULE] with the full gate protocol.

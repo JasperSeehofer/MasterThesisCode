@@ -37,8 +37,8 @@ cycle end, the amendments that earned their keep are named there and credited he
 | A16 — retrospective ledger + impact tracker | this instrument | 0 |
 | A17 — gate/band portability + realized-scatter re-check | operating characteristics survive transport | 0 |
 | A18 — explicit bias reference | every scorer prints what each bias subtracts | 0 |
-| A19 — symmetric falsifiers | every fireable branch carries a registered falsifier | 0 |
-| A20 — clean-context adversarial verification | builder's context never verifies its own claim; typed narrative | 0 |
+| A19 — symmetric falsifiers | every fireable branch carries a registered falsifier | 1 |
+| A20 — clean-context adversarial verification | builder's context never verifies its own claim; typed narrative | 1 |
 
 ## Evidence lines
 
@@ -51,3 +51,5 @@ cycle end, the amendments that earned their keep are named there and credited he
 - 2026-08-21 A5 +1 — independence-preserving Stage-L sweep found our venue sits BELOW Gray 2020's own validated completeness floor (G20-d) and that the O2/O3 per-sector decomposition has no literature precedent (documented field gap → candidate novel contribution) — docs/LITERATURE_WARNINGS.md, commit a80ce4b2
 - 2026-08-21 A15 +1 — the pilot-first mandate + pre-committed STOP caught the orchestrator's own channel-ported GATE V (false-fails 5/12 known-informative reference seeds) before the 42-seed fleet ran — retrospective ledger entry 1, prereg "PILOT GATE V AMENDMENT"
 - 2026-08-21 A10 +1 — the registered six-invariant blindness list converted the INTERNAL-DEFECT verdict into a named-conditional claim and forced the S̄_φ audit designation as the next step — ledger row #151 item 5
+- 2026-08-21 A19 +1 — O4's registered DEFECT-HARDENED falsifier (exhibit a residual convention difference) FIRED and overturned an unearned band: the S̄_φ leg difference owns 106.5% of the score — ledger row #155, A20_REVIEW_O4_20260821.md
+- 2026-08-21 A20 +1 — first application: the clean-context artifacts-only review caught a void verdict (executed arm ≠ registered arm) BEFORE it was banked, and identified the defect mechanism — ledger row #155

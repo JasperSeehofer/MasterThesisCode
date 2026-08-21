@@ -2119,3 +2119,42 @@ snapshot f59a6f48; venv note), blind to the review and all corrections. Banked v
    untested and remains a P5 instrument. The probe post-dates the events it reviews; its brief
    was authored before the Opus review reported, and its snapshot provably excludes all
    post-review artifacts.
+
+## Row #155 — 2026-08-21 — O4 executed and OVERTURNED by its own A19 falsifier + the first A20 review: the matched-channel violation's MECHANISM IS IDENTIFIED — the off-cell completion numerator omits the S̄_φ survival factor its normalizer carries; restoring the registered arm nulls the score (+0.0076 ± 0.0184)
+
+Chronology honest and complete: local 12-wide shard run OOM-killed (evaluate ≈ 9 GB/seed vs 30 GB
+box — the per-seed RAM line joins the instrument-costing checklist), recovered via cluster array
+job 6441957 + 2-wide local hedge; 15/15 seeds, gates R4/T4 15/15 (R4 bit-exact on both venues).
+As-run bands fired DEFECT-HARDENED (S̄(A) = −0.117321 ≈ production, alignment moved ~7e-6). Then:
+
+1. **[A20 first application — it worked.]** The clean-context Opus review (artifacts-only, banked:
+   `A20_REVIEW_O4_20260821.md`) found the executed arm A had DROPPED the registered S̄_φ
+   zero-extension on a post-registration "corrected premise", bands never re-derived ⇒
+   **VOID-BY-DEVIATION**; and ran the registered A19 falsifier checklist, which **FIRES**: the
+   S̄_φ convention difference between the two legs owns **106.5%** of the banked score
+   (per-seed shift +0.1249 ± 0.0012). The registered arm, restored: **S̄₁₅ = +0.0076 ± 0.0184
+   (0.41σ) ⇒ PAIRING-OWNS-IT.** Orchestrator re-derivation: 3-seed locus rerun reproduces the
+   as-run shard scores exactly and shifts +0.120…+0.127.
+2. **[MEASURED] The mechanism:** under the pinned runs-of-record basis
+   (`PRODUCTION_FLAGS: selection_in_completion_numerator="off"`, verified at source) the
+   completion numerator omits the S̄_φ factor that β̄_Ḡ_φ carries and the generator applies at
+   accept time — the legacy pre-#118 cell, which the estimator's own log labels "not a production
+   posterior" in every C-SG shard; `fused` (rows #117–#118) is the in-tree fix.
+3. **[MEASURED] O5 free cross-check (banked B-SELF = mirror generator + fused cell, 11 seeds):**
+   matched score −0.0637 ± 0.0188, bias −0.0364 — the omission owns ~⅔ of the mirror arm's
+   violation; the 3.4σ residual is PROVISIONALLY generator-caveat-side, consistent with the
+   clean-generator restored-arm null.
+4. **[SELF-CORRECTION, orchestrator] O4's registration lacked an axis-leverage calculation** —
+   the domain/quadrature axis could move the statistic ~1e-5 against a 0.0582 band half-width, so
+   DEFECT-HARDENED was the only reachable outcome pre-data (A15-class miss; the leverage line
+   joins A17's checklist). Also: A1 numerically invalid (<1 GL node/σ); 3/15 R4 rows compared
+   cached artifacts; T4 is one check ×15.
+5. **[RULE-PENDING, author] Label disposition:** rows #140/#151's INTERNAL-DEFECT candidate
+   resolves to **IMPLEMENTATION-CONVENTION DEFECT — the off-cell S̄_φ omission, mechanism
+   identified and quantified** (the 6.05σ non-zero score stands as MEASURED; "deeper estimator
+   math" is withdrawn). Production-facing: ALL runs-of-record stand on the off cell.
+6. **[DO-PENDING, author] Registered next measurement:** ONE C-SG-F seed end-to-end under `fused`
+   (both legs; expect null matched score), then the production-basis fork (off→fused is a
+   physics-change-gated [RULE]).
+7. **Amendment credits:** A19 +1 (its falsifier fired and overturned an unearned band), A20 +1
+   (first application caught a void verdict BEFORE banking), A15 evidence extended (axis-leverage).

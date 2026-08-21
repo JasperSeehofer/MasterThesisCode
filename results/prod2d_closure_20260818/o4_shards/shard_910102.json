@@ -1,0 +1,127 @@
+{
+  "registered_in": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, PRE-CHECK O4 -- REGISTRATION (2026-08-21, ledger row #153 item 4)",
+  "arm": "csgf",
+  "h_gen": 0.73,
+  "h_lo": 0.725,
+  "h_hi": 0.735,
+  "n_seeds_requested": 1,
+  "redshift_upper_limit_used": 1.5,
+  "redshift_upper_limit_note": "The prereg/adversarial-review text states this cap as literal 1.55; verified against source (constants.py:111 HOST_DRAW_Z_MAX=1.5, cosmological_model.py:199-201 default max_redshift=HOST_DRAW_Z_MAX, postfix_baseline/iiib/run_metadata_0.json:44 'max_redshift': null, no max_redshift_override call site in selfgen_control.py/correspondence_1d.py) -- every real evaluate() call in this pipeline actually uses 1.5. Used here as 1.5 (a disclosed spec deviation).",
+  "gate_r4": [
+    {
+      "seed": 910102,
+      "pass": true,
+      "key_mismatch": false,
+      "bit_exact": false,
+      "max_rel_err": 1.697009050423408e-15,
+      "tol": 1e-12,
+      "n_rows_compared": 9200,
+      "fresh_csv": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/o4_pairing_test_work/seed910102/simulations/diagnostics/event_likelihoods.csv",
+      "banked_csv": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/csg_pilot_20260821/diagnostics/csgf_seed910102/event_likelihoods.csv",
+      "fallback_justification": "not bit-exact (max_rel_err=1.697e-15); production evaluate() dispatches per-host likelihood terms through a multiprocessing pool (_starmap_host_batches, bayesian_statistics.py:4636-4662) whose float-summation order is not guaranteed run-to-run identical, so the registered <=1e-12 relative fallback is used per the O4 GATE R4 spec.",
+      "elapsed_s": 0.0006153583526611328,
+      "reference": "PREREGISTRATION_SELFGEN_CONTROL.md PRE-CHECK O4, GATE R4; regenerated via selfgen_control.run_csg_arm_seed (unmodified)"
+    }
+  ],
+  "gate_t4": [
+    {
+      "pass": true,
+      "per_h": {
+        "0.725": {
+          "beta_gbar_phi_mine": 893324861.1081496,
+          "column_derived_D_tilde_minus_alpha": 893324910.0,
+          "rel_err": 5.47301992869395e-08,
+          "tol": 2e-06,
+          "pass": true
+        },
+        "0.735": {
+          "beta_gbar_phi_mine": 883510508.7955135,
+          "column_derived_D_tilde_minus_alpha": 883510540.0,
+          "rel_err": 3.531874842069904e-08,
+          "tol": 2e-06,
+          "pass": true
+        }
+      },
+      "reference": "PREREGISTRATION_SELFGEN_CONTROL.md PRE-CHECK O4, GATE T4",
+      "seed": 910102
+    }
+  ],
+  "fleet": {
+    "A": {
+      "n_seeds": 1,
+      "S_bar": -0.08702321320877622,
+      "sem_seeds": null,
+      "per_seed": [
+        {
+          "mean_score": -0.08702321320877622,
+          "sem_score": 0.06398405060185765,
+          "n_used": 200,
+          "n_skipped": 0,
+          "h_lo": 0.725,
+          "h_hi": 0.735,
+          "seed": 910102
+        }
+      ],
+      "band_fired": "DEFECT-HARDENED",
+      "owned_fraction": null,
+      "reference": "PREREGISTRATION_SELFGEN_CONTROL.md PRE-CHECK O4, Statistic + Bands (bands applied only to arm A)"
+    },
+    "A1_window_to_full": {
+      "n_seeds": 1,
+      "S_bar": -0.042412400218224226,
+      "sem_seeds": null,
+      "per_seed": [
+        {
+          "mean_score": -0.042412400218224226,
+          "sem_score": 0.13451171408399368,
+          "n_used": 200,
+          "n_skipped": 0,
+          "h_lo": 0.725,
+          "h_hi": 0.735,
+          "seed": 910102
+        }
+      ],
+      "band_fired": null,
+      "owned_fraction": null,
+      "reference": "PREREGISTRATION_SELFGEN_CONTROL.md PRE-CHECK O4, Statistic + Bands (bands applied only to arm A)"
+    },
+    "A2_gl50_to_trapz1500": {
+      "n_seeds": 1,
+      "S_bar": -0.0870218058629903,
+      "sem_seeds": null,
+      "per_seed": [
+        {
+          "mean_score": -0.0870218058629903,
+          "sem_score": 0.06398424491580405,
+          "n_used": 200,
+          "n_skipped": 0,
+          "h_lo": 0.725,
+          "h_hi": 0.735,
+          "seed": 910102
+        }
+      ],
+      "band_fired": null,
+      "owned_fraction": null,
+      "reference": "PREREGISTRATION_SELFGEN_CONTROL.md PRE-CHECK O4, Statistic + Bands (bands applied only to arm A)"
+    },
+    "A3_clamp_to_zeroext": {
+      "n_seeds": 1,
+      "S_bar": -0.08702180594703218,
+      "sem_seeds": null,
+      "per_seed": [
+        {
+          "mean_score": -0.08702180594703218,
+          "sem_score": 0.06398424491008678,
+          "n_used": 200,
+          "n_skipped": 0,
+          "h_lo": 0.725,
+          "h_hi": 0.735,
+          "seed": 910102
+        }
+      ],
+      "band_fired": null,
+      "owned_fraction": null,
+      "reference": "PREREGISTRATION_SELFGEN_CONTROL.md PRE-CHECK O4, Statistic + Bands (bands applied only to arm A)"
+    }
+  }
+}
