@@ -299,11 +299,20 @@ REDUCED_CATALOGUE_PATH = str(
 )
 REDUCED_CATALOGUE_MD5 = "c52c13b5cab61f6b3f04bbe202550969"
 
-# G-0 registered flags (postfix_baseline/iiib run_metadata_0.json, verbatim).
+# G-0 registered flags (postfix_baseline/iiib run_metadata_0.json, verbatim) —
+# EXCEPT the completion cell: "fused" is the production basis for all FUTURE
+# runs-of-record per the author's D2 ruling (ledger row #159, 2026-08-22;
+# [PHYSICS] gate package: docs/derivations/
+# PROPOSAL_FUSED_BASIS_AND_IMPOSTOR_DIRECTION_20260821.md §1-D2). Historical
+# runs-of-record (through 2026-08-21) ran "off" — the ratified
+# IMPLEMENTATION-CONVENTION DEFECT cell (rows #157/#158) — and STAND with the
+# row #119 bridge; regenerating a banked off-cell artifact requires passing
+# selection_in_completion_numerator="off" EXPLICITLY (the O6 GATE D6 /
+# P3 GATE R-P3 pattern).
 PRODUCTION_FLAGS: dict[str, str] = {
     "--normalization_mode": "absolute_marginal",
     "--host_z_kernel": "volume_deconv",
-    "--selection_in_completion_numerator": "off",
+    "--selection_in_completion_numerator": "fused",
     "--catalogue_mass_overlap": "production",
     "--completion_b_scale": "derived",
     "--pdet_dl_bins": "60",
@@ -1788,7 +1797,8 @@ def run_mirror_seed_inprocess(
             triggered the guard) and only changes behavior for B-OUT.
         selection_in_completion_numerator: Forwarded verbatim to
             ``BayesianStatistics.evaluate`` (AMENDMENT A-4). Default is
-            :data:`PRODUCTION_FLAGS`'s registered ``"off"`` -- byte-identical
+            :data:`PRODUCTION_FLAGS`'s registered value ("fused" since the D2
+            ruling, row #159; was "off" through 2026-08-21) -- byte-identical
             to every call site that does not pass this kwarg explicitly
             (G-1, G-2, and every pre-A-4 fleet arm). Only ``run_arm_seed``'s
             ``bself`` arm passes ``"fused"`` (via :data:`ARM_SELECTION_CELL`),

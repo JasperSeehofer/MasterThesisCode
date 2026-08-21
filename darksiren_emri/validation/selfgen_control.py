@@ -1399,8 +1399,9 @@ def run_csg_arm_seed(
             :func:`~darksiren_emri.validation.correspondence_1d.run_mirror_seed_inprocess`
             (O6 plumbing passthrough, PREREGISTRATION_SELFGEN_CONTROL.md
             "CONFIRMATION RUN O6"). ``None`` (default) omits the kwarg so the
-            callee's pinned production default (``PRODUCTION_FLAGS``' ``"off"``)
-            applies — byte-identical to the pre-O6 behavior.
+            callee's pinned production default (``PRODUCTION_FLAGS``, "fused" since
+            the D2 ruling, row #159) applies. To regenerate a banked off-cell
+            C-SG artifact, pass ``"off"`` EXPLICITLY (the O6 GATE D6 pattern).
 
     Returns:
         The (written-or-pre-existing) JSON path.

@@ -246,8 +246,11 @@ def test_arm_selection_cell_registered_mapping() -> None:
     non_bself = {k: v for k, v in c1d.ARM_SELECTION_CELL.items() if k != "bself"}
     assert set(non_bself.values()) == {"off"}
     assert c1d.ARM_SELECTION_CELL["bself"] == "fused"
-    # Matches the runs-of-record basis every pre-A-4 arm is registered against.
-    assert c1d.PRODUCTION_FLAGS["--selection_in_completion_numerator"] == "off"
+    # D2 ruling (ledger row #159, 2026-08-22): the pin is "fused" for all
+    # FUTURE runs-of-record; every banked pre-A-4 arm's historical "off" basis
+    # lives in ARM_SELECTION_CELL above (regeneration passes it explicitly),
+    # so this flip cannot silently change any banked arm's cell.
+    assert c1d.PRODUCTION_FLAGS["--selection_in_completion_numerator"] == "fused"
 
 
 def test_arm_event_measure_registered_mapping() -> None:
