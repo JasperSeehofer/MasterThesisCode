@@ -798,3 +798,53 @@ cure the H₀ rail; runs-of-record remain on the `off` cell (row #157 item 3 sta
 banking), A21 +1 (first fully-clean registration–execution identity under its own rule), A17
 evidence extended (CSV-storage noise-floor term), A18 exercised (all O6 outputs carry `reference`
 fields).
+
+## O7 — FLEET TRANSFER CLOSE: REGISTRATION (2026-08-22, author-approved: row #159 item 1 "A: Transfer + spot-check"; pre-data)
+
+**Question:** does the fleet-level claim "the `fused` cell nulls the matched-channel score"
+close by measured transfer — the banked per-seed reference fleet (committed code) plus O6's
+proven harness↔production identity, stress-tested on the two most extreme seeds?
+
+**Arms (exact text; A21 governs — any premise correction STOPS and re-registers):**
+
+| arm | what runs | cost |
+|---|---|---|
+| **R7 (reference fleet, instrument)** | `o7_reference_fleet.py`: the committed O6 reference computation (`o6_reference_derivation.compute_reference`, unmodified) looped over ALL 15 F seeds (910101–910115), banking the per-seed r_prod and r_A vectors + fleet mean/SEM from committed code — repairing the review-scratchpad provenance gap | zero-`evaluate()`; ~20–30 min local, ≲4 GB |
+| **S7 (spot-checks, 2 seeds)** | seeds **910105** and **910113** end-to-end under `fused` via the committed O6 driver pattern (fresh work roots, `run_csg_arm_seed(..., "fused")`). Selection criterion (registered, pre-data): the two EXTREMES of the banked off-cell score range — 910105 the most negative (−0.2648), 910113 the sign-flip outlier (+0.0828) — maximal transfer stress, chosen by banked data only | 2 × ~30 min local sequential, ~9 GB each |
+
+Spot-check gates per seed: **L7** = GATE L6's log-content check (fused line present, off-cell
+counterfactual line absent); **V7** = GATE V6's anti-vacuity (fused `B_num` differs from the
+banked off CSV on > 99% of rows). The off-replica gate (O6 D6) is NOT re-run — registered
+justification: regeneration determinism is proven 15/15 bit-exact across two venues (O4 R4) and
+plumbing-inertness proven bit-exact (O6 D6); re-proving per seed buys nothing the bands read.
+
+**Bands (per spot-check seed):** **TRANSFER-HOLDS** iff |S_fused(seed) − r_prod(seed)| ≤ **1e-4**
+(floor per A20/O6 amendment 4: the identity noise floor is the 7-sf CSV storage of the
+normalizer columns, measured 1.94e-6 on 910101; 1e-4 keeps the ~50× margin). Else
+**TRANSFER-BROKEN**; any gate failure ⇒ VOID for that seed.
+
+**The fleet claim (registered wording):** IF both spot-checks fire TRANSFER-HOLDS, the banked
+fused-fleet statement becomes: *"the fused-cell fleet matched score at h_gen = 0.73 is the R7
+reference fleet, by measured transfer: S̄₁₅(fused) = r̄_prod(15) ± SEM(15), expected ≈ +0.008 ±
+0.018 (0.4σ from zero) — the fused cell nulls the matched-channel violation at fleet level, with
+per-seed transfer error bounded by the band 1e-4."* IF either fires TRANSFER-BROKEN, the claim
+does NOT close; the discrepancy is audited zero-compute before any interpretation and the full
+15-seed end-to-end fleet (proposal D1 option B) returns to the author.
+
+**Axis-leverage (A17):** the off→fused axis moves each seed by +0.1249 ± 0.0046 (measured, 15
+seeds) = ~1250 band half-widths; the two spot-check seeds sit at the extremes of the off-score
+range (span 0.35 = 3500 half-widths), so TRANSFER-BROKEN is reachable if the identity is
+seed-dependent in any way the band resolves. Realized-scatter re-check: SEM(15) is recomputed
+from R7's banked vector, not carried from prose.
+
+**A18:** every output carries `reference` fields (per-seed statistics subtract r_prod(seed) with
+provenance; fleet statistics name R7's banked vector).
+
+**A19 falsifiers:** TRANSFER-HOLDS is falsified by (i) any L7/V7 failure; (ii) a zero-compute
+audit exhibiting a convention delta between `compute_reference` and the fused dispatch larger
+than the band (the O6 audits (ii)/(iii) already cover this and PASSED — carried, not re-run).
+TRANSFER-BROKEN is falsified by a single-process re-run restoring the identity to ≤ 1e-12
+(multiprocessing float-order, the registered O6 fallback).
+
+*(R7 + S7 committed before execution; R7 values appended pre-S7-data; VERDICT appended when the
+scorer reports.)*
