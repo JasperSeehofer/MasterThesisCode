@@ -2251,3 +2251,26 @@ selections and free text verbatim in quotes):
    a visualization of where we are with the bias at the moment."** Landscape/T1 stays gated at
    link 4; the digging is item 3's [P3] cycle; a current-state bias visualization is owed as an
    immediate deliverable.
+
+## Row #160 — 2026-08-22 — Overnight autonomy grant + three [STANDING, tonight-only] scopes
+
+Author, verbatim: **"you are now autonomous over night. please follow the scientific lead to
+remove any existing bias so we have a true answer to the hubble constant constraint, this is
+the overarching goal. do you need something before I leave?"** Three scope questions were put
+back (option text orchestrator-derived; selections verbatim):
+
+1. **[STANDING, tonight] "Yes, auto-run on BROKEN":** if an S7 spot-check fires
+   TRANSFER-BROKEN, the 15-seed end-to-end fused fleet (D1 option B) runs overnight,
+   A21-registered before launch; verdict A20-reviewed and QUEUED for the author's ruling.
+2. **[STANDING, tonight] "Cluster OK up to ~50 CPU-h"** for the [P3-IMP] chain (stage-2
+   prereg → 1-seed pilot with costing line → two-convention 12-seed measurement → registered
+   follow-up reads). Pilot + costing before fleet; preflight before any submission.
+3. **[STANDING, tonight] "Implement on a branch, present at morning":** a bias fix touching a
+   physics-trigger formula may be implemented on a NON-MAIN branch with the full 6-item
+   physics-change package + regression tests; nothing merges, no run-of-record changes; the
+   author rules in the morning against the reviewable package.
+
+All three lapse when the author returns. Scientific rulings (stage-5 verdicts, label changes,
+physics-change adoptions) remain author-gated throughout — presented and STOPPED, per standing
+discipline. Overarching goal registered as stated: identify and remove remaining bias toward a
+true H₀ constraint; the active front is [P3-IMP] (row #159 D3).
