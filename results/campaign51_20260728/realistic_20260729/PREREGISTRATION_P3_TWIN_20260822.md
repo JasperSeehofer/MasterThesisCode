@@ -144,3 +144,27 @@ fallback via preflight if the box is contended. Total ≤ ~10 CPU-h of the 50 CP
 
 *(Committed before the branch is created; LEV values and frozen band numbers appended below
 pre-fleet; VERDICT appended when the committed scorer reports; A20 review before any banking.)*
+
+## AMENDMENT 1 (2026-08-22, pre-execution; A21 — registration defect found during implementation, NO arm has run)
+
+**Defect:** §4's GATE E-P3 required runtime engagement evidence from BOTH the scalar and batch
+host-likelihood paths. Implementation-time verification shows production has **no runtime call
+site** of the scalar `single_host_likelihood` (grep: comments/docstrings only; the batch
+`_starmap_host_batches → single_host_likelihood_batch` is the sole dispatch in `evaluate()`).
+The scalar engagement log therefore CANNOT fire in any real run, and the gate as registered
+was unsatisfiable — the inverse of the A13 incident class (a gate that must fail regardless of
+correctness), caught before execution.
+
+**Amended GATE E-P3 (replaces §4's, before any data exist):**
+(a) ≥10% of catalogue-bearing events' `L_cat_no_bh` move ≥1e-6 relative vs banked under
+`"phi"`; (b) the BATCH-path engagement log line (`[P3-IMP] … ENGAGED in the batch host path`)
+present in every `"phi"` run's log; (c) the scalar twin carries the same factor by CODE AUDIT
+(same expression, same table input — auditable at
+`bayesian_statistics.py` `numerator_integrant_without_bh_mass` + the delta-kernel branch),
+explicitly in scope for the A20 review; (d) the implementation note that the factor is applied
+in BOTH `_starmap_host_batches` calls — the with-BH host batch's `r[0]` is also a no-BH
+numerator feeding `L_cat_no_bh` (the caller's `all_results_without_bh` concatenation) — is
+part of the audit surface (a one-call engagement would have been the silent-subset A13
+failure; found and prevented at implementation).
+
+No other section changes; bands, arms, statistics, invariants stand as registered.

@@ -104,6 +104,23 @@ def _warn_quadrature_weight_outside_grid(
     )
 
 
+# [P3-IMP] GATE E-P3 (A13) engagement evidence: per-process, per-dispatch-path
+# one-shot log that the twin cell's factor was actually applied. Read from run
+# logs by the registered scorer (PREREGISTRATION_P3_TWIN_20260822.md §4).
+_p3_engagement_logged_paths: set[str] = set()
+
+
+def _p3_engagement_log_once(path: str) -> None:
+    if path in _p3_engagement_logged_paths:
+        return
+    _p3_engagement_logged_paths.add(path)
+    _LOGGER.info(
+        "[P3-IMP] catalogue_numerator_survival='phi' ENGAGED in the %s host "
+        "path (GATE E-P3 dispatch evidence; once per worker process)",
+        path,
+    )
+
+
 # Per-process dedup state for the C7 ZoA host-z-kernel fallback (see
 # _warn_zoa_hostz_kernel_fallback): hosts whose HEALPix pixel is empty carry
 # f_k == 0 at every redshift, so the catalogued-host intensity f*w_pop vanishes
@@ -3185,6 +3202,9 @@ class BayesianStatistics:
     # PREREGISTRATION_TILT_BATTERY.md §1). "point" (default) is byte-identical
     # to the pre-flag path.
     _sigma4d_mass_kernel: str = "point"
+    # [P3-IMP] catalogue-leg twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2).
+    # "off" (default) is byte-identical to the pre-flag path.
+    _catalogue_numerator_survival: str = "off"
     # B-DEN falsifier instrument (docs/derivations/
     # completion_numerator_data_measure.md §6; AMENDMENT A-5,
     # results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md).
@@ -3233,6 +3253,9 @@ class BayesianStatistics:
         # "on"/"point" => the pre-flag production path, byte-identical.
         self._eddington_m: str = "on"
         self._sigma4d_mass_kernel: str = "point"
+        # [P3-IMP] twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2): "off"
+        # => the pre-flag production path, byte-identical.
+        self._catalogue_numerator_survival: str = "off"
         # B-DEN falsifier instrument (docs/derivations/
         # completion_numerator_data_measure.md §6; AMENDMENT A-5). "ratio"
         # (default) => the pre-flag production path, byte-identical.
@@ -3327,6 +3350,16 @@ class BayesianStatistics:
         # measure as the completion denominator (MFG 2019 arXiv:1809.02063
         # Eqs. (5)-(7)).
         completion_event_measure: str = "ratio",
+        # [P3-IMP] catalogue-leg twin counterfactual cell (results/
+        # campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md
+        # §2; branch-only instrument, row #160 grant 3): "off" (default) is
+        # byte-identical to the pre-flag path; "phi" multiplies the WITHOUT-BH
+        # catalogue numerator integrand per host by the phi-marginal survival
+        # S_bar_phi(z;h) read from the SAME precompute_phi_marginal_survival
+        # table the mixture normalizer beta_G_phi integrates (:2065). The
+        # with-BH catalogue numerator is deliberately untouched (registered
+        # invariant).
+        catalogue_numerator_survival: str = "off",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3393,6 +3426,25 @@ class BayesianStatistics:
                 "absolute_marginal — the legacy pre-#118 estimator (no survival "
                 "factor in either completion leg). Not a production posterior."
             )
+        # [P3-IMP] catalogue-leg twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2).
+        if catalogue_numerator_survival not in ("off", "phi"):
+            raise ValueError(
+                "catalogue_numerator_survival must be 'off' or 'phi', got "
+                f"{catalogue_numerator_survival!r}"
+            )
+        if catalogue_numerator_survival == "phi":
+            if normalization_mode != "absolute_marginal":
+                raise ValueError(
+                    "catalogue_numerator_survival='phi' requires "
+                    "normalization_mode='absolute_marginal' (the S_bar_phi table it "
+                    f"reads is only built there); got {normalization_mode!r}"
+                )
+            _LOGGER.warning(
+                "COUNTERFACTUAL: catalogue_numerator_survival='phi' — per-host "
+                "S_bar_phi in the catalogue numerator ([P3-IMP] twin cell). "
+                "Not a production posterior."
+            )
+        self._catalogue_numerator_survival = catalogue_numerator_survival
         # Prod2d closure counterfactual instrument (results/
         # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1,
         # P8): validated here the same way selection_in_completion_numerator
@@ -4633,6 +4685,10 @@ class BayesianStatistics:
         # per worker chunk instead of one scalar single_host_likelihood task per
         # host. Same chunk count as the old chunksize=ceil(n/processes) policy,
         # same per-host values (see test_kernel_batch_equivalence.py).
+        # [P3-IMP] twin cell: the flag+table go to BOTH host batches — the
+        # with-BH batch's r[0] no-BH numerator also feeds L_cat_no_bh (A13).
+        _cat_surv = self._catalogue_numerator_survival
+        _cat_surv_table = self._phi_survival_table[float(self.h)] if _cat_surv == "phi" else None
         results_with_bh_mass = _starmap_host_batches(
             pool,
             possible_host_galaxies_with_bh_mass,
@@ -4645,6 +4701,8 @@ class BayesianStatistics:
             self._catalogue_mass_overlap,
             self._catalogue_mass_error_scale,
             self._eddington_m,
+            _cat_surv,
+            _cat_surv_table,
         )
 
         results_without_blackhole_mass = _starmap_host_batches(
@@ -4659,6 +4717,8 @@ class BayesianStatistics:
             self._catalogue_mass_overlap,
             self._catalogue_mass_error_scale,
             self._eddington_m,
+            _cat_surv,
+            _cat_surv_table,
         )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
@@ -5675,6 +5735,10 @@ def single_host_likelihood(
     # _host_M_eff, switching the numerator mass prior AND the per-host D_g
     # erf-sum together (the single assignment below).
     eddington_m: str = "on",
+    # [P3-IMP] twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2); scalar twin
+    # of the batch flag — same semantics, same table-slice input.
+    catalogue_numerator_survival: str = "off",
+    catalogue_survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
 ) -> list[float]:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -5691,6 +5755,18 @@ def single_host_likelihood(
 
     if eddington_m not in ("on", "off"):
         raise ValueError(f"eddington_m must be 'on' or 'off', got {eddington_m!r}")
+
+    # [P3-IMP] twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2/§4).
+    if catalogue_numerator_survival not in ("off", "phi"):
+        raise ValueError(
+            "catalogue_numerator_survival must be 'off' or 'phi', got "
+            f"{catalogue_numerator_survival!r}"
+        )
+    _cat_surv_on = catalogue_numerator_survival == "phi"
+    if _cat_surv_on:
+        if catalogue_survival_table is None:
+            raise ValueError("catalogue_numerator_survival='phi' requires catalogue_survival_table")
+        _p3_engagement_log_once("scalar")
 
     FIXED_QUAD_N = _HOST_QUAD_N
 
@@ -5899,12 +5975,20 @@ def single_host_likelihood(
         # p_det = p(D_GW|z,Omega,H0) appears solely in the denominator D_g (below);
         # an extra p_det in the numerator is the Mandel-Farr-Gair (2019)
         # "most common mistake" (arXiv:1809.02063) and biases H0 high.
-        return _mvn_pdf(
+        _num = _mvn_pdf(
             np.vstack([phi, theta, luminosity_distance_fraction]).T,
             _mean_3d,
             _cov_inv_3d,
             _log_norm_3d,
         ) * galaxy_redshift_prior_pdf(z)
+        if _cat_surv_on:
+            # [P3-IMP] twin cell: per-host S_bar_phi factor (endpoint-clamped
+            # np.interp — the completion_numerator_integrand_sel_1d convention),
+            # from the SAME table the mixture normalizer beta_G_phi integrates.
+            assert catalogue_survival_table is not None
+            _z_s, _s_phi = catalogue_survival_table
+            _num = _num * np.interp(np.asarray(z, dtype=np.float64), _z_s, _s_phi)
+        return _num
 
     def denominator_integrant_without_bh_mass(z: npt.NDArray[np.float64]) -> Any:
         d_L = dist_vectorized(z, h=h)
@@ -5944,6 +6028,13 @@ def single_host_likelihood(
         single_host_likelihood_numerator_without_bh_mass = float(
             _mvn_pdf(_x_obs_point, _mean_3d, _cov_inv_3d, _log_norm_3d)[0]
         )
+        if _cat_surv_on:
+            # [P3-IMP] twin cell, delta-kernel branch: point-evaluated factor.
+            assert catalogue_survival_table is not None
+            _z_s, _s_phi = catalogue_survival_table
+            single_host_likelihood_numerator_without_bh_mass *= float(
+                np.interp(host_z, _z_s, _s_phi)
+            )
     else:
         (
             single_host_likelihood_numerator_without_bh_mass,
@@ -6255,6 +6346,13 @@ def single_host_likelihood_batch(
     # the pre-flag path; "off" assigns the raw (unshifted) host_M to
     # host_M_eff.
     eddington_m: str = "on",
+    # [P3-IMP] twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2). "off"
+    # (default) is byte-identical to the pre-flag path; "phi" multiplies the
+    # WITHOUT-BH numerator integrand by S_bar_phi(z;h) from
+    # catalogue_survival_table (endpoint-clamped np.interp — the same
+    # convention as completion_numerator_integrand_sel_1d).
+    catalogue_numerator_survival: str = "off",
+    catalogue_survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
 ) -> npt.NDArray[np.float64]:
     """Host-batched twin of :func:`single_host_likelihood`.
 
@@ -6508,17 +6606,44 @@ def single_host_likelihood_batch(
     gw_3d = _mvn_pdf(x_obs.reshape(n * _k_num, 3), _mean_3d, _cov_inv_3d, _log_norm_3d)
     gw_3d = gw_3d.reshape(n, _k_num)
 
+    # [P3-IMP] twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2): per-host
+    # S_bar_phi factor in the WITHOUT-BH numerator only. GATE E-P3 engagement
+    # log fires once per worker process per path (A13 dispatch evidence).
+    if catalogue_numerator_survival not in ("off", "phi"):
+        raise ValueError(
+            "catalogue_numerator_survival must be 'off' or 'phi', got "
+            f"{catalogue_numerator_survival!r}"
+        )
+    # NOTE (A13): applied for BOTH evaluate_with_bh_mass values — the with-BH
+    # host batch's r[0] is ALSO a no-BH numerator that feeds L_cat_no_bh (the
+    # all_results_without_bh concatenation in the caller), so gating on the
+    # channel flag would silently engage the cell on a host subset only.
+    _cat_surv_on = catalogue_numerator_survival == "phi"
+    if _cat_surv_on:
+        if catalogue_survival_table is None:
+            raise ValueError("catalogue_numerator_survival='phi' requires catalogue_survival_table")
+        _p3_engagement_log_once("batch")
+
     if _use_generator_point:
         # [PHYSICS] N_g = p(x | z_g, Omega_g): point value, no reduce.
         # DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3.
         numerator_without_bh_mass = gw_3d[:, 0]
+        if _cat_surv_on:
+            assert catalogue_survival_table is not None
+            _z_s, _s_phi = catalogue_survival_table
+            numerator_without_bh_mass = numerator_without_bh_mass * np.interp(host_z, _z_s, _s_phi)
     else:
         assert prior_num is not None
+        _num_integrand = gw_3d * prior_num
+        if _cat_surv_on:
+            assert catalogue_survival_table is not None
+            _z_s, _s_phi = catalogue_survival_table
+            _num_integrand = _num_integrand * np.interp(y_num_nodes, _z_s, _s_phi)
         numerator_without_bh_mass = _batched_gl_reduce(
             num_reduce_lo,
             num_reduce_hi,
             _GL_WEIGHTS_50,
-            gw_3d * prior_num,
+            _num_integrand,
         )
 
     # 3D denominator: batched p_det lookup over all hosts' nodes at once.
@@ -6790,6 +6915,8 @@ def _starmap_host_batches(
     catalogue_mass_overlap: str = "production",
     catalogue_mass_error_scale: float = 1.0,
     eddington_m: str = "on",
+    catalogue_numerator_survival: str = "off",
+    catalogue_survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
 ) -> list[list[float]]:
     """Dispatch the batched host kernel over worker processes.
 
@@ -6815,6 +6942,11 @@ def _starmap_host_batches(
         catalogue_mass_error_scale: Width multiplier ``k`` for "inflated".
         eddington_m: Instrument E ("on"/"off"); see
             results/prod2d_closure_20260818/PREREGISTRATION_TILT_BATTERY.md §1.
+        catalogue_numerator_survival: [P3-IMP] twin cell ("off"/"phi");
+            PREREGISTRATION_P3_TWIN_20260822.md §2.
+        catalogue_survival_table: The per-h ``(z_grid, s_phi_grid)`` slice of
+            the phi-marginal survival table; required when the twin cell is
+            "phi", ignored otherwise.
 
     Returns:
         Per-host result rows in input order.
@@ -6843,6 +6975,8 @@ def _starmap_host_batches(
             catalogue_mass_overlap,
             catalogue_mass_error_scale,
             eddington_m,
+            catalogue_numerator_survival,
+            catalogue_survival_table,
         )
         for idx in chunk_indices
     ]
