@@ -35,6 +35,9 @@ cycle end, the amendments that earned their keep are named there and credited he
 | A14 — attribution ships with its falsifier | falsifier registered before banking | 0 |
 | A15 — power-calibrated gates, can-fail controls | operating characteristics at actual N; no vacuous control | 2 |
 | A16 — retrospective ledger + impact tracker | this instrument | 0 |
+| A17 — gate/band portability + realized-scatter re-check | operating characteristics survive transport | 0 |
+| A18 — explicit bias reference | every scorer prints what each bias subtracts | 0 |
+| A19 — symmetric falsifiers | every fireable branch carries a registered falsifier | 0 |
 
 ## Evidence lines
 

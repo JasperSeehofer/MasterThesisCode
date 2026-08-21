@@ -544,3 +544,26 @@ under the binding default (CLAUDE.md, approval-scope rule), any amendment adopte
 standing is tagged `ADOPTED-UNDER-STANDING` and listed for author review at the next session — the
 author may revoke, at which point it reverts to PROPOSED. *Itemisation (a)/(b) and the standing
 reading are orchestrator-derived from the quoted words.*
+
+**A17 — ADOPTED, 2026-08-21 (author ruling: "The updated onces are approved", on row #152's
+restated card 5; ledger row #153).** Gate/band portability. No scored threshold may be moved to a
+new statistic, channel, or venue without re-deriving its operating characteristics against
+known-informative reference data **in the same commit**; and every gate/band re-states its
+operating characteristics on the **realized** scatter at readout, not only on pilot/launch
+estimates. *Evidence:* GATE V's v2 numbers ported to the matched channel false-failed 5/12
+reference seeds and STOPped 3/4 pilot seeds (retrospective entry 1); the C-SG N-adequacy gate
+passed at 7.76σ on pilot σ̂ but realizes 4.98σ (< its registered 5) on fleet scatter (review
+MAJOR-2). Extends A15 one level: A15 demands operating characteristics exist; A17 demands they
+survive transport and be re-checked against reality.
+
+**A18 — ADOPTED, 2026-08-21 (same ruling).** Explicit bias reference. Every readout scorer prints,
+per arm and per statistic, the reference value each "bias"/"error" subtracts, as a machine-readable
+field — a wrong implicit reference is a silent FATAL. *Evidence:* review FATAL-1 — the C-SG fleet
+scorer subtracted the global 0.73 for the δ arms; the corrupted numbers reached ledger row #151 and
+the readout report before an independent review caught them.
+
+**A19 — ADOPTED, 2026-08-21 (same ruling).** Symmetric falsifiers. A pre-registration arms a
+registered falsifier for **every** branch its bands can fire, not only the branch the designer
+expects; a branch without a falsifier may fire but its claim stays PROVISIONAL until one is
+registered and run. *Evidence:* review MAJOR-9 — C-SG's §8 falsifier covered only
+ESTIMATOR-SELF-CONSISTENT; INTERNAL-DEFECT fired with none, and pre-check O4 is its retrofit.

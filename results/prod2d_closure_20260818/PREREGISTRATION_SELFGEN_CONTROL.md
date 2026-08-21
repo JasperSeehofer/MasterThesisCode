@@ -513,3 +513,54 @@ unedited per append-only discipline; where they conflict, THIS addendum governs:
    f_k/f̄ pixel-marginal pairing (the reviewer's own initial suspicion, refuted by their check),
    physics-floor inertness (0 zero cells in 58 seeds), score-statistic grid-invariance, and zero
    analysis-stage attrition (the cross-covariance rescale worked).
+
+---
+
+## PRE-CHECK O4 — REGISTRATION (2026-08-21, author-authorized, ledger row #153 item 4; pre-data)
+
+**Question (the fired branch's falsifier, A19):** is the banked matched-channel score
+(−0.1173 ± 0.0194 realized) owned by the **domain-and-quadrature pairing** of the two
+implementations — `B_num` (per-event, 50-node Gauss–Legendre over the h-dependent window
+`[z(d̂−4σ;h), min(z(d̂+4σ;h),1.55)]`, `S̄_φ` via endpoint-clamped `np.interp`) vs `β_Ḡ_φ`
+(1500-node trapezoid over `[1e-6, min(z_max(h),1.55)]`) — or does it survive alignment (a deeper
+math defect in the estimator)?
+
+**Design (deterministic recomputation, local, 15 F seeds):** regenerate each F seed's event set
+via `draw_csg_realization` (deterministic given seed). Arms:
+
+| arm | B_num settings | β_Ḡ settings |
+|---|---|---|
+| **P (replica)** | production code path, unmodified | production values (column-derived) |
+| **A (aligned, primary)** | full common domain `[1e-6, min(z_max(h), 1.55)]`, 1500-node trapezoid on β_Ḡ's own z-grid, **no clamp** — outside `[1e-6, z_max(h)]` the selection factor is exactly 0 (registered choice, matching β_Ḡ's domain) | same rule, same grid, same domain |
+| A1–A3 (factorial, REPORTED-ONLY) | one alignment component at a time: window→full-domain; GL-50→trapezoid-1500; clamp→zero-extension | production |
+
+**Statistic:** `S̄₁₅(O4-A)` = fleet-mean per-event matched score at h_gen = 0.73 under arm A,
+central difference at 0.725/0.735, same combine conventions.
+
+**Validity gates (can-fail, scored before the statistic is read):**
+- **GATE R4 (replica bit-exactness):** arm P's per-event `B_num(h)` reproduces the banked
+  diagnostics column bit-exactly (calls the production functions; any mismatch ⇒ the regenerated
+  event set or the harness is wrong ⇒ STOP). This simultaneously proves regeneration determinism.
+- **GATE T4:** arm A's β_Ḡ at production settings reproduces the column-derived
+  `D̃_φ − α_G_φ` to the 7-sf storage precision (2e-6).
+
+**Bands (materiality; deterministic recomputation — A15 no-statistical-null statement as in O2/O3;
+thresholds referenced to the frozen SELF-CONSISTENT edge 0.0373 and the realized SEM 0.0194):**
+
+| band | condition | meaning |
+|---|---|---|
+| PAIRING-OWNS-IT | \|S̄(O4-A)\| ≤ 0.0373 | the violation is the production pairing's numerics — production still runs the mismatched pair, so the finding becomes an implementation-pairing defect (production-facing), not an estimator-math defect; the INTERNAL-DEFECT label is re-worded accordingly |
+| DEFECT-HARDENED | \|S̄(O4-A) − (−0.1173)\| ≤ 3·0.0194 | alignment changes nothing within realized resolution ⇒ the mismatch is upstream of quadrature/domain choices; the label hardens |
+| PAIRING-PARTIAL | else | report the owned fraction `1 − S̄(O4-A)/(−0.1173)`; both readings carry |
+
+**A19 falsifiers for O4's own branches:** PAIRING-OWNS-IT is falsified if a further-refined
+production replica (higher-order production-side quadrature at unchanged domain) moves the banked
+score by an amount comparable to the alignment effect (would show the "alignment" gain is generic
+refinement, not pairing); DEFECT-HARDENED is falsified by exhibiting any residual
+convention difference between the two legs after arm A (checklist audit, zero compute);
+PAIRING-PARTIAL carries both.
+
+**A10 note:** O4 deliberately VARIES the seventh invariant (domain/quadrature pairing) that
+rows #149–#151 held fixed; the six shared physics invariants remain fixed and named.
+
+*(O4 scorer committed before it runs; VERDICT appended below when it reports.)*

@@ -2048,3 +2048,43 @@ exactly. Corrections govern via the prereg's CORRECTION & REVIEW ADDENDUM.
    only because the author requested an independent review. Amendment candidates updated
    accordingly (A17 extension: realized-scatter re-check at readout; new: per-arm bias-reference
    declaration in every scorer).
+
+## Row #153 — 2026-08-21 — Author rulings on the post-review queue: score finding BANKED, defect label held PROVISIONAL behind O4 (authorized), GATE S VOID, rows #137/#140/#144 re-graded, A17/A18/A19 ADOPTED; model-tendency concern raised and logged
+
+Author, verbatim: **"on the decisions: The updated onces are approved and please continue"** — given
+against the six restated decision cards of the post-review overview artifact / row #152. The
+itemisation below is orchestrator-derived. In the same message the author raised a **model-tendency
+concern** (Fable-orchestrated phases producing "clearly identified" narratives; Opus passes
+overturning them twice) — logged here for the process record, addressed in
+`docs/proposals/MODEL_TENDENCY_PROTOCOL_20260821.md` (PROPOSED, not adopted), and probed by a
+same-brief cross-model symmetric test (running; results to the proposal doc).
+
+1. **[RULE, ratified] Card 1:** BANKED — *the implemented `B_num` and `β_Ḡ_φ` are not a matched
+   numerator/normalizer pair: their h-derivatives differ by ~10% (−1.222 vs −1.105), measured as a
+   matched-channel per-event score of −0.1173 ± 0.0194 (6.05σ from zero) at h_gen, h_gen- and
+   σ-mode-independent.* The INTERNAL-DEFECT **label** stays PROVISIONAL pending O4.
+2. **[RULE, ratified] Card 2:** GATE S is **VOID** (truncation-reproducible slope; overlapping
+   branches; heteroscedasticity-blind SE). No slope follow-up thread is opened.
+3. **[RULE, ratified] Card 3 — re-grades executed:**
+   - **Row #137/#140:** the "completion class carries it / pure completion carries it" attribution
+     language is **SUPERSEDED** by the three-channel decomposition (rows #149–#151): the completion
+     *class* carried the rail, but the arm-level −0.1083 decomposes as impostor −0.079 ⊕ tilt
+     +0.055 ⊕ matched −0.085; B-SEL's measured bias is **not** owned by the completion numerator
+     alone. The −0.112→−0.1083 measurement itself stands.
+   - **Row #144:** the "residual internal component ≥ 0.073" bound is **RETIRED** — its premise
+     (survival mismatch as the only non-internal channel) is refuted by O2's measured impostor
+     channel, and the non-impostor channel (−0.029 on the pure read) sits below the claimed floor.
+     The headline-swap recompute (≈0.069–0.071) is moot with it.
+4. **[DO, executed] Card 4:** **pre-check O4 REGISTERED** (appended below the prereg freeze line):
+   common-domain/common-quadrature re-evaluation of `B_num` vs `β_Ḡ_φ` on the 15 F seeds, with a
+   production-replica bit-exactness gate, factorial alignment sub-reads, and materiality bands on
+   the realized SEM. Supersedes the `S̄_φ` audit designation.
+5. **[RULE, ratified] Card 5 — amendments ADOPTED** (rows appended to `docs/RESEARCH_CYCLE.md`):
+   **A17** — gates/bands moved to a new statistic, channel, or venue re-derive operating
+   characteristics on reference data in the same commit, **and** re-state them on REALIZED scatter
+   at readout (evidence: GATE V porting; N-adequacy 7.76σ at launch vs 4.98σ realized).
+   **A18** — every readout scorer prints, per arm, the reference value each bias/error statistic
+   subtracts (evidence: FATAL-1, a silent wrong reference reaching two record artifacts).
+   **A19** — a pre-registration arms a falsifier for EVERY branch, not only the expected one
+   (evidence: MAJOR-9 — the fired branch had none; O4 is its retrofit).
+6. **[RULE, ratified] Card 6:** landscape/T1 stays gated pending O4 (card 1's resolution).
