@@ -3427,12 +3427,12 @@ class BayesianStatistics:
                 "factor in either completion leg). Not a production posterior."
             )
         # [P3-IMP] catalogue-leg twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2).
-        if catalogue_numerator_survival not in ("off", "phi"):
+        if catalogue_numerator_survival not in ("off", "phi", "phi_flat"):
             raise ValueError(
-                "catalogue_numerator_survival must be 'off' or 'phi', got "
-                f"{catalogue_numerator_survival!r}"
+                "catalogue_numerator_survival must be 'off', 'phi' or 'phi_flat', "
+                f"got {catalogue_numerator_survival!r}"
             )
-        if catalogue_numerator_survival == "phi":
+        if catalogue_numerator_survival in ("phi", "phi_flat"):
             if normalization_mode != "absolute_marginal":
                 raise ValueError(
                     "catalogue_numerator_survival='phi' requires "
@@ -3440,9 +3440,11 @@ class BayesianStatistics:
                     f"reads is only built there); got {normalization_mode!r}"
                 )
             _LOGGER.warning(
-                "COUNTERFACTUAL: catalogue_numerator_survival='phi' — per-host "
-                "S_bar_phi in the catalogue numerator ([P3-IMP] twin cell). "
-                "Not a production posterior."
+                "COUNTERFACTUAL: catalogue_numerator_survival=%r — per-host "
+                "S_bar_phi in the catalogue numerator ([P3-IMP] twin cell%s). "
+                "Not a production posterior.",
+                catalogue_numerator_survival,
+                "; K-flat CONSTANT table" if catalogue_numerator_survival == "phi_flat" else "",
             )
         self._catalogue_numerator_survival = catalogue_numerator_survival
         # Prod2d closure counterfactual instrument (results/
@@ -4688,7 +4690,18 @@ class BayesianStatistics:
         # [P3-IMP] twin cell: the flag+table go to BOTH host batches — the
         # with-BH batch's r[0] no-BH numerator also feeds L_cat_no_bh (A13).
         _cat_surv = self._catalogue_numerator_survival
-        _cat_surv_table = self._phi_survival_table[float(self.h)] if _cat_surv == "phi" else None
+        if _cat_surv == "phi":
+            _cat_surv_table = self._phi_survival_table[float(self.h)]
+        elif _cat_surv == "phi_flat":
+            # [P3-IMP] K-flat kill arm (PREREGISTRATION_P3_TWIN_20260822.md §3):
+            # the catalogue consumer receives a CONSTANT table (the real table's
+            # grid-mean) while the normalizer legs keep the real table object —
+            # only this per-call slice is flattened, so the §6 invariants hold.
+            _z_kf, _s_kf = self._phi_survival_table[float(self.h)]
+            _cat_surv_table = (_z_kf, np.full_like(_s_kf, float(np.mean(_s_kf))))
+            _cat_surv = "phi"  # workers see the same engaged cell semantics
+        else:
+            _cat_surv_table = None
         results_with_bh_mass = _starmap_host_batches(
             pool,
             possible_host_galaxies_with_bh_mass,
