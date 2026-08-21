@@ -61,6 +61,25 @@ bootstrap note (the worktree has no `.venv`). Readout:
 *Caveat registered up front: n = 1, single direction (Fable-as-verifier); the complementary probe
 (Opus-as-builder) is a future instance under P5.*
 
+## 2b. Author direction (2026-08-21, pre-probe; verbatim)
+
+> "lets wait for the fable verifier experiment and if it shows that it is only about critically
+> verifying rather then the model this should be the rule instead of complicating about model
+> choices. The hirarchy should be clear anyway Fable orchestration and Opus could be the critical
+> thinker if it turns out to be good at this. this naturally pairs Fable with Opus also. And if
+> Fable rate limit is exceeded we can switch to Opus and have to revisit the journey with fable
+> once it is available again"
+
+Orchestrator reading (flagged as derived): the probe adjudicates between two rule shapes —
+**(i)** if fresh-context same-model verification reproduces the decisive findings ⇒ adopt the
+*simple* rule: **mandatory clean-context adversarial verification at every BANK/PROMOTE/WITHDRAW**
+(P1 without the cross-model clause; P2/P3 unchanged), with the standing pairing Fable-orchestrates /
+Opus-as-critical-thinker kept as the natural default rather than a requirement; **(ii)** if the
+same-model probe misses them or reads confirmatorily ⇒ the cross-model clause is load-bearing and
+P1 stays strict. Standing operational rule either way: Fable orchestrates; on Fable rate-limit,
+Opus may orchestrate, and the Fable-orchestrated review of that stretch is REQUIRED once Fable is
+available again ("revisit the journey").
+
 ## 3b. Probe result (appended 2026-08-21, same day)
 
 **PENDING — will be appended when the probe reports.**
