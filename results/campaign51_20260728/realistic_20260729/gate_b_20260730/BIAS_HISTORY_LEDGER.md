@@ -2227,3 +2227,27 @@ committed pre-data at `50476453` and verified against artifact mtimes):
    link (mechanism → fused confirmation ✓ → fix fork → landscape).
 5. **Amendment credits:** A20 +1, A21 +1 (first clean run under its own rule), A17 +1 evidence,
    A18 exercised throughout.
+
+## Row #159 — 2026-08-21 — Author rulings on the joint decision proposal: D1 transfer-close APPROVED, D2 off→fused basis ADOPTED for future runs, D3 = PULL [P3] FORWARD (keep digging), D4 re-grade GRANTED, D5 landscape WITHHELD pending the bias work
+
+Ruled against `docs/derivations/PROPOSAL_FUSED_BASIS_AND_IMPOSTOR_DIRECTION_20260821.md`
+(committed pre-ask; structured question cards, option text orchestrator-derived; the author's
+selections and free text verbatim in quotes):
+
+1. **[D1, DO+RULE] "A: Transfer + spot-check":** close the fleet-level fused null by measured
+   transfer — bank the 15-seed r_prod reference vector from committed code (zero-evaluate) +
+   a 2-seed end-to-end fused spot-check; A21 registration precedes execution.
+2. **[D2, RULE] "A: Fused for future runs":** future runs-of-record (and any resubmitted
+   landscape) run the `fused` cell; the `PRODUCTION_FLAGS` pin updates via the physics-change
+   gate ([PHYSICS] commit + gate-ledger row); past runs STAND on `off` with the ratified defect
+   label and the row #119 bridge — no re-runs.
+3. **[D3, RULE] "B: Pull [P3] forward now":** the Gray-convention catalogue-leg fork (per-host
+   selection weighting) comes OUT of the row #110 paper-task deferral and becomes the next
+   measurement front — does the convention choice move the impostor drag (−0.079, 73% of the
+   headline)? A research cycle opens per `/research-cycle` (claim intake → prereg → measure).
+4. **[D4, RULE] granted:** G7 systematics row 16 re-grades to a measured, calibration-affecting
+   systematic (evidence row #138).
+5. **[D5] WITHHELD.** Author, verbatim: **"we first keep digging for the bias and please give me
+   a visualization of where we are with the bias at the moment."** Landscape/T1 stays gated at
+   link 4; the digging is item 3's [P3] cycle; a current-state bias visualization is owed as an
+   immediate deliverable.
