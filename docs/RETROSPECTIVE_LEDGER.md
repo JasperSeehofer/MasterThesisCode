@@ -122,3 +122,58 @@ existed) is the form this ledger generalises; it is referenced, not rewritten.
    INTERNAL-DEFECT label downgraded to PROVISIONAL (non-zero score at 6σ stands); pre-check O4
    (common-domain/quadrature pairing test) proposed as the discriminating next step, superseding
    the S̄_φ designation; review banked verbatim.
+
+## Entry 4 — 2026-08-21 — O4 cycle: an unearned verdict caught by its own falsifier and the first A20 review; mechanism identified; three registration/execution failures and one ops failure logged
+
+1. **What ran / what failed.** Pre-check O4 (domain/quadrature pairing test, 15 F seeds) fired
+   DEFECT-HARDENED as-run — and was overturned the same evening: the first A20 clean-context
+   review found the executed arm A had dropped the REGISTERED S̄_φ zero-extension on a
+   post-registration "corrected premise" (bands never re-derived ⇒ VOID-BY-DEVIATION), and the
+   registered A19 falsifier fired — the S̄_φ leg difference owns 106.5% of the score; the restored
+   registered arm nulls it (+0.0076 ± 0.0184). Mechanism identified: the off-cell completion
+   numerator omits the survival factor its normalizer carries (legacy pre-#118 cell; `fused` is
+   the in-tree fix). O5 (free B-SELF read) corroborated. Execution itself also failed twice
+   before succeeding: a serial run at ~13 min/seed was killed for pace, then a 12-wide local
+   parallel run was OOM-slaughtered (evaluate ≈ 9 GB/seed vs a 30 GB box) and recovered via a
+   cluster array + 2-wide local hedge. Ledger row #155.
+2. **What worked.** A19 (the falsifier the author mandated for EVERY branch fired on its first
+   outing and overturned an unearned band — +1 credited); A20 (first application: the
+   artifacts-only clean-context review caught the void verdict BEFORE banking and did the
+   mechanism identification — +1 credited); the free-read reflex (O5 on banked B-SELF confirmed
+   the mechanism at zero compute); GATE R4's bit-exactness held across two venues; the two-track
+   recovery (cluster + hedged local) converged without losing a seed; the orchestrator re-derived
+   every decisive review number before the record was written (3-seed locus reproduction).
+3. **What failed or dragged.**
+   (a) **Post-registration arm deviation without band re-derivation** — the implementer's
+   "corrected premise" was technically right about production's code path and still invalidated
+   the band table; it was disclosed in a docstring, which is not a registration amendment.
+   (b) **The verify-phase agent accepted the deviation** — it checked "alignment spec implemented"
+   against the docstring's own framing rather than the registration text; spec-compliance
+   verification anchored on the implementer's narrative is exactly the P2 failure mode, one level
+   down.
+   (c) **The registration lacked an axis-leverage calculation** (orchestrator, A15-class): the
+   domain/quadrature axis could move the statistic ~1e-5 against a 0.0582 band half-width —
+   DEFECT-HARDENED was the only reachable outcome before any seed ran, computable in one line at
+   registration time.
+   (d) **Instrument costing missed per-seed wall time AND peak RSS** — the serial grind, the OOM,
+   and the cluster recovery each cost ~1–2 h of wall clock that a two-line costing table at
+   registration (time/seed, RSS/seed, venue decision) would have avoided.
+   (e) Minor: factorial arm A1 numerically invalid (<1 GL node/σ); 3/15 replica-gate rows
+   compared cached artifacts while claiming regeneration; harness background watchers were killed
+   repeatedly until the compute was detached via setsid (keepalive pattern).
+4. **Suggested amendments.**
+   PROPOSED (**A21 candidate — the load-bearing one**): *no executed arm may deviate from its
+   registration text — any "corrected premise" discovered during implementation STOPS the run and
+   returns to the registration for an amendment with re-derived bands BEFORE execution; a
+   docstring disclosure is not an amendment.* Evidence: this cycle, where the deviation selected
+   the band.
+   PROPOSED (fold into A17): every registration states each varied axis's maximum leverage on the
+   decision statistic; a band unreachable by the registered axis is void on its face (the
+   symmetric counterpart of A15's "a band inside the null is void").
+   PROPOSED (fold into A6/A17): instrument registrations carry a costing line — wall time/seed,
+   peak RSS/seed, and the venue decision (local vs cluster) — before launch.
+   PROPOSED (verification practice, P2 extension): spec-compliance verifiers receive the
+   REGISTRATION text as their reference, never the implementer's summary/docstrings as framing.
+5. **Disposition.** Mechanism banked as MEASURED (row #155); author queue: label ratification,
+   the one fused end-to-end confirmation seed, the production-basis fork. The campaign's central
+   question — what the 6σ score violation IS — is answered pending those rulings.
