@@ -358,3 +358,25 @@ EXPLORATORY, convention not independently verified, carries no verdict.
 5. Pilot mandate, GATE V/H/Q/D, GATE S regression, and the post-pilot band-setting discipline are
    unchanged — with GATE S and BAND C evaluated on the matched channel. GATE V's vacuity targets
    apply to the matched-channel posterior.
+
+## PILOT BAND-FORMULA REGISTRATION (2026-08-21, appended pre-pilot-data)
+
+Implementation landed (commit `7ab5f001`; GO from both adversarial lenses; gates H/Q/D pass all
+arms/h_gen; GATE Q measured the unrescaled draw at 43% non-PD — the cross-covariance rescale is
+active and takes it to 0.0%). Pilot = 4 C-SG-F seeds 910101–910104, job **6415588**.
+
+Registered BEFORE any pilot JSON is read (`csg_pilot_bands.py`, committed with this block):
+the band **formulas** are fixed now; the pilot's σ̂ fills in the numbers, which then freeze.
+
+- References (computed pre-pilot from banked B-SEL, zero compute): **S_REF = −0.1932 ± 0.0264**
+  (matched-channel per-event score at truth, 12 seeds, per-seed sd 0.0914) and **B_REF = −0.0846**.
+- Primary (score, matched channel): SELF-CONSISTENT `|S̄₁₅| ≤ 3·σ̂_score/√15`;
+  INTERNAL-DEFECT `S̄₁₅ ≤ S_REF/2 = −0.0966` and outside the self-consistent band; else MIXED.
+  Confirmatory tri-band on `bias` with B_REF/2 = −0.0423. Disagreement ⇒ MIXED.
+- False-fail table published with the 3-dof sd caveat (95% CI multipliers 0.57×/3.73×).
+- GATE S: CONTROL-VALID `|ŝ−1| ≤ 3·SE(ŝ)`; CONTROL-INERT if CI(ŝ) ∋ 0 ⇒ STOP.
+- BAND R: F vs E **declared independent** (v2: σ-draw desynchronizes the shared RNG stream;
+  pairing would need stream surgery); threshold `3·√2·σ̂_seed/√15`.
+- N-adequacy (A15): fleet launches only if the half-reference effect is ≥5σ detectable at N=15;
+  otherwise STOP and return to the author (N is not silently changed).
+- GATE V roll-up: ≥2 of 4 pilot seeds failing ⇒ STOP.
