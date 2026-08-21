@@ -151,3 +151,46 @@ Commits this campaign (all pushed): 2b9cf0c6 (A16 instruments) · 9d91ecf8 (O2 s
 sbatch) · 3b43732a (GATE V amendment + frozen bands) · 3d385152 (fleet readout scorer) · this
 commit (fleet verdict). Cluster: bwUniCluster jobs 6415588, 6420343; workspace `emri` (expires
 2026-09-23). Data: `csg_pilot_20260821/` with `MANIFEST.sha256` (92 files).
+
+---
+
+## 12. POSTSCRIPT (2026-08-21 late evening) — how the campaign actually ended: rows #152–#158
+
+Sections 1–11 froze at row #151. Everything below happened the same day and supersedes §10's
+decision list.
+
+**The adversarial turn (rows #152–#154).** An author-requested review confirmed two FATAL
+findings against §4–§6's own presentation; the INTERNAL-DEFECT label was downgraded to
+PROVISIONAL and its discriminating test re-registered as pre-check O4. A symmetric probe showed
+the review outcome is role+context-driven, not model-driven → A20 (clean-context adversarial
+verification before any BANK/PROMOTE/WITHDRAW) adopted.
+
+**O4 — overturned by its own falsifier (row #155).** O4's as-run arm fired DEFECT-HARDENED, but
+its first A20 review found the executed arm had dropped the registered S̄_φ zero-extension on a
+mid-run "corrected premise" (bands never re-derived) ⇒ VOID-BY-DEVIATION → A21 adopted
+(registration–execution identity). The registered arm, restored, **nulls the score**
+(+0.0076 ± 0.0184), and the mechanism was named: **the off-cell completion numerator omits the
+S̄_φ survival factor its own normalizer carries** — the legacy pre-#118 cell the estimator's own
+log labels "not a production posterior"; `fused` (rows #117–#118) is the in-tree fix.
+
+**The rulings (row #157).** Label RATIFIED: **IMPLEMENTATION-CONVENTION DEFECT (off-cell S̄_φ
+omission), mechanism identified and quantified** — §6's INTERNAL-DEFECT language is finally
+resolved; "deeper estimator math" withdrawn. Fused confirmation seed APPROVED; production-basis
+fork DEFERRED (joint with the impostor-leg question). §10 items 1–4 are thereby closed or
+superseded; item 5 became A17 (adopted, twice extended); item 6's chain advanced.
+
+**O6 — the confirmation (row #158).** One C-SG-F seed (910101) run end-to-end under the real
+`fused` cell, A21-clean (bands + reference committed pre-data, commit 50476453):
+**MECHANISM-CONFIRMED** — S(F6) = −0.026692 vs the pre-data harness prediction −0.026694,
+delta +1.94e-6 against a ±1e-4 band; all four fail-able gates green; the off→fused switch moved
+the seed +0.127368, exactly as the mechanism predicts. The A20 review (second application, zero
+FATAL) banked it with a narrowed reading: O6 proves the **harness→production transfer** of the
+mechanism, NOT the fleet-level fused null (one seed has no power there — and the fused cell's
+per-seed information collapses, span 7.59 → 1.53 nats). The residual +1.94e-6 is entirely the
+7-sf CSV storage of the normalizer columns (a new A17 noise-floor rule).
+
+**What remains open (runbook 28):** [DO] a multi-seed fused arm to close the fleet-level
+"fused nulls the matched channel" claim; [RULE] the off→fused production fork
+(physics-change-gated, joint with the impostor leg). Carried throughout: **fixing the off cell
+does not cure the H₀ rail** (F6 full channel mean_h = 0.618, r_low) — the full posterior remains
+impostor-leg and rail dominated.
