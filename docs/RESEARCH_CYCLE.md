@@ -581,3 +581,17 @@ pre-committed scorer's output. *Evidence:* the 2026-08-21 symmetric probe — fr
 blind, on the pinned pre-correction snapshot, reproduced every decisive Opus finding (10/10 exact,
 including both FATALs to the same corrected numbers); full diff table in
 `docs/proposals/MODEL_TENDENCY_PROTOCOL_20260821.md` §3b.
+
+**A21 — ADOPTED, 2026-08-21 (author ruling: "all ratified", on retrospective ledger entry 4's
+proposals; ledger row #156).** Registration–execution identity. No executed arm may deviate from
+its registration text: any "corrected premise" discovered during implementation STOPS the run and
+returns to the registration for an append-only amendment with re-derived bands BEFORE execution.
+A docstring disclosure is not an amendment. *Evidence:* O4 — the implementer's technically-correct
+premise correction removed the one arm component with leverage, selected the fired band, and was
+caught only by the A20 review (row #155). *Ratified with it, folded into existing amendments:*
+(a) **A17 extension** — every registration states each varied axis's maximum leverage on the
+decision statistic; a band unreachable by the registered axis is void on its face; (b) **A6/A17
+costing line** — instrument registrations carry wall-time/seed, peak-RSS/seed, and the venue
+decision before launch (O4's serial grind and OOM were both pre-computable); (c) **A20/P2
+extension** — spec-compliance verifiers receive the REGISTRATION text as their reference, never
+the implementer's summary or docstrings as framing.

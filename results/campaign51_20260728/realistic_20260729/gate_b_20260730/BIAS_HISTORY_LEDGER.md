@@ -2158,3 +2158,14 @@ As-run bands fired DEFECT-HARDENED (S̄(A) = −0.117321 ≈ production, alignme
    physics-change-gated [RULE]).
 7. **Amendment credits:** A19 +1 (its falsifier fired and overturned an unearned band), A20 +1
    (first application caught a void verdict BEFORE banking), A15 evidence extended (axis-leverage).
+
+## Row #156 — 2026-08-21 — Author ruling on retrospective entry 4: "all ratified" — A21 ADOPTED + three fold-in extensions (A17 axis-leverage, A6/A17 costing line, A20/P2 registration-text reference)
+
+Author, verbatim: **"all ratified, should we refresh context here?"** — given on retrospective
+ledger entry 4's suggested-amendments list (itemisation orchestrator-derived; written to
+`docs/RESEARCH_CYCLE.md`). **Scope note per the binding default:** the ratification is read as
+covering entry 4's amendment proposals, which were the pending ask; row #155's three campaign
+decisions (label disposition, the fused end-to-end confirmation seed, the production-basis fork)
+were NOT in that list and remain **OPEN** — to be confirmed or ruled at the next session start
+(runbook 27 §1). Session context refreshed at the author's prompt immediately after this row —
+consistent with A20's own role/context finding.
