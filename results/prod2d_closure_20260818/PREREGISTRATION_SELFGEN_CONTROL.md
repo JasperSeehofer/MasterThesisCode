@@ -848,3 +848,20 @@ TRANSFER-BROKEN is falsified by a single-process re-run restoring the identity t
 
 *(R7 + S7 committed before execution; R7 values appended pre-S7-data; VERDICT appended when the
 scorer reports.)*
+
+## O7 — R7 REFERENCE VALUES (2026-08-22, appended pre-S7-data; no `evaluate()` has run for O7)
+
+`o7_reference_fleet_output.json` (committed instrument, ~25 min local, zero-`evaluate()`):
+
+- **Fleet: r̄_prod(15) = +0.007602 ± 0.018362 (SEM), sd 0.071113** — reproduces the A20 review's
+  scratchpad-derived prose values (+0.007604 ± 0.018361) to 2e-6 from committed code; the
+  provenance gap is closed and the realized SEM is recomputed from the banked vector (A17).
+- **Spot-check references (registered):** r_prod(910105) = **−0.134338**;
+  r_prod(910113) = **+0.194954**. Bands per registration: TRANSFER-HOLDS iff
+  |S_fused − r_prod| ≤ 1e-4 ⇒ 910105 ∈ [−0.134438, −0.134238], 910113 ∈ [+0.194854, +0.195054].
+- Observed per-seed off→fused shifts at the extremes: 910105 +0.1304, 910113 +0.1122 — the
+  transfer-stress rationale realized (the shift itself varies by seed; the identity band does
+  not depend on it).
+
+*(S7 executes next: seeds 910105, 910113 end-to-end under `fused`, gates L7/V7, committed
+driver `o7_spot_check.py`.)*

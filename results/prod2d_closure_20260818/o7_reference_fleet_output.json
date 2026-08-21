@@ -1,0 +1,308 @@
+{
+  "registered_in": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, O7 -- FLEET TRANSFER CLOSE: REGISTRATION (2026-08-22, row #159 item 1), arm R7",
+  "instrument": "o7_reference_fleet.py (loops o6_reference_derivation.compute_reference, unmodified)",
+  "arm": "csgf",
+  "h_gen": 0.73,
+  "h_lo": 0.725,
+  "h_hi": 0.735,
+  "n_events": 200,
+  "redshift_upper_limit_used": 1.5,
+  "production_quad_n": 50,
+  "zero_evaluate_note": "No BayesianStatistics.evaluate() call; tables from the pinned production leaf functions, event sets from the deterministic draw_csg_realization redraw (O4 GATE R4 bit-exactness).",
+  "per_seed": [
+    {
+      "seed": 910101,
+      "r_prod": {
+        "mean_score": -0.02669443370359812,
+        "sem_score": 0.06138092471578188,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": -0.026676909990144694,
+        "sem_score": 0.06138059469063433,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910102,
+      "r_prod": {
+        "mean_score": 0.037622274894865096,
+        "sem_score": 0.06043048250256462,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": 0.03761778702694048,
+        "sem_score": 0.060430199949478666,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910103,
+      "r_prod": {
+        "mean_score": 0.08324317412309629,
+        "sem_score": 0.06360957484598023,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": 0.0832375392187274,
+        "sem_score": 0.0636098649398627,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910104,
+      "r_prod": {
+        "mean_score": 0.020871617139896353,
+        "sem_score": 0.05801519518291983,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": 0.02086686729833473,
+        "sem_score": 0.05801441989206318,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910105,
+      "r_prod": {
+        "mean_score": -0.13433839945089965,
+        "sem_score": 0.051218164273084184,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": -0.1343369480140378,
+        "sem_score": 0.05121723459964963,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910106,
+      "r_prod": {
+        "mean_score": -0.06088029195644456,
+        "sem_score": 0.05805897595943707,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": -0.06088014986138461,
+        "sem_score": 0.05805955463680797,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910107,
+      "r_prod": {
+        "mean_score": -0.03213645789769611,
+        "sem_score": 0.05734728624904543,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": -0.03212940821255202,
+        "sem_score": 0.05734732975472278,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910108,
+      "r_prod": {
+        "mean_score": 0.005731490556334587,
+        "sem_score": 0.06369371338189939,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": 0.005735601406473103,
+        "sem_score": 0.06369349586200167,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910109,
+      "r_prod": {
+        "mean_score": -0.0013805590070943329,
+        "sem_score": 0.05739380077651341,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": -0.001390328200673756,
+        "sem_score": 0.05739437350092588,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910110,
+      "r_prod": {
+        "mean_score": 0.013463086357665688,
+        "sem_score": 0.059442142464607946,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": 0.013467417950726129,
+        "sem_score": 0.05944150572937873,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910111,
+      "r_prod": {
+        "mean_score": -0.015860982635390132,
+        "sem_score": 0.05948312703519912,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": -0.015844006441090498,
+        "sem_score": 0.05948270004399588,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910112,
+      "r_prod": {
+        "mean_score": 0.017253503196015683,
+        "sem_score": 0.06200268917698739,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": 0.017245028007581962,
+        "sem_score": 0.06200188218560379,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910113,
+      "r_prod": {
+        "mean_score": 0.19495380334253626,
+        "sem_score": 0.06484061304493707,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": 0.1949480961507895,
+        "sem_score": 0.06484077657324067,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910114,
+      "r_prod": {
+        "mean_score": -0.010390414965769415,
+        "sem_score": 0.058970786401928835,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": -0.010378595966379791,
+        "sem_score": 0.05896979528456145,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    },
+    {
+      "seed": 910115,
+      "r_prod": {
+        "mean_score": 0.02257070222597378,
+        "sem_score": 0.06447832993055586,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      },
+      "r_A_REPORTED_ONLY": {
+        "mean_score": 0.022573090407515636,
+        "sem_score": 0.064476649740789,
+        "n_used": 200,
+        "n_skipped": 0,
+        "h_lo": 0.725,
+        "h_hi": 0.735
+      }
+    }
+  ],
+  "fleet": {
+    "n_seeds": 15,
+    "r_prod_fleet_mean": 0.007601874147966094,
+    "r_prod_fleet_sd": 0.07111452855713774,
+    "r_prod_fleet_sem": 0.018361692318345748,
+    "r_A_fleet_mean_REPORTED_ONLY": 0.007603672052055051,
+    "r_A_fleet_sem_REPORTED_ONLY": 0.018360825802991424,
+    "reference": "A18: these fleet statistics subtract nothing -- they ARE the banked reference the O7 fleet claim names; realized SEM recomputed from this vector per the O7 registration's A17 line (not carried from A20_REVIEW_O4_20260821.md prose)."
+  }
+}
