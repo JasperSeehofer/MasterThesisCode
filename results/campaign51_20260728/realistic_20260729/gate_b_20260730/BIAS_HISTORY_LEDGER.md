@@ -2194,3 +2194,36 @@ verbatim in quotes):
 Carried unchanged from runbook 27 §1 item 4: landscape/T1 un-gate chain (mechanism → fused
 confirmation → fix fork → landscape), systematics row 16 re-grade, workspace `emri` expiry
 2026-09-23.
+
+## Row #158 — 2026-08-21 — O6 executed clean under A21: MECHANISM-CONFIRMED (delta = +1.94e-6, 50× inside band) with the A20 review's scope amendments adopted; the fleet-level fused-null question returns to the author OPEN
+
+The row #157 item 2 [DO] executed end-to-end the same evening, A21-clean (the A20 reviewer:
+"the O4 failure did not recur" — registration–execution identity PASS, bands + reference
+committed pre-data at `50476453` and verified against artifact mtimes):
+
+1. **[MEASURED] Primary:** the real `fused` cell run end-to-end on seed 910101 (both legs,
+   through `BayesianStatistics.evaluate()`) gives S(F6) = −0.026692; the pre-data harness
+   reference r_prod = −0.026694; **delta +1.94e-6** vs a ±1e-4 band ⇒ **MECHANISM-CONFIRMED**.
+   All four gates fail-able and PASS (D6 bit-exact 9200/9200 with genuine 1852 s regeneration;
+   L6 log-content both directions; T6 normalizer identical; V6 numerator changed 100% of rows).
+   Axis leverage realized: off→fused moved the seed +0.127368 (1274 half-widths).
+2. **[BANKED] A20 second application (`A20_REVIEW_O6_20260821.md`, verbatim):**
+   BANK-WITH-AMENDMENTS, zero FATAL; reviewer re-derived every decisive number from scratch
+   (exact) and diagnosed the whole residual as 7-sf CSV storage of the normalizer columns
+   (orchestrator verified the arithmetic independently). Adopted scope amendment: O6 proves the
+   **harness→production transfer** — the in-tree fused dispatch IS the O4 restored-arm harness at
+   machine precision — i.e. the off-cell S̄_φ omission account is complete *as an implementation
+   account of the off→fused difference, for this seed, at production numerics*. Disclosed blind
+   spot: `precompute_phi_marginal_survival` is common-mode to replica and cell. A17 fold-in:
+   identity-band noise floors must be derived from the diagnostics CSV's 7-sf storage (measured
+   1.94e-6), not internal precision.
+3. **[OPEN, author] The approved "expected matched score ≈ 0" is a fleet-level claim one seed
+   cannot adjudicate** (registered pre-data; |S(F6)| = 0.0267 is consistent with, not evidence
+   for, the null; the fused cell's per-seed power is collapsed — span 1.53 vs 7.59 nats).
+   A multi-seed fused arm would close it; its [DO] returns to the author fresh, naturally decided
+   JOINTLY with the deferred production-basis fork + impostor-leg question (row #157 item 3).
+4. **Carried:** fused does not cure the H₀ rail (F6 full channel mean_h = 0.618, r_low);
+   runs-of-record remain on the `off` cell. Landscape/T1 un-gate chain advances to its third
+   link (mechanism → fused confirmation ✓ → fix fork → landscape).
+5. **Amendment credits:** A20 +1, A21 +1 (first clean run under its own rule), A17 +1 evidence,
+   A18 exercised throughout.

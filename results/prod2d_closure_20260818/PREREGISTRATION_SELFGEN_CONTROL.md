@@ -751,3 +751,50 @@ against the banked off-cell column (diagnostic-only; feeds no band). `run_csg_ar
 passthrough parameter landed in-tree before the scripts (same session, registered scope).
 
 *(D6/F6 execute next; VERDICT appended when the committed scorer reports.)*
+
+## CONFIRMATION RUN O6 — VERDICT (2026-08-21; MECHANISM-CONFIRMED, banked WITH the A20 amendments)
+
+**Execution (registered venue, local sequential 1-wide):** arm D6 wall 1852 s, arm F6 wall 1811 s,
+peak within the ~9 GB/seed anchor; no `MTC_*` overrides; HEAD = `50476453` = the `git_commit` in
+both arm records. **All four gates PASS and each was fail-able:** D6 bit-exact 9200/9200 rows
+(genuine regeneration, wall-time floor honored — the O4 cached-artifact hole stayed closed);
+L6 both directions (off line present in d6.log, fused line present / off line absent in f6.log);
+T6 normalizer identical; V6 numerator changed on 100% of rows.
+
+**Primary [MEASURED]:** S(F6) = −0.02669249255841575; registered reference
+r_prod(910101) = −0.02669443370359812; **delta = +1.9411e-6, 50× inside the ±1e-4 band ⇒
+MECHANISM-CONFIRMED** (registered leverage check realized: off→fused moved this seed +0.127368 =
+1274 band half-widths). REPORTED-ONLY: r_A = −0.0266769; |S(F6)| = 0.0267 vs frozen edge 0.0373.
+
+**A20 review (second application; `A20_REVIEW_O6_20260821.md`, banked verbatim):**
+**BANK-WITH-AMENDMENTS, zero FATAL.** The reviewer re-derived S(F6), r_prod, r_A and the delta
+from scratch (exact agreement), diagnosed the entire +1.94e-6 residual as the 7-sf CSV storage of
+the normalizer columns (per-event B_num agreement 3.5e-15; orchestrator verified the storage
+arithmetic independently), and confirmed falsifier (iii) with its own chain. The four amendments
+below are ADOPTED into this verdict as its binding reading:
+
+1. **Scope:** MECHANISM-CONFIRMED = the in-tree fused numerator IS the pre-registered harness
+   replica of its own convention (machine precision) — the **harness→production transfer** of the
+   O4/A20 restored-arm result. "The off-cell S̄_φ omission account is complete" is withdrawn and
+   replaced by "…complete **as an implementation account of the off→fused difference, for this
+   seed, at production numerics**".
+2. **The approved "matched score ≈ 0" question is NOT yet answered** — the single-seed null was
+   demoted REPORTED-ONLY pre-data for lack of power (σ̂_seed ≈ 0.075 vs edge 0.037). |S(F6)| =
+   0.0267 (0.43σ on its own SEM) is consistent with, not evidence for, the null. The fleet-level
+   "fused nulls the matched channel" claim is **OPEN** and returns to the author as a fresh
+   [DO]/[RULE]; note the fused cell's per-seed power collapse (span 1.53 vs 7.59 nats) for its
+   costing.
+3. **Residual blind spot (disclosed):** `precompute_phi_marginal_survival` itself is common-mode
+   to replica and cell — untested by every O6 gate.
+4. **A17 fold-in:** identity-band noise floors scored off `event_likelihoods.csv` must be derived
+   from the CSV's 7-sf stored precision (measured 1.94e-6 here), not the estimator's internal
+   precision; the pre-data "+0.120…+0.127 range" consistency sentence corrected (+0.127368 is
+   0.0004 outside the quoted range, within 1 sd of the fleet mean).
+
+**Carried caveat:** F6's full channel remains mean_h = 0.618, r_low — the fused cell does not
+cure the H₀ rail; runs-of-record remain on the `off` cell (row #157 item 3 stands).
+
+**Amendment credits:** A20 +1 (second application: narrowed an over-broad verdict sentence before
+banking), A21 +1 (first fully-clean registration–execution identity under its own rule), A17
+evidence extended (CSV-storage noise-floor term), A18 exercised (all O6 outputs carry `reference`
+fields).

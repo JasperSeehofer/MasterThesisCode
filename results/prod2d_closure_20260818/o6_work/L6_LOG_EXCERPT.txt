@@ -1,0 +1,7 @@
+# GATE L6 log-evidence excerpt (full logs uncommitted, 4.5 MB each; regeneration deterministic)
+## d6.log matches for the off-cell line:
+27:2026-08-21 22:02:01,999 WARNING root: COUNTERFACTUAL: selection_in_completion_numerator='off' under absolute_marginal — the legacy pre-#118 estimator (no survival factor in either completion leg). Not a production posterior.
+## f6.log matches for the fused line:
+4:2026-08-21 22:32:03,427 INFO root: [PHYSICS] selection fusion ACTIVE (rows #117-#118): the 1D completion numerator carries S_bar_phi(z;h) and the 2D leg uses the fused g_sel,prod (S_4D inside the mass quadrature). This is the production absolute_marginal estimator.
+## f6.log matches for the off-cell line (must be none):
+0

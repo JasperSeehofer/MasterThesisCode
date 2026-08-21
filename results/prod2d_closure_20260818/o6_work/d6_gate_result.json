@@ -1,0 +1,16 @@
+{
+  "gate": "GATE_D6",
+  "pass": true,
+  "key_mismatch": false,
+  "bit_exact": true,
+  "max_rel_err": 0.0,
+  "tol": 1e-12,
+  "n_rows_compared": 9200,
+  "fresh_diagnostics_csv_rows": 9200,
+  "banked_csv": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/csg_pilot_20260821/diagnostics/csgf_seed910101/event_likelihoods.csv",
+  "fallback_justification": null,
+  "wall_time_s": 1852.3693816661835,
+  "wall_time_min_s": 60.0,
+  "wall_time_pass": true,
+  "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, CONFIRMATION RUN O6 -- REGISTRATION (2026-08-21, ledger row #157 item 2), GATE D6"
+}

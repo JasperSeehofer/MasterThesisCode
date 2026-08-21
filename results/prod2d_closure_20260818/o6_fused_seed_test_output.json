@@ -1,0 +1,97 @@
+{
+  "registered_in": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, CONFIRMATION RUN O6 -- REGISTRATION (2026-08-21, ledger row #157 item 2)",
+  "seed": 910101,
+  "arm": "csgf",
+  "h_gen": 0.73,
+  "h_lo": 0.725,
+  "h_hi": 0.735,
+  "o6_run_metadata": {
+    "d6_selection_in_completion_numerator_kwarg": null,
+    "f6_selection_in_completion_numerator_kwarg": "fused",
+    "d6_wall_time_s": 1852.3693816661835,
+    "f6_wall_time_s": 1811.143470287323,
+    "d6_log_path": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/o6_work/d6.log",
+    "f6_log_path": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/o6_work/f6.log"
+  },
+  "gates": {
+    "GATE_D6": {
+      "gate": "GATE_D6",
+      "pass": true,
+      "key_mismatch": false,
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "tol": 1e-12,
+      "n_rows_compared": 9200,
+      "fresh_diagnostics_csv_rows": 9200,
+      "banked_csv": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/csg_pilot_20260821/diagnostics/csgf_seed910101/event_likelihoods.csv",
+      "fallback_justification": null,
+      "wall_time_s": 1852.3693816661835,
+      "wall_time_min_s": 60.0,
+      "wall_time_pass": true,
+      "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, CONFIRMATION RUN O6 -- REGISTRATION (2026-08-21, ledger row #157 item 2), GATE D6"
+    },
+    "GATE_L6": {
+      "gate": "GATE_L6",
+      "pass": true,
+      "d6_log_has_off_cell_line": true,
+      "f6_log_has_fused_line": true,
+      "f6_log_has_off_cell_line": false,
+      "f6_selection_flag_recorded_as_fused": true,
+      "off_cell_substring": "selection_in_completion_numerator='off'",
+      "fused_cell_substring": "selection fusion ACTIVE",
+      "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, CONFIRMATION RUN O6 -- REGISTRATION (2026-08-21, ledger row #157 item 2), GATE L6"
+    },
+    "GATE_T6": {
+      "gate": "GATE_T6",
+      "pass": true,
+      "per_h": {
+        "0.725": {
+          "f6_D_tilde_minus_alpha_G": 893324910.0,
+          "banked_off_D_tilde_minus_alpha_G": 893324910.0,
+          "rel_err": 0.0,
+          "tol": 2e-06,
+          "pass": true
+        },
+        "0.735": {
+          "f6_D_tilde_minus_alpha_G": 883510540.0,
+          "banked_off_D_tilde_minus_alpha_G": 883510540.0,
+          "rel_err": 0.0,
+          "tol": 2e-06,
+          "pass": true
+        }
+      },
+      "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, CONFIRMATION RUN O6 -- REGISTRATION (2026-08-21, ledger row #157 item 2), GATE T6"
+    },
+    "GATE_V6": {
+      "gate": "GATE_V6",
+      "pass": true,
+      "key_mismatch": false,
+      "differ_fraction": 1.0,
+      "min_differ_fraction": 0.99,
+      "differ_rtol": 1e-09,
+      "n_rows_compared": 9200,
+      "reference": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, CONFIRMATION RUN O6 -- REGISTRATION (2026-08-21, ledger row #157 item 2), GATE V6"
+    }
+  },
+  "all_gates_pass": true,
+  "S_F6": {
+    "value": -0.02669249255841575,
+    "reference": "PREREGISTRATION_SELFGEN_CONTROL.md CONFIRMATION RUN O6, 'Primary statistic' -- f6 record['score_at_h_gen']['matched']['mean_score']"
+  },
+  "primary": {
+    "statistic": "S(F6) - r_prod(910101)",
+    "value": 1.9411451823714287e-06,
+    "band_tol": 0.0001,
+    "subtracts": "r_prod(910101)",
+    "reference": "PREREGISTRATION_SELFGEN_CONTROL.md CONFIRMATION RUN O6, A18 note: the primary subtracts r_prod(910101), provenance this registration + o6_reference_derivation_output.json"
+  },
+  "secondary_reported_only": {
+    "statistic": "|S(F6)|",
+    "value": 0.02669249255841575,
+    "frozen_self_consistent_edge": 0.037339,
+    "subtracts": 0,
+    "note": "REPORTED-ONLY, explicitly NOT a band (registration text): a single-seed realization statement, not a fleet null.",
+    "reference": "PREREGISTRATION_SELFGEN_CONTROL.md CONFIRMATION RUN O6, A18 note: the reported-only secondary subtracts 0 and names the frozen SELF-CONSISTENT edge 0.037339"
+  },
+  "verdict": "MECHANISM-CONFIRMED"
+}
