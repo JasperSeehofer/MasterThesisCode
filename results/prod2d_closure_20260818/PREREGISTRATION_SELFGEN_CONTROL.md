@@ -405,3 +405,51 @@ verdicts stay recorded in every banked JSON (`v2_span_pass`/`v2_sigma_pass`) so 
 reproducible. σ_prior convention ((b−a)/√12 of the grid) remains flagged for author review.
 
 **No band, statistic, or reference in the BAND-FORMULA registration is touched by this amendment.**
+
+---
+
+## C-SG v3 — FLEET VERDICT (2026-08-21, 46/46 seeds, frozen bands, pre-committed scorer)
+
+Jobs 6415588 (pilot) + 6420343 (fleet), 46/46 COMPLETED, 0 missing, **0 amended-GATE-V failures**.
+Scorer `csg_fleet_readout.py` (committed pre-fleet-data); decisive numbers independently
+re-derived by the orchestrator from raw diagnostics (seed-level bit-match).
+
+> **BAND C = INTERNAL-DEFECT, on both registered statistics.**
+> S̄₁₅ = **−0.1173** (band edge −0.0966; SELF-CONSISTENT would need |S̄| ≤ 0.0373) and
+> bias₁₅ = **−0.0665** (edge −0.0423; SELF-CONSISTENT ≤ 0.0209). Per §1/v3: this is the branch
+> under which row #140 is *promoted* from PROVISIONAL to a banked estimator-defect claim —
+> **recorded here as the registered outcome; the promotion itself is a fresh author [RULE].**
+
+Cross-arm structure (matched channel):
+
+| arm | h_gen | n | bias | per-event score at h_gen | sd |
+|---|---|---|---|---|---|
+| csgf | 0.73 | 15 | −0.0665 | −0.1173 | 0.0392 |
+| csge | 0.73 | 15 | −0.0667 | −0.1184 | 0.0399 |
+| csgdm | 0.68 | 8 | −0.0863 | −0.1332 | 0.0154 |
+| csgdp | 0.78 | 8 | −0.0495 | −0.1131 | 0.0493 |
+
+- **The score violation is h_gen-independent** (−0.113 … −0.133 across all four arms, both σ
+  modes) — the signature of a systematic completion-leg misnormalization, not a generator artifact.
+- **The FULL channel reproduces the campaign's headline bias in every arm** (−0.1090 / −0.1081 /
+  −0.1099 / −0.1044 vs B-SEL's −0.1083) with a fully clean generator — the mixture-composition +
+  impostor structure of rows #149/#150 transfers quantitatively.
+- **BAND R: CONSISTENT** (F-vs-E gap 0.0002 ≪ 0.0296) — σ-mode invariant.
+- **GATE S: CONTROL-INERT-STOP fired by the registered letter** (ŝ = 0.368, SE = 0.186; 3·SE
+  brackets 0). Qualification recorded with it: the three arm means are strictly ordered in h_gen
+  (0.6437 → 0.6635 → 0.6805), ŝ sits ~2σ from 0 and **3.4σ below 1** — an *attenuated*, not
+  absent, h-response; the sub-unit slope is itself a diagnostic (the matched posterior
+  under-responds to the generating h, and grid-edge truncation at h_gen=0.68 works *against* this
+  reading). The PRIMARY score statistic involves no slope and fires identically in all arms.
+  **The meaning of this gate outcome is put to the author as a [RULE]** — the registered INERT
+  sentence ("the arm carries no h-information") is contested by the ordered means.
+- Conditionality (§7/A10): this verdict is conditional on the six shared invariants by name
+  (`w_pop`, `f_k`/`f̄`, `S̄_φ`/`S_4D`, `P_det`, cosmology, z-domain). **Auditing `S̄_φ` — never
+  independently audited — is the designated next step**, now doubly so: the matched channel's
+  normalization is exactly the `S̄_φ`-built dark-sector integral.
+- Cost disclosure: 46 tasks × 40–55 min wall; submitted at the house fleet convention
+  `--cpus-per-task=16` for a single-process job (gotcha-7 over-reservation, ≈550 reserved
+  core-h vs ≈35 consumed) — flagged as an A6 perf-audit item, matching the banked
+  correspondence-fleet convention rather than the prereg's 2-cpu cost line.
+- Artifacts: 46 banked JSONs + 46 per-event diagnostics CSVs (89 MB) under
+  `csg_pilot_20260821/` with `MANIFEST.sha256`; all three channels recomputable at zero compute.

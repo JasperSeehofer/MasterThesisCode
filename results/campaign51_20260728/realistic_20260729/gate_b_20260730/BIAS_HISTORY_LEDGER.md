@@ -1960,3 +1960,44 @@ before the scorer ran).
    design B unchanged; scoring channels changed per items 2–5; pilot mandate unchanged; bands
    still set post-pilot). Implementation proceeds tonight; the BAND C branch comparison remains a
    fresh **[RULE]** for the author when data exists.
+
+## Row #151 — 2026-08-21 — C-SG v3 EXECUTED (46/46): BAND C = INTERNAL-DEFECT on both registered statistics; the full channel reproduces −0.108 in every arm with a clean generator; GATE S fires CONTROL-INERT by the letter with an ordered-means qualification
+
+Pilot job 6415588 + fleet job 6420343, all COMPLETED; frozen bands (`csg_pilot_bands_output.json`);
+pre-committed scorer (`csg_fleet_readout.py`); decisive numbers independently re-derived from raw
+diagnostics before this row was written. Full verdict block: prereg appendix "C-SG v3 — FLEET
+VERDICT". Chronology kept honest: the pilot's GATE V STOP fired first, was diagnosed on independent
+reference data (v2 thresholds false-fail 5/12 banked B-SEL matched posteriors), and amended with
+published operating characteristics BEFORE the fleet launched (retrospective ledger entry 1;
+"PILOT GATE V AMENDMENT" block).
+
+1. **[RULE-PENDING, author] BAND C = INTERNAL-DEFECT.** S̄₁₅ = −0.1173 (≤ −0.0966) and
+   bias₁₅ = −0.0665 (≤ −0.0423), agreeing branches. Registered meaning (§1, v3 item 3): row #140
+   is promoted from PROVISIONAL to a **banked estimator-defect claim** — the completion leg
+   violates its own dark-sector conditional score-zero under a generator that draws (z,Ω) jointly
+   from `w_pop·(1−f_k)` at the event's own pixel, masses from φ, selects once with `S_4D`, and
+   observes linearly. The branch comparison returns to the author per the binding default.
+2. **The violation is h_gen-independent**: per-event score −0.113…−0.133 across h_gen ∈
+   {0.68, 0.73, 0.78} and both σ modes (F/E gap 0.0002, BAND R CONSISTENT). B-SEL's residual
+   generator caveats (pixel f̄-vs-f_k, donor rows, σ borrowing, quality filter) are hereby
+   ELIMINATED as owners of the matched-channel violation — C-SG removed all of them and the
+   violation persists at 61% of B-SEL's score scale (−0.117 vs −0.193) and 79% of its bias scale
+   (−0.0665 vs −0.0846).
+3. **The full channel reproduces the campaign's headline number in every arm** (−0.1090/−0.1081/
+   −0.1099/−0.1044 vs B-SEL −0.1083, production dark rail ~−0.13): the three-channel structure of
+   rows #149/#150 (matched violation ⊕ tilt ⊕ impostor drag) transfers quantitatively to the
+   clean generator. The pure channel is near-zero in all arms (+0.011/+0.011/−0.013/+0.028) —
+   confirming O3's cancellation reading.
+4. **[RULE-PENDING, author] GATE S = CONTROL-INERT-STOP by the registered letter** (ŝ = 0.368 ±
+   0.186, 3·SE ∋ 0), with the qualification that arm means are strictly ordered in h_gen and ŝ is
+   3.4σ below 1 — an attenuated h-response that is itself diagnostic; the primary score statistic
+   involves no slope. The author rules whether GATE S's INERT sentence voids the mean_h-based
+   confirmatory band (the score-based primary is unaffected by construction).
+5. **Blindness (A10):** the verdict is conditional on the six shared invariants; the designated
+   next step under EITHER branch is the **independent audit of `S̄_φ`** (`bayesian_statistics.py:
+   1932-1975`) — never audited, and it builds the exact normalization the matched channel divides
+   by. The **fix fork** (carried author decision #2, row #128 chain) now has its trigger: C-SG has
+   returned.
+6. **Cost + provenance:** 46 seeds, 40–55 min wall each; 16-cpu house reservation for a
+   single-process job disclosed as gotcha-7 over-reservation (A6 audit item). 89 MB of per-event
+   diagnostics banked with SHA-256 manifest; every channel recomputable at zero compute.

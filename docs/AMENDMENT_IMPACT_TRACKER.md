@@ -28,7 +28,7 @@ cycle end, the amendments that earned their keep are named there and credited he
 | A7 — campaign readout report | comprehension-first report before stage-5 decision | 0 |
 | A8 — branch-referent / two-sidedness / execution-completeness / band-derivation | registration-time checks | 0 |
 | A9 — sequential-escalation rule | PROPOSED, not adopted — tracked for completeness | 0 |
-| A10 — invariance & blindness declaration | fixed invariants + blind-spot sentence per prereg | 0 |
+| A10 — invariance & blindness declaration | fixed invariants + blind-spot sentence per prereg | 1 |
 | A11 — provenance freshness | {value, source, date, config} stamps; STALE may not be quoted | 0 |
 | A12 — score-zero first diagnostic | E[∂_θ ln L]=0 at truth, class/covariate-resolved, free | 1 |
 | A13 — engagement gate | instrument must demonstrably move the output | 0 |
@@ -46,3 +46,4 @@ cycle end, the amendments that earned their keep are named there and credited he
 - 2026-08-21 A15 +1 — forced the O2/O3 band design to state that a deterministic paired read has no sampling null, preventing a repeat of the A-7 `max(0.005, 2·SE)` mistake; materiality bands were derived from C-SG's resolution instead — prereg O2/O3 band registrations
 - 2026-08-21 A5 +1 — independence-preserving Stage-L sweep found our venue sits BELOW Gray 2020's own validated completeness floor (G20-d) and that the O2/O3 per-sector decomposition has no literature precedent (documented field gap → candidate novel contribution) — docs/LITERATURE_WARNINGS.md, commit a80ce4b2
 - 2026-08-21 A15 +1 — the pilot-first mandate + pre-committed STOP caught the orchestrator's own channel-ported GATE V (false-fails 5/12 known-informative reference seeds) before the 42-seed fleet ran — retrospective ledger entry 1, prereg "PILOT GATE V AMENDMENT"
+- 2026-08-21 A10 +1 — the registered six-invariant blindness list converted the INTERNAL-DEFECT verdict into a named-conditional claim and forced the S̄_φ audit designation as the next step — ledger row #151 item 5

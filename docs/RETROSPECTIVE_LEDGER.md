@@ -59,3 +59,33 @@ existed) is the form this ledger generalises; it is referenced, not rewritten.
    because it binds future physics-adjacent judgment calls — author review requested.)
 5. **Disposition.** Bands frozen (`csg_pilot_bands_output.json`), fleet launched; thread
    continues in the C-SG readout.
+
+## Entry 2 — 2026-08-21 — C-SG cycle END: BAND C = INTERNAL-DEFECT (46/46 seeds); the −0.11 reconstructed from first principles in one overnight session
+
+1. **What ran.** The full registered chain in one autonomous night: pre-check O2 (impostor leg
+   carries 73% of −0.1083) → pre-check O3 (matched channel −0.0846; the pure channel's mildness is
+   cancellation) → v3 design change (matched channel primary) → implementation (7-agent workflow,
+   2-lens adversarial GO) → pilot (STOP fired, diagnosed, gate re-derived on reference data) →
+   frozen bands → 42-seed fleet → **BAND C = INTERNAL-DEFECT on both statistics**, full channel
+   reproducing −0.108 in every arm. Rows #149–#151; readout report
+   `CAMPAIGN_READOUT_REPORT_CSG_20260821.md`. Plus Stage-L: the venue is below Gray 2020's own
+   validated completeness floor and the per-sector decomposition is literature-novel.
+2. **What worked.** A1 (two free reads reshaped the design before any CPU; +2 credited),
+   A12 (score-zero frame defined the matched channel; +1), A15 (twice: the O2/O3 band design and
+   the pilot-first STOP that caught the ported gate; +2 total), A5 (Stage-L found the
+   validated-floor gap; +1), A10 (the invariance declaration forced the S̄_φ designation as the
+   next step; +1 this entry). Prereg-first discipline held at every step: every scorer existed
+   before its data. Independent recomputation held: O2 by a firewalled agent, fleet numbers by
+   the orchestrator from raw diagnostics.
+3. **What failed or dragged.** (a) The GATE V porting slip (entry 1). (b) GATE S fired
+   CONTROL-INERT by its letter against ordered arm means — the INERT band was registered without
+   asking what an *attenuated* (rather than absent) slope would mean; a two-sided/three-outcome
+   slope rule would have been cleaner (A8's two-sidedness lesson, recurring in a new guise).
+   (c) The 16-cpu single-process over-reservation followed the house convention unexamined
+   (gotcha 7); ≈550 reserved vs ≈35 consumed core-h.
+4. **Suggested amendments.** A17 (entry 1, PROPOSED) covers (a). For (b): PROPOSED — *slope-type
+   validity gates register all three outcomes (absent / attenuated / unit-consistent) with the
+   attenuated band's meaning stated at registration time*; could fold into A8 rather than a new
+   number. For (c): route to the standing A6 audit (no new amendment).
+5. **Disposition.** Six author [RULE]s queued (readout report §10); next technical step under
+   either branch = independent `S̄_φ` audit; runbook 26 is the entry point.
