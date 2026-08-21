@@ -38,6 +38,7 @@ cycle end, the amendments that earned their keep are named there and credited he
 | A17 — gate/band portability + realized-scatter re-check | operating characteristics survive transport | 0 |
 | A18 — explicit bias reference | every scorer prints what each bias subtracts | 0 |
 | A19 — symmetric falsifiers | every fireable branch carries a registered falsifier | 0 |
+| A20 — clean-context adversarial verification | builder's context never verifies its own claim; typed narrative | 0 |
 
 ## Evidence lines
 

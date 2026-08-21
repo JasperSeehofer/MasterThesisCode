@@ -2088,3 +2088,34 @@ same-brief cross-model symmetric test (running; results to the proposal doc).
    **A19** — a pre-registration arms a falsifier for EVERY branch, not only the expected one
    (evidence: MAJOR-9 — the fired branch had none; O4 is its retrofit).
 6. **[RULE, ratified] Card 6:** landscape/T1 stays gated pending O4 (card 1's resolution).
+
+## Row #154 — 2026-08-21 — Symmetric probe RESULT: fresh-context Fable, blind, reproduces the Opus review 10/10 on decisive findings — the oscillation is role+context, not model; A20 ADOPTED per the author's pre-registered conditional ruling
+
+The model-tendency probe (proposal doc §3): a fresh-context FABLE agent, brief identical to the
+Opus reviewer's (two documented deviations: worktree pinned at the uncontaminated pre-correction
+snapshot f59a6f48; venv note), blind to the review and all corrections. Banked verbatim:
+`SYMMETRIC_PROBE_FABLE_REVIEW_20260821.md`.
+
+1. **10/10 decisive findings reproduced exactly** — both FATALs to the same corrected numbers
+   (δ-arm references −0.0363/−0.0995 matched, −0.0599/−0.1544 full; the 46-seed rail), the
+   realized-scatter restatement (0.0751 → 6.0σ / 1.07σ), N-adequacy 4.98σ, the GATE S truncation
+   explanation (same 0.616 extended-grid slope), the mean_h truncation shifts (same numbers), the
+   ∫B_num = β_Ḡ identity attack, BAND R pairing (corr 0.998), GATE V near-vacuity, S_REF/2
+   conventionality. No decisive disagreement; next-step recommendations converge on O4's content.
+2. **New secondary findings folded into the record** (each corroborating or extending, none
+   overturning): (a) GATE S's arms share seeds — cross-arm correlations 0.87–0.95, paired slope
+   SE 0.130 (INERT still fires, barely; the void ruling stands a fortiori); (b) O2's 73% carries
+   ±11 rel-% seed scatter (SEM 0.0119) — the headline gains an honest error bar; (c) the
+   noiseless-sky observation and the injection sampler are additional un-listed shared objects
+   (corroborates the review's N-5 and the A10 seventh-invariant extension); (d) GATE V
+   counterfactual-freedom note (no discretion was actually exercised — all 46 passed).
+3. **[RULE, conditional ruling executed] A20 ADOPTED** per the author's pre-registered direction
+   ("...this should be the rule instead of complicating about model choices"): mandatory
+   clean-context adversarial verification at every BANK/PROMOTE/WITHDRAW; model choice
+   unregulated; default pairing Fable-orchestrates/Opus-critical-thinker; rate-limit fallback
+   with mandatory Fable revisit; blind-verifier and typed-narrative clauses included. Written to
+   `docs/RESEARCH_CYCLE.md`.
+4. **Caveats stated:** n = 1, one direction (Fable-as-verifier); the Opus-as-builder direction is
+   untested and remains a P5 instrument. The probe post-dates the events it reviews; its brief
+   was authored before the Opus review reported, and its snapshot provably excludes all
+   post-review artifacts.

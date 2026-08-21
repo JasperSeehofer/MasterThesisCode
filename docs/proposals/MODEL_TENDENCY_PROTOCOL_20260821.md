@@ -82,4 +82,50 @@ available again ("revisit the journey").
 
 ## 3b. Probe result (appended 2026-08-21, same day)
 
-**PENDING — will be appended when the probe reports.**
+**The finding sets are essentially ISOMORPHIC on every decisive item.** Fresh-context Fable
+(banked verbatim: `results/prod2d_closure_20260818/SYMMETRIC_PROBE_FABLE_REVIEW_20260821.md`),
+blind to the Opus review and to all corrections, independently found:
+
+| decisive finding | Opus review | Fable probe | agreement |
+|---|---|---|---|
+| δ-arm bias reference bug (FATAL-1) | ✔ | ✔ Finding 1 — same corrected values (−0.0599/−0.1544 full; −0.0363/−0.0995 matched) | exact |
+| full-channel rail coincidence, "reconstructed" withdrawn (FATAL-2) | ✔ | ✔ Finding 1 — map=0.600, r_low 100%, same conclusion | exact |
+| realized sd 0.0751 → 6.0σ from zero, 1.07σ past edge (MAJOR-1) | ✔ | ✔ Finding 6 — identical numbers | exact |
+| N-adequacy realized 4.98σ < registered 5 (MAJOR-2) | ✔ | ✔ Finding 6 — identical | exact |
+| GATE S slope = truncation/shrinkage artifact, ŝ→0.616 on extended grid (MAJOR-3) | ✔ | ✔ Finding 3 — same model, same 0.616 | exact |
+| mean_h statistics grid-truncation-dominated, extended-grid shifts (MAJOR-4) | ✔ | ✔ Finding 2 — same computed shifts (0.5828/0.6444) | exact |
+| ∫B_num = β_Ḡ identity assumed, z-cap parity untested (MAJOR-5) | ✔ | ✔ Finding 5 — same attack | exact |
+| BAND R actually paired (corr ≈0.998) (MAJOR-8) | ✔ | ✔ Finding 7 — same measurement | exact |
+| GATE V amended prongs near-vacuous (MINOR-1) | ✔ | ✔ Finding 4 | exact |
+| S_REF/2 edge conventional (MINOR-3) | ✔ | ✔ Finding 6 | exact |
+
+Each reviewer additionally contributed 1–3 *secondary* items the other did not (Opus: the
+−1.222/−1.105 derivative decomposition, quadrature specifics, heteroscedastic SE; Fable: cross-arm
+common-seed correlations 0.87–0.95 → paired GATE S SE = 0.130, O2's 73% carries ±11 rel-% seed
+scatter, the GATE V counterfactual-freedom note, the noiseless-sky/sampler un-listed invariants —
+the last corroborating Opus's N-5). The two disagreed on **nothing decisive**; even the
+next-step recommendations converge (both demand the ∫B_num = β_Ḡ / z-cap test — Opus as "O4",
+Fable as the content of the audit).
+
+**Conclusion (n = 1, direction stated in §3):** the oscillation is dominated by **role + clean
+context + adversarial brief**, not by model identity. Per the author's pre-registered direction
+(§2b), the simple rule applies.
+
+## 4. ADOPTED per the author's pre-commitment — becomes amendment A20
+
+The author's §2b direction ("if it shows that it is only about critically verifying rather then
+the model **this should be the rule** instead of complicating about model choices") is a
+conditional ruling whose condition the probe satisfied. Adopted as **A20**:
+
+> **A20 — mandatory clean-context adversarial verification.** Every ledger row that BANKS,
+> PROMOTES, or WITHDRAWS a claim receives, before the author rules, an adversarial review by an
+> agent with a **clean context** and an explicit falsification brief; the builder's own context
+> never verifies its own claim. Model choice is NOT regulated — the standing default pairing is
+> Fable-orchestrates / Opus-as-critical-thinker; on Fable rate-limit, Opus may orchestrate and a
+> Fable-orchestrated revisit of that stretch is REQUIRED once available. Verifiers receive
+> artifacts, scorers, and data — not the readout narrative (P2). Interpretive sentences in
+> reports are typed MEASURED / BANKED / PROVISIONAL / NARRATIVE-HYPOTHESIS, and a report may not
+> contain claims absent from its pre-committed scorer output (P3).
+
+P4 (calibration ledger) and P5 (periodic symmetric probes, including the untested Opus-as-builder
+direction) remain [DO] instruments, unadopted-as-rules.

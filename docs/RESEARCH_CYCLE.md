@@ -567,3 +567,17 @@ registered falsifier for **every** branch its bands can fire, not only the branc
 expects; a branch without a falsifier may fire but its claim stays PROVISIONAL until one is
 registered and run. *Evidence:* review MAJOR-9 — C-SG's §8 falsifier covered only
 ESTIMATOR-SELF-CONSISTENT; INTERNAL-DEFECT fired with none, and pre-check O4 is its retrofit.
+
+**A20 — ADOPTED, 2026-08-21 (author conditional ruling, verbatim: "if it shows that it is only
+about critically verifying rather then the model this should be the rule instead of complicating
+about model choices" — condition satisfied by the symmetric probe, ledger row #154).** Mandatory
+clean-context adversarial verification: every BANK/PROMOTE/WITHDRAW ledger row gets, before the
+author rules, an adversarial review by an agent with a clean context and a falsification brief —
+the builder's context never verifies its own claim. Model choice is unregulated (default pairing:
+Fable orchestrates / Opus critical thinker; on Fable rate-limit Opus may orchestrate with a
+mandatory Fable revisit). Verifiers get artifacts + data, never the readout narrative; report
+sentences are typed MEASURED / BANKED / PROVISIONAL / NARRATIVE-HYPOTHESIS and may not exceed the
+pre-committed scorer's output. *Evidence:* the 2026-08-21 symmetric probe — fresh-context Fable,
+blind, on the pinned pre-correction snapshot, reproduced every decisive Opus finding (10/10 exact,
+including both FATALs to the same corrected numbers); full diff table in
+`docs/proposals/MODEL_TENDENCY_PROTOCOL_20260821.md` §3b.
