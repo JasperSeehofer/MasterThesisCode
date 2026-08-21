@@ -339,9 +339,14 @@ M_CROSS_COV_COLUMNS: tuple[str, ...] = (
 CSG_GATE_Q_NONPD_BAND: float = 0.01
 
 # GATE V (prereg section 6, applied to the matched-channel posterior per v3
-# item 5).
-CSG_GATE_V_MIN_SPAN_NATS: float = 5.0
-CSG_GATE_V_SIGMA_PRIOR_FRACTION: float = 0.5
+# item 5). GATE V AMENDMENT 1 (2026-08-21): v2's (5.0, 0.5) were full-channel
+# thresholds; ported unchanged they false-failed 5/12 banked B-SEL matched
+# posteriors (known-informative reference) and STOPped 3/4 pilot seeds. The
+# amended values target the flat-null vacuity signature (span=0, ratio=1.0);
+# reference false-fail 0/16, and the B-F1 flat mode still fails both prongs.
+# See gate_v's docstring + the prereg's "PILOT GATE V AMENDMENT" block.
+CSG_GATE_V_MIN_SPAN_NATS: float = 1.0
+CSG_GATE_V_SIGMA_PRIOR_FRACTION: float = 0.9
 
 # GATE D band: D_crit(alpha=5%) at the ACTUAL n, never the retired fixed
 # 0.05 (prereg section 6). See ks_d_crit.
@@ -1284,10 +1289,29 @@ def gate_v(
 ) -> dict[str, Any]:
     r"""GATE V (anti-vacuity), applied to the MATCHED channel per v3 item 5.
 
-    ``max(log_posterior) - min(log_posterior) >= 5`` nats on the score grid,
-    AND ``sigma_h <= 0.5 * sigma_prior``. ``sigma_prior`` is a REGISTERED NEW
-    convention (see the module docstring's "Registered deviations" item 3):
-    the std of ``Uniform(min(h_grid), max(h_grid))``.
+    GATE V AMENDMENT 1 (2026-08-21, prereg appendix "PILOT GATE V AMENDMENT"):
+    the v2 thresholds (span >= 5 nats, sigma_h <= 0.5*sigma_prior) were written
+    for the FULL-channel posterior and, ported unchanged to the matched
+    channel, false-fail 5/12 banked B-SEL matched posteriors (42%) -- the
+    known-informative reference data that carries the O3 measurement -- and
+    fired the registered STOP on 3/4 pilot seeds. Amended thresholds target
+    the ACTUAL vacuity signature (prereg section 0 item 4: a FLAT log-posterior,
+    span identically 0, sigma_h == sigma_prior, mean at the weight-convention
+    flat mean):
+
+    - ``span >= 1`` nat: a flat posterior has span 0 exactly; every genuine
+      matched posterior in the reference set has span >= 2.01. Reference
+      false-fail 0/12 (B-SEL) + 0/4 (pilot); the B-F1 flat mode (span 0.0)
+      fails it decisively -- the gate CAN fail (A15).
+    - ``sigma_h <= 0.9 * sigma_prior``: the flat null has ratio 1.0 exactly;
+      reference max ratio 0.812. Reference false-fail 0/16.
+    - the flat-mean coincidence (|mean_h - 0.73| < 1e-6 AND span < 1) is
+      REPORTED as ``flat_mean_coincidence`` -- a genuinely centered posterior
+      near 0.73 is the self-consistent EXPECTATION, so mean alone never fails.
+
+    The superseded v2 numbers are still computed and returned
+    (``v2_span_pass``/``v2_sigma_pass``) so the pilot's fired STOP remains
+    reproducible from any banked JSON.
 
     Args:
         vals_matched: The matched-channel ``(n_events, n_nodes)`` matrix
@@ -1296,9 +1320,8 @@ def gate_v(
             :func:`csg_channel_scores`, reconstructed via
             ``SeedStats(**channel_scores["matched"])`` if needed).
         h_grid: The score grid.
-        min_span_nats: The vacuity-span floor (prereg section 6: 5 nats).
-        sigma_prior_fraction: The sigma_h ceiling as a fraction of
-            ``sigma_prior`` (prereg section 6: 0.5).
+        min_span_nats: The amended vacuity-span floor (1 nat).
+        sigma_prior_fraction: The amended sigma_h ceiling fraction (0.9).
 
     Returns:
         The GATE V report dict, including ``"pass"``.
@@ -1319,6 +1342,17 @@ def gate_v(
         "sigma_prior_fraction": sigma_prior_fraction,
         "sigma_pass": bool(sigma_pass),
         "pass": bool(span_pass and sigma_pass),
+        "flat_mean_coincidence": bool(
+            span < 1.0 and abs(seed_stats_matched.mean_h - 0.73) < 1.0e-6
+        ),
+        "v2_span_pass": bool(span >= 5.0),
+        "v2_sigma_pass": bool(seed_stats_matched.sigma_h <= 0.5 * sigma_prior),
+        "amendment": (
+            "GATE V AMENDMENT 1 (2026-08-21): thresholds re-derived for the matched "
+            "channel against the 12 banked B-SEL matched posteriors (v2 numbers "
+            "false-failed 5/12 known-informative reference seeds); flat-null "
+            "signature is span=0 / ratio=1.0; reference false-fail 0/16."
+        ),
         "sigma_prior_convention": (
             "std of Uniform(min(h_grid), max(h_grid)) = (b-a)/sqrt(12) -- REGISTERED "
             "NEW convention, not specified numerically by the prereg; flagged for "

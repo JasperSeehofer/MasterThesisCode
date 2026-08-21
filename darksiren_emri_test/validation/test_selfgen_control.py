@@ -526,6 +526,31 @@ def test_gate_v_span_and_sigma_pass_fields() -> None:
     assert flat_report["pass"] is False
 
 
+def test_gate_v_amendment_1_reference_regime_passes_v2_flags_recorded() -> None:
+    """GATE V AMENDMENT 1: a B-SEL-reference-like matched posterior (span ~2-5
+    nats, sigma_h ~0.5-0.8 sigma_prior) PASSES the amended gate while the
+    superseded v2 flags record it as a would-have-failed -- the exact regime
+    that false-failed 5/12 banked B-SEL seeds and STOPped 3/4 pilot seeds."""
+    grid = np.array(sorted(c1d.H_GRID_41), dtype=np.float64)
+    n_events, n_nodes = 40, grid.size
+    peak_idx = int(np.argmin(np.abs(grid - 0.73)))
+    # Broad Gaussian (width tuned numerically): summed log-likelihood span
+    # ~3 nats, sigma_h ~0.65 sigma_prior (the reference regime).
+    vals = np.empty((n_events, n_nodes))
+    for i in range(n_events):
+        vals[i] = np.exp(-0.5 * ((np.arange(n_nodes) - peak_idx) / 54.0) ** 2) + 1e-9
+    stats = c1d.seed_statistics_from_matrix(vals, 1, grid, h_true=0.73)
+    report = sg.gate_v(vals, stats)
+    assert 1.0 <= report["span_nats"] < 5.0, "fixture must sit in the amendment regime"
+    assert 0.5 < report["sigma_h"] / report["sigma_prior"] <= 0.9, (
+        "fixture must sit in the amendment regime"
+    )
+    assert report["pass"] is True
+    assert report["v2_span_pass"] is False
+    assert report["flat_mean_coincidence"] is False
+    assert "amendment" in report
+
+
 # ── Matched-channel helper reproduces decompose_matched_channel.py exactly ──
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]

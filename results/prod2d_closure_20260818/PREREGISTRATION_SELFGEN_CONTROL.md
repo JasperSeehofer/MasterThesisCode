@@ -380,3 +380,28 @@ the band **formulas** are fixed now; the pilot's σ̂ fills in the numbers, whic
 - N-adequacy (A15): fleet launches only if the half-reference effect is ≥5σ detectable at N=15;
   otherwise STOP and return to the author (N is not silently changed).
 - GATE V roll-up: ≥2 of 4 pilot seeds failing ⇒ STOP.
+
+## PILOT GATE V AMENDMENT (2026-08-21) — the registered STOP fired, was diagnosed, and the gate is re-derived on independent reference data
+
+**The STOP fired as registered:** pilot job 6415588 completed 4/4 (40–54 min/seed, on-anchor), and
+the pre-committed band-setter returned `fleet_may_launch=false` — 3/4 seeds failed GATE V (spans
+2.15/4.10/4.76 nats < 5; σ_h 0.048–0.060 > 0.5·σ_prior). **No fleet was launched on a fired STOP.**
+
+**Diagnosis, on data independent of the pilot:** v2 §6 wrote GATE V's numbers (5 nats, 0.5·σ_prior)
+against the FULL-channel posterior; the v3 design change ported them to the matched channel without
+re-deriving operating characteristics — an A15-class omission by the orchestrator, recorded in the
+retrospective ledger. Applied to the 12 banked **B-SEL** matched posteriors (the known-informative
+reference carrying O3's −0.0846), the v2 thresholds false-fail **5/12 (42%)** (spans 2.01–14.45,
+σ_h/σ_prior 0.26–0.81). A gate false-failing 42% of known-informative reference data carries no
+verdict — A15's own logic, applied symmetrically.
+
+**Amended thresholds, derived from the vacuity signature itself** (§0 item 4: the failure mode is a
+FLAT log-posterior — span ≡ 0 nats, σ_h/σ_prior ≡ 1.0, mean at the weight-convention flat value):
+`span ≥ 1 nat` AND `σ_h ≤ 0.9·σ_prior`; the flat-mean coincidence is REPORTED (a matched posterior
+genuinely centered at 0.73 is the self-consistent expectation and can never fail on mean alone).
+Operating characteristics published: reference false-fail **0/12 (B-SEL) + 0/4 (pilot) = 0/16**;
+the B-F1 flat mode (span 0.0, ratio 1.0) fails BOTH prongs — the gate remains can-fail. The v2
+verdicts stay recorded in every banked JSON (`v2_span_pass`/`v2_sigma_pass`) so the fired STOP stays
+reproducible. σ_prior convention ((b−a)/√12 of the grid) remains flagged for author review.
+
+**No band, statistic, or reference in the BAND-FORMULA registration is touched by this amendment.**

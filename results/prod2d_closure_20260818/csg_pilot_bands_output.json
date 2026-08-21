@@ -1,0 +1,70 @@
+{
+  "registered_in": "csg_pilot_bands.py (committed pre-pilot-data) + prereg section 6",
+  "pilot_seeds": [
+    910101,
+    910102,
+    910103,
+    910104
+  ],
+  "per_seed": [
+    {
+      "seed": 910101,
+      "matched_mean_h": 0.6409501582919092,
+      "matched_sigma_h": 0.036347735419232974,
+      "matched_mean_score_at_h_gen": -0.15406021492343094
+    },
+    {
+      "seed": 910102,
+      "matched_mean_h": 0.6741245808490444,
+      "matched_sigma_h": 0.05143095372600133,
+      "matched_mean_score_at_h_gen": -0.08701986480185463
+    },
+    {
+      "seed": 910103,
+      "matched_mean_h": 0.7060226450153767,
+      "matched_sigma_h": 0.06040389517824027,
+      "matched_mean_score_at_h_gen": -0.036895522792812115
+    },
+    {
+      "seed": 910104,
+      "matched_mean_h": 0.664339591277534,
+      "matched_sigma_h": 0.048372284194567204,
+      "matched_mean_score_at_h_gen": -0.10157062576917761
+    }
+  ],
+  "sigma_hat_score": 0.048204576068771425,
+  "sigma_hat_seed": 0.026976449456192597,
+  "median_sigma_h": 0.049901618960284264,
+  "sd_3dof_ci_multipliers": [
+    0.5665,
+    3.7297
+  ],
+  "bands_of_record": {
+    "score_self_consistent_abs_max": 0.03733910406506806,
+    "score_internal_defect_max": -0.0966,
+    "bias_self_consistent_abs_max": 0.02089586789672801,
+    "bias_internal_defect_max": -0.0423,
+    "band_r_abs_max": 0.029551219777109318
+  },
+  "false_fail_table": {
+    "nominal_gaussian_3sigma": 0.0027,
+    "if_true_sd_is_hi_edge_(3.73x)": 0.4211924222127106,
+    "if_true_sd_is_lo_edge_(0.57x)": 1.1857744253163105e-07,
+    "note": "rate the 3*SE15 band false-fails under the null if the pilot sd mis-estimates the true sd at the 95% CI edges (3 dof)"
+  },
+  "power": {
+    "half_reference_effect": -0.0966,
+    "significance_at_half_reference_sigma": 7.761300311196199,
+    "n_required_for_5sigma_at_half_reference": 7,
+    "n_adequate_at_registered_15": true
+  },
+  "gate_s_projection": {
+    "se_slope_at_registered_allocation": 0.13488224728096299
+  },
+  "gate_v_failures": [],
+  "stop_conditions": {
+    "n_inadequate": false,
+    "gate_v_2plus_failures": false
+  },
+  "fleet_may_launch": true
+}

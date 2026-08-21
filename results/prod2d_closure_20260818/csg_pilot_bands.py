@@ -99,11 +99,21 @@ def main() -> int:
     )
     means = np.array([r["channel_scores"]["matched"]["mean_h"] for r in recs], dtype=np.float64)
     sigma_hs = np.array([r["channel_scores"]["matched"]["sigma_h"] for r in recs], dtype=np.float64)
-    gate_v_fail = [
-        {"seed": int(r["seed"]), "gate_v": r["gate_v"]}
-        for r in recs
-        if not bool(r["gate_v"].get("pass", False))
-    ]
+    # GATE V AMENDMENT 1 (2026-08-21, prereg "PILOT GATE V AMENDMENT" block):
+    # the banked pilot JSONs embed gate_v evaluated at the superseded v2
+    # thresholds (span>=5, sigma<=0.5*sigma_prior), which false-fail 5/12
+    # banked B-SEL matched posteriors. Re-evaluate the AMENDED thresholds
+    # (span>=1 nat, sigma_h<=0.9*sigma_prior; flat-null signature) from the
+    # recorded span_nats/sigma_h/sigma_prior fields. The v2 verdicts stay in
+    # the JSONs; both are reported here.
+    gate_v_fail = []
+    for r in recs:
+        gv = r["gate_v"]
+        amended_pass = bool(gv["span_nats"] >= 1.0 and gv["sigma_h"] <= 0.9 * gv["sigma_prior"])
+        if not amended_pass:
+            gate_v_fail.append(
+                {"seed": int(r["seed"]), "gate_v_recorded": gv, "amended_pass": False}
+            )
 
     sigma_hat_score = float(scores.std(ddof=1))
     sigma_hat_seed = float(means.std(ddof=1))

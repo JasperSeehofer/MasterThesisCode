@@ -33,7 +33,7 @@ cycle end, the amendments that earned their keep are named there and credited he
 | A12 — score-zero first diagnostic | E[∂_θ ln L]=0 at truth, class/covariate-resolved, free | 1 |
 | A13 — engagement gate | instrument must demonstrably move the output | 0 |
 | A14 — attribution ships with its falsifier | falsifier registered before banking | 0 |
-| A15 — power-calibrated gates, can-fail controls | operating characteristics at actual N; no vacuous control | 1 |
+| A15 — power-calibrated gates, can-fail controls | operating characteristics at actual N; no vacuous control | 2 |
 | A16 — retrospective ledger + impact tracker | this instrument | 0 |
 
 ## Evidence lines
@@ -45,3 +45,4 @@ cycle end, the amendments that earned their keep are named there and credited he
 - 2026-08-21 A12 +1 — the score-zero frame (E[∂_h ln L_matched]=0 for the dark-conditional) is what defined the matched channel and localized the completion-leg violation; the per-event score-at-truth read (−0.28 → −0.06) carried the O2 readout — ledger rows #149–#150
 - 2026-08-21 A15 +1 — forced the O2/O3 band design to state that a deterministic paired read has no sampling null, preventing a repeat of the A-7 `max(0.005, 2·SE)` mistake; materiality bands were derived from C-SG's resolution instead — prereg O2/O3 band registrations
 - 2026-08-21 A5 +1 — independence-preserving Stage-L sweep found our venue sits BELOW Gray 2020's own validated completeness floor (G20-d) and that the O2/O3 per-sector decomposition has no literature precedent (documented field gap → candidate novel contribution) — docs/LITERATURE_WARNINGS.md, commit a80ce4b2
+- 2026-08-21 A15 +1 — the pilot-first mandate + pre-committed STOP caught the orchestrator's own channel-ported GATE V (false-fails 5/12 known-informative reference seeds) before the 42-seed fleet ran — retrospective ledger entry 1, prereg "PILOT GATE V AMENDMENT"
