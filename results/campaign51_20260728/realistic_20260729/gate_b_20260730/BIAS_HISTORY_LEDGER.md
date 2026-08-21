@@ -2001,3 +2001,50 @@ published operating characteristics BEFORE the fleet launched (retrospective led
 6. **Cost + provenance:** 46 seeds, 40–55 min wall each; 16-cpu house reservation for a
    single-process job disclosed as gotcha-7 over-reservation (A6 audit item). 89 MB of per-event
    diagnostics banked with SHA-256 manifest; every channel recomputable at zero compute.
+
+## Row #152 — 2026-08-21 — Author-requested adversarial review CONFIRMED 2 FATAL + confirmed-decisive MAJOR findings against row #151's own presentation; overclaims WITHDRAWN; the INTERNAL-DEFECT label downgraded to PROVISIONAL; the discriminating test re-targeted
+
+The author (back online) requested an independent Opus review of the overnight chain. Banked
+verbatim: `ADVERSARIAL_REVIEW_CSG_20260821.md`. **Every decisive claim was re-derived by the
+orchestrator before this row was written** — FATAL-1, FATAL-2, MAJOR-1, MAJOR-8 all reproduced
+exactly. Corrections govern via the prereg's CORRECTION & REVIEW ADDENDUM.
+
+1. **[SELF-CORRECTION] FATAL-1:** `csg_fleet_readout.py` measured every arm's bias against the
+   global 0.73 instead of the arm's own h_gen. Corrected matched biases: −0.0363 (δ−) / −0.0665
+   (F) / −0.0995 (δ+). Row #151 item 3's "every arm" sentence and the readout §4 table are wrong
+   as bias statements; scorer fixed with the superseded values retained.
+2. **[SELF-CORRECTION] FATAL-2:** the full channel rails at map_h = 0.600 in 46/46 seeds; the
+   celebrated "full channel reproduces −0.108" is a rail coincidence (0.62 − 0.73). The
+   "reconstructed from first principles" language is WITHDRAWN. (The three-channel O2/O3
+   decomposition of B-SEL itself — row #149/#150 — is untouched; the review cleared O2's
+   mechanics explicitly.)
+3. **[RULE-PENDING, author, restated] BAND C:** on realized scatter (sd 0.0751, 1.56× pilot σ̂),
+   S̄₁₅ = −0.1173 ± 0.0194 — **non-zero at 6.05σ (bankable)** but past the defect edge by only
+   **1.07σ** (bootstrap P≈0.13 of MIXED). The bankable finding is precise: *the implemented
+   `B_num` and `β_Ḡ_φ` are not a matched numerator/normalizer pair (h-derivatives −1.222 vs
+   −1.105, a ~10% mismatch)*. The INTERNAL-DEFECT **label** is PROVISIONAL pending item 5.
+4. **[RULE-PENDING, author, restated] GATE S:** VOID-CANDIDATE (truncation simulation reproduces
+   ŝ≈0.37 with no estimator pathology; branches provably overlap on the extended grid). My row
+   #151 "attenuated response" qualification was itself built on FATAL-1-corrupted numbers —
+   withdrawn. No follow-up thread on the slope.
+5. **[RULE-PENDING, author] Proposed pre-check O4 — the fired branch's falsifier (retrofits
+   MAJOR-9):** common-domain/common-quadrature re-evaluation of `B_num` vs `β_Ḡ_φ` (±10σ window,
+   aligned z-caps, no interp clamp). Moves −0.117 materially ⇒ numerical-pairing artifact and the
+   §1 branch flips; survives ⇒ the defect claim hardens. This SUPERSEDES the `S̄_φ` audit
+   designation (row #151 item 5): `S̄_φ` cancels between the legs.
+6. **Other re-characterizations:** BAND R was PAIRED all along (σ drawn after the accept loop;
+   corr 0.9975; informative paired band 0.0022 — passed); GATE V's amended prongs are flat-null
+   detectors only (46/46 PASS is not quality evidence); "generator caveats ELIMINATED" softened —
+   C-SG vs B-SEL matched scores differ 2.3σ, so ~40% of B-SEL's excess remains
+   generator-attributable; N-adequacy on realized scatter = 4.98σ (< registered 5), queued with
+   A17. The A10 invariant list gains a SEVENTH member: the numerator/normalizer z-domain +
+   quadrature pairing, which is NOT shared and is the live alternative.
+7. **What survives untouched:** O2 (+0.0792 impostor decomposition), O3 (matched −0.0846 on
+   B-SEL), S_REF/B_REF, the 6σ non-zero C-SG score, score-statistic grid-invariance,
+   physics-floor inertness, the pilot-STOP chronology, zero attrition. Gates H/Q/D raw outputs
+   now banked (`csg_gate_hqd_outputs.json`).
+8. **Process note (retrospective entry 3):** the two FATALs entered the record through the
+   orchestrator's own readout layer AFTER an otherwise discipline-heavy night — both were caught
+   only because the author requested an independent review. Amendment candidates updated
+   accordingly (A17 extension: realized-scatter re-check at readout; new: per-arm bias-reference
+   declaration in every scorer).

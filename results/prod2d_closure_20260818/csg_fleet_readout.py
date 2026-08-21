@@ -84,7 +84,13 @@ def main() -> int:
             )
             stats[ch] = {
                 "mean_h": float(means.mean()),
-                "bias": float(means.mean() - H_TRUE),
+                # CORRECTION (2026-08-21 adversarial review FATAL-1, ledger row
+                # #152): bias is measured against the ARM'S OWN h_gen, not the
+                # global H_TRUE — the first release of this scorer subtracted
+                # 0.73 for the delta arms too, and the wrong numbers reached
+                # the readout report and row #151 item 3 before being caught.
+                "bias": float(means.mean() - h_gen),
+                "bias_vs_073_SUPERSEDED": float(means.mean() - H_TRUE),
                 "sd": float(means.std(ddof=1)) if means.size > 1 else None,
                 "sem": float(means.std(ddof=1) / np.sqrt(means.size)) if means.size > 1 else None,
                 "mean_score_at_h_gen": float(scores.mean()),
@@ -160,6 +166,28 @@ def main() -> int:
         "band_on_bias": band_bias,
         "BAND_C": band_c,
         "band_c_note": "fresh author [RULE] — recorded, not ruled",
+        # Added 2026-08-21 post-review (MAJOR-1/MAJOR-2, ledger row #152): the
+        # REALIZED F-arm scatter, which is 1.56x the pilot's sigma_hat. The
+        # frozen bands are NOT retuned (anti-tuning); these fields quantify the
+        # verdict's margin under the realized scatter.
+        "realized_scatter": {
+            "score_sd": f["score_sd"],
+            "score_sem": (f["score_sd"] / np.sqrt(n_f)) if f["score_sd"] else None,
+            "sigma_from_zero": (abs(s_bar) / (f["score_sd"] / np.sqrt(n_f)))
+            if f["score_sd"]
+            else None,
+            "sigma_past_defect_edge": (
+                (abs(s_bar) - abs(bands["score_internal_defect_max"]))
+                / (f["score_sd"] / np.sqrt(n_f))
+            )
+            if f["score_sd"]
+            else None,
+            "n_adequacy_on_realized": (
+                abs(bands["score_internal_defect_max"]) / (f["score_sd"] / np.sqrt(n_f))
+            )
+            if f["score_sd"]
+            else None,
+        },
         "gate_s": {
             "s_hat": s_hat,
             "se_slope": se_slope,

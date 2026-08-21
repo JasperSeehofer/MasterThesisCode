@@ -1,0 +1,174 @@
+{
+  "gate_h": {
+    "0.68": {
+      "arm": "csgdm",
+      "seed": 910101,
+      "h_gen": 0.68,
+      "threading": {
+        "joint_z_omega_draw_h": 0.68,
+        "dist_vectorized_h": 0.68,
+        "build_csg_selection_objects_h_gen": 0.68
+      },
+      "s_bar_phi_z_max": 1.25290020423356,
+      "injection_pool_dl_max_gpc": 9.164987215485882,
+      "frac_drawn_beyond_calibrated_depth": 0.0,
+      "allow_low_pdet_coverage_silences_stop": true,
+      "design_deviation_gate_h_anchors": "prereg GATE H cites draw_selected_population_redshifts(:1213) and build_bsel_selection_objects(h_true=h_gen)(:894) as h_gen threading sites. C-SG v3's generator does not call draw_selected_population_redshifts -- prereg section 0 item 2's fix removes S_bar_phi from the (z,Omega) proposal entirely (recon-1 independently confirmed draw_selected_population_redshifts/selected_population_z_weights cannot be reused unmodified for C-SG). h_gen instead threads through dark_siren_injection._draw_dark_hosts_pixelated (the joint proposal), physical_relations.dist_vectorized (true d_L), this module's build_csg_selection_objects (the h_gen-keyed analog of build_bsel_selection_objects), and compute_seed_statistics/seed_statistics_from_matrix at scoring time. build_bsel_selection_objects(h_true=h_gen) IS still called above, but only to report S_bar_phi's z_max(h_gen) as a diagnostic.",
+      "_wall_time_s": 28.865215063095093
+    },
+    "0.73": {
+      "arm": "csgf",
+      "seed": 910101,
+      "h_gen": 0.73,
+      "threading": {
+        "joint_z_omega_draw_h": 0.73,
+        "dist_vectorized_h": 0.73,
+        "build_csg_selection_objects_h_gen": 0.73
+      },
+      "s_bar_phi_z_max": 1.3261748578964083,
+      "injection_pool_dl_max_gpc": 9.164987215485882,
+      "frac_drawn_beyond_calibrated_depth": 0.0,
+      "allow_low_pdet_coverage_silences_stop": true,
+      "design_deviation_gate_h_anchors": "prereg GATE H cites draw_selected_population_redshifts(:1213) and build_bsel_selection_objects(h_true=h_gen)(:894) as h_gen threading sites. C-SG v3's generator does not call draw_selected_population_redshifts -- prereg section 0 item 2's fix removes S_bar_phi from the (z,Omega) proposal entirely (recon-1 independently confirmed draw_selected_population_redshifts/selected_population_z_weights cannot be reused unmodified for C-SG). h_gen instead threads through dark_siren_injection._draw_dark_hosts_pixelated (the joint proposal), physical_relations.dist_vectorized (true d_L), this module's build_csg_selection_objects (the h_gen-keyed analog of build_bsel_selection_objects), and compute_seed_statistics/seed_statistics_from_matrix at scoring time. build_bsel_selection_objects(h_true=h_gen) IS still called above, but only to report S_bar_phi's z_max(h_gen) as a diagnostic.",
+      "_wall_time_s": 24.67609143257141
+    },
+    "0.78": {
+      "arm": "csgdp",
+      "seed": 910101,
+      "h_gen": 0.78,
+      "threading": {
+        "joint_z_omega_draw_h": 0.78,
+        "dist_vectorized_h": 0.78,
+        "build_csg_selection_objects_h_gen": 0.78
+      },
+      "s_bar_phi_z_max": 1.3985050409038058,
+      "injection_pool_dl_max_gpc": 9.164987215485882,
+      "frac_drawn_beyond_calibrated_depth": 0.0,
+      "allow_low_pdet_coverage_silences_stop": true,
+      "design_deviation_gate_h_anchors": "prereg GATE H cites draw_selected_population_redshifts(:1213) and build_bsel_selection_objects(h_true=h_gen)(:894) as h_gen threading sites. C-SG v3's generator does not call draw_selected_population_redshifts -- prereg section 0 item 2's fix removes S_bar_phi from the (z,Omega) proposal entirely (recon-1 independently confirmed draw_selected_population_redshifts/selected_population_z_weights cannot be reused unmodified for C-SG). h_gen instead threads through dark_siren_injection._draw_dark_hosts_pixelated (the joint proposal), physical_relations.dist_vectorized (true d_L), this module's build_csg_selection_objects (the h_gen-keyed analog of build_bsel_selection_objects), and compute_seed_statistics/seed_statistics_from_matrix at scoring time. build_bsel_selection_objects(h_true=h_gen) IS still called above, but only to report S_bar_phi's z_max(h_gen) as a diagnostic.",
+      "_wall_time_s": 24.570569276809692
+    }
+  },
+  "gate_q": {
+    "csgf": {
+      "arm": "csgf",
+      "seed": 910101,
+      "h_gen": 0.73,
+      "before_rescale": {
+        "n_total": 200,
+        "snr_below_threshold": {
+          "n": 0,
+          "fraction": 0.0
+        },
+        "sigma_over_dhat_ge_010": {
+          "n": 0,
+          "fraction": 0.0
+        },
+        "fisher_nonpd": {
+          "n": 86,
+          "fraction": 0.43
+        }
+      },
+      "after_rescale": {
+        "n_total": 200,
+        "snr_below_threshold": {
+          "n": 0,
+          "fraction": 0.0
+        },
+        "sigma_over_dhat_ge_010": {
+          "n": 0,
+          "fraction": 0.0
+        },
+        "fisher_nonpd": {
+          "n": 0,
+          "fraction": 0.0
+        }
+      },
+      "nonpd_band": 0.01,
+      "arm_redesign_required": false,
+      "_wall_time_s": 46.25922179222107
+    },
+    "csge": {
+      "arm": "csge",
+      "seed": 910101,
+      "h_gen": 0.73,
+      "before_rescale": {
+        "n_total": 200,
+        "snr_below_threshold": {
+          "n": 0,
+          "fraction": 0.0
+        },
+        "sigma_over_dhat_ge_010": {
+          "n": 0,
+          "fraction": 0.0
+        },
+        "fisher_nonpd": {
+          "n": 86,
+          "fraction": 0.43
+        }
+      },
+      "after_rescale": {
+        "n_total": 200,
+        "snr_below_threshold": {
+          "n": 0,
+          "fraction": 0.0
+        },
+        "sigma_over_dhat_ge_010": {
+          "n": 0,
+          "fraction": 0.0
+        },
+        "fisher_nonpd": {
+          "n": 0,
+          "fraction": 0.0
+        }
+      },
+      "nonpd_band": 0.01,
+      "arm_redesign_required": false,
+      "_wall_time_s": 46.61529588699341
+    }
+  },
+  "gate_d": {
+    "0.68": {
+      "arm": "csgdm",
+      "seed": 910101,
+      "h_gen": 0.68,
+      "n_drawn": 200,
+      "n_surviving": 200,
+      "survival_fraction": 1.0,
+      "max_cdf_gap_surviving_vs_model": 0.043240388396477814,
+      "max_cdf_gap_drawn_vs_model": 0.043240388396477814,
+      "d_crit_alpha": 0.05,
+      "d_crit_at_n_surviving": 0.09603227913199208,
+      "verdict": "MIRROR-MATCHED",
+      "_wall_time_s": 30.048146724700928
+    },
+    "0.73": {
+      "arm": "csgf",
+      "seed": 910101,
+      "h_gen": 0.73,
+      "n_drawn": 200,
+      "n_surviving": 200,
+      "survival_fraction": 1.0,
+      "max_cdf_gap_surviving_vs_model": 0.05510059894583452,
+      "max_cdf_gap_drawn_vs_model": 0.05510059894583452,
+      "d_crit_alpha": 0.05,
+      "d_crit_at_n_surviving": 0.09603227913199208,
+      "verdict": "MIRROR-MATCHED",
+      "_wall_time_s": 25.529088973999023
+    },
+    "0.78": {
+      "arm": "csgdp",
+      "seed": 910101,
+      "h_gen": 0.78,
+      "n_drawn": 200,
+      "n_surviving": 200,
+      "survival_fraction": 1.0,
+      "max_cdf_gap_surviving_vs_model": 0.030622445471883752,
+      "max_cdf_gap_drawn_vs_model": 0.030622445471883752,
+      "d_crit_alpha": 0.05,
+      "d_crit_at_n_surviving": 0.09603227913199208,
+      "verdict": "MIRROR-MATCHED",
+      "_wall_time_s": 25.26356339454651
+    }
+  }
+}

@@ -1,5 +1,16 @@
 # Runbook — next session (written 2026-08-21 ~07:45, supersedes RUNBOOK_NEXT_SESSION_25)
 
+> **⚠ SUPERSEDING ADDENDUM (2026-08-21 ~09:30, ledger row #152):** an author-requested adversarial
+> review CONFIRMED two FATAL defects in the fleet readout's presentation (δ-arm bias reference;
+> the "full channel reproduces −0.108" rail coincidence) plus decisive MAJORs (realized scatter
+> 1.56× pilot σ̂ → defect-edge margin only 1.07σ; GATE S void-candidate; BAND R actually paired).
+> **Read `ADVERSARIAL_REVIEW_CSG_20260821.md` + the prereg's CORRECTION & REVIEW ADDENDUM before
+> §1 below.** The decision queue is RESTATED by row #152: BAND C ratification becomes "bank the
+> 6.05σ non-zero score (B_num/β_Ḡ h-derivative mismatch ~10%); INTERNAL-DEFECT label PROVISIONAL
+> pending pre-check O4 (common-domain/quadrature pairing test — supersedes the S̄_φ audit)";
+> GATE S ruling becomes "void, not attenuated"; plus the A17-extension and two new proposed
+> amendments in retrospective entry 3. Everything else below stands.
+
 **Read first:** `results/prod2d_closure_20260818/CAMPAIGN_READOUT_REPORT_CSG_20260821.md` — the
 whole overnight campaign in one comprehension-first artifact — then ledger rows **#149 → #151**.
 The prereg (`PREREGISTRATION_SELFGEN_CONTROL.md`) now carries, below its freeze line, in order:

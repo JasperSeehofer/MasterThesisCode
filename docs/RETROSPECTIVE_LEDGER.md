@@ -89,3 +89,36 @@ existed) is the form this ledger generalises; it is referenced, not rewritten.
    number. For (c): route to the standing A6 audit (no new amendment).
 5. **Disposition.** Six author [RULE]s queued (readout report §10); next technical step under
    either branch = independent `S̄_φ` audit; runbook 26 is the entry point.
+
+## Entry 3 — 2026-08-21 — Author-requested adversarial review found 2 FATALs in the orchestrator's readout layer; overclaims withdrawn same-morning
+
+1. **What failed.** After a discipline-heavy night (4 pre-committed scorers, frozen bands,
+   independent recomputes), the *readout/presentation layer* still shipped two fatal errors:
+   (a) every arm's bias measured against the global 0.73 instead of its own h_gen — corrupting
+   the δ-arm numbers, the "every arm reproduces −0.108" claim, AND the orchestrator's own
+   GATE S "attenuated" qualification built on them; (b) a railed posterior's location (map_h =
+   0.600 in 46/46) narrated as a "first-principles reconstruction" of the −0.11. Both entered
+   ledger row #151 and the readout report before being caught — by an Opus review the author
+   requested, not by the night's own checks. Also confirmed: realized scatter 1.56× the pilot's
+   σ̂ (the defect-edge margin is 1.07σ, not categorical); BAND R's registered independence
+   rationale was wrong (arms provably paired, corr 0.9975).
+2. **What worked.** The review-then-re-derive loop: every finding was reproduced by the
+   orchestrator before any correction was applied, and the corrections landed append-only with
+   the superseded values retained. The score-zero primary statistic survived everything (6.05σ,
+   grid-invariant) — A12's design choice is what kept the campaign's core finding alive through
+   the review. The review also *cleared* O2/O3's mechanics explicitly.
+3. **What failed structurally.** Independent recomputation was applied to *inputs* (O2 headline,
+   fleet means) but not to the *readout semantics* (which reference does "bias" use per arm?);
+   the falsifier asymmetry (A14 falsifier registered only for the branch that did NOT fire) went
+   unnoticed until the review named it; verification effort concentrated pre-run, thinned
+   post-run.
+4. **Suggested amendments.** PROPOSED A17-extension: gates and bands re-state their operating
+   characteristics on REALIZED scatter at readout (the N-adequacy gate would have failed at 4.98σ
+   vs its registered 5). PROPOSED (new): every readout scorer declares, per arm, the reference
+   value each "bias"/"error" statistic subtracts, as a printed field — a wrong implicit reference
+   is a silent FATAL. PROPOSED (new): A14 tightened — a pre-registration must arm a falsifier for
+   EVERY branch, not only the branch the designer expects.
+5. **Disposition.** Corrections in prereg CORRECTION & REVIEW ADDENDUM + ledger row #152; the
+   INTERNAL-DEFECT label downgraded to PROVISIONAL (non-zero score at 6σ stands); pre-check O4
+   (common-domain/quadrature pairing test) proposed as the discriminating next step, superseding
+   the S̄_φ designation; review banked verbatim.

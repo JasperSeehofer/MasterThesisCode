@@ -453,3 +453,63 @@ Cross-arm structure (matched channel):
   correspondence-fleet convention rather than the prereg's 2-cpu cost line.
 - Artifacts: 46 banked JSONs + 46 per-event diagnostics CSVs (89 MB) under
   `csg_pilot_20260821/` with `MANIFEST.sha256`; all three channels recomputable at zero compute.
+
+---
+
+## CORRECTION & REVIEW ADDENDUM (2026-08-21, post-verdict; author-requested adversarial review)
+
+An independent adversarial review (`ADVERSARIAL_REVIEW_CSG_20260821.md`, banked verbatim) attacked
+the night's chain. **Every decisive finding was re-derived by the orchestrator before this addendum
+was written** (row #152). Corrections to the FLEET VERDICT block above — the block itself is left
+unedited per append-only discipline; where they conflict, THIS addendum governs:
+
+1. **FATAL-1 CONFIRMED — the δ-arm "bias" numbers above are wrong.** `csg_fleet_readout.py`
+   subtracted the global 0.73 for every arm. Corrected (mean_h − h_gen): matched **−0.0363 (δ−)
+   / −0.0665 (F) / −0.0995 (δ+)**; full −0.0599 / −0.1090 / −0.1544; pure +0.0371 / +0.0115 /
+   −0.0219. The scorer is fixed (superseded values retained as `bias_vs_073_SUPERSEDED`), and the
+   matched-channel bias is in fact strongly h_gen-dependent — only the SCORE is
+   approximately h_gen-flat (−0.133/−0.117/−0.113).
+2. **FATAL-2 CONFIRMED — the "full channel reproduces −0.108 in every arm" claim is WITHDRAWN.**
+   Full-channel `map_h` = 0.600 (the grid floor) in **46/46 seeds**; what is constant is the railed
+   posterior's location (~0.62), and "−0.108" is `0.62 − 0.73`. The full channel is railed and
+   uninformative (slope in h_gen ≈ 0.055); the "reconstructed from first principles" sentence in
+   the readout is withdrawn. The full channel stays REPORTED-ONLY as v3 designated.
+3. **MAJOR-1 CONFIRMED — the verdict's margin, restated on realized scatter.** Realized F-arm
+   score sd = 0.0751 (1.56× the pilot's σ̂), SEM = 0.0194. **S̄₁₅ = −0.1173 ± 0.0194: non-zero at
+   6.05σ (bankable), but past the INTERNAL-DEFECT edge by only 1.07σ** (reviewer's seed bootstrap:
+   P ≈ 0.13 of landing MIXED). The INTERNAL-DEFECT *label* is therefore **PROVISIONAL**; the
+   bankable statement is: *the implemented `B_num` and `β_Ḡ_φ` are not a matched
+   numerator/normalizer pair — their h-derivatives differ by ~10% (−1.222 vs −1.105)*. The frozen
+   bands are NOT retuned (anti-tuning); the realized-scatter fields are added to the output.
+4. **MAJOR-2 — the N-adequacy gate re-evaluated on realized scatter gives 4.98σ (< the registered
+   5)**; queued with the author's A17 ruling (extension: gates re-check operating characteristics
+   at readout on realized scatter).
+5. **GATE S is VOID-CANDIDATE, superseding the "attenuated" qualification** (MAJOR-3): the
+   reviewer's truncation simulation reproduces ŝ ≈ 0.37 from a plain truncated Gaussian with the
+   observed widths (my "truncation works against this" sentence was built on the FATAL-1-corrupted
+   δ-arm numbers and is withdrawn); the registered rule's branches also overlap on `H_GRID_FULL`
+   (both VALID and INERT satisfiable), so the gate is not a partition. Author [RULE] #2 becomes
+   "rule GATE S void", not "INERT vs attenuated".
+6. **BAND R re-characterized** (MAJOR-8): the σ draw happens AFTER the accept loop, so F and E
+   share bit-identical (z, Ω, M) draws — they are PAIRED, not independent (measured corr 0.9975);
+   the registered independence rationale was wrong in the implementation's favour. Correct paired
+   3σ band = 0.0022; observed gap 0.0002 — the σ-mode null passes an informative band after all.
+7. **The discriminating next test is re-targeted** (MAJOR-5/6): the verdict is a ~10% residual
+   between two large derivatives computed by DIFFERENT quadratures on DIFFERENT h-dependent
+   z-domains (`β_Ḡ_φ`: 1500-node trapezoid to `min(z_max(h),1.55)`; `B_num`: 50-node
+   Gauss–Legendre over per-event ±4σ with endpoint-clamped interpolation; generator: fixed
+   [1e-6, 1.5]). The identity `∫B_num dx = β_Ḡ_φ` was assumed, never verified, and the z-domain
+   is a SEVENTH un-listed invariant that is *not* shared. **Proposed pre-check O4 (the fired
+   branch's falsifier, retrofitting MAJOR-9):** re-evaluate `B_num` and `β_Ḡ_φ` on a common
+   domain/quadrature (±10σ window, aligned caps, no clamp) and re-read the score. If −0.117 moves
+   materially ⇒ numerical-pairing artifact (the §1 reading flips to generator–model/implementation
+   mismatch); if it survives ⇒ the defect label hardens. Cheap; awaits the author's [RULE].
+8. Also recorded: GATE V's amended prongs have near-zero discriminating power on real posteriors
+   (46/46 PASS is not evidence of quality — it is a flat-null detector only); `S̄_φ` audit
+   (previous designation) is DE-PRIORITIZED because `S̄_φ` appears in both legs and largely
+   cancels; gates H/Q/D raw outputs are now banked (`csg_gate_hqd_outputs.json`).
+9. **What the review confirmed clean** (recorded for balance): O2's mechanics (identity to 5.5e-7,
+   no leak, r_Malm placement verified), S_REF/B_REF reproduction, the pilot-STOP chronology, the
+   f_k/f̄ pixel-marginal pairing (the reviewer's own initial suspicion, refuted by their check),
+   physics-floor inertness (0 zero cells in 58 seeds), score-statistic grid-invariance, and zero
+   analysis-stage attrition (the cross-covariance rescale worked).
