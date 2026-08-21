@@ -2078,6 +2078,42 @@ def compute_seed_statistics(
     piv = df.pivot_table(index="event_idx", columns="h", values="combined_no_bh", aggfunc="first")
     piv = piv.reindex(columns=grid)
     vals = piv.to_numpy(dtype=np.float64)
+    return seed_statistics_from_matrix(vals, seed, grid, h_true, zero_handling, weights_convention)
+
+
+def seed_statistics_from_matrix(
+    vals: npt.NDArray[np.float64],
+    seed: int,
+    grid: npt.NDArray[np.float64],
+    h_true: float = H_TRUE,
+    zero_handling: ZeroHandling = "physics_floor",
+    weights_convention: MomentWeights = "trapezoid",
+) -> SeedStats:
+    """Core ``(n_events, n_nodes)`` likelihood matrix -> :class:`SeedStats` reduction.
+
+    Extracted from :func:`compute_seed_statistics` (pure refactor, 2026-08-21,
+    ADDITIVE per the C-SG v3 build task -- no existing arm's behaviour
+    changes: :func:`compute_seed_statistics` is now a thin CSV-to-matrix
+    wrapper that delegates here) so a caller with a likelihood matrix that is
+    NOT the ``combined_no_bh`` column pivot -- e.g.
+    :mod:`darksiren_emri.validation.selfgen_control`'s C-SG matched/pure/full
+    channel matrices (``B_num/(D_tilde_phi - alpha_G_phi)``,
+    ``B_num/D_tilde_phi``) -- gets the IDENTICAL scoring statistics
+    (physics-floor zero handling, trapezoid moments, HPD coverage, DS-6 rail)
+    without re-deriving them.
+
+    Args:
+        vals: ``(n_events, n_nodes)`` per-event likelihoods (linear, not log),
+            columns aligned with ``grid``.
+        seed: The realization seed (recorded, not consumed).
+        grid: The (sorted) h-grid ``vals``' columns are aligned to.
+        h_true: The mirror-universe truth.
+        zero_handling: See :func:`combine_log_likelihood`.
+        weights_convention: See :func:`moment_weights`.
+
+    Returns:
+        The :class:`SeedStats`.
+    """
     sum_log_l = combine_log_likelihood(vals, zero_handling)
 
     # Ledger row #145: a seed whose every node is masked carries no information.
@@ -2114,7 +2150,7 @@ def compute_seed_statistics(
 
     return SeedStats(
         seed=seed,
-        n_events=int(piv.shape[0]),
+        n_events=int(vals.shape[0]),
         mean_h=mean_h,
         map_h=map_h,
         sigma_h=sigma_h,
