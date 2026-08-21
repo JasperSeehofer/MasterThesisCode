@@ -168,3 +168,23 @@ part of the audit surface (a one-call engagement would have been the silent-subs
 failure; found and prevented at implementation).
 
 No other section changes; bands, arms, statistics, invariants stand as registered.
+
+## LEV — AXIS-LEVERAGE VALUES (2026-08-22, appended pre-pilot; no `evaluate()` has run for [P3-IMP])
+
+`p3_leverage_estimate.py` (zero-`evaluate()`, 103 s local — within the costing line), with the
+two DISCLOSED substitutions carried in its output (`flagged_substitutions`): effective event-z
+in place of per-candidate z_obs (the real ball search is not reimplemented outside
+`evaluate()`), and a product-of-means in place of a paired per-event average (the redrawn
+200-event set cannot be index-aligned to the banked post-filter 174-event set without
+`evaluate()`). Both are order-of-magnitude-safe for a gate whose threshold check has this
+margin:
+
+- Per-seed predicted score-scale delta: +0.095 … +0.157 (12/12 positive);
+  fleet mean **+0.1224, sd 0.0185**.
+- **Gate check: ratio |fleet mean| / threshold (5 × 0.004) = 6.12; min per-seed ratio 4.75,
+  max 7.85 ⇒ GATE-LEV PASS** — the registered axis can reach every band; execution proceeds
+  to arm P and the pilot.
+- Note for the verdict's context (NARRATIVE-HYPOTHESIS until measured): the predicted
+  score-scale leverage (+0.122) is the same order as the completion-leg twin's measured
+  per-seed shift (+0.125) — consistent with the one-arrangement ([P2]+[P3]) reading; the
+  measured primary remains Δmean_h, not this estimate.

@@ -1,0 +1,175 @@
+{
+  "registered_in": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md, arm LEV (\u00a73) and the axis-leverage statement (A17, \u00a75)",
+  "seeds": [
+    900101,
+    900102,
+    900103,
+    900104,
+    900105,
+    900106,
+    900107,
+    900108,
+    900109,
+    900110,
+    900111,
+    900112
+  ],
+  "h_gen": 0.73,
+  "h_lo": 0.725,
+  "h_hi": 0.735,
+  "flagged_substitutions": [
+    "candidate z_obs: used the event's own observed-d_L-implied redshift at H_GEN as an effective-z proxy, NOT the real catalogue candidate search (galaxy_catalogue/handler.py get_possible_hosts_from_ball_tree) -- disclosed, module docstring 'FLAGGED SUBSTITUTION'",
+    "per-seed predicted_delta is a PRODUCT OF MEANS (banked share_cat index vs. regenerated-but-unfiltered z_obs index), not a true paired per-event mean -- the 200 regenerated events cannot be reliably index-aligned to the banked CSV's 174 (post-quality-filter, renumbered) events without running evaluate() itself"
+  ],
+  "per_seed": [
+    {
+      "seed": 900101,
+      "banked_mean_h": 0.6185865082775021,
+      "banked_n_events": 174,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.04124638647998708,
+      "mean_dln_s_phi_regenerated": 2.80822203893334,
+      "dln_s_phi_sd_regenerated": 2.0943776786809636,
+      "predicted_delta": 0.11582901153946186,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    },
+    {
+      "seed": 900102,
+      "banked_mean_h": 0.6245614094133964,
+      "banked_n_events": 184,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.04004307570803636,
+      "mean_dln_s_phi_regenerated": 2.9035677451559185,
+      "dln_s_phi_sd_regenerated": 2.80633148442762,
+      "predicted_delta": 0.11626778304269088,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    },
+    {
+      "seed": 900103,
+      "banked_mean_h": 0.617284636735078,
+      "banked_n_events": 174,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.0508789474067159,
+      "mean_dln_s_phi_regenerated": 2.9676143753905375,
+      "dln_s_phi_sd_regenerated": 2.5042432127483214,
+      "predicted_delta": 0.1509890957289092,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    },
+    {
+      "seed": 900104,
+      "banked_mean_h": 0.6143537574081882,
+      "banked_n_events": 182,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.05015196066347017,
+      "mean_dln_s_phi_regenerated": 3.129133785020422,
+      "dln_s_phi_sd_regenerated": 2.932186444372353,
+      "predicted_delta": 0.15693219449707974,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    },
+    {
+      "seed": 900105,
+      "banked_mean_h": 0.6127797083931378,
+      "banked_n_events": 175,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.03734901383544121,
+      "mean_dln_s_phi_regenerated": 3.0143676293334027,
+      "dln_s_phi_sd_regenerated": 2.4854417016262405,
+      "predicted_delta": 0.11258365829307938,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    },
+    {
+      "seed": 900106,
+      "banked_mean_h": 0.6197060244610186,
+      "banked_n_events": 188,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.0427595813642853,
+      "mean_dln_s_phi_regenerated": 2.9499795335828463,
+      "dln_s_phi_sd_regenerated": 2.3769054685418847,
+      "predicted_delta": 0.12613988988921213,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    },
+    {
+      "seed": 900107,
+      "banked_mean_h": 0.6139929758754807,
+      "banked_n_events": 180,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.03093526563024386,
+      "mean_dln_s_phi_regenerated": 3.0715077266110224,
+      "dln_s_phi_sd_regenerated": 2.7901988000784823,
+      "predicted_delta": 0.09501790740805842,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    },
+    {
+      "seed": 900108,
+      "banked_mean_h": 0.6199126801101454,
+      "banked_n_events": 181,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.04107023702131659,
+      "mean_dln_s_phi_regenerated": 3.048748627739559,
+      "dln_s_phi_sd_regenerated": 2.799518266771927,
+      "predicted_delta": 0.12521282875967737,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    },
+    {
+      "seed": 900109,
+      "banked_mean_h": 0.6106198681953956,
+      "banked_n_events": 181,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.03655123882386014,
+      "mean_dln_s_phi_regenerated": 3.3018216038328023,
+      "dln_s_phi_sd_regenerated": 2.7440557353555115,
+      "predicted_delta": 0.12068566999547367,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    },
+    {
+      "seed": 900110,
+      "banked_mean_h": 0.6319218907039342,
+      "banked_n_events": 178,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.05238694992176446,
+      "mean_dln_s_phi_regenerated": 2.54149575922738,
+      "dln_s_phi_sd_regenerated": 2.112190166514063,
+      "predicted_delta": 0.1331412110650215,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    },
+    {
+      "seed": 900111,
+      "banked_mean_h": 0.6134792497822728,
+      "banked_n_events": 175,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.030284645992480708,
+      "mean_dln_s_phi_regenerated": 3.1875579350093557,
+      "dln_s_phi_sd_regenerated": 2.9299948140384418,
+      "predicted_delta": 0.09653406364228116,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    },
+    {
+      "seed": 900112,
+      "banked_mean_h": 0.6183763882750846,
+      "banked_n_events": 180,
+      "n_events_regenerated": 200,
+      "mean_share_cat_banked": 0.04253894614956537,
+      "mean_dln_s_phi_regenerated": 2.8130069869742935,
+      "dln_s_phi_sd_regenerated": 2.1489114496354182,
+      "predicted_delta": 0.11966235273725061,
+      "substitution_note": "predicted_delta = mean(share_cat) [banked, paired index] x mean(dln_S_phi) [regenerated proxy, DECOUPLED index] -- see module docstring 'FLAGGED SUBSTITUTION'"
+    }
+  ],
+  "fleet": {
+    "n_seeds": 12,
+    "predicted_delta_mean": 0.12241630554984965,
+    "predicted_delta_sd": 0.018472288569710903,
+    "predicted_delta_max_abs": 0.15693219449707974
+  },
+  "axis_leverage_check": {
+    "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md, arm LEV (\u00a73) and the axis-leverage statement (A17, \u00a75), axis-leverage statement",
+    "sem_paired_scale": 0.004,
+    "leverage_factor": 5.0,
+    "leverage_threshold": 0.02,
+    "fleet_mean_predicted_delta": 0.12241630554984965,
+    "ratio_fleet_mean_over_threshold": 6.120815277492483,
+    "ratio_max_abs_over_threshold": 7.846609724853987,
+    "note": "the GATE-LEV pass/fail decision (continue to PILOT vs. STOP for re-design) is the orchestrator's/author's per prereg \u00a75 -- this instrument prints the ratios only"
+  },
+  "elapsed_s": 103.08927989006042
+}
