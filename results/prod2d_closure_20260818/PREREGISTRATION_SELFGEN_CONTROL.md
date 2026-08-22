@@ -916,3 +916,49 @@ in advance from O4's banked β̄ values (match 1.8e-8 relative). Adopted amendme
 6. **Carried caveat restored:** under `fused` the full channel is still railed (mean_h
    0.6169/0.6221, r_low) — O7 is a completion-cell score statement, not a production-posterior
    statement, and not an endorsement of the `266d7290` pin (its own ruling).
+
+## O8 — FUSED BIAS-LEG REFERENCE: REGISTRATION (2026-08-22, author-approved rows #163 item 1 + morning "Run now"; pre-data; A21/A22 in force)
+
+**Question (the O7 amendment-1 gap):** what is the fused-cell fleet **bias** (mean_h − h_gen on
+the matched channel), the BAND-C leg O7 could not close?
+
+**Construction (zero-`evaluate()` transfer, the O6/O7 pattern extended):** per C-SG-F seed, the
+harness replica of the fused numerator (`o6_reference_derivation.r_prod_b_num`, UNMODIFIED)
+evaluated at **every node of H_GRID_41** (not just 0.725/0.735), with
+`build_aligned_tables`-pattern S̄_φ/β̄_Ḡ_φ tables built for the full grid; the matched posterior
+= per-event `B_num_replica(h)/β̄_Ḡ_φ(h)` combined by the COMMITTED
+`seed_statistics_from_matrix`-equivalent path (`csg_channel_matrices`/`compute` conventions —
+the same combine every C-SG shard used), giving `mean_h_fused_ref(seed)` per seed.
+
+**Gates (fail ⇒ VOID):**
+- **GATE T8:** β̄_Ḡ_φ at 0.725/0.735 matches the O4-banked full-precision values
+  (893324861.1081496 / 883510508.7955135) to 1e-9 relative (table-construction identity).
+- **GATE M8 (the transfer anchor):** for the THREE banked end-to-end fused seeds (910101,
+  910105, 910113), `mean_h_fused_ref` matches the banked records' matched-channel `mean_h` to
+  **≤ 2e-4** (floor: the O6/O7-measured storage/convention terms propagate differently into a
+  mean than into the score's central difference; 2e-4 is ~100× the score-level floor and ~20×
+  below the per-seed bias scatter — axis-leverage statement below). A21: if the realized
+  mismatch exceeds the band for a diagnosed benign reason, STOP and amend BEFORE reading the
+  fleet statistic.
+- **A22 stamp** at run start; **A17(f)**: every comparand above is a banked artifact (named).
+
+**Primary [registered wording]:** `bias_fused(15) = mean_s[mean_h_fused_ref(s)] − 0.73` with
+per-seed vector banked (A17(e)); typed **[BANKED, by transfer]** with the 3/15 end-to-end
+anchor fraction stated (O7 amendment-3 discipline). REPORTED alongside: the banked off-cell
+bias leg (−0.0665, C-SG readout) for the paired Δ.
+
+**Bands:** BIAS-LEG-CLOSED iff |bias_fused(15)| ≤ 0.0209 (the frozen C-SG bias
+SELF-CONSISTENT edge, ported per A17 with this leverage statement: the off→fused axis moved
+the two spot-check seeds' matched mean_h by −0.084/+0.093 — order 5× the edge — so both bands
+are reachable); else BIAS-LEG-OPEN (report the value; the fused cell's bias leg remains a
+production caveat). Two-sided; no materiality commentary (amendment-6 discipline).
+
+**Costing (A6/A17):** zero-`evaluate()`; tables at 41 nodes ≈ 20× the 2-node build ≈ 30–60 min
+local, ≲6 GB; per-seed numerator replicas ≈ minutes.
+
+**A10:** everything held fixed except the evaluation grid extension; structural blindness:
+inherits the replica/table common-mode (S̄_φ leaf) and the 12/15 transfer inference; the
+matched-channel combine conventions are those of the C-SG record, not re-derived here.
+
+*(Instrument `o8_bias_leg_reference.py` committed before it runs; VERDICT + A20 review before
+banking.)*
