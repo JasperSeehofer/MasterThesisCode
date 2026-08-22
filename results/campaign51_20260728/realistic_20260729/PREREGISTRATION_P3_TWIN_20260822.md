@@ -211,3 +211,17 @@ implicated by this failure.
 scratch before the pilot; no band, arm, or statistic changes.** The h-grid → h-prior →
 candidate-window coupling joins the A17 checklist as a portability hazard (an "evaluation grid"
 input that is secretly a SELECTION input).
+
+## AMENDMENT 3 (2026-08-22 ~05:25; pre-scoring — E-P3(b)'s evidence channel unsatisfiable for a mechanics reason, second instance of the AMENDMENT-1 class)
+
+The batch-path engagement log (`_p3_engagement_log_once("batch")`) is emitted inside FORKSERVER
+WORKER processes, which do not inherit the parent's `_capture_root_log` FileHandler — the line
+cannot appear in any captured run log regardless of genuine engagement (seed 900101: engagement
+real — the counterfactual init line is present in the parent log, and `L_cat_no_bh` moves
+fleet-wide, E-P3(a)). E-P3(b) is REPLACED, before any scoring, by: (b′) the parent-process
+counterfactual init line (`catalogue_numerator_survival='phi'`) present in every `"phi"` log —
+already cell-specific at source; the batch-dispatch reach remains covered by (a)'s data-level
+movement plus AMENDMENT 1(c)'s code audit, explicitly in the A20 review's scope. No band, arm,
+or statistic changes. (Two gate-evidence mechanics defects in one registration — logging
+observability joins the A17 checklist: an engagement gate's evidence channel must be verified
+OBSERVABLE in the harness before registration.)
