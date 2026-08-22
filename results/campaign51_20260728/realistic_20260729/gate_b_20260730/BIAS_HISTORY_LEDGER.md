@@ -2434,3 +2434,26 @@ table as recommended:
    defects of the day — every one caught by the A20 mechanism before banking.
 4. Housekeeping queued: comparand-CSV checksum pinning (2026-08-20 rule, recurring across the
    P3 chain).
+
+## Row #168 — 2026-08-22 — Appendix A REFUTED by the derivation check: the R-rescale is a B_scale-class un-derived multiplier; the TWIN (+0.0155) is the derivation-coherent candidate, off-basis-conditional; Appendix B PROPOSED to the author; [P3-RPHI] opened
+
+1. **[BANKED verdict of the check] APPENDIX-FALLS** (`A20_REVIEW_APPENDIX_A_20260822.md`):
+   D̃_φ-stays survives; the β_G_φ→β_G numerator re-derivation is refuted at the repo's own
+   ratified bscale memo ("no remaining slot") — β_G_φ/Σ_glob is a measure conversion, its S̄
+   cancels, and R = β_G/β_G_φ (measured 1.39–1.73) re-installs the B_scale defect class on the
+   catalogue leg. Confirmed by self-normalization and S̄→cS̄ homogeneity (twin uniquely
+   invariant, fused basis only). Orchestrator verified the decisive code facts at source.
+2. **[Re-labelled] The completed arm's −0.00281 = the twin contaminated by the spurious
+   R-inflation; the derivation-coherent candidate is the TWIN: +0.015524 ± 0.003657** — with
+   TWO carried conditionals: the all-impostor scope warning AND the off-basis conditional
+   (S̄→cS̄ invariance requires the fused completion leg; all banked P3 numbers are off-basis).
+   **P3 adoption is inseparable from the off-vs-fused basis fork; re-measure on fused.**
+3. **[PROPOSED → author, open RULE] APPENDIX B** (ratify (i) D̃ stays / (ii) β_G_φ stays,
+   twin = candidate / (iii) basis conditional + fused re-measure / (iv) three-arm fused-basis
+   b0 identity test). The author's conditional ratification of Appendix A does NOT take effect.
+4. **[AGENT, stage 0 opened] [P3-RPHI]:** possible Σ^φ/Σ³ᴰ ≈ 0.91 slot mismatch in the no-BH
+   catalogue divisor (contested vs Path A's r_φ≡1) — un-derived ~9% leg factor if real; intake
+   next, re-measure before any use (rule 2).
+5. The day's scoreboard: five A20-class reviews, zero FATAL, THREE verdicts materially
+   corrected and one derivation overturned before adoption — the mechanism is carrying the
+   campaign's integrity exactly as designed.
