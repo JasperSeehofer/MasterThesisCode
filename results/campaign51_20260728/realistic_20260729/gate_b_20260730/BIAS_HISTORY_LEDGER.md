@@ -2457,3 +2457,11 @@ table as recommended:
 5. The day's scoreboard: five A20-class reviews, zero FATAL, THREE verdicts materially
    corrected and one derivation overturned before adoption — the mechanism is carrying the
    campaign's integrity exactly as designed.
+
+## Row #169 — 2026-08-22 — Author ruling: APPENDIX B RATIFIED ("Ratify B, run fused re-measure + b0 test") — the twin is the candidate of record (off-basis-conditional); fused-basis re-measurement + three-arm b0 identity test granted; [P3-RPHI] proceeds
+
+Costing correction disclosed at registration (binding-default honesty): the granted option
+described the fused re-measure as "12 seeds ~6 CPU-h"; the PAIRED design (Δ_twin|fused =
+fused+twin − fused+coded) requires the fused-CODED baseline as well ⇒ 24 runs ≈ 12 CPU-h.
+The baseline half (independently required for ANY fused-basis B-SEL statement) launches first;
+the twin half follows unless the author intervenes on the corrected total.

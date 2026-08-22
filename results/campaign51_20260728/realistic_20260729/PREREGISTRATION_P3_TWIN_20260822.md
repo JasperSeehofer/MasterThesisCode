@@ -521,3 +521,40 @@ verified 174×41 exactly; the 870 skipped rows are the low-wing nodes the scorer
 A17(d): bank the four β vectors + per-h T-C residuals, not only R(h); both input CSV sets are
 untracked/unchecksummed at the consumer, contra the 2026-08-20 dataset-pinning rule (recurring
 across the P3 chain — queued for the author as housekeeping).
+
+## FUSED-BASIS ARMS — REGISTRATION (2026-08-22, author-ratified Appendix B item (iii), row #169; pre-data; A21/A22, A17(d)/(e)/(f) in force)
+
+**Question:** the twin's basis-clean value — Δ̄_twin|fused(12) = mean_h(fused+twin) −
+mean_h(fused+coded) on the 12 B-SEL seeds — the number Appendix B makes the candidate's venue
+statistic (the S̄→cS̄-invariant arrangement exists only on the fused completion basis).
+
+**Arms (the committed driver `p3_twin_test.py`'s `_run_bsel_seed`, with
+`selection_in_completion_numerator="fused"` — pin-value, now also the PRODUCTION_FLAGS default
+— and `catalogue_numerator_survival` as tabled; fresh work roots, logs, A22 stamps):**
+
+| arm | cells | seeds | cost |
+|---|---|---|---|
+| **FC (fused-coded baseline)** | fused / off-twin | 12 | ≈ 6 CPU-h — REQUIRED for any fused-basis statement; launches first |
+| **FT (fused-twin)** | fused / phi | 12 | ≈ 6 CPU-h — follows FC unless the author intervenes on the corrected total (row #169 disclosure: the ratified option said ~6 CPU-h total; the paired design costs ~12) |
+
+**Gates:** L-P3 log checks per arm (fused line present; twin line present only in FT);
+E-P3(a)-style engagement (FT's L_cat differs from FC's on >99% of rows); the A17(e) baseline
+gate is INTERNAL here (both arms fresh, same code state); comparand pins: the driver records
+git commit + dirty at start (A22).
+
+**Primary:** paired Δ̄_twin|fused(12) with per-seed vector + sd + SEM banked. REPORTED
+alongside: mean_h(FC) fleet bias (the fused-basis B-SEL baseline — itself a first: the venue's
+headline re-measured on the production basis) and the cross-basis comparison to the banked off
+numbers (twin +0.015524, off headline −0.108302), explicitly labeled cross-basis.
+
+**Bands (frozen now; the off-basis paired scatter 0.0037 is the port, A17-checked when FC/FT
+realized scatter lands — re-derive and STOP if >2× off):** TWIN-FUSED-MATERIAL iff
+|Δ̄_twin|fused| > 0.02 · TWIN-FUSED-SMALL iff ≤ 0.01 with SEM ≤ 0.004 · REPORT-BOUND otherwise.
+Two-sided; no commentary (amendment-6/16 discipline). The all-impostor scope warning rides:
+this measures leverage on the fused basis, not correctness — correctness = the b0 test (next
+registration).
+
+**Costing (A6/A17):** 24 × evaluate() ≈ 12 CPU-h; local 2-wide detached (the overnight ops
+pattern), ~6 h wall total; the corrected-vs-granted cost is disclosed in row #169.
+
+*(Driver reused as committed; VERDICT + A20 review before banking.)*
