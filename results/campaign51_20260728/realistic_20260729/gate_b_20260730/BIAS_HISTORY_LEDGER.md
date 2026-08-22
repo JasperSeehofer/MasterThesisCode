@@ -2274,3 +2274,34 @@ All three lapse when the author returns. Scientific rulings (stage-5 verdicts, l
 physics-change adoptions) remain author-gated throughout — presented and STOPPED, per standing
 discipline. Overarching goal registered as stated: identify and remove remaining bias toward a
 true H₀ constraint; the active front is [P3-IMP] (row #159 D3).
+
+## Row #161 — 2026-08-22 (overnight) — O7 closes the score-leg fleet null by transfer (A20-amended); D2 pin executed [PHYSICS]; [P3-IMP] opened through stage 2 with the twin cell built; GATE R-P3 FIRED and is under diagnosis
+
+Overnight autonomous execution under row #160; rulings queued, nothing banked past its review.
+
+1. **[BANKED, by transfer — A20-amended] O7:** both registered spot-checks TRANSFER-HOLDS at
+   the identical +1.9411452e-6 storage constant (derived in advance by the reviewer from O4's
+   banked β̄); fleet: the fused cell removes the matched-channel violation (paired shift
+   **+0.124919 ± 0.001194, 105σ**), residual **+0.007602 ± 0.018362** (0.41σ; 95% CI does not
+   exclude the frozen edge). SCORE leg only — the **bias leg is OPEN under fused** (amendment
+   1); rail uncured (mean_h ~0.62, r_low). Review: `A20_REVIEW_O7_20260822.md`,
+   BANK-WITH-AMENDMENTS, zero FATAL. Author ratification queued (morning).
+2. **[DONE, ruled row #159] D2 executed:** `PRODUCTION_FLAGS` completion cell off→fused for
+   future runs-of-record ([PHYSICS] `266d7290`, gate-ledger rows appended); banked arms keep
+   their explicit ARM_SELECTION_CELL basis — regeneration pin-independent (test re-anchored).
+3. **[OWNED — A22 candidate, author]** S7/910113 ran while the P3 branch checkout + twin-cell
+   commit mutated the tree; verified numerically uncontaminated, but the record's git_commit
+   stamp is false. Proposed standing rule (A22): no tree mutation/HEAD moves during a
+   registered run; stamp commit + dirty state at run start. Adopted as discipline for the
+   remainder of the session.
+4. **[P3-IMP] (the "keep digging" front, row #159 D3=B):** stage 0–2 complete and committed
+   (claim intake with exoneration/R0 checks; the CATALOGUE-LEG TWIN mechanism hypothesis —
+   β_G_φ = ∫f̄·S̄_φ·w_pop carries the survival factor the per-host numerator omits, verified at
+   source; branch-only counterfactual cell `catalogue_numerator_survival` with A13 both-batch
+   engagement; prereg with paired bands + K-flat kill arm + AMENDMENT 1). GATE-LEV PASS
+   (predicted leverage 6.1× threshold, 12/12 seeds positive). **GATE R-P3 (replica) FIRED as
+   designed:** B_num bit-exact but L_cat_no_bh differs (max rel 1.0, 738 rows fresh-zero;
+   h-grid deviation 41 vs 46 also found) — execution STOPPED per the gate; a main-side
+   canonical-producer discriminator is running to separate driver defect / branch defect /
+   upstream drift. No [P3-IMP] measurement proceeds until R-P3 is diagnosed and the prereg
+   amended (A21).

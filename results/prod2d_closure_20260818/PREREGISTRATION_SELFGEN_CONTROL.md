@@ -891,3 +891,28 @@ and the author's morning ratification (row #160: rulings stay author-gated).
 
 **Costing (realized):** R7 ~25 min; S7 2 × ~31 min wall, ~9 GB; all local — within the
 registered line.
+
+## O7 — A20 REVIEW AMENDMENTS (2026-08-22, adopted into the verdict as its binding reading; review banked verbatim in `A20_REVIEW_O7_20260822.md`, BANK-WITH-AMENDMENTS, zero FATAL)
+
+The reviewer reproduced every decisive number to 17 digits and DERIVED the +1.9411452e-6 delta
+in advance from O4's banked β̄ values (match 1.8e-8 relative). Adopted amendments:
+
+1. **Scope: score leg only.** The C-SG bias leg (bias₁₅ = −0.0665 vs edge 0.0209) is
+   **unmeasured under `fused` and OPEN** — R7's reference is score-only; the spot-check fused
+   matched posteriors (mean_h 0.6457 / 0.8231) show large unadjudicated per-seed bias scatter.
+2. **What "nulls" may say:** the licensed statement is the paired shift **+0.124919 ± 0.001194
+   (105σ)** removing the violation, leaving a fleet score consistent with zero (0.41σ) whose
+   point estimate is inside the frozen edge 0.0373 but whose **95% CI [−0.0284, +0.0436] does
+   not exclude a residual at that edge**. No zero-equivalence within the edge is established.
+3. **Typing: [BANKED, by transfer]** — 3/15 seeds end-to-end; 12 inferred.
+4. **The delta is a pre-computable storage constant** (β̄ h-only, byte-identical across seeds);
+   its cross-seed identity confirms the diagnosis and is not independent evidence; the extremes
+   criterion stresses only the B_num leg.
+5. **Provenance defect (owned):** S7/910113's `git_commit` stamps a branch commit that landed
+   MID-RUN and never executed (verified uncontaminated via pool timing + the constant-delta
+   match). **Amendment candidate A22 queued for the author:** no tree mutation / HEAD moves
+   during a registered run; stamp commit + dirty state at run START. Adopted as operating
+   discipline for the rest of this session.
+6. **Carried caveat restored:** under `fused` the full channel is still railed (mean_h
+   0.6169/0.6221, r_low) — O7 is a completion-cell score statement, not a production-posterior
+   statement, and not an endorsement of the `266d7290` pin (its own ruling).
