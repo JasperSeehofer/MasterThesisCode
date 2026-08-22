@@ -2305,3 +2305,35 @@ Overnight autonomous execution under row #160; rulings queued, nothing banked pa
    canonical-producer discriminator is running to separate driver defect / branch defect /
    upstream drift. No [P3-IMP] measurement proceeds until R-P3 is diagnosed and the prereg
    amended (A21).
+
+## Row #162 — 2026-08-22 (overnight close) — [P3-IMP] measured and A20-banked: the catalogue-leg twin recovers +0.0155 ± 0.0037 of the headline (REPORT-BOUND, 12/12 positive, 4.2σ); the impostor drag itself persists at 80.6%; the mechanism decomposes level ⊕ slope with the α-pairing question promoted to the author
+
+The overnight goal (row #160: "remove any existing bias") — where it landed, typed:
+
+1. **[MEASURED, A20-amended] The catalogue-leg twin effect:** switching the per-host catalogue
+   numerator to carry the S̄_φ factor its own normalizer β_G_φ integrates moves the 12-seed
+   B-SEL fleet by **Δ̄ = +0.015524 ± 0.003657** (paired, 12/12 positive, 4.24σ), re-referenced
+   to the headline convention (banked trapezoid bias −0.108302) after the review caught a
+   legacy-vs-trapezoid reference mismatch (the first-scored +0.0193 is WITHDRAWN). **Band:
+   REPORT-BOUND** (frozen anchor 0.02; no materiality commentary per amendment 6). All gates
+   green after two honest fires (R-P3: the driver's h-grid was silently a candidate-SELECTION
+   input; E-P3: worker-log observability) — both diagnosed, amended pre-scoring, re-run.
+2. **[MEASURED] The impostor drag persists:** under the twin cell, pure−full = +0.0637 ± 0.0090
+   (80.6% of the coded −0.079). The twin recovers ~14.3% of the headline; it is NOT the
+   impostor fix. Rail: 11/12 still railed (expected null). Full-channel score-at-truth −0.211.
+3. **[MEASURED, qualified] K-flat:** the twin effect = level (+0.0393, mixture rebalancing,
+   conditioned on the grid-mean constant) ⊕ slope (−0.0236, per-event heterogeneity) — the
+   registered α-pairing sub-convention question (unnormalized insertion vs shape-only) goes to
+   the author with this decomposition as its evidence.
+4. **Reviews:** `A20_REVIEW_P3_TWIN_20260822.md` (BANK-WITH-AMENDMENTS, zero FATAL; amendments
+   4–7 adopted; every decisive number orchestrator-re-derived) and the O7 review (row #161).
+   **Two new A17 rules** from tonight: (i) paired counterfactuals re-derive the baseline
+   statistic through the arm's own scoring path and gate it; (ii) engagement-gate evidence
+   channels must be verified observable pre-registration.
+5. **Compute realized:** ~9 CPU-h of the 50 CPU-h grant, all local; branch
+   `p3/catalogue-survival-counterfactual` holds the cell + instruments + verdict (not merged).
+6. **[OPEN → author, morning queue]** (i) ratify O7 (banked-by-transfer, A20-amended) + the
+   fused BIAS-leg follow-up; (ii) A22 adoption; (iii) the [P3-IMP] REPORT-BOUND disposition —
+   whether +0.0155 (14.3% of headline) warrants the catalogue-leg physics-change fork, and
+   under WHICH α-pairing sub-convention (the shape-only arm is the registered follow-up);
+   (iv) the branch's fate; (v) landscape/T1 (link 4) still gated on (iii).
