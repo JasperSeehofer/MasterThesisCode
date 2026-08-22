@@ -753,8 +753,15 @@ def main() -> int:
         "--stage", choices=("p", "pilot", "fleet", "kflat", "score", "fusedarm"), required=True
     )
     ap.add_argument(
-        "--seeds", type=str, default=None, help="fleet only: comma-separated seed subset"
+        "--seeds", type=str, default=None, help="fleet/fusedarm: comma-separated seed subset"
     )
+    ap.add_argument(
+        "--completion-cell", type=str, default=None, help="fusedarm: completion cell (fused)"
+    )
+    ap.add_argument(
+        "--survival", type=str, default="off", help="fusedarm: catalogue_numerator_survival"
+    )
+    ap.add_argument("--tag", type=str, default="fc", help="fusedarm: output subdir tag (fc/ft)")
     ap.add_argument(
         "--out-root",
         type=str,
