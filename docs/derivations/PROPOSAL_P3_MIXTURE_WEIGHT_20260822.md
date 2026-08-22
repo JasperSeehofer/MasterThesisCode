@@ -112,3 +112,38 @@ venue with catalogued hosts (§5).
 
 **STOP.** Presented for the author's ruling; no code path changes, no registration executes,
 until items 1–2 of §4 are ruled.
+
+---
+
+## APPENDIX A (2026-08-22, post-amendment-12; the §1/§2 inconsistency RESOLVED by derivation — presented for ratification)
+
+**The inconsistency (amendment 12):** §2's prose said β_G_φ→β_G "in α_G_φ's construction";
+α_G_φ also enters D̃_φ. Completing D̃_φ flips the measured verdict (+0.0344 vs −0.0028) — a
+15× lever. Which reading does the latent model force?
+
+**Resolution — the numerator-only completion is the derivation; D̃_φ stays S̄-weighted.**
+In §1's display the denominator is the TOTAL SELECTED MASS, `∫f_k λ S̄_φ + ∫(1−f̄) λ S̄_φ` —
+both class terms S̄-weighted. That is D̃_φ = α_G_φ + β̄_Ḡ_φ **as coded**: the denominator is
+the selected-population normalization ("α untouched", exactly as the venue chain's A-FULL
+result held), and un-selecting it (the +0.0344 arm) departs from the latent model. The
+symbol α_G_φ plays TWO roles: (i) in D̃_φ it is the selected catalogue MASS — stays
+S̄-weighted; (ii) as the numerator's class weight it is the ensemble stand-in for the
+per-event Σ_g S̄_φ(z_g) — and THERE the completion replaces class-mean-S̄ content with the
+per-candidate factors (β_G × per-candidate S̄_φ, whose ensemble mean is β_G_φ, preserving
+D̃_φ-consistency in expectation). §2's wording was the error; §1's display was right; the
+instrument's construction is the derivation-coherent candidate. The reviewer's +0.0344 arm is
+banked as the measured cost of the WRONG reading, not as a live candidate.
+
+**Consequences if ratified:**
+1. The registered candidate's venue effect stands at **−0.002810 ± 0.000467** (6σ, small,
+   negative; a magnitude bound under this now-derivation-fixed convention).
+2. The catalogued-host responsibility-identity test UNBLOCKS (the candidate is no longer
+   ambiguous) and proceeds per its granted [DO] with the costing line
+   (~8 paired b0 runs ≈ 4–5 CPU-h + one instrumentation flag).
+3. The remaining bias story is unchanged: the impostor drag's convention component is bounded
+   small under the coherent completion; the drag itself (−0.079 within −0.108) stays venue
+   physics *pending* the identity test's correctness verdict — stated as pending, not assumed
+   (amendment-16 discipline).
+
+**[RULE] asked of the author:** ratify Appendix A's resolution (numerator-only completion is
+the candidate; D̃_φ stays as coded), unblocking §5 item 2.
