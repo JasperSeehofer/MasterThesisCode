@@ -1,0 +1,8 @@
+{
+  "stage": "kflat",
+  "seed": 900101,
+  "mean_h_phi_flat": 0.6617226985881217,
+  "mean_h_banked": 0.6185865082775021,
+  "delta_vs_banked": 0.04313619031061966,
+  "reference": "PREREGISTRATION_P3_TWIN_20260822.md \u00a73 K-flat + \u00a75 secondary 5: subtracts the banked coded mean_h; expected within the pilot noise floor if the z-slope is the mechanism"
+}

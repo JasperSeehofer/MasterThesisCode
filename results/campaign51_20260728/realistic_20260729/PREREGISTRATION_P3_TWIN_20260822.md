@@ -238,3 +238,38 @@ Pilot (seeds 900101/900102 under `"phi"`, GATE R-P3 already green): Δ_s = **+0.
 
 Realized-scatter re-check (A17) at scoring uses the fleet's own 12-seed paired SEM, not this
 n=2 proxy. Costing realized: ~30 min/seed wall (46-node grid), ~9 GB — fleet 2-wide ≈ 2.5 h.
+
+## VERDICT (2026-08-22 ~09:00; all gates PASS; band fired: REPORT-BOUND — banked PENDING the A20 review)
+
+**Gates:** R-P3 PASS (post-AMENDMENT-2 re-run: L_cat 1.3e-14, B_num bit-exact, 8004/8004 keys,
+1810 s genuine); E-P3 PASS (AMENDMENTS 1+3 form: pooled engagement fraction **1.00**, per-seed
+1.00 ×12; parent init line ×12; code audits (c)/(d)); L-P3 PASS (counterfactual line in every φ
+log, absent in P).
+
+**Primary [MEASURED]: Δ̄(12) = +0.019257 ± 0.003704 (paired SEM; sd 0.012829; 12/12 positive;
+5.2σ from zero).** Frozen bands: 0.019257 < 0.02 ⇒ **REPORT-BOUND** (not TWIN-MATERIAL by
+0.0007; not IMMATERIAL — both its conditions fail). Reported bound, no label; the
+production-fork question returns to the author with this number, per the registered branch.
+
+**K-flat [MEASURED, reported-only — the kill test fired INFORMATIVELY]:** Δ(phi_flat, 900101) =
+**+0.0431** vs Δ(phi, 900101) = +0.0195. The constant-table arm moves the posterior MORE than
+the real table: the twin insertion's effect decomposes as **level ⊕ slope** — the LEVEL
+component (catalogue-leg suppression rebalancing the mixture toward completion, +0.043)
+dominates, and the z-SLOPE component acts OPPOSITE (net ≈ −0.024 on this seed: S̄_φ is larger
+at low z, relatively up-weighting the low-z impostors within the leg). The §7 falsifier
+consequence: a TWIN-MATERIAL claim "owned by the z-slope mechanism" would have been falsified;
+REPORT-BOUND carries no such claim. **Promoted to the author as the α-pairing sub-convention
+question:** the registered unnormalized insertion changes the mixture LEVEL alongside the shape
+(the double-counting risk the registration's structural-blindness section adjoined); the
+shape-only (per-event-normalized) sub-convention is the registered follow-up arm that would
+isolate the slope.
+
+**Secondaries [REPORTED]:** (1) impostor decomposition under φ: pure−full ≈ +0.076 per seed —
+the impostor drag PERSISTS at ~96%-of-coded magnitude; the twin recovers +0.019 of the
+headline, not the drag itself. (2) per-event paired Δln L_cat: mean −0.0123, median ≈ 0, min
+−0.250, max 0.000 — pure suppression, heterogeneous, no cancellation hiding ([A2]).
+(3) score-at-truth under φ: full ≈ −0.197 — the full-channel violation stands. (4) rail read:
+11/12 r_low under φ (banked 12/12) — NULL as expected, one marginal un-rail.
+
+**Costing realized:** 17 × `evaluate()` (P re-run ×2, pilot 2, fleet 10, K-flat 1, + the
+diagnosis discriminator ×2) ≈ **9 CPU-h** of the 50 CPU-h grant; all local.

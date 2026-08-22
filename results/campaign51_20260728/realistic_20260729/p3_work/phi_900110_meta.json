@@ -1,0 +1,17 @@
+{
+  "subdir": "phi_900110",
+  "seed": 900110,
+  "catalogue_numerator_survival": "phi",
+  "work_root": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_work/phi_900110_work",
+  "diagnostics_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_work/phi_900110_work/seed900110/simulations/diagnostics/event_likelihoods.csv",
+  "log_path": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_work/phi_900110.log",
+  "wall_time_s": 2321.8438713550568,
+  "elapsed_evaluate_s": 2317.4038920402527,
+  "catalogue_pin_ok": true,
+  "mean_h": 0.688468221184906,
+  "map_h": 0.65,
+  "sigma_h": 0.058683908999680505,
+  "r_low": false,
+  "n_events": 178,
+  "git_commit": "8183ae3321b4a1fbf74fbc00aff3d212abf9b8bc"
+}

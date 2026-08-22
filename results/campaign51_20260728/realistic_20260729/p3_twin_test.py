@@ -117,7 +117,11 @@ GATE_RP3_MIN_WALL_S: float = 60.0
 # GATE E-P3 (AMENDMENT 1's amended form).
 GATE_EP3_MOVE_RTOL: float = 1.0e-6
 GATE_EP3_MIN_FRACTION: float = 0.10
-BATCH_ENGAGEMENT_LOG_SUBSTRING: str = "ENGAGED in the batch host path"
+# AMENDMENT 3 (2026-08-22, pre-scoring): the batch-worker engagement line
+# cannot reach the parent's captured log (forkserver workers do not inherit
+# the FileHandler), so E-P3(b) is the PARENT-process counterfactual init
+# line, cell-specific at source (bayesian_statistics.py evaluate()).
+BATCH_ENGAGEMENT_LOG_SUBSTRING: str = "catalogue_numerator_survival='phi'"
 
 # GATE L-P3.
 COUNTERFACTUAL_LOG_SUBSTRING: str = "COUNTERFACTUAL: catalogue_numerator_survival='phi'"
@@ -461,7 +465,7 @@ def _gate_e_p3(phi_metas: dict[int, dict[str, Any]]) -> dict[str, Any]:
         "caller's all_results_without_bh concatenation, per AMENDMENT 1(d)"
     )
     return {
-        "gate": "GATE_E-P3 (AMENDED, AMENDMENT 1)",
+        "gate": "GATE_E-P3 (AMENDED, AMENDMENTS 1+3)",
         "pass": a_pass and b_pass,
         "a_engagement_magnitude": {
             "pooled_fraction_moved": pooled_fraction,
@@ -474,7 +478,7 @@ def _gate_e_p3(phi_metas: dict[int, dict[str, Any]]) -> dict[str, Any]:
                 "also reported -- see docstring"
             ),
         },
-        "b_batch_log_present": {"per_seed": log_b_pass, "pass": b_pass},
+        "b_parent_init_line_present_AMENDMENT3": {"per_seed": log_b_pass, "pass": b_pass},
         "c_scalar_code_audit": {"statement": audit_c, "pass": True},
         "d_both_batches_code_audit": {"statement": audit_d, "pass": True},
         "reference": f"{REGISTRATION_SECTION}, AMENDMENT 1 amended GATE E-P3",
