@@ -1,0 +1,598 @@
+{
+  "registered_in": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md (AMENDMENT 1, 2026-08-22)",
+  "seeds": [
+    900101,
+    900102,
+    900103,
+    900104,
+    900105,
+    900106,
+    900107,
+    900108,
+    900109,
+    900110,
+    900111,
+    900112
+  ],
+  "h_gen": 0.73,
+  "gates": {
+    "GATE_R-P3": {
+      "pass": true,
+      "key_mismatch": false,
+      "tol": 1e-12,
+      "n_rows_compared": 8004,
+      "per_column": {
+        "L_cat_no_bh": {
+          "bit_exact": false,
+          "max_rel_err": 1.3476160126670065e-14,
+          "pass": true
+        },
+        "B_num": {
+          "bit_exact": true,
+          "max_rel_err": 0.0,
+          "pass": true
+        },
+        "combined_no_bh": {
+          "bit_exact": false,
+          "max_rel_err": 5.206628746432402e-15,
+          "pass": true
+        }
+      },
+      "banked_csv": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/arm_event_likelihoods/bsel_seed900101/seed900101/simulations/diagnostics/event_likelihoods.csv",
+      "fallback_justification": "production evaluate() dispatches per-host likelihood terms through a multiprocessing pool (_starmap_host_batches, bayesian_statistics.py:4692-4721) whose float-summation order is not guaranteed run-to-run identical, so the registered <= 1e-12 relative fallback is used per GATE R-P3.",
+      "gate": "GATE_R-P3",
+      "wall_time_s": 1810.159285068512,
+      "wall_time_min_s": 60.0,
+      "wall_time_pass": true,
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md (AMENDMENT 1, 2026-08-22), \u00a74 GATE R-P3"
+    },
+    "GATE_E-P3": {
+      "gate": "GATE_E-P3 (AMENDED, AMENDMENTS 1+3)",
+      "pass": true,
+      "a_engagement_magnitude": {
+        "pooled_fraction_moved": 1.0,
+        "per_seed_fraction_moved": {
+          "900101": 1.0,
+          "900102": 1.0,
+          "900103": 1.0,
+          "900104": 1.0,
+          "900105": 1.0,
+          "900106": 1.0,
+          "900107": 1.0,
+          "900108": 1.0,
+          "900109": 1.0,
+          "900110": 1.0,
+          "900111": 1.0,
+          "900112": 1.0
+        },
+        "min_fraction": 0.1,
+        "move_rtol": 1e-06,
+        "pass": true,
+        "ambiguity_flag": "A21: fleet-pooled convention chosen, per-seed fractions also reported -- see docstring"
+      },
+      "b_parent_init_line_present_AMENDMENT3": {
+        "per_seed": {
+          "900101": true,
+          "900102": true,
+          "900103": true,
+          "900104": true,
+          "900105": true,
+          "900106": true,
+          "900107": true,
+          "900108": true,
+          "900109": true,
+          "900110": true,
+          "900111": true,
+          "900112": true
+        },
+        "pass": true
+      },
+      "c_scalar_code_audit": {
+        "statement": "the scalar twin (single_host_likelihood's catalogue-leg branch, bayesian_statistics.py:5765-5769) applies the SAME expression on the SAME table input as the batch path (:6621-6625) -- verified by source read (grep-confirmed, not runtime-measured: production has no runtime call site of the scalar path, per AMENDMENT 1's own finding)",
+        "pass": true
+      },
+      "d_both_batches_code_audit": {
+        "statement": "both _starmap_host_batches call sites (bayesian_statistics.py:4692-4721) receive _cat_surv/_cat_surv_table -- the with-BH host batch's r[0] no-BH numerator ALSO feeds L_cat_no_bh via the caller's all_results_without_bh concatenation, per AMENDMENT 1(d)",
+        "pass": true
+      },
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md (AMENDMENT 1, 2026-08-22), AMENDMENT 1 amended GATE E-P3"
+    },
+    "GATE_L-P3": {
+      "gate": "GATE_L-P3",
+      "pass": true,
+      "p_log_counterfactual_absent": true,
+      "phi_logs_counterfactual_present": {
+        "900101": true,
+        "900102": true,
+        "900103": true,
+        "900104": true,
+        "900105": true,
+        "900106": true,
+        "900107": true,
+        "900108": true,
+        "900109": true,
+        "900110": true,
+        "900111": true,
+        "900112": true
+      },
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md (AMENDMENT 1, 2026-08-22), \u00a74 GATE L-P3"
+    }
+  },
+  "all_gates_pass": true,
+  "primary": {
+    "statistic": "Delta_bar(12) = mean_s[mean_h(F-phi,s) - mean_h(coded banked,s)]",
+    "value": 0.01925727424025094,
+    "sem_paired": 0.0037035031949971737,
+    "per_seed": [
+      {
+        "seed": 900101,
+        "mean_h_phi": 0.6380837705884551,
+        "mean_h_banked": 0.6185865082775021,
+        "delta_s": 0.019497262310953056
+      },
+      {
+        "seed": 900102,
+        "mean_h_phi": 0.651931252905705,
+        "mean_h_banked": 0.6245614094133964,
+        "delta_s": 0.027369843492308532
+      },
+      {
+        "seed": 900103,
+        "mean_h_phi": 0.6324266842119807,
+        "mean_h_banked": 0.617284636735078,
+        "delta_s": 0.01514204747690262
+      },
+      {
+        "seed": 900104,
+        "mean_h_phi": 0.6341691010078895,
+        "mean_h_banked": 0.6143537574081882,
+        "delta_s": 0.019815343599701274
+      },
+      {
+        "seed": 900105,
+        "mean_h_phi": 0.624819966862082,
+        "mean_h_banked": 0.6127797083931378,
+        "delta_s": 0.012040258468944187
+      },
+      {
+        "seed": 900106,
+        "mean_h_phi": 0.6349292785004487,
+        "mean_h_banked": 0.6197060244610186,
+        "delta_s": 0.015223254039430034
+      },
+      {
+        "seed": 900107,
+        "mean_h_phi": 0.6264022582251038,
+        "mean_h_banked": 0.6139929758754807,
+        "delta_s": 0.012409282349623019
+      },
+      {
+        "seed": 900108,
+        "mean_h_phi": 0.6353376276883519,
+        "mean_h_banked": 0.6199126801101454,
+        "delta_s": 0.01542494757820645
+      },
+      {
+        "seed": 900109,
+        "mean_h_phi": 0.6187419648823967,
+        "mean_h_banked": 0.6106198681953956,
+        "delta_s": 0.008122096687001146
+      },
+      {
+        "seed": 900110,
+        "mean_h_phi": 0.688468221184906,
+        "mean_h_banked": 0.6319218907039342,
+        "delta_s": 0.056546330480971796
+      },
+      {
+        "seed": 900111,
+        "mean_h_phi": 0.6236276757918234,
+        "mean_h_banked": 0.6134792497822728,
+        "delta_s": 0.010148426009550682
+      },
+      {
+        "seed": 900112,
+        "mean_h_phi": 0.637724586664503,
+        "mean_h_banked": 0.6183763882750846,
+        "delta_s": 0.01934819838941848
+      }
+    ],
+    "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md (AMENDMENT 1, 2026-08-22), \u00a75 'Primary' -- paired per-seed delta, fleet mean with paired SEM (the C-SG BAND R lesson)",
+    "band_note": "bands (TWIN-MATERIAL/TWIN-IMMATERIAL/REPORT-BOUND) are applied by the orchestrator against the pilot-frozen numbers, per prereg \u00a75 -- this scorer prints Delta_bar/SEM only, no band is computed here"
+  },
+  "secondaries_reported_only": {
+    "1_impostor_decomposition": {
+      "reference": "results/prod2d_closure_20260818/decompose_impostor_leg.py load_matrices()/moments(), applied to the phi-cell CSVs (REPORTED-ONLY, prereg \u00a75 secondary 1)",
+      "per_seed": [
+        {
+          "seed": 900101,
+          "gate_i_identity_max_rel": 5.396038314320382e-07,
+          "n_events": 174,
+          "full_mean_h": 0.6380837705884551,
+          "pure_mean_h": 0.7144062479891599,
+          "delta_mean_h": 0.07632247740070475
+        },
+        {
+          "seed": 900102,
+          "gate_i_identity_max_rel": 5.011888279668451e-07,
+          "n_events": 184,
+          "full_mean_h": 0.651931252905705,
+          "pure_mean_h": 0.7423920030552322,
+          "delta_mean_h": 0.09046075014952726
+        },
+        {
+          "seed": 900103,
+          "gate_i_identity_max_rel": 5.177295874503075e-07,
+          "n_events": 174,
+          "full_mean_h": 0.6324266842119807,
+          "pure_mean_h": 0.712582732451463,
+          "delta_mean_h": 0.0801560482394823
+        },
+        {
+          "seed": 900104,
+          "gate_i_identity_max_rel": 5.112162822779365e-07,
+          "n_events": 182,
+          "full_mean_h": 0.6341691010078895,
+          "pure_mean_h": 0.7469852694900304,
+          "delta_mean_h": 0.11281616848214093
+        },
+        {
+          "seed": 900105,
+          "gate_i_identity_max_rel": 5.484084926377265e-07,
+          "n_events": 175,
+          "full_mean_h": 0.624819966862082,
+          "pure_mean_h": 0.6564285338718068,
+          "delta_mean_h": 0.03160856700972481
+        },
+        {
+          "seed": 900106,
+          "gate_i_identity_max_rel": 5.434038125827105e-07,
+          "n_events": 188,
+          "full_mean_h": 0.6349292785004487,
+          "pure_mean_h": 0.6889645681671814,
+          "delta_mean_h": 0.054035289666732766
+        },
+        {
+          "seed": 900107,
+          "gate_i_identity_max_rel": 5.181987027185444e-07,
+          "n_events": 180,
+          "full_mean_h": 0.6264022582251038,
+          "pure_mean_h": 0.664826755383305,
+          "delta_mean_h": 0.03842449715820129
+        },
+        {
+          "seed": 900108,
+          "gate_i_identity_max_rel": 5.32690476013396e-07,
+          "n_events": 181,
+          "full_mean_h": 0.6353376276883519,
+          "pure_mean_h": 0.687607198014851,
+          "delta_mean_h": 0.05226957032649915
+        },
+        {
+          "seed": 900109,
+          "gate_i_identity_max_rel": 5.3335737052146e-07,
+          "n_events": 181,
+          "full_mean_h": 0.6187419648823967,
+          "pure_mean_h": 0.6435440320373476,
+          "delta_mean_h": 0.024802067154950813
+        },
+        {
+          "seed": 900110,
+          "gate_i_identity_max_rel": 5.365778906648712e-07,
+          "n_events": 178,
+          "full_mean_h": 0.688468221184906,
+          "pure_mean_h": 0.8000135468787742,
+          "delta_mean_h": 0.11154532569386821
+        },
+        {
+          "seed": 900111,
+          "gate_i_identity_max_rel": 5.365530128149882e-07,
+          "n_events": 175,
+          "full_mean_h": 0.6236276757918234,
+          "pure_mean_h": 0.6492158227801327,
+          "delta_mean_h": 0.025588146988309246
+        },
+        {
+          "seed": 900112,
+          "gate_i_identity_max_rel": 5.294763171369442e-07,
+          "n_events": 180,
+          "full_mean_h": 0.637724586664503,
+          "pure_mean_h": 0.7036656247088644,
+          "delta_mean_h": 0.06594103804436136
+        }
+      ],
+      "bias_full_phi": -0.0927781342905295,
+      "bias_pure_phi": -0.029113972097654206,
+      "delta_bias_phi": 0.0636641621928753
+    },
+    "2_paired_event_delta_ln": {
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md (AMENDMENT 1, 2026-08-22), \u00a75 secondary 2",
+      "n": 2152,
+      "mean": -0.012290291493053364,
+      "median": -3.3807298359667115e-06,
+      "sd": 0.030458510366104058,
+      "min": -0.2503570749444113,
+      "max": 0.0,
+      "per_seed_mean": {
+        "900101": -0.011037725342117955,
+        "900102": -0.01347954029873647,
+        "900103": -0.015620745041263652,
+        "900104": -0.017184648961916946,
+        "900105": -0.011389872587989982,
+        "900106": -0.009681125363207338,
+        "900107": -0.0098067431931514,
+        "900108": -0.01017827385342659,
+        "900109": -0.012055474951625329,
+        "900110": -0.016311515725042747,
+        "900111": -0.007384043543157795,
+        "900112": -0.013354627341849687
+      }
+    },
+    "3_score_at_truth": {
+      "reference": "decompose_impostor_leg.score_at_truth(), full (all events) vs matched (banked L_cat_no_bh>0 mask) channels, prereg \u00a75 secondary 3",
+      "per_seed": [
+        {
+          "seed": 900101,
+          "full": {
+            "mean_score": -0.19697902680054682,
+            "sem_score": 0.04470961164667883,
+            "n_used": 174,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": -0.06619285047242565,
+            "sem_score": 0.04940397450506526,
+            "n_used": 128,
+            "n_skipped": 0
+          }
+        },
+        {
+          "seed": 900102,
+          "full": {
+            "mean_score": -0.14690848058060463,
+            "sem_score": 0.044001668087046614,
+            "n_used": 184,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": -0.020387053563560572,
+            "sem_score": 0.04609077368356429,
+            "n_used": 130,
+            "n_skipped": 0
+          }
+        },
+        {
+          "seed": 900103,
+          "full": {
+            "mean_score": -0.2377890504763855,
+            "sem_score": 0.044139848673273925,
+            "n_used": 174,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": -0.06605939252941943,
+            "sem_score": 0.052787794716515714,
+            "n_used": 117,
+            "n_skipped": 0
+          }
+        },
+        {
+          "seed": 900104,
+          "full": {
+            "mean_score": -0.19722156117449594,
+            "sem_score": 0.04519785388971278,
+            "n_used": 182,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": 0.08099553956386853,
+            "sem_score": 0.05060127470016205,
+            "n_used": 111,
+            "n_skipped": 0
+          }
+        },
+        {
+          "seed": 900105,
+          "full": {
+            "mean_score": -0.22287080678257049,
+            "sem_score": 0.08276830162641803,
+            "n_used": 175,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": -0.019191386060778512,
+            "sem_score": 0.12507095510833094,
+            "n_used": 110,
+            "n_skipped": 0
+          }
+        },
+        {
+          "seed": 900106,
+          "full": {
+            "mean_score": -0.19586775616947308,
+            "sem_score": 0.04861389795254265,
+            "n_used": 188,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": -0.010605957321098059,
+            "sem_score": 0.06405619636430167,
+            "n_used": 119,
+            "n_skipped": 0
+          }
+        },
+        {
+          "seed": 900107,
+          "full": {
+            "mean_score": -0.2559675098230041,
+            "sem_score": 0.0394516994710449,
+            "n_used": 180,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": -0.07476914795274121,
+            "sem_score": 0.04597701290628773,
+            "n_used": 119,
+            "n_skipped": 0
+          }
+        },
+        {
+          "seed": 900108,
+          "full": {
+            "mean_score": -0.21844478792445024,
+            "sem_score": 0.04615130948657372,
+            "n_used": 181,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": -0.01874191800698966,
+            "sem_score": 0.059235884465314095,
+            "n_used": 116,
+            "n_skipped": 0
+          }
+        },
+        {
+          "seed": 900109,
+          "full": {
+            "mean_score": -0.3314457175422223,
+            "sem_score": 0.04334096092270756,
+            "n_used": 181,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": -0.20731311723842175,
+            "sem_score": 0.05255205033625661,
+            "n_used": 124,
+            "n_skipped": 0
+          }
+        },
+        {
+          "seed": 900110,
+          "full": {
+            "mean_score": -0.06385509343704186,
+            "sem_score": 0.04727837663949963,
+            "n_used": 178,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": 0.08823470103935928,
+            "sem_score": 0.052874350416844566,
+            "n_used": 127,
+            "n_skipped": 0
+          }
+        },
+        {
+          "seed": 900111,
+          "full": {
+            "mean_score": -0.2844020544586115,
+            "sem_score": 0.0433783537067731,
+            "n_used": 175,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": -0.10258286997064922,
+            "sem_score": 0.05490793332650337,
+            "n_used": 106,
+            "n_skipped": 0
+          }
+        },
+        {
+          "seed": 900112,
+          "full": {
+            "mean_score": -0.18567721822397515,
+            "sem_score": 0.048577709914679364,
+            "n_used": 180,
+            "n_skipped": 0
+          },
+          "matched": {
+            "mean_score": -0.04543068760711095,
+            "sem_score": 0.061498010638263656,
+            "n_used": 120,
+            "n_skipped": 0
+          }
+        }
+      ]
+    },
+    "4_rail_read": {
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md (AMENDMENT 1, 2026-08-22), \u00a75 secondary 4",
+      "expected": "NULL (photo-z territory, not the twin cell)",
+      "n_r_low_banked": 12,
+      "n_r_low_phi": 11,
+      "per_seed": [
+        {
+          "seed": 900101,
+          "r_low_banked": true,
+          "r_low_phi": true,
+          "floor_node_mass_phi": 0.10594106114031436
+        },
+        {
+          "seed": 900102,
+          "r_low_banked": true,
+          "r_low_phi": true,
+          "floor_node_mass_phi": 0.06392559490811052
+        },
+        {
+          "seed": 900103,
+          "r_low_banked": true,
+          "r_low_phi": true,
+          "floor_node_mass_phi": 0.1260570227983797
+        },
+        {
+          "seed": 900104,
+          "r_low_banked": true,
+          "r_low_phi": true,
+          "floor_node_mass_phi": 0.12359238861908525
+        },
+        {
+          "seed": 900105,
+          "r_low_banked": true,
+          "r_low_phi": true,
+          "floor_node_mass_phi": 0.1803146963250474
+        },
+        {
+          "seed": 900106,
+          "r_low_banked": true,
+          "r_low_phi": true,
+          "floor_node_mass_phi": 0.12008995472984002
+        },
+        {
+          "seed": 900107,
+          "r_low_banked": true,
+          "r_low_phi": true,
+          "floor_node_mass_phi": 0.16611714672645495
+        },
+        {
+          "seed": 900108,
+          "r_low_banked": true,
+          "r_low_phi": true,
+          "floor_node_mass_phi": 0.11197400452995525
+        },
+        {
+          "seed": 900109,
+          "r_low_banked": true,
+          "r_low_phi": true,
+          "floor_node_mass_phi": 0.23744071041457418
+        },
+        {
+          "seed": 900110,
+          "r_low_banked": true,
+          "r_low_phi": false,
+          "floor_node_mass_phi": 0.025507672546667144
+        },
+        {
+          "seed": 900111,
+          "r_low_banked": true,
+          "r_low_phi": true,
+          "floor_node_mass_phi": 0.18654165378264942
+        },
+        {
+          "seed": 900112,
+          "r_low_banked": true,
+          "r_low_phi": true,
+          "floor_node_mass_phi": 0.10978580555832627
+        }
+      ]
+    }
+  },
+  "verdict": "GATES-PASS"
+}

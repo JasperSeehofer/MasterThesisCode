@@ -1742,6 +1742,7 @@ def run_mirror_seed_inprocess(
         "--selection_in_completion_numerator"
     ],
     completion_event_measure: str = "ratio",
+    catalogue_numerator_survival: str = "off",
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
 
@@ -1874,6 +1875,8 @@ def run_mirror_seed_inprocess(
             host_z_kernel=PRODUCTION_FLAGS["--host_z_kernel"],
             selection_in_completion_numerator=selection_in_completion_numerator,
             completion_event_measure=completion_event_measure,
+            # [P3-IMP] twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2).
+            catalogue_numerator_survival=catalogue_numerator_survival,
             catalogue_mass_overlap=PRODUCTION_FLAGS["--catalogue_mass_overlap"],
             completion_b_scale=PRODUCTION_FLAGS["--completion_b_scale"],
             pdet_dl_bins=int(PRODUCTION_FLAGS["--pdet_dl_bins"]),
