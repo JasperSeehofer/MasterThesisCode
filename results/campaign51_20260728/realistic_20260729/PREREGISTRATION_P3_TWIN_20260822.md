@@ -312,3 +312,67 @@ multiprocessing float order) is factually wrong — two independent runs on diff
 agreed to 17 digits; restated as an unexplained deterministic residual vs the banked CSV,
 bounded 1.3e-14, and the cross-run bit-identity recorded as the strongest evidence for the
 off-default byte-identity.
+
+## SHAPE-ONLY ARM — REGISTRATION (2026-08-22 morning; author-approved row #163 item 3; pre-data; A21/A22 in force)
+
+**Question:** isolated from the mixture-level component, does the S̄_φ z/h-SHAPE alone move the
+headline — i.e. what does the derivation-coherent per-host reweighting do when the catalogue
+leg's per-event level is held at its coded value at the truth anchor?
+
+**Construction (registered exactly; ZERO-`evaluate()` — a rescore of banked columns):** per
+event e, seed s, node h:
+
+    L_cat_shape(s,e,h) ≡ L_cat_phi(s,e,h) · [ L_cat_off(s,e,h_ref) / L_cat_phi(s,e,h_ref) ],
+    h_ref = 0.73 (the truth anchor; registered choice)
+
+with `L_cat_phi` from the banked φ fleet CSVs (`p3_work/phi_*_work/.../event_likelihoods.csv`)
+and `L_cat_off` from the banked baseline CSVs. The event's mixture is reassembled via the
+verified identity (`decompose_impostor_leg` GATE I):
+`combined_shape = combined_off − cat_term_off + cat_term_shape` with
+`cat_term_X = (α_G_φ/r_Malm)·L_cat_X/D̃_φ` (h-only columns identical across cells, O-series
+T-gates). The per-seed posterior and `mean_h` are computed by writing the reconstructed
+`combined_no_bh` column into a patched CSV and calling the COMMITTED `compute_seed_statistics`
+(trapezoid — the convention of record per A20 amendment 4), never a reimplementation.
+Events with `L_cat_phi(h_ref) = 0` (dark/no-candidate events) take factor ≡ cat_term ≡ 0 —
+identical in both cells by construction; registered edge case.
+
+**Arms:** SHAPE (above, 12 seeds) + REPORTED-ONLY sensitivity: h_ref ∈ {0.70, 0.76} re-runs of
+the same rescore (zero cost) — the anchor-choice leverage is measured, not assumed (K-flat's
+constant-conditioning lesson, A20 amendment 7a).
+
+**Gates (fail ⇒ VOID):**
+- **GATE I-S:** the mixture identity reproduces `combined_no_bh` on BOTH input CSV sets to
+  ≤ 2e-6 relative before any reconstruction.
+- **GATE N-S:** `L_cat_shape(h_ref) = L_cat_off(h_ref)` exactly (≤1e-12; true by construction —
+  the assert is the anti-bug gate).
+- **GATE B-S (A17(e), first application):** the baseline `mean_h` re-derived from the banked
+  CSVs through `compute_seed_statistics` (trapezoid) matches the A20-amendment-4 orchestrator
+  re-derivation values per seed (≤1e-9) BEFORE any Δ is formed.
+- **A22 stamp:** the instrument records git commit + dirty state at START.
+
+**Primary:** `Δ̄_shape(12) = mean_s[mean_h(shape,s) − mean_h(banked trapezoid,s)]`, paired SEM.
+**Decomposition report (registered):** `Δ̄_level ≡ Δ̄_phi(re-referenced, +0.015524) − Δ̄_shape`,
+reported alongside — the two sub-conventions' split at the fleet level, superseding K-flat's
+constant-conditioned version.
+
+**Bands (frozen NOW — the paired scatter is already measured on this exact fleet):**
+SHAPE-MATERIAL iff |Δ̄_shape| > 0.02 · SHAPE-NULL iff |Δ̄_shape| ≤ 0.01 AND SEM_paired ≤ 0.004 ·
+REPORT-BOUND otherwise. **Two-sided by construction** — K-flat's constant-conditioned slope
+(−0.024) makes a NEGATIVE (bias-worsening) Δ̄_shape a live branch, registered as such
+[NARRATIVE-HYPOTHESIS until measured].
+
+**Axis leverage (A17):** the φ arm moved every seed (+0.0155 fleet, per-seed spread
+0.008–0.057 as-scored); the shape rescore differs from φ only by the per-event constants, whose
+K-flat analog carried +0.039 — the axis trivially resolves both bands. **Costing (A6/A17):**
+zero `evaluate()`; < 5 min wall, < 2 GB; local.
+
+**A19 falsifiers:** SHAPE-MATERIAL/NULL are falsified by the h_ref sensitivity arms moving the
+verdict across a band edge (anchor-conditioning — the K-flat lesson applied prospectively);
+any gate failure voids. **A10:** everything held fixed except the per-event level constant;
+structural blindness: (i) inherits every φ-run blindness (S̄_φ table common-mode); (ii) the
+shape/level split is h_ref-anchored — a different anchor family (e.g. h-averaged) is a
+different registered choice; (iii) zero-evaluate means no new engagement evidence — the φ
+CSVs' provenance carries it.
+
+*(Instrument `p3_shape_rescore.py` committed before it runs; VERDICT + A20 review before any
+banking.)*
