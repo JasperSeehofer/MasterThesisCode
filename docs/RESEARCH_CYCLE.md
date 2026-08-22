@@ -595,3 +595,18 @@ costing line** — instrument registrations carry wall-time/seed, peak-RSS/seed,
 decision before launch (O4's serial grind and OOM were both pre-computable); (c) **A20/P2
 extension** — spec-compliance verifiers receive the REGISTRATION text as their reference, never
 the implementer's summary or docstrings as framing.
+
+**A22 (adopted 2026-08-22, author ruling row #163 item 2; born from the O7 A20 review MAJOR-5,
+row #161 item 3).** Run-provenance integrity. No registered measurement executes while a
+concurrent workstream mutates the working tree or moves HEAD; every run record stamps the git
+commit AND dirty state at run START, not at record write. *Evidence:* O7/S7 seed 910113 — a
+branch checkout plus an estimator-file commit landed mid-run; the measurement was verified
+uncontaminated (single pre-edit forkserver pool; the delta equal to a pre-computable constant to
+1.8e-8) but its record stamps a commit whose code never executed. A false provenance stamp is a
+defect even when the number is right. *Folded in:* the A17 checklist gains (d) evidence-channel
+observability — an engagement gate's evidence channel is verified OBSERVABLE in the harness
+before registration (two unsatisfiable-gate instances in one night, [P3-IMP] AMENDMENTS 1 and
+3); and (e) baseline-statistic re-derivation — a paired counterfactual re-derives its baseline
+statistic from the baseline artifact through the arm's own scoring path and gates it before any
+Δ is formed ([P3-IMP] A20 amendment 4: a banked summary field is a different object from a
+re-scored column).
