@@ -2355,3 +2355,25 @@ option text orchestrator-derived; selections verbatim):
 4. **[RULE] "Merge as instrumentation":** `p3/catalogue-survival-counterfactual` merges to main
    (guarded counterfactual flag, default byte-identical, suite green) — the verdict chain's
    code joins the record.
+
+## Row #164 — 2026-08-22 — SHAPE-NULL banked (A20-amended): the catalogue-leg twin's effect is ~94–98% the per-event host-z-dependent S̄_φ suppression of the leg's mixture weight; the residual h-tilt after anchoring is null (+0.00057 ± 0.00010); the α-pairing question is now the mixture-weight derivation
+
+1. **[MEASURED] Shape-only arm (zero-`evaluate()` rescore, rows of record in
+   `PREREGISTRATION_P3_TWIN_20260822.md` SHAPE-ONLY sections):** Δ̄_shape(12) =
+   **+0.000570 ± 0.000099** (12/12 positive) ⇒ **SHAPE-NULL**, robust across anchors
+   h_ref = 0.62–0.86 (stress-test, verdict-inert). Direct LEVEL-ONLY arm: **+0.014929**
+   (additivity gap −2.5e-5). A20 review zero FATAL; amendments 8–11 adopted.
+2. **[MEASURED, amendment-9 reading] What the twin effect IS:** ~94–98% of the +0.0155 comes
+   through the per-event factor S̄_φ(z_host) suppressing each event's catalogue-leg mixture
+   weight (anchor factor median 0.359, range 0.019–0.958) — a z-shape effect acting through
+   the population, NOT a global normalization constant and NOT a residual h-tilt.
+3. **[OWNED, amendment 8]** GATE B-S was silently substituted at implementation (registered
+   comparand never banked) — third unavailable-evidence-channel instance, first silent one;
+   discharged by the review; **A17(f)** adopted: comparands must exist as banked artifacts.
+4. **The α-pairing fork question, now precisely posed for the author:** the physics choice is
+   the catalogue class's MIXTURE WEIGHT under the latent model — should each event's catalogue
+   leg carry its own S̄_φ(z_host)-suppressed weight (the measured twin, +0.0155 recovery,
+   generator-matched by the same argument as the completion fix) or the coded global α_G_φ
+   weighting (Gray/MFG as published)? This is a derivation task (the [P2]+[P3] "one
+   arrangement" completion) feeding a physics-change proposal — stage-5, author-gated.
+5. Compute: zero `evaluate()` for the entire shape/level decomposition.

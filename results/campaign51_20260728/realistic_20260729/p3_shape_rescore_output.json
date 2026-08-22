@@ -1,0 +1,141 @@
+{
+  "h_ref_primary": {
+    "per_seed": [
+      {
+        "seed": 900101,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.4023540726357e-07,
+        "gate_ns_max_rel": 1.8419329377121276e-16,
+        "mean_h_shape": 0.6230259807072048,
+        "mean_h_banked_trapezoid": 0.6224394129480753,
+        "delta_s": 0.0005865677591295748
+      },
+      {
+        "seed": 900102,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.065841626185577e-07,
+        "gate_ns_max_rel": 1.772816376376238e-16,
+        "mean_h_shape": 0.6292990957100846,
+        "mean_h_banked_trapezoid": 0.6284306686034667,
+        "delta_s": 0.0008684271066178306
+      },
+      {
+        "seed": 900103,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.214120185928278e-07,
+        "gate_ns_max_rel": 1.7677639571505815e-16,
+        "mean_h_shape": 0.6215122110705384,
+        "mean_h_banked_trapezoid": 0.6209906539290944,
+        "delta_s": 0.0005215571414440845
+      },
+      {
+        "seed": 900104,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.150026866225278e-07,
+        "gate_ns_max_rel": 1.8954330703957321e-16,
+        "mean_h_shape": 0.618546879322635,
+        "mean_h_banked_trapezoid": 0.6179915288175917,
+        "delta_s": 0.000555350505043295
+      },
+      {
+        "seed": 900105,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.485186444072638e-07,
+        "gate_ns_max_rel": 1.9024276994478088e-16,
+        "mean_h_shape": 0.6166789111752071,
+        "mean_h_banked_trapezoid": 0.6163380973251849,
+        "delta_s": 0.00034081385002227016
+      },
+      {
+        "seed": 900106,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.437195616129768e-07,
+        "gate_ns_max_rel": 1.559596276068446e-16,
+        "mean_h_shape": 0.6240027938220881,
+        "mean_h_banked_trapezoid": 0.6235814091203212,
+        "delta_s": 0.00042138470176689147
+      },
+      {
+        "seed": 900107,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.211000876509306e-07,
+        "gate_ns_max_rel": 1.4783677507688348e-16,
+        "mean_h_shape": 0.6179765879222636,
+        "mean_h_banked_trapezoid": 0.6176130366116449,
+        "delta_s": 0.00036355131061871493
+      },
+      {
+        "seed": 900108,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.33863859059644e-07,
+        "gate_ns_max_rel": 1.8043369799332721e-16,
+        "mean_h_shape": 0.6241857634801709,
+        "mean_h_banked_trapezoid": 0.6236947821659539,
+        "delta_s": 0.0004909813142169872
+      },
+      {
+        "seed": 900109,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.34841811048695e-07,
+        "gate_ns_max_rel": 1.6163378041138242e-16,
+        "mean_h_shape": 0.6142190939945196,
+        "mean_h_banked_trapezoid": 0.6139647837223976,
+        "delta_s": 0.00025431027212197144
+      },
+      {
+        "seed": 900110,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.374607160928748e-07,
+        "gate_ns_max_rel": 1.8359253405956911e-16,
+        "mean_h_shape": 0.6375536363918166,
+        "mean_h_banked_trapezoid": 0.636040218102455,
+        "delta_s": 0.0015134182893615789
+      },
+      {
+        "seed": 900111,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.372496154753628e-07,
+        "gate_ns_max_rel": 1.8127493277784064e-16,
+        "mean_h_shape": 0.617319030485607,
+        "mean_h_banked_trapezoid": 0.6170470906219618,
+        "delta_s": 0.0002719398636451542
+      },
+      {
+        "seed": 900112,
+        "h_ref": 0.73,
+        "gate_is_max_rel": 5.310894082171931e-07,
+        "gate_ns_max_rel": 1.5990754758771393e-16,
+        "mean_h_shape": 0.622887483207654,
+        "mean_h_banked_trapezoid": 0.6222411142181218,
+        "delta_s": 0.0006463689895321867
+      }
+    ],
+    "delta_bar": 0.0005695559252933783,
+    "sd": 0.00034374146377799203,
+    "sem_paired": 9.922961332192986e-05,
+    "n_positive": 12,
+    "gate_bs_fleet_base_bias": -0.10830226698447765,
+    "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md, SHAPE-ONLY ARM -- REGISTRATION (2026-08-22, row #163 item 3); subtracts the banked TRAPEZOID mean_h (A17(e): re-derived through compute_seed_statistics and gated on the headline anchor -0.108302)"
+  },
+  "h_ref_sensitivity": {
+    "0.7": {
+      "delta_bar": 0.000500611566390724,
+      "sem_paired": 8.640868644547273e-05
+    },
+    "0.76": {
+      "delta_bar": 0.0006376890878098396,
+      "sem_paired": 0.00011180569659142215
+    }
+  },
+  "decomposition_report": {
+    "delta_bar_phi_rereferenced": 0.015524,
+    "delta_bar_shape": 0.0005695559252933783,
+    "delta_bar_level_implied": 0.014954444074706622,
+    "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md, SHAPE-ONLY ARM -- REGISTRATION (2026-08-22, row #163 item 3), 'Decomposition report'"
+  },
+  "a22_stamp": {
+    "git_commit_at_start": "c372678039fd36956604600e5ad318115967d2df",
+    "estimator_tree_dirty": "clean"
+  },
+  "registered_in": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md, SHAPE-ONLY ARM -- REGISTRATION (2026-08-22, row #163 item 3)"
+}

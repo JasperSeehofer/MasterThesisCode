@@ -376,3 +376,41 @@ CSVs' provenance carries it.
 
 *(Instrument `p3_shape_rescore.py` committed before it runs; VERDICT + A20 review before any
 banking.)*
+
+## SHAPE-ONLY ARM — VERDICT + A20 AMENDMENTS 8–11 (2026-08-22; review banked verbatim in `A20_REVIEW_P3_SHAPE_20260822.md`, BANK-WITH-AMENDMENTS, zero FATAL; reviewer reproduction exact to every printed digit)
+
+**Verdict [MEASURED, as amended]: SHAPE-NULL** — Δ̄_shape(12) = **+0.000570 ± 0.000099**
+(12/12 positive), reported as, and only as: *the residual h-tilt of the catalogue likelihood,
+after per-event anchoring at h_ref = 0.73, is null at the 0.001 level.* Gates I-S/N-S green;
+A22 stamp truthful (HEAD never moved; tree clean).
+
+**AMENDMENT 8 — GATE B-S deviated from its registered form; discharged by the A20 review.**
+The registered per-seed comparand (amendment-4 values) never existed as a banked artifact; the
+instrument substituted a fleet-mean anchor check WITHOUT an A21 STOP-and-amend — the third
+unavailable-evidence-channel instance and the first silently substituted. The reviewer
+re-derived all 12 per-seed baselines (max diff 0.0) and Δ̄_phi = +0.015524133 ± 0.003657306
+independently: the gate's substance is satisfied, amendment 4 confirmed. **New A17 rule (f):**
+a gate may only compare against a comparand that exists as a banked artifact; otherwise the
+registration is amended (A21), never substituted at implementation time.
+
+**AMENDMENT 9 — the level/shape labels are anchor-artefacts; the interpretation is bounded.**
+The per-event anchor factor L_cat_phi(0.73)/L_cat_off(0.73) has median 0.359, IQR 0.231–0.492,
+range 0.019–0.958 (1427 live event-seeds): the "level" component is NOT a normalization
+constant but **the per-event, host-z-dependent suppression S̄_φ(z_host) imposes — a z-shape
+effect acting through the population**, anchored away by design. "The z-shape is physically
+irrelevant" is NOT supported and may not be carried forward; the registration's "i.e." clause
+is the operative definition, its lead phrase withdrawn as conflationary.
+
+**AMENDMENT 10 — additivity measured, not assumed.** The complementary LEVEL-ONLY arm gives
+Δ̄_level = **+0.014929** directly vs the residual-defined +0.014955 (gap −2.5e-5, −0.2% of
+Δ̄_phi). Both banked; the instrument's hardcoded 0.015524 superseded by the re-derived
++0.015524133 (level implied +0.014954577).
+
+**AMENDMENT 11 — h_ref robustness extended (REPORTED-ONLY, verdict-inert).** Δ̄_shape at
+h_ref = 0.62…0.86: +0.000312 → +0.000863, monotone, 12/12 positive throughout — SHAPE-NULL
+holds at every anchor including where the posterior mass sits (≈0.62). The level share is
+anchor-conditioned: **~94–98%**, never a bare "96%".
+
+**MINOR (recorded):** GATE I-S residual 5.1–5.5e-7 vs 2e-6 tol — approximate identity, harmless
+here (φ round-trip reproduces the directly-scored mean_h to ≤3.8e-8, a check the instrument did
+not run).
