@@ -225,3 +225,16 @@ movement plus AMENDMENT 1(c)'s code audit, explicitly in the A20 review's scope.
 or statistic changes. (Two gate-evidence mechanics defects in one registration — logging
 observability joins the A17 checklist: an engagement gate's evidence channel must be verified
 OBSERVABLE in the harness before registration.)
+
+## BAND FREEZE (2026-08-22 ~05:40, appended post-pilot, PRE-FLEET; formulas as registered in §5)
+
+Pilot (seeds 900101/900102 under `"phi"`, GATE R-P3 already green): Δ_s = **+0.019497,
++0.027370**; realized paired σ̂ (n=2 proxy) = **0.005567** ⇒ SEM_paired(12) forecast ≈ 0.00161
+⇒ 3·SEM = 0.0048 < 0.02, so the registered max() resolves to the anchor:
+
+- **TWIN-MATERIAL iff |Δ̄(12)| > 0.02** (frozen)
+- **TWIN-IMMATERIAL iff |Δ̄(12)| ≤ 0.01 AND SEM_paired(12) ≤ 0.004** (frozen)
+- **REPORT-BOUND otherwise** (first-class)
+
+Realized-scatter re-check (A17) at scoring uses the fleet's own 12-seed paired SEM, not this
+n=2 proxy. Costing realized: ~30 min/seed wall (46-node grid), ~9 GB — fleet 2-wide ≈ 2.5 h.
