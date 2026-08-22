@@ -414,3 +414,59 @@ anchor-conditioned: **~94–98%**, never a bare "96%".
 **MINOR (recorded):** GATE I-S residual 5.1–5.5e-7 vs 2e-6 tol — approximate identity, harmless
 here (φ round-trip reproduces the directly-scored mean_h to ≤3.8e-8, a check the instrument did
 not run).
+
+## COMPLETED-PAIRING ARM — REGISTRATION (2026-08-22, author-approved row #166 item 2(i); pre-data; A21/A22, A17(d)/(e)/(f) in force)
+
+**Question:** the registered candidate's net effect — per-candidate S̄_φ inside the sum WITH the
+class weight re-derived to the S̄-free β_G — on the 12 banked B-SEL seeds. Registered
+expectation [NARRATIVE-HYPOTHESIS]: the fluctuation term only, ≪ the twin's +0.0155; genuinely
+two-sided.
+
+**Construction (zero-`evaluate()`; first-order completion, the Σ-chain corrections held
+invariant and DISCLOSED as such):** per event and node,
+
+    cat_term_completed(e,h) = cat_term_phi(e,h) · R(h),   R(h) ≡ β_G(h) / β_G_φ(h)
+
+with both β's from the COMMITTED leaf `precompute_phi_selection_integrals` called twice on the
+same grid — once with the real `phi_survival_table` (→ β_G_φ, β̄_Ḡ_φ), once with an S̄≡1 table
+(→ β_G, β̄_Ḡ) — venue objects via `build_bsel_selection_objects` (no leaf reimplementation).
+Mixture reassembled by the verified identity; scored by the committed
+`compute_seed_statistics` (trapezoid); baseline = the banked trapezoid mean_h (A17(e), gated).
+
+**Gates (fail ⇒ VOID):**
+- **GATE T-C (venue-object anchor):** the real-table call's β̄_Ḡ_φ(h) matches the banked
+  columns' `D̃_φ − α_G_φ` per h to ≤2e-6 relative on all 12 seeds' CSVs (h-only, so one seed
+  suffices numerically; checked on all 12 for key integrity). A mismatch ⇒ the rebuilt venue
+  objects are not the estimator's — STOP and diagnose (A21), never proceed.
+- **GATE S-C (sanity):** R(h) > 1 ∀h (S̄_φ < 1); β_G/(β_G+β̄_Ḡ) ∈ (0,1); R(h) banked per node
+  (A17(d): the full vector, not a summary).
+- **GATE I-S / N-S analogues** as in the shape arm (mixture identity; h_ref-free here — no
+  anchoring in this construction).
+- **A22 stamp** (instrument-tree-inclusive per O8 amendment 5); **A17(f):** every comparand is
+  a banked artifact (the CSVs; the headline anchor −0.108302 for the baseline gate at 1e-5,
+  the amendment-8-discharged form, disclosed as such).
+
+**Primary:** `Δ̄_completed(12)` paired vs the banked trapezoid baseline; per-seed vector + sd +
+SEM banked (A17(e), O8-amendment-3 lesson). **Decomposition report:** Δ̄_completed vs the twin
+(+0.015524), shape (+0.000570), level (+0.014954) — closing the arithmetic of the candidate's
+content.
+
+**Bands (frozen now):** **COMPLETED-SMALL** iff |Δ̄_completed| ≤ 0.005 (the fluctuation-scale
+prediction holds; the candidate is calibration-near-neutral in this venue) · **COMPLETED-
+MATERIAL** otherwise (two-sided; report only — the all-impostor venue caveat applies to ANY
+sign; no correctness claim either way, per the proposal's scope warning). No materiality
+commentary (amendment-6 discipline).
+
+**Axis leverage (A17):** R(h) ≈ 1/⟨S̄_φ⟩_G ~ 3–4 rescales the φ arm's cat terms upward ~global;
+the φ arm moved the fleet +0.0155 and K-flat's global-constant analog moved +0.039 — the axis
+trivially resolves both bands; the interesting outcome is WHERE between 0 and the twin it
+lands. **Costing:** zero-`evaluate()`; table build ≈ 1–2 min (o8-measured leaf costs), rescore
+< 5 min; local.
+
+**A10:** invariants = everything except the class-weight ratio; structural blindness: (i) the
+Σ-chain (n̂_w, r_Malm, Σ_φ/Σ_4D) corrections are NOT completed here (first-order only,
+disclosed); (ii) all-impostor venue — no correctness claim possible; (iii) the S̄_φ-leaf
+common-mode, as throughout.
+
+*(Instrument `p3_completed_rescore.py` committed before it runs; VERDICT + A20 review before
+banking.)*
