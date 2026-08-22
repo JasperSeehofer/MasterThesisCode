@@ -2465,3 +2465,20 @@ described the fused re-measure as "12 seeds ~6 CPU-h"; the PAIRED design (Δ_twi
 fused+twin − fused+coded) requires the fused-CODED baseline as well ⇒ 24 runs ≈ 12 CPU-h.
 The baseline half (independently required for ANY fused-basis B-SEL statement) launches first;
 the twin half follows unless the author intervenes on the corrected total.
+
+## Row #170 — 2026-08-22 — Author backlog task logged + primer delivered: the vocabulary gap; "channel" disambiguated ("contribution" adopted for the decomposition); book addendum PROPOSED
+
+Author (verbatim): "I struggle to follow your explanations and reports because the vocabulary
+has shifted and I want to catch up… is there a chapter on the channels in the book?"
+
+1. **[DONE] `docs/PRIMER_BIAS_CHANNELS_20260822.md`** — the vocabulary built from the one
+   mixture equation (legs → channels → contributions → cells → arms/venues → governance), with
+   the "channel" collision fixed: **"contribution" is adopted for the three-way bias split;
+   "channel" reserved for the full/matched/pure readouts** — binding for future reports.
+2. **[FINDING] The book has NO chapter on this:** Ch 0–11 (design frozen 2026-07-31) covers
+   the mixture (Ch 5) and mass channel (Ch 8) but predates the August campaign entirely.
+   **[PROPOSED, author]** a book-design addendum — "The Anatomy of the Bias" (interlude or
+   Ch-10 extension: the decomposition, the off-cell defect and its fix, the twin, the
+   governance arc) — queued as a design-doc amendment for the author's ruling (the design is
+   BINDING; not edited unilaterally).
+3. Report-hygiene consequence: future readouts open with the primer's terms and link it.
