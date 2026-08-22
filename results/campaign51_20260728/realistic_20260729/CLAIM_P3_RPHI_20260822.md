@@ -54,3 +54,43 @@ venue scope warning rides.
 
 *(Instrument `p3_rphi_rescore.py` committed before it runs; VERDICT + A20 review before
 banking.)*
+
+## VERDICT + A20 AMENDMENTS (2026-08-22; review banked verbatim in `A20_REVIEW_P3_RPHI_20260822.md`, BANK-WITH-AMENDMENTS, zero FATAL; primary reproduced to −1.5e-16; **the band ruling returns to the author as a fresh [RULE] per the binding default** — nothing below is banked as ruled)
+
+**Measured:** Δ̄(12) = **−0.004309 ± 0.000736** (0/12 positive) ⇒ RPHI-SMALL as a band
+assignment, PENDING the author's ruling.
+
+**AMENDMENT 1 — provenance corrected [OWNED].** The stage-0 instrument was never committed
+(scratchpad-only) — attribution void; the table VERIFIED by the reviewer's independent leaf
+rebuild (all five rows exact). Repaired: the instrument is now committed as
+`p3_rphi_measure.py`; future citations cite the committed leaves.
+
+**AMENDMENT 2 — framing strengthened.** Path A's "all three slots" are β_G^φ/β̄_Ḡ^φ/Σ^φ; the
+no-BH L_cat divisor is a FOURTH object Path A never rules on. The defect: the code's own
+"r_phi == 1 by construction/identically" assertions (`:1751-1753`, `:2422-2423`) are
+unqualified and FALSE for this leg (0.886), while the with-BH channel in the same assembly
+block pairs correctly. No committed decision rules Σ³ᴰ deliberate.
+
+**AMENDMENT 3 — derivation ratified, alternative refuted.** 1/r_φ = Σ³ᴰ/Σ^φ is algebraically
+EXACT (n̂_w^φ ≡ Σ^φ/β_G^φ is a defined code object; Σ^φ is the unique divisor making
+β_G^φ·L_cat = A_ball/n̂_w^φ); the β-ratio alternative injects a second rate density (β objects
+not even commensurate: ≈62, slope −0.945). The patch is minimal AND complete.
+
+**AMENDMENT 4 — attribution corrected.** ≈56% level (−0.002411 ± 0.000466) ⊕ ≈44% slope
+(−0.002112 ± 0.000349) — "h-sloped factor" over-attributed; both components 0/12 positive.
+
+**AMENDMENT 5 — scope conditional (binding).** r_φ is venue/catalogue-specific: 0.8860 here vs
+the 0.9119 the code quotes for the production object — NOT comparable, neither supersedes.
+RPHI-SMALL bounds THIS venue only; it licenses no production-headline statement and is NOT an
+exoneration — the slot is derivation-wrong regardless of |Δ̄|. The anti-conservative direction
+(the defect makes the reported bias look +0.0043 smaller) is venue-conditional.
+
+**AMENDMENT 6 — gate reporting corrected.** GATE S-R cannot fail (its band was frozen in the
+card that already contained the table — the measured cost of the stage-0/2 fusion) and must
+not count as an independent pass; I-S/T-C sit at the 7-digit print-rounding floor (resolving
+power ~1e-6); the Σ³ᴰ divisor-of-record remains rebuild-assumed (second-order exposure).
+
+**AMENDMENT 7 — registration hygiene.** Stage 1 retro-labelled as discharged by the
+axis-leverage paragraph (A21(a)); recurring MINORs carried (anchor literal; unregistered
+GATE_BS_TOL; unpinned comparand CSVs; A22 dirty-scope). Commit-before-run clean; no A21
+registration/execution deviation found.

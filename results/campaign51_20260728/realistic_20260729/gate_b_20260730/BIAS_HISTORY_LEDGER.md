@@ -2482,3 +2482,17 @@ has shifted and I want to catch up… is there a chapter on the channels in the 
    governance arc) — queued as a design-doc amendment for the author's ruling (the design is
    BINDING; not edited unilaterally).
 3. Report-hygiene consequence: future readouts open with the primer's terms and link it.
+
+## Row #171 — 2026-08-22 — [P3-RPHI] measured and A20-amended, PENDING the author's ruling: the slot correction is algebraically exact and moves this venue's headline −0.0043 (anti-conservative defect direction); the production-facing fix question is now sharply posed
+
+1. **[MEASURED, PENDING-RULE]** Δ̄(12) = −0.004309 ± 0.000736 (0/12 positive) ⇒ RPHI-SMALL as
+   a venue-bound; amendments 1–7 adopted (provenance repaired; derivation ratified — 1/r_φ is
+   EXACT, alternative refuted; ≈56/44 level/slope; venue-conditional: 0.8860 here vs the
+   production object's quoted 0.9119; the slot is derivation-wrong regardless of size; S-R
+   gate unfalsifiable — the stage-fusion cost, owned).
+2. **The production-facing question for the author:** the no-BH catalogue divisor (Σ³ᴰ where
+   the pairing uniquely wants Σ^φ) is a documented-as-fixed-but-unfixed slot with the with-BH
+   channel pairing correctly in the same block — the fix is a physics-change-gated candidate
+   of the same shape as the fused fix (its production r_φ ≈ 0.91; venue-measured effect here
+   −0.0043, anti-conservative).
+3. Owned defects this arm: uncommitted stage-0 instrument (repaired); unfalsifiable S-R gate.
