@@ -273,3 +273,42 @@ headline, not the drag itself. (2) per-event paired Δln L_cat: mean −0.0123, 
 
 **Costing realized:** 17 × `evaluate()` (P re-run ×2, pilot 2, fleet 10, K-flat 1, + the
 diagnosis discriminator ×2) ≈ **9 CPU-h** of the 50 CPU-h grant; all local.
+
+## A20 REVIEW AMENDMENTS 4–7 (2026-08-22 ~09:40; review banked verbatim in `A20_REVIEW_P3_TWIN_20260822.md`, BANK-WITH-AMENDMENTS, zero FATAL; every decisive number orchestrator-re-derived before this block was written)
+
+**AMENDMENT 4 — primary re-referenced (scoring-convention mismatch found post-verdict).** The
+primary as scored subtracted the banked JSONs' `mean_h` (produced pre-row-#145 with the
+superseded `legacy_gradient` weights) from a φ arm scored with the corrected `trapezoid`
+default — a systematic +0.003733 offset. **The primary of record, re-referenced to the
+convention the −0.1083 headline is quoted on (banked trapezoid fleet bias −0.108302):
+Δ̄(12) = +0.015524 ± 0.003657 (paired SEM; sd 0.012669; 12/12 positive; 4.24σ) — recovering
+14.3% of the headline bias.** Cross-check legacy/legacy: +0.015769 ± 0.003854. **REPORT-BOUND
+is unchanged under every consistent pairing.** The superseded +0.019257 ± 0.003704 is
+WITHDRAWN. Orchestrator re-derivation: exact match on all three pairings.
+**New A17 rule:** a paired counterfactual re-derives its baseline statistic from the baseline
+CSV through the arm's own scoring path and GATES that recomputation against the banked JSON
+before any Δ is formed — a banked summary field is a different object from a re-scored column.
+
+**AMENDMENT 5 — secondaries corrected from single-seed to fleet.** (1) impostor decomposition
+under φ: pure−full = **+0.06366 ± 0.0090** fleet mean (sd 0.0312, range 0.0248–0.1128) =
+**80.6%** of the coded −0.079 (not "+0.076 / ~96%"; the 4.5× per-seed spread admits no single
+number). (3) score-at-truth under φ, full channel fleet mean **−0.21145** (not −0.197).
+Directions unchanged: the drag persists; the full-channel violation stands.
+
+**AMENDMENT 6 — materiality framing withdrawn.** "Not TWIN-MATERIAL by 0.0007" is withdrawn;
+under the corrected reference the gap is 0.00448 and 3·SEM (0.0110) never approaches the 0.02
+anchor. REPORT-BOUND is reported as a bound, no distance-to-anchor commentary.
+
+**AMENDMENT 7 — K-flat qualified; evidence banked.** (a) The K-flat constant is the unweighted
+grid-mean (c ≈ 0.270–0.280 across h) vs an operative per-event median 0.353 (range 0.017–0.94):
+the level/slope partition is CONDITIONED on that constant (c=1 ⇒ all "slope"), and c(h) is
+itself h-sloped (+3.6% across the grid) — the "slope" residual is per-event/per-host
+heterogeneity, not the factor's h-tilt. Re-referenced: **level +0.039283, slope −0.023639**
+(slope offset-invariant, stands). The α-pairing sub-convention question to the author stands,
+strengthened. (b) Discriminator artifacts banked at `p3_work/rp3_discriminator/`; the FIRED
+gate's work root was overwritten pre-mandate — loss disclosed in
+`FIRED_GATE_EVIDENCE_NOTE.txt`. (c) The R-P3 `fallback_justification` (run-to-run
+multiprocessing float order) is factually wrong — two independent runs on different commits
+agreed to 17 digits; restated as an unexplained deterministic residual vs the banked CSV,
+bounded 1.3e-14, and the cross-run bit-identity recorded as the strongest evidence for the
+off-default byte-identity.
