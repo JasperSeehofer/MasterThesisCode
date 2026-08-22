@@ -962,3 +962,15 @@ matched-channel combine conventions are those of the C-SG record, not re-derived
 
 *(Instrument `o8_bias_leg_reference.py` committed before it runs; VERDICT + A20 review before
 banking.)*
+
+## O8 — PRE-RUN NOTES (2026-08-22, appended before the full run; A21)
+
+1. **Costing correction (A6/A17):** the smoke run (2 nodes, 1 seed, 26.6 s; table build 3.2 s)
+   extrapolates the full 41-node/15-seed run to **~100–120 min local**, above the registered
+   30–60 min. Costing line amended; no band, arm, or gate changes.
+2. **Combine-callable disclosure:** the registration named "the committed
+   `seed_statistics_from_matrix`-equivalent path" without one callable; the instrument calls
+   `seed_statistics_from_matrix` (`correspondence_1d.py:2097`, linear-input per its docstring)
+   directly — the CSV wrapper is unavailable for an in-memory replica. GATE M8 guards the
+   choice: the banked comparands went through the wrapper into the same reduction, so a wrong
+   choice fails M8 rather than passing silently.

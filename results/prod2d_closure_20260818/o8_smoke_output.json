@@ -1,0 +1,31 @@
+{
+  "registered_in": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, O8 -- FUSED BIAS-LEG REFERENCE: REGISTRATION (2026-08-22, rows #163 item 1 + morning 'Run now')",
+  "instrument": "o8_bias_leg_reference.py",
+  "smoke": true,
+  "a22_stamp": {
+    "git_commit_at_start": "2f1478122f0e5bde784a33940ff02465141cb3b3",
+    "estimator_tree_dirty": "clean"
+  },
+  "arm": "csgf",
+  "h_gen": 0.73,
+  "h_grid_n_nodes": 2,
+  "h_grid": [
+    0.725,
+    0.735
+  ],
+  "n_events": 200,
+  "n_seeds": 1,
+  "seeds": [
+    910101
+  ],
+  "table_build_elapsed_s": 3.198861837387085,
+  "per_seed_elapsed_s": 21.36025333404541,
+  "zero_evaluate_note": "No BayesianStatistics.evaluate() call; tables from the pinned production leaf functions (precompute_phi_marginal_survival, precompute_phi_selection_integrals) at the full h-grid, event sets from the deterministic draw_csg_realization redraw (O4 GATE R4 bit-exactness); matched-channel combine via correspondence_1d.seed_statistics_from_matrix, the SAME reduction csg_channel_scores/csg_channel_matrices use for every banked C-SG shard's matched channel (see module docstring A21 note).",
+  "per_seed": [
+    {
+      "seed": 910101,
+      "mean_h_fused_ref": 0.7298665595262174
+    }
+  ],
+  "note": "SMOKE MODE: 2 h-nodes (0.725/0.735), 1 seed, GATE T8/M8 SKIPPED -- plumbing proof only, not a registered statistic."
+}
