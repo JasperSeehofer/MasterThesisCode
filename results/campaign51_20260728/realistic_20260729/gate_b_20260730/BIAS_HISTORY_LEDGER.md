@@ -2496,3 +2496,12 @@ has shifted and I want to catch up… is there a chapter on the channels in the 
    of the same shape as the fused fix (its production r_φ ≈ 0.91; venue-measured effect here
    −0.0043, anti-conservative).
 3. Owned defects this arm: uncommitted stage-0 instrument (repaired); unfalsifiable S-R gate.
+
+## Row #172 — 2026-08-22 — Author rulings: [P3-RPHI] verdict RATIFIED as amended; the Σ^φ divisor fix proposal AUTHORIZED
+
+1. **[RULE] "Ratify as amended":** RPHI-SMALL banks as a venue-bound with amendments 1–7
+   binding; no production claim attaches.
+2. **[RULE] "Author the physics-change proposal":** the Σ³ᴰ→Σ^φ no-BH divisor fix proceeds to
+   a 6-item gate package (derivation = the ratified algebraic-exactness argument), with a
+   production-object r_φ measurement + counterfactual instrument as its verification plan;
+   presented-then-STOP.
