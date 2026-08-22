@@ -147,3 +147,37 @@ banked as the measured cost of the WRONG reading, not as a live candidate.
 
 **[RULE] asked of the author:** ratify Appendix A's resolution (numerator-only completion is
 the candidate; D̃_φ stays as coded), unblocking §5 item 2.
+
+---
+
+## APPENDIX A — REFUTED (2026-08-22; adversarial derivation check, banked verbatim in `A20_REVIEW_APPENDIX_A_20260822.md`; the author's conditional ratification does NOT take effect)
+
+The verifier's verdict: **APPENDIX-FALLS.** Half survives — D̃_φ stays selected (the +0.0344
+reading refuted by two independent routes). The ratified half is refuted: **β_G_φ also stays.**
+Under `absolute_marginal`, `L_cat` divides by the GLOBAL selection sum (verified at source,
+`:4896-4901`), so β_G_φ/Σ_glob = 1/n̂ is a **measure conversion whose S̄ content cancels** —
+the repo's own ratified derivation (`bscale_completion_normalization.md` §2: "no remaining slot
+for any factor on either leg"). The R = β_G/β_G_φ rescale is a **B_scale-class un-derived
+multiplier** (a ratio of one leg's integral under two detection models — the exact defect class
+rows #130–#131 removed from the completion leg). Two independent confirmations: the
+self-normalization table (only the twin leaves the class mass unchanged) and the S̄→cS̄
+homogeneity test (only the twin is invariant — on the fused basis).
+
+## APPENDIX B — the verifier's replacement resolution (PROPOSED; returns to the author)
+
+(i) **D̃_φ stays selected** (Appendix A's surviving half; the +0.0344/+0.0424 arms banked as
+the cost of the wrong reading). (ii) **β_G_φ stays** — no double count exists; the
+derivation-coherent candidate is **the twin cell as measured: Δ̄ = +0.015524 ± 0.003657**
+(12/12 positive, 4.24σ), with amendment 15's "double-count +0.018334" RE-LABELLED as the
+spurious R-inflation and −0.002810 as the twin contaminated by it. (iii) **Basis conditional:**
+the twin's coherence (S̄→cS̄ invariance) holds only with the completion leg `fused`; ALL banked
+P3 numbers are off-basis, where no arrangement is invariant — **P3 adoption is inseparable from
+the off-vs-fused basis fork and must be re-measured on `fused`.** (iv) The catalogued-host
+identity test proceeds with THREE arms (coded / twin / R-rescaled), on the fused basis, as the
+empirical adjudicator. **Secondary finding (separate thread, [AGENT] pending re-measurement):**
+the no-BH `L_cat`'s global divisor is the mass-blind Σ³ᴰ while its weight β_G_φ is
+φ-marginal-4D — a possible residual r_φ = Σ^φ/Σ³ᴰ ≈ 0.91 slot mismatch contested against Path
+A's "all three slots" claim; opened as `[P3-RPHI]` stage 0.
+
+**[RULE] asked of the author:** ratify Appendix B (i)–(iv), or rule otherwise. Nothing adopts
+until then.
