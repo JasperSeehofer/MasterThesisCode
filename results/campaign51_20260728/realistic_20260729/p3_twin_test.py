@@ -169,6 +169,7 @@ def _run_bsel_seed(
     catalogue_numerator_survival: str,
     out_root: Path,
     subdir: str,
+    completion_cell: str | None = None,
 ) -> dict[str, Any]:
     """Regenerate one B-SEL realization AND evaluate it end-to-end -- the exact
     call pattern ``run_arm_seed``'s ``bsel``/``bself`` branch uses
@@ -217,7 +218,9 @@ def _run_bsel_seed(
             # lower limit (0.6 vs 0.5) and with it the candidate z-window,
             # dropping low-z candidates (18 events fully, 110 partially).
             h_values=H_GRID_FULL,
-            selection_in_completion_numerator=c1d.ARM_SELECTION_CELL["bsel"],
+            selection_in_completion_numerator=(
+                completion_cell if completion_cell is not None else c1d.ARM_SELECTION_CELL["bsel"]
+            ),
             completion_event_measure=c1d.ARM_EVENT_MEASURE["bsel"],
             catalogue_numerator_survival=catalogue_numerator_survival,
         )
@@ -746,7 +749,9 @@ def stage_score(out_root: Path) -> dict[str, Any]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--stage", choices=("p", "pilot", "fleet", "kflat", "score"), required=True)
+    ap.add_argument(
+        "--stage", choices=("p", "pilot", "fleet", "kflat", "score", "fusedarm"), required=True
+    )
     ap.add_argument(
         "--seeds", type=str, default=None, help="fleet only: comma-separated seed subset"
     )
@@ -770,6 +775,19 @@ def main() -> int:
 
     out_root = Path(args.out_root)
     out_root.mkdir(parents=True, exist_ok=True)
+
+    if args.stage == "fusedarm":
+        # FUSED-BASIS ARMS registration (2026-08-22, row #169): FC/FT halves.
+        seeds = [int(x) for x in args.seeds.split(",")] if args.seeds else BSEL_SEEDS
+        for seed in seeds:
+            _run_bsel_seed(
+                seed,
+                args.survival,
+                out_root,
+                f"{args.tag}_{seed}",
+                completion_cell=args.completion_cell,
+            )
+        return 0
 
     if args.stage == "p":
         stage_p(out_root)
