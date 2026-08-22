@@ -2337,3 +2337,21 @@ The overnight goal (row #160: "remove any existing bias") — where it landed, t
    whether +0.0155 (14.3% of headline) warrants the catalogue-leg physics-change fork, and
    under WHICH α-pairing sub-convention (the shape-only arm is the registered follow-up);
    (iv) the branch's fate; (v) landscape/T1 (link 4) still gated on (iii).
+
+## Row #163 — 2026-08-22 (morning) — Author rulings on the overnight queue: O7 RATIFIED + fused bias-leg commissioned; A22 ADOPTED; the SHAPE-ONLY sub-convention arm is the next measurement; the branch MERGES as instrumentation
+
+Ruled against `OVERNIGHT_READOUT_20260822.md` §6 / runbook 29 §1 (structured question cards,
+option text orchestrator-derived; selections verbatim):
+
+1. **[RULE] "Ratify + commission bias leg":** O7 is RATIFIED as A20-amended (BANKED-by-transfer,
+   score leg, all six amendments binding). The fused BIAS-leg reference + band becomes a
+   queued [DO] (the O7 amendment-1 gap).
+2. **[RULE] "Adopt":** **A22 ADOPTED** — no tree mutation or HEAD moves during a registered
+   run; stamp git commit + dirty state at run START. Written to `docs/RESEARCH_CYCLE.md`'s
+   amendment ledger; stamp-at-start implementation lands with the next instrument change.
+3. **[RULE] "Measure shape-only arm first":** the α-pairing fork ruling WAITS for the
+   shape-only (per-event-normalized) sub-convention measurement — registered as the next arm
+   under A21/A22 discipline. The fork proposal follows with both sub-conventions' numbers.
+4. **[RULE] "Merge as instrumentation":** `p3/catalogue-survival-counterfactual` merges to main
+   (guarded counterfactual flag, default byte-identical, suite green) — the verdict chain's
+   code joins the record.
