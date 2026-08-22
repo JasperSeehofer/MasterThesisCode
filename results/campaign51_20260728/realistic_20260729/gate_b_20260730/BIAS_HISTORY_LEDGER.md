@@ -2395,3 +2395,21 @@ option text orchestrator-derived; selections verbatim):
    reduction output), A22 fold-in (stamp the instrument's own tree).
 4. **Session compute:** O8 realized 6 min (the pre-run ~100–120 min estimate itself wrong 18× —
    recorded). Day total ≈ 9.2 CPU-h of the granted 50.
+
+## Row #166 — 2026-08-22 — Author ruling on the mixture-weight proposal: "please continue and approved" — §4 items 1–2 granted as recommended (registered candidate + verification plan; NO production adoption)
+
+Author, verbatim: **"please continue and approved"** — given on
+`docs/derivations/PROPOSAL_P3_MIXTURE_WEIGHT_20260822.md` (delivered and pending; itemisation
+orchestrator-derived). Per the binding default, the approval covers the proposal's decision
+table as recommended:
+
+1. **[RULE] granted:** the completed per-event pairing (per-candidate S̄_φ inside the sum +
+   class weight re-derived to the S̄-free β_G) is a **REGISTERED CANDIDATE**, not production;
+   the gate-ledger row moves PENDING → APPROVED with exactly this scope.
+2. **[DO] granted:** the §5 verification plan executes — (i) the normalizer-completion
+   instrument on the 12 banked B-SEL seeds (zero-evaluate; registered expectation: the
+   completed arrangement's net effect is the fluctuation term, ≪ +0.0155); (ii) the
+   catalogued-host responsibility-identity test (registration + costing line before launch);
+   (iii) the MFG-a verbatim verification remains a Stage-L obligation before paper use.
+3. Item 3 ([STANDING structure] note) remains a note: production adoption, if the identity
+   test passes, returns as its own 6-item gate.
