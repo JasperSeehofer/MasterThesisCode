@@ -16,10 +16,10 @@
       "max_rel_err": 0.0,
       "tol": 1e-12,
       "n_rows_compared": 9200,
-      "fresh_csv": "/pfs/work9/workspace/scratch/st_ac147838-emri/o4_shards_20260821/work/seed910109/simulations/diagnostics/event_likelihoods.csv",
-      "banked_csv": "/pfs/data6/home/st/st_us-403333/st_ac147838/darksiren-emri/results/prod2d_closure_20260818/csg_pilot_20260821/diagnostics/csgf_seed910109/event_likelihoods.csv",
+      "fresh_csv": "results/prod2d_closure_20260818/o4_pairing_test_work/seed910109/simulations/diagnostics/event_likelihoods.csv",
+      "banked_csv": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/csg_pilot_20260821/diagnostics/csgf_seed910109/event_likelihoods.csv",
       "fallback_justification": null,
-      "elapsed_s": 5672.261839389801,
+      "elapsed_s": 2095.3628118038177,
       "reference": "PREREGISTRATION_SELFGEN_CONTROL.md PRE-CHECK O4, GATE R4; regenerated via selfgen_control.run_csg_arm_seed (unmodified)"
     }
   ],

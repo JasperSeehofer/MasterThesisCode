@@ -1,0 +1,206 @@
+{
+  "registered_in": "results/prod2d_closure_20260818/PREREGISTRATION_SELFGEN_CONTROL.md, O8 -- FUSED BIAS-LEG REFERENCE: REGISTRATION (2026-08-22, rows #163 item 1 + morning 'Run now')",
+  "instrument": "o8_bias_leg_reference.py",
+  "smoke": false,
+  "a22_stamp": {
+    "git_commit_at_start": "6a534d380529f74b7bdbe41efcc4690019764531",
+    "estimator_tree_dirty": "clean"
+  },
+  "arm": "csgf",
+  "h_gen": 0.73,
+  "h_grid_n_nodes": 41,
+  "h_grid": [
+    0.6,
+    0.61,
+    0.62,
+    0.63,
+    0.64,
+    0.65,
+    0.655,
+    0.66,
+    0.665,
+    0.67,
+    0.675,
+    0.68,
+    0.685,
+    0.69,
+    0.695,
+    0.7,
+    0.705,
+    0.71,
+    0.715,
+    0.72,
+    0.725,
+    0.73,
+    0.735,
+    0.74,
+    0.745,
+    0.75,
+    0.755,
+    0.76,
+    0.765,
+    0.77,
+    0.775,
+    0.78,
+    0.785,
+    0.79,
+    0.8,
+    0.81,
+    0.82,
+    0.83,
+    0.84,
+    0.85,
+    0.86
+  ],
+  "n_events": 200,
+  "n_seeds": 15,
+  "seeds": [
+    910101,
+    910102,
+    910103,
+    910104,
+    910105,
+    910106,
+    910107,
+    910108,
+    910109,
+    910110,
+    910111,
+    910112,
+    910113,
+    910114,
+    910115
+  ],
+  "table_build_elapsed_s": 65.54673552513123,
+  "per_seed_elapsed_s": 293.8327708244324,
+  "zero_evaluate_note": "No BayesianStatistics.evaluate() call; tables from the pinned production leaf functions (precompute_phi_marginal_survival, precompute_phi_selection_integrals) at the full h-grid, event sets from the deterministic draw_csg_realization redraw (O4 GATE R4 bit-exactness); matched-channel combine via correspondence_1d.seed_statistics_from_matrix, the SAME reduction csg_channel_scores/csg_channel_matrices use for every banked C-SG shard's matched channel (see module docstring A21 note).",
+  "per_seed": [
+    {
+      "seed": 910101,
+      "mean_h_fused_ref": 0.71102325300223
+    },
+    {
+      "seed": 910102,
+      "mean_h_fused_ref": 0.7623408507473177
+    },
+    {
+      "seed": 910103,
+      "mean_h_fused_ref": 0.789716464606478
+    },
+    {
+      "seed": 910104,
+      "mean_h_fused_ref": 0.7509354899568583
+    },
+    {
+      "seed": 910105,
+      "mean_h_fused_ref": 0.6456545370190091
+    },
+    {
+      "seed": 910106,
+      "mean_h_fused_ref": 0.6851379293127674
+    },
+    {
+      "seed": 910107,
+      "mean_h_fused_ref": 0.7071119344485889
+    },
+    {
+      "seed": 910108,
+      "mean_h_fused_ref": 0.7386964034965837
+    },
+    {
+      "seed": 910109,
+      "mean_h_fused_ref": 0.7335249824448271
+    },
+    {
+      "seed": 910110,
+      "mean_h_fused_ref": 0.7446893399305424
+    },
+    {
+      "seed": 910111,
+      "mean_h_fused_ref": 0.7209088979084438
+    },
+    {
+      "seed": 910112,
+      "mean_h_fused_ref": 0.7479663066481717
+    },
+    {
+      "seed": 910113,
+      "mean_h_fused_ref": 0.8231218400842594
+    },
+    {
+      "seed": 910114,
+      "mean_h_fused_ref": 0.7258539256551082
+    },
+    {
+      "seed": 910115,
+      "mean_h_fused_ref": 0.7516675558274221
+    }
+  ],
+  "gate_t8": {
+    "beta_gbar_phi_0.725_computed": 893324861.1081496,
+    "beta_gbar_phi_0.725_registered": 893324861.1081496,
+    "rel_0.725": 0.0,
+    "beta_gbar_phi_0.735_computed": 883510508.7955135,
+    "beta_gbar_phi_0.735_registered": 883510508.7955135,
+    "rel_0.735": 0.0,
+    "tol": 1e-09,
+    "pass": true
+  },
+  "gate_m8": {
+    "per_anchor": {
+      "910101": {
+        "banked_record": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/o6_work/f6_out/csgf_seed910101.json",
+        "banked_mean_h": 0.7110225932234768,
+        "computed_mean_h_fused_ref": 0.71102325300223,
+        "abs_diff": 6.597787531870125e-07,
+        "tol": 0.0002,
+        "pass": true
+      },
+      "910105": {
+        "banked_record": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/o7_work/s7_910105_out/csgf_seed910105.json",
+        "banked_mean_h": 0.6456532219178651,
+        "computed_mean_h_fused_ref": 0.6456545370190091,
+        "abs_diff": 1.31510114398381e-06,
+        "tol": 0.0002,
+        "pass": true
+      },
+      "910113": {
+        "banked_record": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/o7_work/s7_910113_out/csgf_seed910113.json",
+        "banked_mean_h": 0.8231218098980464,
+        "computed_mean_h_fused_ref": 0.8231218400842594,
+        "abs_diff": 3.018621297368185e-08,
+        "tol": 0.0002,
+        "pass": true
+      }
+    },
+    "tol": 0.0002,
+    "pass": true
+  },
+  "primary": {
+    "bias_fused_15": 0.00588998073924063,
+    "per_seed_mean_h_fused_ref": [
+      0.71102325300223,
+      0.7623408507473177,
+      0.789716464606478,
+      0.7509354899568583,
+      0.6456545370190091,
+      0.6851379293127674,
+      0.7071119344485889,
+      0.7386964034965837,
+      0.7335249824448271,
+      0.7446893399305424,
+      0.7209088979084438,
+      0.7479663066481717,
+      0.8231218400842594,
+      0.7258539256551082,
+      0.7516675558274221
+    ],
+    "n_seeds": 15,
+    "typed": "BANKED, by transfer",
+    "anchor_fraction": "3/15 end-to-end anchors (GATE M8)",
+    "band": "BIAS-LEG-CLOSED",
+    "band_threshold": 0.0209,
+    "off_cell_bias_banked_reported_alongside": -0.0665,
+    "reference": "PREREGISTRATION_SELFGEN_CONTROL.md O8 -- FUSED BIAS-LEG REFERENCE, 'Primary [registered wording]': bias_fused(15) = mean_s[mean_h_fused_ref(s)] - 0.73; bands: BIAS-LEG-CLOSED iff |bias_fused(15)| <= 0.0209 else BIAS-LEG-OPEN (two-sided, no materiality commentary)."
+  }
+}

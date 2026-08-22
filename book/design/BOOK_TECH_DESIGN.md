@@ -1,7 +1,7 @@
 # Discovery Book — Technical Design
 
 Status: **skeleton built and verified** (2026-07-31). Branch: `book/foundations-interactive`
-in the dedicated worktree `/home/jasper/Repositories/MasterThesisCode-book`. Never write to
+in the dedicated worktree `/home/jasper/Repositories/darksiren-emri-book`. Never write to
 `/home/jasper/Repositories/darksiren-emri` (main worktree) from this project.
 
 ---

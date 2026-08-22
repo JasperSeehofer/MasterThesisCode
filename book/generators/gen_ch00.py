@@ -55,7 +55,7 @@ from typing import Any
 # same tree (this repo is a worktree of it) or a sibling directory.
 # ---------------------------------------------------------------------------
 BOOK_ROOT = Path(__file__).resolve().parents[1]  # .../book
-REPO_ROOT = Path(__file__).resolve().parents[2]  # .../MasterThesisCode-book
+REPO_ROOT = Path(__file__).resolve().parents[2]  # .../darksiren-emri-book
 OUT_DIR = BOOK_ROOT / "site" / "data"
 OUT_FILE = OUT_DIR / "ch00_tension.json"
 

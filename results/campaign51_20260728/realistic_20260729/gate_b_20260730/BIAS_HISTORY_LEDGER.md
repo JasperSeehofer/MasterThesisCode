@@ -2377,3 +2377,21 @@ option text orchestrator-derived; selections verbatim):
    weighting (Gray/MFG as published)? This is a derivation task (the [P2]+[P3] "one
    arrangement" completion) feeding a physics-change proposal — stage-5, author-gated.
 5. Compute: zero `evaluate()` for the entire shape/level decomposition.
+
+## Row #165 — 2026-08-22 — O8 banked (A20-amended): the fused-replica bias leg closes as a point estimate (+0.00589 ± 0.01078, censored statistic, CI fence carried); the paired off→fused correction is +0.0724 ± 0.0051 (14.1σ, 15/15); the registration's own leverage line falsified by the review and corrected
+
+1. **[BANKED, by transfer; 3/15 anchors] O8:** bias_fused(15) = **+0.005890 ± 0.010781** ⇒
+   BIAS-LEG-CLOSED as a point-estimate band, with the O7-amendment-2-style CI fence (95% CI
+   does not exclude the edge), the [0.60, 0.86] censoring disclosure, and the scope fence
+   (fused-replica only; BAND_C stands on the off cell; no production/rail claim). GATE M8
+   anchored at ≤1.32e-6 on the exact min/max/interior of the realized vector.
+2. **[MEASURED] The paired off→fused bias correction: +0.072427 ± 0.005137 (14.1σ, 15/15
+   positive)** — the completion-cell fix removes the off cell's −0.0665 bias leg to within a
+   0.55σ censored residual. Both BAND-C legs are now closed on the fused REPLICA (score row
+   #161, bias here), each with its CI fence.
+3. **[OWNED] The O8 registration's A17 leverage line was arithmetically false** (anchors'
+   biases vs h_gen mislabelled as axis shifts) — caught by the third A20 application
+   pre-banking; corrected in the amendments. A17 +2 (censored statistics; bank the full
+   reduction output), A22 fold-in (stamp the instrument's own tree).
+4. **Session compute:** O8 realized 6 min (the pre-run ~100–120 min estimate itself wrong 18× —
+   recorded). Day total ≈ 9.2 CPU-h of the granted 50.

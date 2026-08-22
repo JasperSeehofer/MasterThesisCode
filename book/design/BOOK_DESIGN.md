@@ -13,7 +13,7 @@ question texts and answers live in `BOOK_PEDAGOGY.md` Part 3** and are used verb
 **conflict/supersession register in `BOOK_SOURCES_MAP.md` §7 is binding in its entirety**.
 
 Repo paths: source repo = `/home/jasper/Repositories/darksiren-emri` (READ-ONLY);
-worktree = `/home/jasper/Repositories/MasterThesisCode-book` (all writes). Python =
+worktree = `/home/jasper/Repositories/darksiren-emri-book` (all writes). Python =
 the source repo's `.venv/bin/python`.
 
 ---

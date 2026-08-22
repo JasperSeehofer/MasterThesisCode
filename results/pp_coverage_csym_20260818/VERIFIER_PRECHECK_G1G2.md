@@ -693,3 +693,9 @@ new text:
 
 *Part-VI verifier of record: same session. BLOCKING: A-B-1, A-B-2 — apply verbatim before any
 Amendment-B cell or probe runs.*
+
+---
+
+*Part VII (prod2d closure + landscape campaign pre-check, 2026-08-19) lives at
+`results/prod2d_closure_20260818/VERIFIER_PRECHECK_PROD2D.md` — verdict GO-WITH-AMENDMENTS,
+4 BLOCKING (P7-1…P7-4), 4 NON-BLOCKING (P7-5…P7-8).*

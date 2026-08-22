@@ -974,3 +974,36 @@ banking.)*
    directly — the CSV wrapper is unavailable for an in-memory replica. GATE M8 guards the
    choice: the banked comparands went through the wrapper into the same reduction, so a wrong
    choice fails M8 rather than passing silently.
+
+## O8 — VERDICT + A20 AMENDMENTS (2026-08-22; review banked verbatim in `A20_REVIEW_O8_20260822.md`, BANK-WITH-AMENDMENTS, zero FATAL; reviewer reproduction exact throughout)
+
+**Gates:** T8 PASS (bit-identical at the shared nodes, rel 0.0); M8 PASS at ≤1.32e-6 vs the
+2e-4 band — and stronger than registered: the three anchors are the exact min/max/interior of
+the realized fused mean_h vector, validating the 41-node transfer at both extremes.
+
+**Primary [BANKED, by transfer; 3/15 anchors]:** `bias_fused(15) = +0.005890 ± 0.010781`
+(sd 0.041755; 0.55σ from zero) ⇒ **BIAS-LEG-CLOSED as a point-estimate band**, with the
+amendments below as its binding reading. Paired off→fused correction (reviewer-recomputed):
+**+0.072427 ± 0.005137 (14.1σ, 15/15 positive)** removing the off cell's −0.0665.
+
+**Amendments (adopted verbatim):**
+1. **Leverage statement corrected [OWNED]:** the registered "−0.084/+0.093 axis" figures were
+   the two anchors' fused BIASES (differenced against h_gen), not off→fused shifts — withdrawn.
+   The measured axis is +0.0724 ± 0.0051 fleet (per-seed +0.0245…+0.0902); reachability stands
+   on the corrected numbers.
+2. **What CLOSED may say:** the 95% CI **[−0.0172, +0.0291] does not exclude a residual at the
+   edge 0.0209**; no zero-equivalence is established (the O7 amendment-2 fence, carried). The
+   ported pilot edge is conservative (fused-scatter re-derivation would give 0.0323).
+3. **Censoring disclosed (A10):** mean_h is censored to [0.60, 0.86]; 2/3 anchors rail at the
+   boundaries; the paired shift is censoring-matched, the absolute bias is a censored
+   statistic. **A17(d) fold-in:** bank the reduction's map_h/sigma_h/r_low alongside mean_h —
+   O8's output cannot answer the rail state of 12/15 seeds it scored.
+4. **Scope fence:** O8 closes the fused-REPLICA bias leg only; C-SG's BAND_C stands on the off
+   cell; no production/rail statement; the O7 amendment-6 caveat carried unmodified.
+5. **Disclosure completed [OWNED]:** the per-h-scalar β̄ divisor (vs the per-event column) is
+   an undisclosed-at-registration convention choice, M8-guarded and GATE-T-licensed. **A22
+   fold-in:** the start-stamp's dirty check covers the instrument's own tree, not
+   `darksiren_emri/` alone.
+
+**Amendment credits:** A20 +1 (third application: falsified the registration's leverage
+evidence pre-banking), A17 +2 (censored-statistic term; reduction-output observability).
