@@ -470,3 +470,54 @@ common-mode, as throughout.
 
 *(Instrument `p3_completed_rescore.py` committed before it runs; VERDICT + A20 review before
 banking.)*
+
+## COMPLETED-PAIRING ARM — VERDICT + A20 AMENDMENTS 12–16 (2026-08-22; review banked verbatim in `A20_REVIEW_P3_COMPLETED_20260822.md`, BANK-WITH-AMENDMENTS, zero FATAL; reviewer reproduction exact to every printed digit, R(h) rebuilt bit-identically from the committed leaves)
+
+**Verdict [MEASURED, as amended]: COMPLETED-SMALL** — Δ̄_completed(12) = **−0.002810 ± 0.000467**
+(sd 0.001619, 0/12 positive), reported as, and only as: *under the registered first-order
+completion — per-candidate S̄_φ in the catalogue numerator with the class weight rescaled
+β_G_φ→β_G, with D̃_φ, the Σ-chain and the off-basis completion leg held at coded — the 12-seed
+paired shift in mean_h vs the banked trapezoid baseline satisfies |Δ̄| ≤ 0.005.* Gates T-C
+(4.756e-07) and S-C green; A22 stamp truthful.
+
+**AMENDMENT 12 — the "first-order, Σ-chain invariant" disclosure is verdict-decisive and is
+re-stated as a registered SUB-CONVENTION.** The proposal §2 prescribes β_G_φ→β_G "in α_G_φ's
+construction"; α_G_φ enters D̃_φ. The instrument completed the numerator only, following §1's
+display denominator, without an A21 amendment recording that the alternative reading exists.
+Reviewer measurement: completing D̃_φ as well gives Δ̄ = **+0.034357 ± 0.004342 (12/12
+positive)** → COMPLETED-MATERIAL; the D̃_φ lever alone gives **+0.042362 ± 0.005033**. The
+held-invariant object is a **15× lever that flips the sign and the band**. COMPLETED-SMALL
+therefore holds ONLY for the D̃-invariant sub-convention and may never be quoted as "the
+completed pairing's effect" unqualified. **`PROPOSAL_P3_MIXTURE_WEIGHT_20260822.md` §1 and §2
+are mutually inconsistent on this point and return to the author as an open [RULE] before any
+production-adoption gate.** Both sensitivity arms banked as REPORTED-ONLY, verdict-inert.
+
+**AMENDMENT 13 — a registered fail⇒VOID gate was omitted; discharged by the A20 review
+[OWNED].** The registered "GATE I-S / N-S analogues" were not implemented and no A21 STOP was
+taken — the third unavailable/substituted-gate instance and the first outright omission. The
+reviewer ran the mixture identity on both cell CSV sets, all 12 seeds: max rel residual
+5.49e-07 (off) / 5.48e-07 (φ) vs 2e-6; N-S vacuous as registered. Substance satisfied.
+**A17(f) extended:** an instrument must FAIL CLOSED on any registered gate it does not execute.
+
+**AMENDMENT 14 — the registered axis-leverage statement falsified and corrected [OWNED].**
+Registered "R ≈ 3–4"; measured **R ∈ [1.3862, 1.7285]** (~2× off). Verdict-inert; owned per
+the O8 precedent.
+
+**AMENDMENT 15 — decomposition arithmetic corrected and closed.** twin +0.015524133 =
+double-count **+0.018333714** ⊕ completed −0.002809581 — the double-count is **118% of the
+twin**, which the completion OVER-returns. The SHAPE literal corrected to +0.000569556 (the
+report then closes to the digit). Per-seed |completed|/twin spans 0.133–0.319 (2.4×) — no
+single-number summary admissible. The double-count is banked as a number.
+
+**AMENDMENT 16 — the band's interpretive gloss withdrawn [OWNED].** "calibration-near-neutral
+in this venue" is withdrawn (contrary to the arm's own amendment-6 discipline, and "calibration"
+is forbidden for the all-impostor venue by the proposal's own §1). Δ̄ is **6.0σ from zero,
+12/12 negative**: small is not neutral. COMPLETED-SMALL is a magnitude bound in one venue under
+one sub-convention; it licenses no calibration, correctness, or "impostor drag is venue
+physics" claim — the latter rests on no measurement in this arm.
+
+**MINOR (recorded):** the `keep` NaN branch is an A13-class silent-subset hazard (coverage
+verified 174×41 exactly; the 870 skipped rows are the low-wing nodes the scorer discards);
+A17(d): bank the four β vectors + per-h T-C residuals, not only R(h); both input CSV sets are
+untracked/unchecksummed at the consumer, contra the 2026-08-20 dataset-pinning rule (recurring
+across the P3 chain — queued for the author as housekeeping).

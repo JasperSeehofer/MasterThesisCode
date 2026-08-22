@@ -2413,3 +2413,24 @@ table as recommended:
    (iii) the MFG-a verbatim verification remains a Stage-L obligation before paper use.
 3. Item 3 ([STANDING structure] note) remains a note: production adoption, if the identity
    test passes, returns as its own 6-item gate.
+
+## Row #167 — 2026-08-22 — COMPLETED-SMALL banked under its sub-convention ONLY (−0.00281 ± 0.00047, 6σ, 0/12 positive) — and the A20 review found the verdict-decisive lever: completing D̃_φ as well flips the result to +0.0344 (COMPLETED-MATERIAL); the D̃ sub-convention returns to the author as the pivotal open [RULE]
+
+1. **[MEASURED, as amended] The registered candidate (numerator-only completion):**
+   Δ̄_completed(12) = −0.002810 ± 0.000467 ⇒ COMPLETED-SMALL — a magnitude bound in one venue
+   under ONE sub-convention; no calibration/correctness/venue-physics claim licensed
+   (amendment 16). Decomposition closed exactly: twin +0.015524 = double-count **+0.018334
+   (118%, over-returned)** ⊕ completed −0.002810.
+2. **[MEASURED, reviewer arms, REPORTED-ONLY] The D̃_φ lever:** full completion
+   **+0.034357 ± 0.004342 (12/12 positive)**; D̃ lever alone +0.042362 ± 0.005033 — a 15×
+   sign-flipping lever hiding inside "Σ-chain held invariant". **The proposal's §1 and §2 are
+   mutually inconsistent on whether D̃_φ completes; this is now the pivotal [RULE] of the [P3]
+   thread and BLOCKS the catalogued-host identity test** (running it before the sub-convention
+   is ruled would test an ambiguous candidate) — the verification plan's item 2 is PAUSED at
+   this A21-style stop.
+3. **[OWNED ×3]** a registered gate omitted outright (amendment 13 → A17(f) fail-closed
+   extension); the axis-leverage claim falsified again (amendment 14); an interpretive gloss
+   baked into my own registered band (amendment 16). Fourth/fifth/sixth owned instrument
+   defects of the day — every one caught by the A20 mechanism before banking.
+4. Housekeeping queued: comparand-CSV checksum pinning (2026-08-20 rule, recurring across the
+   P3 chain).
