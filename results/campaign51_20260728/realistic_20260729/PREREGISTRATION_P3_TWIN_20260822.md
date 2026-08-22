@@ -558,3 +558,42 @@ registration).
 pattern), ~6 h wall total; the corrected-vs-granted cost is disclosed in row #169.
 
 *(Driver reused as committed; VERDICT + A20 review before banking.)*
+
+## FUSED-BASIS ARMS — VERDICT + A20 AMENDMENTS 17–21 (2026-08-23 ~01:30; review banked verbatim in `A20_REVIEW_P3_FUSED_20260823.md`, BANK-WITH-AMENDMENTS, zero FATAL; primary reproduced exactly, incl. one seed re-scored from raw diagnostics through the committed path)
+
+**Verdict [MEASURED, as amended]: TWIN-FUSED-MATERIAL** — Δ̄_twin|fused(12) =
+**+0.029068 ± 0.005088** (sd 0.017624, 12/12 positive, 5.71σ) vs the frozen 0.02 anchor, on
+the fused (production) completion basis — **1.87× the off-basis +0.015524** (corrected
+trapezoid comparand, named per amendment 21). FC fleet bias −0.113508 (sd 0.00294), FT
+−0.084440 — both floor-clamped (amendment 20). The all-impostor scope warning rides: leverage,
+not correctness; the b0 identity test remains the adjudicator.
+
+**AMENDMENT 17 [OWNED]** — the registered L-P3/E-P3(a) gates were NOT executed by the fusedarm
+stage; discharged by the reviewer (and independently by the orchestrator pre-review): L-P3
+PASS 24/24 (fused line in all logs; twin line 12/12 FT, 0/12 FC).
+
+**AMENDMENT 18** — E-P3(a) FAILS AS REGISTERED (60.6–73.6% of rows vs ">99%"): every
+non-differing row is an L_cat≡0 no-catalogue-host row (26–39% of rows) where the cell has no
+operand; on the live-catalogue-leg denominator engagement = 100.00000%, zero exceptions.
+Re-derived and PASSES; recorded fail-as-written. **A17 fold-in: engagement gates state their
+denominator explicitly.** (The orchestrator's own first post-hoc check also mis-thresholded —
+conflating V6's all-rows form — before converging on the registered form: recorded.)
+
+**AMENDMENT 19 [OWNED]** — the driver's A22 stamp is run-END-placed with no dirty flag —
+evidentially void for its purpose; five HEAD moves landed inside the FC window (literal A22
+violation), ruled NON-MATERIAL on evidence (zero estimator commits in the window; the driver's
+commits precede the launch; detached processes pre-imported). **A22 amended: stamp taken and
+WRITTEN before the evaluate call, with dirty flag; the completion cell recorded in the meta.**
+
+**AMENDMENT 20 (binding on every quotation)** — the primary is boundary-censored (map_h at the
+0.60 floor 24/24; 27–31% of FC's mass on the floor node). Un-truncated on H_GRID_FULL:
+**Δ̄ = +0.063389 ± 0.008897 (7.1σ), 2.18× the registered value**; FC/FT un-truncated biases
+−0.213589/−0.150200 with FC's MAP at the extended grid's own 0.50 floor 12/12. Censoring
+COMPRESSES the paired difference ⇒ the verdict is conservative. +0.029068 is the
+registered-grid statistic, never an effect size; the leverage fraction carries its grid
+(25.6% H_GRID_41 / 29.7% H_GRID_FULL).
+
+**AMENDMENT 21** — "scatter 0.0037" was a SEM (immaterial; the 1.374× check passes on either
+convention); the off-basis comparand is the corrected +0.015524 (never the as-used +0.019257);
+the fused arms do NOT repeat the row-#167 mixed-convention defect (both freshly scored through
+the committed defaults; reproduced <1e-12).

@@ -2505,3 +2505,23 @@ has shifted and I want to catch up… is there a chapter on the channels in the 
    a 6-item gate package (derivation = the ratified algebraic-exactness argument), with a
    production-object r_φ measurement + counterfactual instrument as its verification plan;
    presented-then-STOP.
+
+## Row #173 — 2026-08-23 — TWIN-FUSED-MATERIAL banked (A20-amended): on its coherent basis the twin moves the venue headline +0.0291 ± 0.0051 (12/12, 5.7σ; un-truncated +0.0634 — the censoring makes the verdict conservative); the b0 identity test is now the sole gate between the candidate and a production proposal
+
+1. **[MEASURED, as amended] Δ̄_twin|fused(12) = +0.029068 ± 0.005088 ⇒ TWIN-FUSED-MATERIAL**
+   (frozen anchor 0.02; 1.87× the off-basis value; un-truncated on H_GRID_FULL:
+   +0.063389 ± 0.008897, 2.18× — censoring compresses, verdict conservative). FC fused-basis
+   venue headline −0.113508 (floor-clamped; un-truncated −0.213589). Amendments 17–21 adopted
+   (un-executed gates discharged; E-P3 denominator rule → A17; A22 stamp-before-evaluate +
+   dirty flag + completion-cell-in-meta adopted; quotation rules binding).
+2. **[OWNED ×2 + 1 near-miss]** gates not wired into the fusedarm stage; end-placed A22 stamp
+   with five mid-run HEAD moves (non-material, verified); the orchestrator's first post-hoc
+   gate check mis-thresholded before converging on the registered form.
+3. **Where the thread now stands:** the derivation-coherent candidate (App B) is MATERIAL on
+   its coherent basis at ~26–30% of the venue headline; correctness (vs all-impostor leverage)
+   rests entirely on the **b0 catalogued-host identity test** — next session's centerpiece,
+   together with the PENDING Σ^φ divisor proposal (§7) whose corrected slot the b0 test
+   should inherit.
+4. Session compute: FC+FT 24 × evaluate ≈ 12 CPU-h as disclosed (row #169); day-2 total
+   ≈ 21 CPU-h. Eight A20-class reviews across the two days: zero FATAL, every verdict
+   materially amended — the mechanism IS the campaign's integrity.
