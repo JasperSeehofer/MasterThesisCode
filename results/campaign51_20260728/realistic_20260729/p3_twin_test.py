@@ -83,6 +83,7 @@ import decompose_impostor_leg as o2  # noqa: E402
 from darksiren_emri.validation import correspondence_1d as c1d  # noqa: E402
 from darksiren_emri.validation.correspondence_1d import (  # noqa: E402
     H_GRID_41,
+    H_GRID_FULL,
     H_TRUE,
     combine_log_likelihood,
     compute_seed_statistics,
@@ -207,7 +208,11 @@ def _run_bsel_seed(
             events,
             seed,
             galaxy_catalog=handler,
-            h_values=H_GRID_41,
+            # GATE R-P3 diagnosis fix (prereg AMENDMENT 2): the canonical bsel
+            # branch evaluates over H_GRID_FULL; H_GRID_41 narrowed the h-prior
+            # lower limit (0.6 vs 0.5) and with it the candidate z-window,
+            # dropping low-z candidates (18 events fully, 110 partially).
+            h_values=H_GRID_FULL,
             selection_in_completion_numerator=c1d.ARM_SELECTION_CELL["bsel"],
             completion_event_measure=c1d.ARM_EVENT_MEASURE["bsel"],
             catalogue_numerator_survival=catalogue_numerator_survival,
@@ -333,13 +338,16 @@ def stage_pilot(out_root: Path) -> dict[str, Any]:
     return out
 
 
-def stage_fleet(out_root: Path) -> dict[str, Any]:
-    """F-phi arm: all 12 banked seeds under "phi" -- seeds already produced by
+def stage_fleet(out_root: Path, seeds: list[int] | None = None) -> dict[str, Any]:
+    """F-phi arm: the 12 banked seeds under "phi" -- seeds already produced by
     ``pilot`` (same ``phi_<seed>_meta.json`` naming) are REUSED, not re-run.
+    ``seeds`` (from ``--seeds``) restricts this invocation to a subset so two
+    driver processes can split the fleet 2-wide across disjoint halves
+    (disclosed operational split; the score stage always reads all 12).
     """
     reused: list[int] = []
     ran: list[int] = []
-    for seed in BSEL_SEEDS:
+    for seed in seeds if seeds is not None else BSEL_SEEDS:
         meta_path = out_root / f"phi_{seed}_meta.json"
         if meta_path.is_file():
             reused.append(seed)
@@ -736,6 +744,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--stage", choices=("p", "pilot", "fleet", "kflat", "score"), required=True)
     ap.add_argument(
+        "--seeds", type=str, default=None, help="fleet only: comma-separated seed subset"
+    )
+    ap.add_argument(
         "--out-root",
         type=str,
         default=str(THIS_DIR / "p3_work"),
@@ -763,7 +774,7 @@ def main() -> int:
         stage_pilot(out_root)
         return 0
     if args.stage == "fleet":
-        stage_fleet(out_root)
+        stage_fleet(out_root, [int(x) for x in args.seeds.split(",")] if args.seeds else None)
         return 0
     if args.stage == "kflat":
         stage_kflat(out_root)

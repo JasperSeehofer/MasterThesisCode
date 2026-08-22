@@ -188,3 +188,26 @@ margin:
   score-scale leverage (+0.122) is the same order as the completion-leg twin's measured
   per-seed shift (+0.125) — consistent with the one-arrangement ([P2]+[P3]) reading; the
   measured primary remains Δmean_h, not this estimate.
+
+## AMENDMENT 2 (2026-08-22 ~03:30; GATE R-P3 FIRED, diagnosed, driver fixed — gate re-runs before anything else)
+
+**The gate fired as designed.** Arm P's first run: B_num bit-exact (0.0) but L_cat_no_bh max
+rel 1.0 with 738 rows fresh-zero-where-banked-nonzero (18 events fully zeroed at all h, 110
+partially reduced, 56 exact) and a key mismatch (41 vs 46 h rows). Execution STOPPED per §4.
+
+**Diagnosis [MEASURED]:** the driver deviated from the canonical bsel producer in ONE input —
+`h_values=H_GRID_41` where the canonical `run_arm_seed` uses `H_GRID_FULL`. The mirror driver
+widens the h-prior lower limit to `min(h_values)` (0.6 vs the canonical 0.5), which narrows the
+candidate z-window at the low-z end and DROPS low-z catalogue candidates — a strict membership
+subset, exactly the observed signature (the completion leg, which has no candidate membership,
+stayed bit-exact). **Discriminator [MEASURED]:** the canonical producer re-run on unmodified
+main reproduces the banked seed-900101 CSV at max rel **1.3e-14** on L_cat_no_bh (B_num 0.0,
+8004/8004 keys) — the banked baseline is sound; no upstream drift; the twin cell is not
+implicated by this failure.
+
+**Fix (driver-only, pre-measurement):** `p3_twin_test.py` evaluates over `H_GRID_FULL`
+(canonical), scores on `H_GRID_41` (unchanged — the same split the canonical uses). Also added:
+`--seeds` fleet subset for a disclosed 2-wide operational split. **GATE R-P3 re-runs from
+scratch before the pilot; no band, arm, or statistic changes.** The h-grid → h-prior →
+candidate-window coupling joins the A17 checklist as a portability hazard (an "evaluation grid"
+input that is secretly a SELECTION input).
