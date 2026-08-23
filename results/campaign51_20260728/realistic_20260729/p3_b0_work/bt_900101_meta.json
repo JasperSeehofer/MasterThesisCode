@@ -1,0 +1,37 @@
+{
+  "subdir": "bt_900101",
+  "seed": 900101,
+  "venue": "b0i",
+  "completion_cell": "fused",
+  "catalogue_numerator_survival": "phi",
+  "catalogue_global_selection": "phi",
+  "work_root": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900101_work",
+  "diagnostics_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900101_work/seed900101/simulations/diagnostics/event_likelihoods.csv",
+  "log_path": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900101.log",
+  "wall_time_s": 2018.8358170986176,
+  "elapsed_evaluate_s": 2016.0416240692139,
+  "catalogue_pin_ok": true,
+  "mean_h": 0.7452132426136572,
+  "map_h": 0.73,
+  "sigma_h": 0.043742316106757356,
+  "r_low": false,
+  "n_events": 106,
+  "beta_G_phi_at_h_gen": 153322777.12146157,
+  "beta_Gbar_phi_at_h_gen": 888403790.0,
+  "selection_json_cross_check": {
+    "found": true,
+    "path": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900101_work/seed900101/selection_tables_h_0_73.json",
+    "json_beta_G_phi": 153322758.61602736,
+    "json_beta_Gbar_phi": 888403798.0710543,
+    "csv_beta_G_phi": 153322777.12146157,
+    "csv_beta_Gbar_phi": 888403790.0,
+    "rel_err_beta_G_phi": 1.2069593830758522e-07,
+    "rel_err_beta_Gbar_phi": 9.084894005330842e-09,
+    "pass": true
+  },
+  "a22_stamp": {
+    "git_commit_at_start": "71b52e9c9fd35c409fb0ac7d61d37e2c9571b83a",
+    "tree_dirty_incl_instrument": "clean"
+  },
+  "git_commit": "71b52e9c9fd35c409fb0ac7d61d37e2c9571b83a"
+}

@@ -324,3 +324,21 @@ on the author's ETA query ~4 h later. Watcher protocol corrected: the launcher w
 driver PID to a file; the monitor polls `kill -0` on that PID (no pattern matching). Registered
 statistics unaffected (no arm data existed). [OWNED ×3: the unchunked full-pool pass, and two
 defective watchers.]
+
+## BAND FREEZE (2026-08-23 ~19:20, post-pilot, PRE-FLEET; formulas as registered in §4/PA-6)
+
+Pilot (seed 900101, both arms fresh; banked `p3_b0_work/pilot_identity_freeze_inputs.json`):
+C\* = 0.170472 (mass companion: ρ = 0.987771); n_live = 105/106 both arms, dead-rate
+IDENTICAL (1/106, same event ⇒ no VOID trigger); W-B0 closure 1.246e-7 ≤ 1e-6 both arms.
+Realized identity reads: **B-C I_s = −0.5887** (PSIS −0.6037, k̂ = 0.851, event-level SEM of
+the mean 0.1315) · **B-T I_s = −0.1526** (PSIS −0.1797, k̂ = 0.963, event-level SEM 0.3199).
+Direction per the PA-4 predictions (B-C fails low; B-T nearest 0); one-seed reads, NO verdict
+content (banked for the freeze only).
+
+**ε_I FROZEN = 0.10** — the projected fleet resolution of the NOISIER arm (0.3199/√12 ≈ 0.092,
+rounded up; the B-C projection is 0.038). Bands as registered: PASS(a) iff |Ī(a)| ≤
+max(3·SEM(a), 0.10) with PSIS agreement; k̂ > 0.7 AND raw/PSIS band disagreement ⇒
+UNDETERMINED(a). B-R must land at (Ī(B-T)+1)/R − 1 within 0.05 (PA-13(c)). Anchors may only
+TIGHTEN post-data (the §4 rule). Pilot Δmean_h(B-T − B-C) = +0.0455 (same sign as the B-SEL
+twin; leverage secondary 3's prior). Fleet launches: 2 arms × 12 seeds, seed 900101 reused
+idempotently (22 fresh evaluates remain).
