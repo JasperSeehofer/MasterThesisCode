@@ -2557,3 +2557,32 @@ need to flag the decisions as yours so i can trace them and correct if I disagre
 5. Next: gates (R-B0 replica + E-B0(a) same-venue pair) → pilot → ε_I freeze → 24-evaluate
    fleet (~12–20 CPU-h disclosed §8) → B-R rescore → score → A20 review → verdict (returns to
    the author per the §4 map).
+
+## Row #175 — 2026-08-23 — Author ruling: the row #170 book addendum APPROVED; design amendment 1 appended to BOOK_DESIGN.md ("Ch 10½ — The Anatomy of the Bias", interlude)
+
+Author (verbatim): "book addendum is also approved."
+
+1. **[RULE, author]** The "Anatomy of the Bias" addendum proceeds. **[ORCH-DESIGN]** placement
+   (interlude between Ch 10 and Ch 11, `ch10x-anatomy.html`), scope (primer ladder → C-SG
+   decomposition → off-cell fix → twin thread → governance arc → b0 adjudicator), the
+   `#ex-offcell-sbar` museum exhibit, and **[ORCH-DECIDE]** build sequencing (the page builds
+   only after the b0 identity verdict banks, so it quotes the actual state) are orchestrator
+   decisions, flagged for the author's correction.
+2. Quotation rules carried into the design entry: amendment-20 grid qualification; the
+   COMPLETED-SMALL sub-convention; the banned-sentence list untouched.
+3. Commit deferred to the next A22-safe window (a registered run is in flight).
+
+## Row #176 — 2026-08-23 — Σ^φ verification plan items (i)+(ii) COMPLETE: production r_φ(0.73) = 0.885984 (cluster, canonical pool, md5-pinned catalogue); the code's quoted 0.9119 is a STALE stamp [A11]; adoption stays author-gated pending the b0 verdict
+
+1. **[MEASURED, cluster]** r_φ(h) on the production object: 0.8529/0.8707/0.8860/0.8992/0.9108
+   at h = 0.60/0.665/0.73/0.795/0.86; chord slope +0.2526. Pool `mix200k_20260728`
+   symlink-verified as what the canonical prodstack `--evaluate` wires (the DATA_INVENTORY
+   row-78 `depth15_50k` "CURRENT" tag is stale docs — flagged, not edited). Preflight READY;
+   cluster commit `7cc9c7ac` (no signature skew vs local `cfeb2d29` on the touched leaves).
+2. **[A11]** The `bayesian_statistics.py` gate (ii-b) comment (0.9119 ± 3e-7 "production
+   object") is STALE — provenance unresolved, never quotable; correction rides the adoption
+   commit if granted. The realistic-venue 0.8860 and the production object now agree to 4e-4:
+   CLAIM_P3_RPHI amendment 5's "NOT comparable" caveat superseded on its pool half.
+3. Ops: the run took ~65 min (not "minutes") — future r_φ pool sweeps sized accordingly; the
+   subagent's first attempt parked on an untracked background process (the SIXTH incident of
+   the 2026-08-20 class) and was corrected mid-flight to a bounded foreground poll.

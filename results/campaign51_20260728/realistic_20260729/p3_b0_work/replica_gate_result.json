@@ -1,0 +1,30 @@
+{
+  "pass": true,
+  "key_mismatch": false,
+  "tol": 1e-12,
+  "n_rows_compared": 3174,
+  "per_column": {
+    "L_cat_no_bh": {
+      "bit_exact": false,
+      "max_rel_err": 2.6879513761522082e-14,
+      "pass": true
+    },
+    "B_num": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "combined_no_bh": {
+      "bit_exact": false,
+      "max_rel_err": 3.1316397294311866e-14,
+      "pass": true
+    }
+  },
+  "banked_csv": "/home/jasper/Repositories/darksiren-emri/results/prod2d_closure_20260818/arm_event_likelihoods/b0_seed900101/seed900101/simulations/diagnostics/event_likelihoods.csv",
+  "fallback_justification": "production evaluate() dispatches per-host likelihood terms through a multiprocessing pool (_starmap_host_batches) whose float-summation order is not guaranteed run-to-run identical, so the registered <= 1e-12 relative fallback is used per GATE R-B0 (GATE R-P3/R4/D6 precedent).",
+  "gate": "GATE_R-B0",
+  "wall_time_s": 1682.3516943454742,
+  "wall_time_min_s": 60.0,
+  "wall_time_pass": true,
+  "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_B0_IDENTITY_20260823.md (2026-08-23, PA-1..PA-10 amended), S3 GATE R-B0"
+}

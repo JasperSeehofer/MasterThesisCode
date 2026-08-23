@@ -69,3 +69,32 @@ consistency (same population + detection model in every numerator's normalizatio
 | 3 | Fold the corrected slot into the FC/FT + b0 chain | [RULE] | yes — the b0 test should run on the corrected slot |
 
 **STOP.** Presented for the author's ruling.
+
+---
+
+## VERIFICATION RESULTS (appended 2026-08-23; autonomous session, [ORCH] — see rows #174/#176)
+
+- **Item (ii) DONE:** `catalogue_global_selection ∈ {"s3d","phi"}` implemented (commit
+  `cfeb2d29`; default byte-identical, 15 tests + the S̄→cS̄ degree test; single consumption
+  site — no worker threading exists for this divisor, verified at source).
+- **Item (i) DONE — production-object r_φ(h) measured on the cluster** (instrument
+  `p3_rphi_measure_production.py`; result JSON `p3_rphi_production/p3_rphi_production_result.json`;
+  catalogue md5 matches the code pin; pool = `injection_pool_mix200k_20260728` (707 files) —
+  symlink-verified as the pool the canonical prodstack run (`run_20260729_seed61000`,
+  `[PHYSICS] ce6338e`) actually wires; `allow_shallow_pool=False`, production pdet settings):
+  r_φ = {0.600: 0.852883, 0.665: 0.870664, 0.730: **0.885984**, 0.795: 0.899241,
+  0.860: 0.910782}; d ln r_φ/dh (chord) = +0.2526.
+- **[A11] STALENESS FINDING:** the code's gate (ii-b) comment "r_phi(0.73) = 0.9119 ± 3e-7 on
+  the production object" (`bayesian_statistics.py` ~:1748) does NOT match the current
+  production object (0.885984) and is hereby STALE — never quotable as the production value;
+  its pool provenance is unresolved (possibly the retired `depth15_50k`; DATA_INVENTORY row 78
+  "CURRENT (campaign canonical)" tag for depth15 is likewise stale documentation — flagged for
+  the author, not silently edited). The comment is corrected in the adoption commit if §7
+  item 1's adoption is eventually granted.
+- **Consequence:** the realistic-venue measurement (0.8860, CLAIM_P3_RPHI amendment 5) and the
+  production object now agree to 4e-4 — the "venue-conditional, NOT comparable" caveat is
+  superseded on its pool half (same pool family is the production pool), retained on settings.
+  The production-level effect of the fix at h=0.73 is a 1/r_φ ≈ 1.1287 catalogue-leg level
+  rescale. Item (iii) regression tests are in `test_catalogue_global_selection.py`.
+  **Adoption (item 1) remains open, author-gated** — measure-first is complete except the b0
+  identity verdict (item 3's chain), which is in flight.

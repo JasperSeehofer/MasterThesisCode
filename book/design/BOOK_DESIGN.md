@@ -870,3 +870,64 @@ self-review against §3.4.
 ---
 
 *End of build spec. GO for fan-out per §4.1.*
+
+---
+
+## DESIGN AMENDMENT 1 (2026-08-23) — Interlude: "The Anatomy of the Bias" [AUTHOR-APPROVED]
+
+**Provenance:** proposed row #170 item 2 (2026-08-22); author ruling 2026-08-23, verbatim:
+*"book addendum is also approved."* Amendment appended per §4.3 rule 1 (no frozen-file edits;
+the design gains this section, the chapter list above stays as frozen 2026-07-31). Placement,
+scope, and sequencing below are orchestrator decisions ([ORCH-DESIGN], row #175) — correctable.
+
+### Ch 10½ — The Anatomy of the Bias  *(interlude between Ch 10 and Ch 11)*
+`ch10x-anatomy.html` · `gen_ch10x.py` · ~2,200 words
+
+- **Discovery statement:** the −0.1083 was never one thing — it decomposes, with mechanism,
+  into three contributions, and the decomposition was only trustworthy because every verdict
+  along the way was adversarially amended.
+- **Learning goals:** the one-equation ladder (the canonical vocabulary of
+  `docs/PRIMER_BIAS_CHANNELS_20260822.md` — "contribution" for the split, "channel" for
+  readouts, binding); the three-way decomposition (impostor −0.079 ⊕ tilt +0.055 ⊕ matched
+  −0.085, rows #149–#156, restored arm nulls at +0.008); the off-cell S̄_φ omission and the
+  fused fix (mechanism-confirmed, row #157/O6); the catalogue-leg twin thread as a live
+  worked example of derivation-vs-leverage (Appendix A refuted as B_scale-class, Appendix B
+  ratified, TWIN-FUSED-MATERIAL +0.0291 ± 0.0051 quoted ONLY with its amendment-20 grid
+  qualification); the governance arc (A17–A22; the A20 mechanism: eight clean-context reviews
+  in two days, zero FATAL, every verdict materially amended — "the mechanism IS the campaign's
+  integrity"); the b0 identity test as the correctness adjudicator.
+- **Opening hook (predict-then-reveal):** "A −0.108 bias decomposes into three parts. Two of
+  them you have met (Ch 5, Ch 7). The third was hiding in a cell no arm ever varied — where
+  would YOU look?"
+- **Sections:** 1. One equation, six rungs (the primer ladder, verbatim vocabulary).
+  2. Cutting the bias three ways (the C-SG decomposition, with the restored-arm null as the
+  control). 3. The cell nobody varied (off-cell S̄_φ; the B_scale lesson recalled from the
+  Museum; the fused fix and its scope amendments). 4. Leverage is not correctness (the twin:
+  refuted rescale → ratified twin → basis-conditional MATERIAL — and why the all-impostor
+  venue cannot adjudicate). 5. The adjudicator (the b0i identity test: the odds-form identity,
+  the aligned generator, the fail-at-predicted-value control — ending in the then-current
+  banked verdict state, unresolved if unresolved, per the Ch 11 ethos).
+- **Sources (verbatim numbers only):** `docs/PRIMER_BIAS_CHANNELS_20260822.md`;
+  `BIAS_HISTORY_LEDGER.md` rows #149–#175; `PREREGISTRATION_P3_TWIN_20260822.md` (+ verdicts
+  and amendments 1–21); `PROPOSAL_P3_MIXTURE_WEIGHT_20260822.md` (App A/B);
+  `PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md`; `CLAIM_P3_RPHI_20260822.md`;
+  `PREREGISTRATION_B0_IDENTITY_20260823.md` (+ PA-1…PA-14, both banked A20 reviews).
+  Quotation rules binding: amendment-20 (registered-grid vs un-truncated, never an unqualified
+  effect size); COMPLETED-SMALL only under its sub-convention (amendment 12).
+- **Running example:** the twin cell followed end-to-end: +0.0155 off-basis → +0.0291 fused
+  (1.87×) → un-truncated +0.0634 (censoring compresses; conservative) → the b0 identity read.
+- **Interactives:**
+  | id | manipulate | src | AHA | fallback |
+  |---|---|---|---|---|
+  | I10X.1 The Decomposition Bench | toggle the three contributions on/off against the −0.1083 headline | gen (banked C-SG arm numbers, rows #149–#156) | contributions are measured with controls, not read off a plot — and they need not sum exactly | static: stacked-bar decomposition |
+  | I10X.2 Verdict Archaeology | scrub the twin thread's verdict timeline (registration → amendment → refutation → ratification → re-measure) | gen (dated events from the P3 prereg chain + ledger rows) | a scientific verdict is a TRAJECTORY of amendments, not a number | static: annotated timeline |
+- **Bias rail:** the amber 2D pip gains the decomposition tooltip; a new grey pip "b0 identity
+  test — in flight / [verdict when banked]".
+- **Museum:** one new exhibit anchor `#ex-offcell-sbar` (the off-cell S̄_φ omission: hypothesis,
+  the four campaigns it survived, the decisive C-SG design, the fused fix) — appended to
+  `museum.html` exhibit list; the museum meta-rule applies (the twin/R-rescale toggle in
+  I10X.x-class widgets must reveal the banked verdicts, never leave them open).
+- **Build sequencing ([ORCH-DECIDE]):** the chapter builds AFTER the b0 identity verdict banks,
+  so §5 and the rail pip quote the actual banked state (the design entry is approved now; the
+  fan-out for this one page launches on the verdict's ledger row). Same file-ownership,
+  fidelity, and §4.3 prohibitions as every chapter; word/interactive budgets per this entry.

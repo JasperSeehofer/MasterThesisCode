@@ -1,0 +1,48 @@
+{
+  "instrument": "p3_rphi_measure_production.py",
+  "h_probe": [
+    0.6,
+    0.665,
+    0.73,
+    0.795,
+    0.86
+  ],
+  "sigma_phi": {
+    "0.6": 901989722.2105248,
+    "0.665": 944853003.6096072,
+    "0.73": 980867125.6740596,
+    "0.795": 1011258703.6441164,
+    "0.86": 1036988946.9339669
+  },
+  "sigma_3d": {
+    "0.6": 1057576885.7822282,
+    "0.665": 1085209152.9841347,
+    "0.73": 1107092986.2726161,
+    "0.795": 1124569389.5769906,
+    "0.86": 1138569612.6455324
+  },
+  "r_phi": {
+    "0.6": 0.8528833547107787,
+    "0.665": 0.8706644253888085,
+    "0.73": 0.8859844094726529,
+    "0.795": 0.899240823213678,
+    "0.86": 0.9107822090249388
+  },
+  "r_phi_0p73": 0.8859844094726529,
+  "chord_slope_dlnr_phi_dh": 0.25261926778132604,
+  "cluster_git_commit": "7cc9c7ac673cd0ebcddc2a07078180a4877b097f",
+  "injection_pool_dir_used": "/pfs/work9/workspace/scratch/st_ac147838-emri/injection_pool_mix200k_20260728",
+  "injection_pool_file_count": 707,
+  "row78_tagged_pool_dir_NOT_used": "/pfs/work9/workspace/scratch/st_ac147838-emri/injection_pool_depth15_50k",
+  "row78_tagged_pool_file_count": 500,
+  "reduced_catalogue_path": "/pfs/data6/home/st/st_us-403333/st_ac147838/darksiren-emri/darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv",
+  "reduced_catalogue_md5": "c52c13b5cab61f6b3f04bbe202550969",
+  "pdet_settings": {
+    "dl_bins": 60,
+    "mass_bins": 40,
+    "estimator": "local_linear",
+    "allow_shallow_pool": false,
+    "pdet_z_resolved": true,
+    "expected_z_max": 1.5
+  }
+}
