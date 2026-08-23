@@ -208,6 +208,7 @@ def main() -> None:
             eddington_m=arguments.eddington_m,
             sigma4d_mass_kernel=arguments.sigma4d_mass_kernel,
             completion_event_measure=arguments.completion_event_measure,
+            catalogue_global_selection=arguments.catalogue_global_selection,
         )
 
     if arguments.snr_analysis:
@@ -1403,6 +1404,10 @@ def evaluate(
     # completion_numerator_data_measure.md §6; AMENDMENT A-5): "ratio"
     # (default) is byte-identical to the pre-flag path.
     completion_event_measure: str = "ratio",
+    # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
+    # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)):
+    # "s3d" (default) is byte-identical to the pre-flag path.
+    catalogue_global_selection: str = "s3d",
 ) -> None:
     from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1434,6 +1439,7 @@ def evaluate(
         eddington_m=eddington_m,
         sigma4d_mass_kernel=sigma4d_mass_kernel,
         completion_event_measure=completion_event_measure,
+        catalogue_global_selection=catalogue_global_selection,
     )
 
 

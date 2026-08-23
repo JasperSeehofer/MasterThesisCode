@@ -3210,6 +3210,13 @@ class BayesianStatistics:
     # results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md).
     # "ratio" (default) is byte-identical to the pre-flag path.
     _completion_event_measure: str = "ratio"
+    # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
+    # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)).
+    # "s3d" (default) is byte-identical to the pre-flag path (the no-BH
+    # catalogue divisor is Sigma^3D = _global_cat_denom_no_bh). "phi" swaps
+    # the divisor to Sigma^phi = _global_cat_selection_phi (the SAME table
+    # already built by Path A for the weight chain) -- proposal item 2.
+    _catalogue_global_selection: str = "s3d"
 
     def __init__(self) -> None:
         self.h_values = []
@@ -3260,6 +3267,10 @@ class BayesianStatistics:
         # completion_numerator_data_measure.md §6; AMENDMENT A-5). "ratio"
         # (default) => the pre-flag production path, byte-identical.
         self._completion_event_measure: str = "ratio"
+        # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
+        # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)):
+        # "s3d" (default) => the pre-flag production path, byte-identical.
+        self._catalogue_global_selection: str = "s3d"
 
     def evaluate(
         self,
@@ -3360,6 +3371,17 @@ class BayesianStatistics:
         # with-BH catalogue numerator is deliberately untouched (registered
         # invariant).
         catalogue_numerator_survival: str = "off",
+        # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
+        # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii);
+        # row #172): "s3d" (default) is byte-identical to the pre-flag path
+        # (the no-BH catalogue divisor is the separately fitted Sigma^3D).
+        # "phi" swaps ONLY that divisor to Sigma^phi (the SAME catalogue-
+        # weighted sum Path A already builds for the weight chain, on the
+        # same rows/weights/eligibility as Sigma^4D) -- makes the
+        # estimator's own r_phi==1 docstring invariant true for this slot.
+        # The with-BH leg is deliberately untouched. Not a production
+        # posterior until the verification plan is discharged.
+        catalogue_global_selection: str = "s3d",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3447,6 +3469,25 @@ class BayesianStatistics:
                 "; K-flat CONSTANT table" if catalogue_numerator_survival == "phi_flat" else "",
             )
         self._catalogue_numerator_survival = catalogue_numerator_survival
+        # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
+        # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)).
+        if catalogue_global_selection not in ("s3d", "phi"):
+            raise ValueError(
+                "catalogue_global_selection must be 's3d' or 'phi', "
+                f"got {catalogue_global_selection!r}"
+            )
+        if catalogue_global_selection == "phi":
+            if normalization_mode != "absolute_marginal":
+                raise ValueError(
+                    "catalogue_global_selection='phi' requires "
+                    "normalization_mode='absolute_marginal' (the Sigma^phi table it "
+                    f"reads is only built there); got {normalization_mode!r}"
+                )
+            _LOGGER.warning(
+                'COUNTERFACTUAL: catalogue_global_selection="phi" — no-BH '
+                "catalogue divisor Σ^φ ([P3-RPHI] slot). Not a production posterior."
+            )
+        self._catalogue_global_selection = catalogue_global_selection
         # Prod2d closure counterfactual instrument (results/
         # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1,
         # P8): validated here the same way selection_in_completion_numerator
@@ -4820,7 +4861,16 @@ class BayesianStatistics:
             D_h: float = self._D_h_table.get(self.h, 0.0)
             beta_G: float = self._beta_G_table.get(self.h, 0.0)
             beta_Gbar: float = self._beta_Gbar_table.get(self.h, 0.0)
-            global_denom_no_bh: float = self._global_cat_denom_no_bh.get(self.h, 0.0)
+            # [P3-RPHI] the fourth Path-A slot (docs/derivations/
+            # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)): "phi" swaps
+            # the no-BH catalogue divisor Sigma^3D for Sigma^phi (the SAME
+            # table Path A already builds for the weight chain, :3878). The
+            # with-BH leg (global_denom_with_bh) is deliberately untouched.
+            global_denom_no_bh: float = (
+                self._global_cat_selection_phi.get(self.h, 0.0)
+                if getattr(self, "_catalogue_global_selection", "s3d") == "phi"
+                else self._global_cat_denom_no_bh.get(self.h, 0.0)
+            )
             global_denom_with_bh: float = self._global_cat_denom_with_bh.get(self.h, 0.0)
             # generator_marginal draw-side calibration (0.0 outside that mode).
             n_hat_w: float = 0.0

@@ -221,10 +221,16 @@ from typing import Any, Literal
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from scipy.special import roots_legendre
+from scipy.stats import norm
 
 from darksiren_emri.bayesian_inference.bayesian_statistics import (
     FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD,
     BayesianStatistics,
+    _completeness_at_host_nodes,
+    _host_pixels,
+    _rate_weight,
+    _warn_zoa_hostz_kernel_fallback,
     path_a_completion_numerators,
     path_a_mixture_objects,
     precompute_phi_marginal_survival,
@@ -236,12 +242,16 @@ from darksiren_emri.constants import (
     HOST_DRAW_Z_MAX,
     M_SOURCE_FRAME_MAX,
     M_SOURCE_FRAME_MIN,
+    SIGMA_V_PEC_KM_S,
     SNR_THRESHOLD,
+    SPEED_OF_LIGHT_KM_S,
     H,
 )
 from darksiren_emri.cosmological_model import Model1CrossCheck
+from darksiren_emri.emri_rate import R_eff_per_mbh
 from darksiren_emri.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
+    HostGalaxy,
     InternalCatalogColumns,
 )
 from darksiren_emri.galaxy_catalogue.pixel_completeness import (
@@ -407,6 +417,11 @@ ARM_SPECS: dict[str, tuple[float, float]] = {
     "bsel": (1.0, 1.0),
     "bself": (1.0, 1.0),
     "bden": (1.0, 1.0),
+    # PA-2 (prereg PREREGISTRATION_B0_IDENTITY_20260823.md; A20 review
+    # A20_REVIEW_B0_DESIGN_20260823.md Finding 2): the b0-identity test's
+    # estimator-aligned catalogue-hosted arm ("b0i"). NOT a runs-of-record
+    # arm -- identity-test-only, never fed into a production H0 posterior.
+    "b0i": (1.0, 1.0),
 }
 # AMENDMENT A-2/A-3: per-arm host-draw mode. "catalogue" (default, all
 # pre-A-2 arms) draws hosts FROM the pinned catalogue's HostPool (D-B item
@@ -416,8 +431,14 @@ ARM_SPECS: dict[str, tuple[float, float]] = {
 # AMENDMENT A-2); "population_selected" (bsel only, AMENDMENT A-3) draws
 # hosts from the estimator's own assumed distribution of DETECTED dark
 # events (draw_selected_population_redshifts + isotropic sky), likewise
-# never inserted into the candidate set.
-ARM_HOST_MODE: dict[str, Literal["catalogue", "population", "population_selected"]] = {
+# never inserted into the candidate set. "catalogue_selected" (b0i only,
+# PA-2) draws hosts FROM the pinned catalogue like "catalogue" but weighted
+# by the estimator's own w_g*S̃_φ,g and with a per-event kernel-smeared
+# z_true draw -- see :meth:`MirrorUniverseGenerator.draw_realization`'s
+# "catalogue_selected" branch.
+ARM_HOST_MODE: dict[
+    str, Literal["catalogue", "population", "population_selected", "catalogue_selected"]
+] = {
     "b0": "catalogue",
     "bsig005": "catalogue",
     "bsig025": "catalogue",
@@ -428,6 +449,7 @@ ARM_HOST_MODE: dict[str, Literal["catalogue", "population", "population_selected
     "bsel": "population_selected",
     "bself": "population_selected",
     "bden": "population_selected",
+    "b0i": "catalogue_selected",
 }
 # AMENDMENT A-2: per-arm completeness override. True (bf1 only) monkeypatches
 # the real GLADE completeness object with the P14 f=1 shim
@@ -447,6 +469,7 @@ ARM_UNITY_COMPLETENESS: dict[str, bool] = {
     "bsel": False,
     "bself": False,
     "bden": False,
+    "b0i": False,
 }
 # AMENDMENT A-4: per-arm ``selection_in_completion_numerator`` convention
 # (mirrors production's own flag of the same name,
@@ -469,6 +492,9 @@ ARM_SELECTION_CELL: dict[str, str] = {
     "bsel": "off",
     "bself": "fused",
     "bden": "off",
+    # PA-2 (b0i): "fused" -- the identity test scores the production
+    # runs-of-record cell (PRODUCTION_FLAGS), not the pre-A-4 "off" basis.
+    "b0i": "fused",
 }
 # B-DEN falsifier instrument (docs/derivations/completion_numerator_data_measure.md
 # §6; AMENDMENT A-5, results/prod2d_closure_20260818/
@@ -492,6 +518,7 @@ ARM_EVENT_MEASURE: dict[str, str] = {
     "bsel": "ratio",
     "bself": "ratio",
     "bden": "data",
+    "b0i": "ratio",
 }
 # Registered paired-seed discipline (prereg §1 D-C, extended by AMENDMENT
 # A-2/A-3): b0/bsig005 get the adjudicating N=25; bsig025/eden05/eden2 are
@@ -512,6 +539,8 @@ ARM_SEEDS: dict[str, tuple[int, ...]] = {
     "bsel": tuple(range(900101, 900116)),
     "bself": tuple(range(900101, 900116)),
     "bden": tuple(range(900101, 900116)),
+    # PA-2 (b0i): identity-test-only, never a runs-of-record arm.
+    "b0i": tuple(range(900101, 900126)),
 }
 
 
@@ -614,6 +643,13 @@ class HostPool:
             catalogue's own z_obs is declared truth here).
         z_error: Host redshift measurement error (as stored/realized).
         n: Number of hosts in the pool.
+        M: Source-frame catalogue BH mass (:attr:`HostGalaxy.M`'s column,
+            ``InternalCatalogColumns.BH_MASS``), the exact mass
+            :func:`darksiren_emri.emri_rate.R_eff_per_mbh` is evaluated at
+            for the ``"catalogue_selected"`` host-draw mode (PA-2, A20 review
+            Finding 2). ``None`` for pools that never need it (every other
+            host mode, and legacy hand-built test pools) -- optional so
+            existing ``HostPool(...)`` call sites stay unchanged.
     """
 
     phiS: npt.NDArray[np.float64]
@@ -621,6 +657,7 @@ class HostPool:
     z: npt.NDArray[np.float64]
     z_error: npt.NDArray[np.float64]
     n: int
+    M: npt.NDArray[np.float64] | None = None
 
 
 @functools.lru_cache(maxsize=8)
@@ -665,6 +702,10 @@ def _host_pool_from_handler(handler: GalaxyCatalogueHandler) -> HostPool:
         z=df[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64),
         z_error=df[InternalCatalogColumns.REDSHIFT_ERROR].to_numpy(dtype=np.float64),
         n=len(df),
+        # Source-frame catalogue BH mass, populated unconditionally (cheap; a
+        # plain column read) so every pool built from a real handler supports
+        # host_mode="catalogue_selected" without extra plumbing (PA-2).
+        M=df[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64),
     )
 
 
@@ -973,6 +1014,356 @@ def build_bsel_selection_objects(
     return completeness, phi_survival_table
 
 
+# ── PA-2 (prereg PREREGISTRATION_B0_IDENTITY_20260823.md; A20 review
+# A20_REVIEW_B0_DESIGN_20260823.md Finding 2) -- estimator-aligned
+# catalogue-hosted draw ("catalogue_selected", the b0i arm). Finding 2
+# refuted the stock "catalogue" mode as the b0-identity venue: it draws
+# hosts by a self-flagged 1/d_L^2 proxy (no per-galaxy mass weighting), never
+# thins by S_bar_phi, and sets z_true := the listed z (no photo-z scatter),
+# so E_{q_Ḡ}[p_gen/q_G] != 1 even for a correct arrangement -- the identity
+# test's B-T PASS branch was structurally unreachable. This mode replaces
+# the proxy with the venue's own generative objects: host g drawn
+# ∝ w_g * S̃_φ,g, w_g the estimator's own `_rate_weight` leaf
+# (bayesian_statistics.py:1036-1058, "IDENTICAL to ... draw_rate_weighted_hosts
+# ... and the in-catalogue likelihood weight", precompute_global_catalog_selection
+# docstring :2684-2688) and S̃_φ,g = INTEGRAL k_g(z) S_bar_phi(z;H_TRUE) dz the
+# kernel-smeared survival. PA-11 (A20 implementation review, Finding 1 FATAL
+# -- A20_REVIEW_B0_IMPL_20260823.md; the earlier PA-2 bare-Gaussian text this
+# comment carried was REFUTED there, measured bare-vs-deconv misalignment
+# median +0.32sigma / S~ off ~3%, unwaivable): k_g is the ESTIMATOR'S OWN
+# numerator kernel under the run flags -- k_g(z) PROPORTIONAL TO
+# N(z; z_g, z_error_eff_g) * w_pop(z) * f_k(z at the host's HEALPix pixel;
+# ZoA fallback per bayesian_statistics.py:5986-5988), renormalized on the
+# +/-4sigma/1e-6-floored window (the Z_g convention -- also folds in Finding
+# 8(d)'s window-mass-deficit note), evaluated at h=H_TRUE. Mirrors
+# galaxy_redshift_prior_pdf's volume_deconv+C7 form exactly
+# (bayesian_statistics.py:5954-6023): w_pop(z) = dV_c/dz(z,h)/(1+z), f_k the
+# C7-core host-pixel completeness (the completeness object
+# build_bsel_selection_objects already returns). z_true is then drawn per
+# event from k_g(z)*S_bar_phi(z;H_TRUE)/S̃_φ,g on the SAME window; d_L and
+# sky noise conventions are UNCHANGED from the "catalogue" branch.
+
+_B0I_KERNEL_QUAD_N = 50  # mirrors _HOST_QUAD_N's default (bayesian_statistics.py:409)
+_GL_NODES_B0I, _GL_WEIGHTS_B0I = roots_legendre(_B0I_KERNEL_QUAD_N)  # on [-1, 1]
+# mirrors integration_limit_sigma_multiplier (bayesian_statistics.py:4989/5844/6487).
+_B0I_KERNEL_SIGMA_MULTIPLIER = 4.0
+# mirrors the non-volume_trunc z_min floor (bayesian_statistics.py:5921-5926).
+_B0I_KERNEL_Z_FLOOR = 1.0e-6
+_B0I_ZTRUE_GRID_N = 401  # per-host inverse-CDF draw grid resolution (fine; n=200 events only)
+
+
+def host_z_error_eff(
+    z: npt.NDArray[np.float64], z_error: npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    r"""Effective photo-z kernel width: catalogue error (+) residual PV dispersion.
+
+    Byte-identical functional form to production's per-host sigma
+    (``bayesian_statistics.py:5908-5909``):
+    ``sqrt(z_error^2 + sigma_z_pv^2)``, ``sigma_z_pv = (1+z) *
+    SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S`` -- currently a no-op since
+    :data:`~darksiren_emri.constants.SIGMA_V_PEC_KM_S` is ``0.0``, kept for
+    exact parity if that constant is ever set.
+
+    Args:
+        z: Host redshift(s).
+        z_error: Catalogue redshift measurement error(s), same shape as ``z``.
+
+    Returns:
+        The effective kernel width, same shape as ``z``.
+    """
+    z_arr = np.asarray(z, dtype=np.float64)
+    sigma_z_pv = (1.0 + z_arr) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+    return np.sqrt(np.asarray(z_error, dtype=np.float64) ** 2 + sigma_z_pv**2)
+
+
+def _host_kernel_window(
+    z: npt.NDArray[np.float64], z_error_eff: npt.NDArray[np.float64]
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """The +/- :data:`_B0I_KERNEL_SIGMA_MULTIPLIER` sigma window per host,
+    floored at :data:`_B0I_KERNEL_Z_FLOOR` (mirrors production's denominator
+    z-window clip, ``bayesian_statistics.py:5910-5926``)."""
+    lower = np.clip(z - _B0I_KERNEL_SIGMA_MULTIPLIER * z_error_eff, _B0I_KERNEL_Z_FLOOR, None)
+    upper = z + _B0I_KERNEL_SIGMA_MULTIPLIER * z_error_eff
+    return lower, upper
+
+
+def _kernel_w_pop_eff(
+    z_nodes: npt.NDArray[np.float64],
+    completeness: CompletenessModel,
+    host_pixels: npt.NDArray[np.int64],
+    h: float,
+) -> npt.NDArray[np.float64]:
+    r"""``w_pop(z) * f_k(z)`` at ``(n, k)`` nodes, with the per-host ZoA fallback.
+
+    ``w_pop(z) = dV_c/dz(z, h) / (1+z)`` (:func:`~darksiren_emri.physical_relations.comoving_volume_element`),
+    the SAME functional form ``_w_pop_eff`` builds
+    (``bayesian_statistics.py:5975-5989``); ``f_k`` is the C7-core host-pixel
+    completeness (:func:`~darksiren_emri.bayesian_inference.bayesian_statistics._completeness_at_host_nodes`).
+    Per-host ZoA fallback (``bayesian_statistics.py:5986-5988``): if a host's
+    pixel carries ``f_k == 0`` across its WHOLE window (empty/ZoA pixel), that
+    host's factor reverts to the pre-C7 ``w_pop``-only form (no elementwise
+    clamping -- the fallback is all-or-nothing per host, never per-node,
+    matching production's ``_host_pixel = None`` branch).
+
+    Args:
+        z_nodes: Redshift quadrature nodes, shape ``(n, k)``.
+        completeness: Per-pixel completeness model.
+        host_pixels: HEALPix pixel index per host, shape ``(n,)``.
+        h: Dimensionless Hubble parameter.
+
+    Returns:
+        ``w_pop(z) * f_k(z)`` (or ``w_pop(z)`` alone for ZoA-fallback hosts),
+        shape ``(n, k)``.
+    """
+    w_pop = np.asarray(comoving_volume_element(z_nodes, h=h), dtype=np.float64) / (1.0 + z_nodes)
+    f_k = _completeness_at_host_nodes(completeness, z_nodes, host_pixels, h)
+    zoa = ~np.any(f_k > 0.0, axis=1)
+    n_zoa = int(np.count_nonzero(zoa))
+    if n_zoa:
+        f_k = f_k.copy()
+        f_k[zoa, :] = 1.0
+        _warn_zoa_hostz_kernel_fallback(-1, n_zoa)
+    result: npt.NDArray[np.float64] = w_pop * f_k
+    return result
+
+
+def kernel_smeared_survival(
+    z: npt.NDArray[np.float64],
+    z_error: npt.NDArray[np.float64],
+    phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    completeness: CompletenessModel,
+    host_phiS: npt.NDArray[np.float64],
+    host_qS: npt.NDArray[np.float64],
+    h: float = H_TRUE,
+) -> npt.NDArray[np.float64]:
+    r"""``S̃_φ,g = INTEGRAL k_g(z) S_bar_phi(z;h) dz`` -- kernel-smeared survival (PA-11).
+
+    ``k_g(z) ∝ N(z; z_g, z_error_eff_g) * w_pop(z) * f_k(z at the host's
+    pixel; ZoA fallback per :func:`_kernel_w_pop_eff`)``, renormalized on the
+    host's own ``±4σ``/``1e-6``-floored window (the ``Z_g`` convention) --
+    the ESTIMATOR'S OWN numerator kernel (``galaxy_redshift_prior_pdf``,
+    ``bayesian_statistics.py:5954-6023``), NOT the bare Gaussian (A20 review
+    Finding 1, FATAL: the bare form mis-centers ``z_true`` by median
+    ``+0.32σ`` and biases ``S̃`` by ~3%, an unwaivable first-order venue
+    term). The window renormalization also folds in Finding 8(d)'s window-
+    unnormalized-mass note: ``Z_g`` is the SAME per-host window integral
+    production's ``_z_prior_norm`` computes, so the ``S̃_φ,g`` returned here
+    already accounts for the finite-window Gaussian mass deficit.
+
+    The unnormalized numerator ``∫ N(z) w_pop(z) f_k(z) S_bar_phi(z) dz`` and
+    the normalizer ``Z_g = ∫ N(z) w_pop(z) f_k(z) dz`` are both evaluated by
+    the SAME 50-node Gauss-Legendre quadrature (mirrors
+    ``scipy.integrate.fixed_quad``'s algorithm, the one production's own
+    numerator quadrature uses) on the per-host window
+    :func:`_host_kernel_window`, vectorized over ALL of ``z`` at once (so this
+    scales to a full ~1e5-1e6-row catalogue pool). ``S_bar_phi`` is read off
+    ``phi_survival_table`` by plain (endpoint-clamped) ``np.interp`` -- the
+    SAME table-object convention the ``[P3-IMP]`` twin cell uses
+    (``bayesian_statistics.py:6048-6053``), NOT B-SEL's zero-fill convention.
+
+    Args:
+        z: Host redshift(s), shape ``(n,)``.
+        z_error: Host redshift measurement error(s), same shape as ``z``.
+        phi_survival_table: ``h -> (z_grid, S_bar_phi(z_grid))`` (output of
+            :func:`~darksiren_emri.bayesian_inference.bayesian_statistics.precompute_phi_marginal_survival`).
+        completeness: Per-pixel completeness model (production's own object,
+            e.g. from :func:`build_bsel_selection_objects`).
+        host_phiS: Host ecliptic sky azimuth (rad), same shape as ``z``.
+        host_qS: Host ecliptic sky polar angle (colatitude, rad), same shape
+            as ``z``.
+        h: Dimensionless Hubble parameter (default :data:`H_TRUE`); must be a
+            key of ``phi_survival_table``.
+
+    Returns:
+        ``S̃_φ,g`` per host, shape ``(n,)``.
+
+    Raises:
+        KeyError: If ``h`` is not a key of ``phi_survival_table``.
+    """
+    if h not in phi_survival_table:
+        raise KeyError(
+            f"phi_survival_table has no entry for h={h!r}; keys={sorted(phi_survival_table)}"
+        )
+    z_arr = np.asarray(z, dtype=np.float64)
+    z_error_eff = host_z_error_eff(z_arr, z_error)
+    lower, upper = _host_kernel_window(z_arr, z_error_eff)
+    half = 0.5 * (upper - lower)
+    mid = 0.5 * (upper + lower)
+    z_nodes = mid[:, None] + half[:, None] * _GL_NODES_B0I[None, :]  # (n, 50)
+    host_pixels = _host_pixels(completeness, host_phiS, host_qS)
+    w_pop_eff = _kernel_w_pop_eff(z_nodes, completeness, host_pixels, h)
+    gaussian_vals = norm.pdf(z_nodes, loc=z_arr[:, None], scale=z_error_eff[:, None])
+    kernel_unnorm = gaussian_vals * w_pop_eff
+    z_grid, s_phi = phi_survival_table[h]
+    s_vals = np.interp(z_nodes.ravel(), z_grid, s_phi).reshape(z_nodes.shape)
+    numerator = np.sum(kernel_unnorm * s_vals * _GL_WEIGHTS_B0I[None, :], axis=1) * half
+    z_g_norm = np.sum(kernel_unnorm * _GL_WEIGHTS_B0I[None, :], axis=1) * half
+    z_g_norm = np.where(z_g_norm > 0.0, z_g_norm, 1.0)
+    integral: npt.NDArray[np.float64] = numerator / z_g_norm
+    return integral
+
+
+def catalogue_selected_host_draw_weights(
+    pool: HostPool,
+    phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    completeness: CompletenessModel,
+    h: float = H_TRUE,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    r"""PA-2 host-draw weights: normalized ``w_g * S̃_φ,g``, plus the two factors.
+
+    ``w_g`` is the estimator's OWN per-MBH rate weight
+    (:func:`~darksiren_emri.emri_rate.R_eff_per_mbh`\ ``(M_g) / (1 + z_g)``),
+    byte-identical in form to
+    :func:`~darksiren_emri.bayesian_inference.bayesian_statistics._rate_weight`
+    -- see :func:`~darksiren_emri.validation.correspondence_1d._verify_rate_weight_parity`
+    for the runtime parity assertion against that leaf on a sample of real
+    catalogue rows.
+
+    Args:
+        pool: Host pool; :attr:`HostPool.M` must be populated.
+        phi_survival_table: See :func:`kernel_smeared_survival`.
+        completeness: Per-pixel completeness model, forwarded to
+            :func:`kernel_smeared_survival` (PA-11).
+        h: Dimensionless Hubble parameter (default :data:`H_TRUE`).
+
+    Returns:
+        ``(normalized_weights, w_g, s_tilde_phi)``, each shape ``(pool.n,)``.
+
+    Raises:
+        ValueError: If ``pool.M`` is ``None``, or the total weight is <= 0.
+    """
+    if pool.M is None:
+        raise ValueError(
+            "host_mode='catalogue_selected' requires HostPool.M (source-frame "
+            "catalogue BH mass) -- build the pool via _host_pool_from_handler "
+            "(which populates it) or pass M explicitly for a hand-built pool"
+        )
+    w_g = np.asarray(R_eff_per_mbh(pool.M), dtype=np.float64) / (1.0 + pool.z)
+    s_tilde_phi = kernel_smeared_survival(
+        pool.z, pool.z_error, phi_survival_table, completeness, pool.phiS, pool.qS, h=h
+    )
+    unnormalized = w_g * s_tilde_phi
+    total = float(unnormalized.sum())
+    if not (total > 0.0):
+        raise ValueError(f"catalogue_selected draw weights sum to <= 0 ({total})")
+    normalized: npt.NDArray[np.float64] = unnormalized / total
+    return normalized, w_g, s_tilde_phi
+
+
+@functools.lru_cache(maxsize=4)
+def _verify_rate_weight_parity(
+    catalogue_path: str = REDUCED_CATALOGUE_PATH,
+    sample_size: int = 25,
+    seed: int = 0,
+) -> int:
+    r"""Runtime parity assertion: the vectorized ``w_g`` leaf == ``_rate_weight``.
+
+    PA-2's "importing/mirroring the same leaf, NOT a reimplementation with
+    different conventions" requirement: draws a random sample of real
+    catalogue rows and checks
+    :func:`~darksiren_emri.emri_rate.R_eff_per_mbh`\ ``(M)/(1+z)``
+    (:func:`catalogue_selected_host_draw_weights`'s ``w_g``) against
+    :func:`~darksiren_emri.bayesian_inference.bayesian_statistics._rate_weight`
+    (the estimator's own per-host leaf, called on a real
+    :class:`~darksiren_emri.galaxy_catalogue.handler.HostGalaxy` built from
+    the same row) to <= 1e-12 relative. ``functools.lru_cache``-d (harness
+    reuse only): a process that runs multiple b0i seeds pays this cost once.
+
+    Args:
+        catalogue_path: The pinned reduced catalogue (default baseline).
+        sample_size: Number of rows to sample.
+        seed: RNG seed for the sample (arbitrary; fixed for reproducibility).
+
+    Returns:
+        The sample size actually checked (for logging/diagnostics).
+
+    Raises:
+        AssertionError: If the max relative difference exceeds ``1e-12``.
+    """
+    handler = _load_galaxy_catalog_handler(catalogue_path)
+    df = handler.reduced_galaxy_catalog
+    n = min(sample_size, len(df))
+    rng = np.random.default_rng(seed)
+    idx = rng.choice(len(df), size=n, replace=False)
+    sample = df.iloc[idx]
+    M = sample[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64)
+    z = sample[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64)
+    vectorized = np.asarray(R_eff_per_mbh(M), dtype=np.float64) / (1.0 + z)
+    reference = np.array(
+        [_rate_weight(HostGalaxy(row)) for _, row in sample.iterrows()], dtype=np.float64
+    )
+    max_rel = float(np.max(np.abs(vectorized - reference) / np.abs(reference)))
+    if max_rel > 1e-12:
+        raise AssertionError(
+            f"catalogue_selected w_g leaf diverges from _rate_weight: "
+            f"max_rel={max_rel:.3e} over n={n} sampled rows"
+        )
+    _LOGGER.info("b0i rate-weight parity: max_rel=%.3e over n=%d sampled rows", max_rel, n)
+    return n
+
+
+def _draw_kernel_survival_redshifts(
+    rng: np.random.Generator,
+    host_z: npt.NDArray[np.float64],
+    host_z_error: npt.NDArray[np.float64],
+    phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    completeness: CompletenessModel,
+    host_phiS: npt.NDArray[np.float64],
+    host_qS: npt.NDArray[np.float64],
+    h: float = H_TRUE,
+    n_grid: int = _B0I_ZTRUE_GRID_N,
+) -> npt.NDArray[np.float64]:
+    r"""Per-event ``z_true`` draw from ``k_g(z) S_bar_phi(z;h)`` (PA-11), one per host.
+
+    For each of the (already-drawn) ``n`` hosts, builds its OWN density
+    ``N(z; z_g, z_error_eff_g) * w_pop(z) * f_k(z at the host's pixel; ZoA
+    fallback per :func:`_kernel_w_pop_eff`) * S_bar_phi(z;h)`` on its OWN
+    window (:func:`_host_kernel_window`) and draws exactly one ``z_true`` via
+    :func:`_inverse_cdf_draw` -- consuming exactly one uniform draw from
+    ``rng`` per host, in host order, so the whole call consumes exactly
+    ``len(host_z)`` uniform draws (the same "exactly n draws" stream
+    discipline :func:`draw_population_redshifts`/
+    :func:`draw_selected_population_redshifts` use). The draw's internal
+    normalization (division by the segment-sum total) makes the ``Z_g``
+    window-renormalization :func:`kernel_smeared_survival` applies
+    irrelevant to the SAMPLED values here (any per-host constant cancels in
+    the inverse-CDF normalization) -- so this need not (and does not) reuse
+    :func:`kernel_smeared_survival`'s Gauss-Legendre nodes; a fine uniform
+    grid is simpler and equally valid here.
+
+    Args:
+        rng: Seeded generator (consumes exactly ``len(host_z)`` uniform draws).
+        host_z: The drawn hosts' catalogue redshifts, shape ``(n,)``.
+        host_z_error: The drawn hosts' catalogue redshift errors, shape ``(n,)``.
+        phi_survival_table: See :func:`kernel_smeared_survival`.
+        completeness: Per-pixel completeness model (PA-11).
+        host_phiS: Host ecliptic sky azimuth (rad), same shape as ``host_z``.
+        host_qS: Host ecliptic sky polar angle (colatitude, rad), same shape
+            as ``host_z``.
+        h: Dimensionless Hubble parameter (default :data:`H_TRUE`).
+        n_grid: Per-host inverse-CDF grid resolution.
+
+    Returns:
+        Drawn ``z_true`` per event, shape ``(n,)``.
+    """
+    n = host_z.shape[0]
+    z_error_eff = host_z_error_eff(host_z, host_z_error)
+    lower, upper = _host_kernel_window(host_z, z_error_eff)
+    z_grid, s_phi = phi_survival_table[h]
+    host_pixels = _host_pixels(completeness, host_phiS, host_qS)
+    z_true = np.empty(n, dtype=np.float64)
+    for i in range(n):
+        z_i_grid = np.linspace(lower[i], upper[i], n_grid, dtype=np.float64)
+        kernel_i = norm.pdf(z_i_grid, loc=host_z[i], scale=z_error_eff[i])
+        w_pop_eff_i = _kernel_w_pop_eff(z_i_grid[None, :], completeness, host_pixels[i : i + 1], h)[
+            0
+        ]
+        s_i = np.interp(z_i_grid, z_grid, s_phi)
+        density_i = kernel_i * w_pop_eff_i * s_i
+        z_true[i] = _inverse_cdf_draw(rng, 1, z_i_grid, density_i)[0]
+    return z_true
+
+
 def draw_isotropic_sky(
     rng: np.random.Generator, n: int
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
@@ -1132,7 +1523,9 @@ class MirrorUniverseGenerator:
         self,
         seed: int,
         host_pool: HostPool | None = None,
-        host_mode: Literal["catalogue", "population", "population_selected"] = "catalogue",
+        host_mode: Literal[
+            "catalogue", "population", "population_selected", "catalogue_selected"
+        ] = "catalogue",
         completeness: CompletenessModel | None = None,
         phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]
         | None = None,
@@ -1170,10 +1563,22 @@ class MirrorUniverseGenerator:
                 B-OUT-style unweighted comparison draw's quantiles, so the
                 readout can quantify how much the selection weighting moved
                 the distribution.
+                ``"catalogue_selected"`` (PA-2, prereg
+                ``PREREGISTRATION_B0_IDENTITY_20260823.md``, the b0i arm):
+                draws hosts FROM ``host_pool`` like ``"catalogue"``
+                (``host_galaxy_index >= 0``, ``in_catalog=True``), but
+                weighted ∝ ``w_g * S̃_φ,g`` (:func:`catalogue_selected_host_draw_weights`)
+                instead of the 1/d_L^2 proxy, AND draws each event's
+                ``z_true`` from ``k_g(z) S_bar_phi(z;H_TRUE)/S̃_φ,g`` on the
+                drawn host's own kernel window
+                (:func:`_draw_kernel_survival_redshifts`) instead of using
+                the listed catalogue z as truth -- see the module-level
+                "PA-2" section for the full derivation. Requires
+                ``phi_survival_table``.
             completeness: Required (only) for ``host_mode="population_selected"``
                 -- see :func:`build_bsel_selection_objects`.
-            phi_survival_table: Required (only) for
-                ``host_mode="population_selected"`` -- see
+            phi_survival_table: Required for ``host_mode="population_selected"``
+                or ``host_mode="catalogue_selected"`` -- see
                 :func:`build_bsel_selection_objects`.
 
         Returns:
@@ -1241,10 +1646,47 @@ class MirrorUniverseGenerator:
                     float(np.quantile(unweighted_diag_z, q)) for q in _levels
                 ],
             }
+        elif host_mode == "catalogue_selected":
+            # (a) PA-2 (b0i): host g drawn ∝ w_g * S̃_φ,g -- the estimator's
+            # own generative objects -- see the module-level "PA-2" section.
+            if phi_survival_table is None or completeness is None:
+                raise ValueError(
+                    "host_mode='catalogue_selected' requires completeness and "
+                    "phi_survival_table (build via build_bsel_selection_objects)"
+                )
+            pool = host_pool if host_pool is not None else _load_host_pool(REDUCED_CATALOGUE_PATH)
+            host_w, _b0i_w_g, b0i_s_tilde_phi = catalogue_selected_host_draw_weights(
+                pool, phi_survival_table, completeness, h=H_TRUE
+            )
+            host_idx = rng.choice(pool.n, size=n, replace=False, p=host_w)
+            host_z_listed = pool.z[host_idx]
+            host_z_error_listed = pool.z_error[host_idx]
+            host_phiS = pool.phiS[host_idx]
+            host_qS = pool.qS[host_idx]
+            host_index_col = host_idx.astype(np.int64)
+            in_catalog_col = True
+            # z_true per event, drawn from k_g(z)*S_bar_phi(z;H_TRUE)/S̃_φ,g
+            # on the drawn host's own kernel window -- NOT the listed z (the
+            # "catalogue" branch's z_true := listed z is exactly what
+            # Finding 2(iii) refutes). Consumes exactly n uniform draws from
+            # the SAME rng stream (no fresh generator), immediately after the
+            # host-index draw above.
+            z_true_col = _draw_kernel_survival_redshifts(
+                rng,
+                host_z_listed,
+                host_z_error_listed,
+                phi_survival_table,
+                completeness,
+                host_phiS,
+                host_qS,
+                h=H_TRUE,
+            )
+            host_z = z_true_col
+            b0i_s_tilde_phi_host = b0i_s_tilde_phi[host_idx]
         else:
             raise ValueError(
                 f"unknown host_mode {host_mode!r}; expected "
-                "'catalogue'/'population'/'population_selected'"
+                "'catalogue'/'population'/'population_selected'/'catalogue_selected'"
             )
 
         # (c) true d_L from host z at h_true; observed d_L about it.
@@ -1289,6 +1731,13 @@ class MirrorUniverseGenerator:
         rows["qS"] = obs_qS
         rows["host_galaxy_index"] = host_index_col
         rows["in_catalog"] = in_catalog_col
+        if host_mode == "catalogue_selected":
+            # PA-2 record (task spec item 4): host draw mode, the per-event
+            # drawn z_true (distinct from the listed catalogue z whenever the
+            # kernel scatters it), and S̃_φ,g of the drawn host.
+            rows["host_draw_mode"] = "catalogue_selected"
+            rows["z_true"] = z_true_col
+            rows["s_tilde_phi_host"] = b0i_s_tilde_phi_host
         return rows
 
 
@@ -1743,6 +2192,10 @@ def run_mirror_seed_inprocess(
     ],
     completion_event_measure: str = "ratio",
     catalogue_numerator_survival: str = "off",
+    # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
+    # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii));
+    # scalar twin of the same semantics. "s3d" (default) is byte-identical.
+    catalogue_global_selection: str = "s3d",
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
 
@@ -1877,6 +2330,9 @@ def run_mirror_seed_inprocess(
             completion_event_measure=completion_event_measure,
             # [P3-IMP] twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2).
             catalogue_numerator_survival=catalogue_numerator_survival,
+            # [P3-RPHI] the fourth Path-A slot (docs/derivations/
+            # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)).
+            catalogue_global_selection=catalogue_global_selection,
             catalogue_mass_overlap=PRODUCTION_FLAGS["--catalogue_mass_overlap"],
             completion_b_scale=PRODUCTION_FLAGS["--completion_b_scale"],
             pdet_dl_bins=int(PRODUCTION_FLAGS["--pdet_dl_bins"]),
@@ -2700,7 +3156,7 @@ def run_arm_seed(
             run (catalogue variant + CRB-CSV write + diagnostics output).
         arm: One of :data:`ARM_SPECS`' keys
             (``b0``/``bsig005``/``bsig025``/``eden05``/``eden2``/``bout``/
-            ``bf1``/``bsel``/``bself``/``bden``).
+            ``bf1``/``bsel``/``bself``/``bden``/``b0i``).
         seed: Realization seed. Expected to be a member of
             ``ARM_SEEDS[arm]`` per the registered paired-seed discipline
             (prereg §1 D-C) -- not enforced here (kept testable with
@@ -2746,14 +3202,21 @@ def run_arm_seed(
     host_pool, _observed_path, handler = gen.host_pool_for_sigma_scale(
         work_root / "catalogue", seed, sigma_z_scale=sigma_z_scale
     )
-    if host_mode == "population_selected":
-        # AMENDMENT A-3 (B-SEL): build the completeness/S_bar_phi weighting
-        # objects BEFORE drawing the realization -- see the module
+    if host_mode in ("population_selected", "catalogue_selected"):
+        # AMENDMENT A-3 (B-SEL) / PA-2 (b0i): build the completeness/S_bar_phi
+        # weighting objects BEFORE drawing the realization -- see the module
         # docstring's "AMENDMENT A-3" section and
         # :func:`build_bsel_selection_objects`'s docstring for exactly which
         # production construction calls this reuses and why the ordering
-        # (not the total cost) is what the amendment requires.
+        # (not the total cost) is what the amendment requires. "b0i" reuses
+        # the SAME builder as "bsel" (both need only phi_survival_table at
+        # H_TRUE; the completeness object is threaded but unused by the
+        # catalogue_selected weighting formula, which carries no f_bar term).
         completeness_obj, phi_survival_table = build_bsel_selection_objects()
+        if host_mode == "catalogue_selected":
+            # PA-2 runtime parity gate: the w_g leaf must match the
+            # estimator's own _rate_weight before any b0i draw runs.
+            _verify_rate_weight_parity()
         events = gen.draw_realization(
             seed,
             host_pool=host_pool,
@@ -2860,7 +3323,7 @@ def _cli() -> int:
         default=None,
         help=(
             "Fleet arm (--stage arm only): "
-            "b0/bsig005/bsig025/eden05/eden2/bout/bf1/bsel/bself/bden."
+            "b0/bsig005/bsig025/eden05/eden2/bout/bf1/bsel/bself/bden/b0i."
         ),
     )
     parser.add_argument(

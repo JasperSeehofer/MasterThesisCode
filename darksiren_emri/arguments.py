@@ -354,6 +354,20 @@ class Arguments:
         """
         return str(self._parsed_arguments.sigma4d_mass_kernel)
 
+    @property
+    def catalogue_global_selection(self) -> str:
+        """[P3-RPHI] the fourth Path-A slot instrumentation counterfactual
+        (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)).
+        's3d' (default) is byte-identical to the pre-flag path: the no-BH
+        catalogue divisor is the separately fitted Sigma^3D
+        (``_global_cat_denom_no_bh``). 'phi' swaps ONLY that divisor to
+        Sigma^phi (``_global_cat_selection_phi``, the same catalogue-weighted
+        sum Path A already builds for the weight chain, on the same
+        rows/weights/eligibility as Sigma^4D). Requires
+        --normalization_mode absolute_marginal. Never a production posterior.
+        """
+        return str(self._parsed_arguments.catalogue_global_selection)
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -947,6 +961,24 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "the observable, so the numerator normalizes to the completion "
             "denominator's measure (MFG 2019 arXiv:1809.02063 Eqs. (5)-(7)). "
             "Never a production posterior."
+        ),
+    )
+    parser.add_argument(
+        "--catalogue_global_selection",
+        type=str,
+        choices=["s3d", "phi"],
+        default="s3d",
+        help=(
+            "[P3-RPHI] the fourth Path-A slot instrumentation counterfactual "
+            "(docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/"
+            "§6(ii)). 's3d' (default) is byte-identical to the pre-flag "
+            "behaviour: the no-BH catalogue divisor is the separately fitted "
+            "Sigma^3D. 'phi' swaps ONLY that divisor to Sigma^phi (the SAME "
+            "catalogue-weighted sum Path A already builds for the weight "
+            "chain, on the same rows/weights/eligibility as Sigma^4D); the "
+            "with-BH leg is deliberately untouched. Requires "
+            "--normalization_mode absolute_marginal. Never a production "
+            "posterior."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

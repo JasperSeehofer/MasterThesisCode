@@ -16,7 +16,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.integrate import quad
+from scipy.stats import norm
 
+from darksiren_emri.emri_rate import R_eff_per_mbh
 from darksiren_emri.validation import correspondence_1d as c1d
 
 _N_DONOR_ROWS = 12
@@ -177,6 +180,7 @@ def test_arm_specs_registered_mapping() -> None:
         "bsel": (1.0, 1.0),
         "bself": (1.0, 1.0),
         "bden": (1.0, 1.0),
+        "b0i": (1.0, 1.0),
     }
 
 
@@ -193,6 +197,7 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
         "bsel": "population_selected",
         "bself": "population_selected",
         "bden": "population_selected",
+        "b0i": "catalogue_selected",
     }
     assert c1d.ARM_UNITY_COMPLETENESS == {
         "b0": False,
@@ -205,6 +210,7 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
         "bsel": False,
         "bself": False,
         "bden": False,
+        "b0i": False,
     }
     # Every ARM_SPECS key has an entry in both registries (no silent fallback
     # to the default for a registered arm).
@@ -241,11 +247,15 @@ def test_arm_selection_cell_registered_mapping() -> None:
         "bsel": "off",
         "bself": "fused",
         "bden": "off",
+        # PA-2 (b0i): "fused" -- the identity test scores the production
+        # runs-of-record cell, not the pre-A-4 "off" basis.
+        "b0i": "fused",
     }
     assert set(c1d.ARM_SELECTION_CELL) == set(c1d.ARM_SPECS)
-    non_bself = {k: v for k, v in c1d.ARM_SELECTION_CELL.items() if k != "bself"}
+    non_bself = {k: v for k, v in c1d.ARM_SELECTION_CELL.items() if k not in ("bself", "b0i")}
     assert set(non_bself.values()) == {"off"}
     assert c1d.ARM_SELECTION_CELL["bself"] == "fused"
+    assert c1d.ARM_SELECTION_CELL["b0i"] == "fused"
     # D2 ruling (ledger row #159, 2026-08-22): the pin is "fused" for all
     # FUTURE runs-of-record; every banked pre-A-4 arm's historical "off" basis
     # lives in ARM_SELECTION_CELL above (regeneration passes it explicitly),
@@ -271,6 +281,7 @@ def test_arm_event_measure_registered_mapping() -> None:
         "bsel": "ratio",
         "bself": "ratio",
         "bden": "data",
+        "b0i": "ratio",
     }
     assert set(c1d.ARM_EVENT_MEASURE) == set(c1d.ARM_SPECS)
     non_bden = {k: v for k, v in c1d.ARM_EVENT_MEASURE.items() if k != "bden"}
@@ -290,11 +301,13 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     assert len(c1d.ARM_SEEDS["bsel"]) == 15
     assert len(c1d.ARM_SEEDS["bself"]) == 15
     assert len(c1d.ARM_SEEDS["bden"]) == 15
+    assert len(c1d.ARM_SEEDS["b0i"]) == 25
     total = sum(len(v) for v in c1d.ARM_SEEDS.values())
     # 25 + 25 + 10 + 10 + 10 + 15 + 2 + 15 + 15 + 15 = 142, the fleet task-list
     # arithmetic (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks + 15 AMENDMENT
-    # A-3 tasks + 15 AMENDMENT A-4 tasks + 15 AMENDMENT A-5 tasks).
-    assert total == 142
+    # A-3 tasks + 15 AMENDMENT A-4 tasks + 15 AMENDMENT A-5 tasks); PA-2's
+    # b0i (25 seeds) is identity-test-only and not part of that fleet count.
+    assert total == 142 + 25
     for arm, seeds in c1d.ARM_SEEDS.items():
         assert seeds[0] == 900101, arm
         assert list(seeds) == sorted(seeds), arm
@@ -393,6 +406,10 @@ def test_run_arm_seed_threads_selection_cell_to_evaluate_call(
     )
     monkeypatch.setattr(c1d.MirrorUniverseGenerator, "draw_realization", _fake_draw_realization)
     monkeypatch.setattr(c1d, "build_bsel_selection_objects", lambda: (None, None))
+    # PA-2 (b0i): the runtime rate-weight parity gate needs the REAL pinned
+    # catalogue -- stubbed here too (same convention as build_bsel_selection_objects
+    # above), since this test is exercising the arm -> kwarg wiring only.
+    monkeypatch.setattr(c1d, "_verify_rate_weight_parity", lambda *args, **kwargs: 0)
     monkeypatch.setattr(c1d, "run_mirror_seed_inprocess", _fake_run_mirror_seed_inprocess)
     monkeypatch.setattr(c1d, "check_reduced_catalogue_pin", lambda: True)
 
@@ -407,8 +424,9 @@ def test_run_arm_seed_threads_selection_cell_to_evaluate_call(
 
     # The one arm the amendment actually changes.
     assert c1d.ARM_SELECTION_CELL["bself"] == "fused"
-    # Every other arm is provably unchanged (still "off").
-    assert all(v == "off" for k, v in c1d.ARM_SELECTION_CELL.items() if k != "bself")
+    # Every other pre-PA-2 arm is provably unchanged (still "off"); b0i
+    # (PA-2) is registered "fused" too, disclosed separately above.
+    assert all(v == "off" for k, v in c1d.ARM_SELECTION_CELL.items() if k not in ("bself", "b0i"))
 
 
 def test_run_arm_seed_threads_event_measure_to_evaluate_call(
@@ -477,6 +495,10 @@ def test_run_arm_seed_threads_event_measure_to_evaluate_call(
     )
     monkeypatch.setattr(c1d.MirrorUniverseGenerator, "draw_realization", _fake_draw_realization)
     monkeypatch.setattr(c1d, "build_bsel_selection_objects", lambda: (None, None))
+    # PA-2 (b0i): the runtime rate-weight parity gate needs the REAL pinned
+    # catalogue -- stubbed here too (same convention as build_bsel_selection_objects
+    # above), since this test is exercising the arm -> kwarg wiring only.
+    monkeypatch.setattr(c1d, "_verify_rate_weight_parity", lambda *args, **kwargs: 0)
     monkeypatch.setattr(c1d, "run_mirror_seed_inprocess", _fake_run_mirror_seed_inprocess)
     monkeypatch.setattr(c1d, "check_reduced_catalogue_pin", lambda: True)
 
@@ -1016,3 +1038,409 @@ def test_run_d1_premise_check_is_deterministic(
     assert a.n_surviving == b.n_surviving
     assert a.max_cdf_gap_surviving_vs_model == pytest.approx(b.max_cdf_gap_surviving_vs_model)
     assert a.z_quantiles == b.z_quantiles
+
+
+# ── PA-2 (prereg PREREGISTRATION_B0_IDENTITY_20260823.md; A20 review
+# A20_REVIEW_B0_DESIGN_20260823.md Finding 2) -- the b0i "catalogue_selected"
+# host mode. Same pool-free convention as the bsel tests above: synthetic
+# completeness/survival test doubles, never the real GLADE
+# from_cache_or_build()/precompute_phi_marginal_survival() objects.
+
+
+def _make_host_pool_with_mass(n_pool: int = _N_HOST_POOL) -> c1d.HostPool:
+    """The SAME pool :func:`_make_host_pool` builds (identical rng draws for
+    phiS/qS/z/z_error), plus a source-frame BH mass column in
+    ``[1e5, 1e6]`` M_sun (well inside ``[M_SOURCE_FRAME_MIN, M_SOURCE_FRAME_MAX]``
+    = ``[1e4, 1e7]``, so :func:`~darksiren_emri.emri_rate.R_eff_per_mbh` is
+    well-defined for every row)."""
+    rng = np.random.default_rng(5678)
+    return c1d.HostPool(
+        phiS=rng.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng.uniform(0.1, np.pi - 0.1, n_pool),
+        z=rng.uniform(0.01, 0.3, n_pool),
+        z_error=rng.uniform(0.001, 0.04, n_pool),
+        n=n_pool,
+        M=rng.uniform(1.0e5, 1.0e6, n_pool),
+    )
+
+
+def test_catalogue_selected_draw_realization_requires_phi_survival_table(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """(a) Mode guard: host_mode='catalogue_selected' without phi_survival_table raises."""
+    n = 10
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    with pytest.raises(ValueError):
+        gen.draw_realization(seed=1, host_pool=pool, host_mode="catalogue_selected")
+
+
+def test_catalogue_selected_host_draw_weights_requires_mass() -> None:
+    """(a) Mode guard: a HostPool without M (the default) raises for the PA-2 weighting."""
+    pool = _make_host_pool()  # no M column
+    table = _fake_phi_survival_table()
+    completeness = _FakeIncompleteness()
+    with pytest.raises(ValueError):
+        c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+
+
+def test_catalogue_selected_draw_realization_is_deterministic(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """(b) Determinism under a fixed seed (host draw + z_true draw + row/noise draws)."""
+    n = 8
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    a = gen.draw_realization(
+        seed=5,
+        host_pool=pool,
+        host_mode="catalogue_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+    )
+    b = gen.draw_realization(
+        seed=5,
+        host_pool=pool,
+        host_mode="catalogue_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+    )
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_catalogue_selected_draw_realization_seed_sensitivity(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """(b) Different seeds must not reproduce the same z_true draw."""
+    n = 8
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    a = gen.draw_realization(
+        seed=5,
+        host_pool=pool,
+        host_mode="catalogue_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+    )
+    b = gen.draw_realization(
+        seed=6,
+        host_pool=pool,
+        host_mode="catalogue_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+    )
+    assert not a["z_true"].equals(b["z_true"])
+
+
+def test_catalogue_selected_draw_realization_records_pa2_columns(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """(item 4) host draw mode / drawn z_true / host row index / S̃_φ,g are recorded."""
+    n = 8
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    events = gen.draw_realization(
+        seed=9,
+        host_pool=pool,
+        host_mode="catalogue_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+    )
+    assert (events["host_draw_mode"] == "catalogue_selected").all()
+    assert (events["host_galaxy_index"].to_numpy() >= 0).all()
+    assert bool(events["in_catalog"].all())
+    _, _w_g, s_tilde = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+    host_idx = events["host_galaxy_index"].to_numpy()
+    np.testing.assert_allclose(
+        events["s_tilde_phi_host"].to_numpy(), s_tilde[host_idx], rtol=0.0, atol=1e-15
+    )
+    # z_true differs from the listed catalogue z (the mode's whole point --
+    # Finding 2(iii)'s refuted "z_true := listed z" convention).
+    assert not np.allclose(events["z_true"].to_numpy(), pool.z[host_idx])
+    # true_d_L (item c, unchanged convention) is dist(z_true, H_TRUE) -- NOT
+    # dist(listed z, H_TRUE) -- so the observed luminosity_distance must sit
+    # close to dist(z_true), within a generous Gpc-scale sanity bound (the
+    # donor rows' own noise sigma is at most O(0.05) per the synthetic donor
+    # CSV's construction, so any O(1) mismatch would mean d_L was built from
+    # the wrong redshift).
+    true_d_l_from_z_true = c1d.dist_vectorized(events["z_true"].to_numpy(), h=c1d.H_TRUE)
+    obs_d_l = events["luminosity_distance"].to_numpy()
+    assert np.all(np.abs(obs_d_l - true_d_l_from_z_true) < 1.0)
+
+
+def _independent_w_pop_f_k(
+    z: float, phi: float, theta: float, completeness: "_FakeIncompleteness", h: float
+) -> float:
+    """Independent (non-vectorized, ``scipy.integrate.quad``-friendly)
+    recomputation of ``w_pop(z) * f_k(z)`` -- calls
+    :func:`c1d.comoving_volume_element`/``completeness.f_k`` directly, never
+    the module's own :func:`c1d._kernel_w_pop_eff`/``_completeness_at_host_nodes``
+    batch helpers, so this is a genuine independent check of the PA-11 kernel
+    factors, not a self-consistency echo."""
+    w_pop = float(c1d.comoving_volume_element(z, h=h)) / (1.0 + z)
+    pixel = completeness.ang2pix(phi, theta)
+    f_k = float(completeness.f_k(z, pixel, h))
+    return w_pop * f_k
+
+
+def test_catalogue_selected_host_draw_weights_matches_independent_computation() -> None:
+    """(c) Draw weights match w_g*S̃_φ,g computed independently.
+
+    PA-11 (A20_REVIEW_B0_IMPL_20260823.md Finding 1 FATAL fix): the module's
+    ``S̃_φ,g`` now uses the estimator's volume_deconv+C7 kernel
+    ``N(z;z_g,sigma)*w_pop(z)*f_k(z)``, window-renormalized (Z_g) -- not a
+    bare Gaussian. This check recomputes that SAME integral independently
+    per host via ``scipy.integrate.quad`` (never the module's own
+    Gauss-Legendre quadrature or its ``_kernel_w_pop_eff``/
+    ``_completeness_at_host_nodes`` helpers), including the ``w_pop(z)*f_k(z)``
+    factors -- a genuine recomputation, not an echo of the implementation.
+    """
+    pool = _make_host_pool_with_mass(n_pool=8)  # small n: per-host quad is O(host)
+    table = _fake_phi_survival_table(z_max=2.0)  # S_bar_phi(z) = exp(-3z), non-trivial
+    completeness = _FakeIncompleteness()
+
+    normalized, w_g, s_tilde = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+
+    # Independent w_g: the production leaf, called directly (not re-derived).
+    assert pool.M is not None
+    w_g_ref = R_eff_per_mbh(pool.M) / (1.0 + pool.z)
+    np.testing.assert_allclose(w_g, w_g_ref, rtol=1e-14)
+
+    # Independent S̃_φ,g: per-host scipy.integrate.quad over the SAME
+    # +/-4sigma/1e-6-floored window, including w_pop(z)*f_k(z) and the Z_g
+    # window renormalization -- computed with the table's own S_bar_phi
+    # (data input, not reimplemented logic).
+    z_grid, s_phi_grid = table[c1d.H_TRUE]
+    z_error_eff = pool.z_error.copy()  # SIGMA_V_PEC_KM_S == 0.0, so eff == raw here
+    lower = np.clip(pool.z - 4.0 * z_error_eff, 1.0e-6, None)
+    upper = pool.z + 4.0 * z_error_eff
+    s_tilde_ref = np.empty(pool.n)
+    for i in range(pool.n):
+        z_g, sigma = float(pool.z[i]), float(z_error_eff[i])
+        phi_i, theta_i = float(pool.phiS[i]), float(pool.qS[i])
+
+        def _numerator_integrand(
+            z: float,
+            z_g: float = z_g,
+            sigma: float = sigma,
+            phi_i: float = phi_i,
+            theta_i: float = theta_i,
+        ) -> float:
+            s_bar = float(np.interp(z, z_grid, s_phi_grid))
+            return (
+                norm.pdf(z, loc=z_g, scale=sigma)
+                * _independent_w_pop_f_k(z, phi_i, theta_i, completeness, c1d.H_TRUE)
+                * s_bar
+            )
+
+        def _norm_integrand(
+            z: float,
+            z_g: float = z_g,
+            sigma: float = sigma,
+            phi_i: float = phi_i,
+            theta_i: float = theta_i,
+        ) -> float:
+            return norm.pdf(z, loc=z_g, scale=sigma) * _independent_w_pop_f_k(
+                z, phi_i, theta_i, completeness, c1d.H_TRUE
+            )
+
+        numerator, _ = quad(_numerator_integrand, lower[i], upper[i], limit=200, epsabs=1e-14)
+        z_g_norm, _ = quad(_norm_integrand, lower[i], upper[i], limit=200, epsabs=1e-14)
+        s_tilde_ref[i] = numerator / z_g_norm
+
+    np.testing.assert_allclose(s_tilde, s_tilde_ref, rtol=1e-5, atol=1e-12)
+
+    unnormalized_ref = w_g_ref * s_tilde_ref
+    normalized_ref = unnormalized_ref / unnormalized_ref.sum()
+    max_rel = float(np.max(np.abs(normalized - normalized_ref) / np.abs(normalized_ref)))
+    assert max_rel <= 1e-5, max_rel
+
+
+def test_kernel_smeared_survival_missing_h_raises() -> None:
+    pool = _make_host_pool_with_mass()
+    table = _fake_phi_survival_table()
+    completeness = _FakeIncompleteness()
+    with pytest.raises(KeyError):
+        c1d.kernel_smeared_survival(
+            pool.z, pool.z_error, table, completeness, pool.phiS, pool.qS, h=0.9
+        )
+
+
+def test_draw_kernel_survival_redshifts_matches_model_density() -> None:
+    """(d) z_true samples from k_g(z)*S_bar_phi(z) (CDF-gap / moment check).
+
+    All events are hosted at the SAME single (z, z_error) so a large sample
+    can be checked against ONE model density via the shared
+    :func:`c1d._max_cdf_gap` diagnostic (the same tool the D-1 premise check
+    uses for :func:`~darksiren_emri.validation.correspondence_1d.selected_population_z_weights`).
+    """
+    table = _fake_phi_survival_table(z_max=1.0)  # S_bar_phi(z) = exp(-3z)
+    completeness = _FakeIncompleteness()
+    z0, z_err0 = 0.2, 0.03
+    phi0, theta0 = 1.1, 1.4
+    n = 20000
+    rng = np.random.default_rng(11)
+    host_z = np.full(n, z0)
+    host_z_error = np.full(n, z_err0)
+    host_phiS = np.full(n, phi0)
+    host_qS = np.full(n, theta0)
+    sample = c1d._draw_kernel_survival_redshifts(
+        rng, host_z, host_z_error, table, completeness, host_phiS, host_qS, h=c1d.H_TRUE
+    )
+
+    lower, upper = c1d._host_kernel_window(np.array([z0]), np.array([z_err0]))
+    z_grid = np.linspace(float(lower[0]), float(upper[0]), 4000)
+    kernel = norm.pdf(z_grid, loc=z0, scale=z_err0)
+    z_table, s_table = table[c1d.H_TRUE]
+    s_vals = np.interp(z_grid, z_table, s_table)
+    # Independent recomputation of the PA-11 w_pop(z)*f_k(z) factor (never
+    # the module's own _kernel_w_pop_eff/_completeness_at_host_nodes helpers).
+    pixel0 = completeness.ang2pix(phi0, theta0)
+    w_pop_f_k = np.array(
+        [
+            float(c1d.comoving_volume_element(float(z), h=c1d.H_TRUE))
+            / (1.0 + float(z))
+            * float(completeness.f_k(float(z), pixel0, c1d.H_TRUE))
+            for z in z_grid
+        ]
+    )
+    density = kernel * w_pop_f_k * s_vals
+
+    gap = c1d._max_cdf_gap(sample, z_grid, density)
+    assert 0.0 <= gap < 0.02, gap
+
+    # Moment check: the drawn mean should sit close to the model density's mean.
+    seg = 0.5 * (density[1:] + density[:-1]) * np.diff(z_grid)
+    model_mean = float(np.sum(0.5 * (z_grid[1:] + z_grid[:-1]) * seg) / seg.sum())
+    assert abs(float(np.mean(sample)) - model_mean) < 0.002
+
+
+def test_draw_kernel_survival_redshifts_is_deterministic() -> None:
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    host_z = np.array([0.1, 0.2, 0.05])
+    host_z_error = np.array([0.01, 0.02, 0.005])
+    host_phiS = np.array([0.5, 1.5, 2.5])
+    host_qS = np.array([0.5, 1.0, 1.5])
+    rng_a = np.random.default_rng(42)
+    rng_b = np.random.default_rng(42)
+    a = c1d._draw_kernel_survival_redshifts(
+        rng_a, host_z, host_z_error, table, completeness, host_phiS, host_qS, h=c1d.H_TRUE
+    )
+    b = c1d._draw_kernel_survival_redshifts(
+        rng_b, host_z, host_z_error, table, completeness, host_phiS, host_qS, h=c1d.H_TRUE
+    )
+    np.testing.assert_array_equal(a, b)
+    assert a.shape == host_z.shape
+
+
+def test_catalogue_mode_does_not_enter_catalogue_selected_code_path(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """(e) Regression guard: host_mode='catalogue' must never touch the new
+    PA-2 machinery. Monkeypatches each new entry point to raise; a
+    'catalogue' draw must complete unaffected (and gain none of the new
+    columns)."""
+
+    def _boom(*args: object, **kwargs: object) -> None:
+        raise AssertionError("catalogue_selected code path entered by host_mode='catalogue'")
+
+    monkeypatch.setattr(c1d, "catalogue_selected_host_draw_weights", _boom)
+    monkeypatch.setattr(c1d, "kernel_smeared_survival", _boom)
+    monkeypatch.setattr(c1d, "_draw_kernel_survival_redshifts", _boom)
+
+    n = 5
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    events = gen.draw_realization(seed=1, host_pool=pool, host_mode="catalogue")
+    assert "host_draw_mode" not in events.columns
+    assert "z_true" not in events.columns
+    assert "s_tilde_phi_host" not in events.columns
+
+
+def test_catalogue_mode_byte_unchanged_regression(tmp_path: Path) -> None:
+    """(e) Fixed-seed regression pin: host_mode='catalogue' output is
+    UNCHANGED by the PA-2 addition (values captured from the pre-existing
+    "catalogue" branch, which this change does not touch)."""
+    rng = np.random.default_rng(5678)
+    n_pool = 20
+    pool = c1d.HostPool(
+        phiS=rng.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng.uniform(0.1, np.pi - 0.1, n_pool),
+        z=rng.uniform(0.01, 0.3, n_pool),
+        z_error=rng.uniform(0.001, 0.04, n_pool),
+        n=n_pool,
+    )
+    rng2 = np.random.default_rng(1234)
+    n_rows = 12
+    df = pd.DataFrame(
+        {
+            "SNR": rng2.uniform(20.0, 80.0, n_rows),
+            "luminosity_distance": rng2.uniform(1.0, 3.0, n_rows),
+            "phiS": rng2.uniform(0.0, 2 * np.pi, n_rows),
+            "qS": rng2.uniform(0.1, np.pi - 0.1, n_rows),
+            "delta_luminosity_distance_delta_luminosity_distance": rng2.uniform(
+                0.001, 0.05, n_rows
+            ),
+            "delta_phiS_delta_phiS": rng2.uniform(1e-4, 1e-2, n_rows),
+            "delta_qS_delta_qS": rng2.uniform(1e-4, 1e-2, n_rows),
+            "delta_phiS_delta_qS": np.zeros(n_rows),
+            "host_galaxy_index": -1,
+            "in_catalog": False,
+            "_coord_frame": "ecliptic_BarycentricTrue_J2000",
+            "_cov_frame": "ecliptic_BarycentricTrue_J2000",
+        }
+    )
+    donor_csv = tmp_path / "donor_crb_regr.csv"
+    df.to_csv(donor_csv, index=False)
+
+    cfg = c1d.CorrespondenceConfig(n_events=5, crb_reference_csv=str(donor_csv))
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    events = gen.draw_realization(seed=555, host_pool=pool, host_mode="catalogue")
+
+    expected_luminosity_distance = [
+        0.18625746623057443,
+        0.06871630539154697,
+        0.32309516540067595,
+        0.20943400385463906,
+        0.8147148069849749,
+    ]
+    expected_phiS = [
+        3.3292432950382462,
+        4.748267935276316,
+        5.831028711539124,
+        4.228419555411897,
+        4.006419403472291,
+    ]
+    expected_qS = [
+        1.3044173246251798,
+        1.9313731301490729,
+        1.0923656799287413,
+        0.43830070826936485,
+        2.6738108442307853,
+    ]
+    expected_host_idx = [3, 16, 0, 2, 19]
+
+    np.testing.assert_allclose(
+        events["luminosity_distance"].to_numpy(), expected_luminosity_distance, rtol=0.0, atol=0.0
+    )
+    np.testing.assert_allclose(events["phiS"].to_numpy(), expected_phiS, rtol=0.0, atol=0.0)
+    np.testing.assert_allclose(events["qS"].to_numpy(), expected_qS, rtol=0.0, atol=0.0)
+    assert events["host_galaxy_index"].to_numpy().tolist() == expected_host_idx
+    assert "host_draw_mode" not in events.columns

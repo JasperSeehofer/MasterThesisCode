@@ -2525,3 +2525,35 @@ has shifted and I want to catch up… is there a chapter on the channels in the 
 4. Session compute: FC+FT 24 × evaluate ≈ 12 CPU-h as disclosed (row #169); day-2 total
    ≈ 21 CPU-h. Eight A20-class reviews across the two days: zero FATAL, every verdict
    materially amended — the mechanism IS the campaign's integrity.
+
+## Row #174 — 2026-08-23 — AUTONOMOUS SESSION (author-directed): orchestrator rulings [ORCH-RULE 1–7] + the b0 identity test REGISTERED through two adversarial review rounds; venue premise and odds constant both corrected pre-commit; NO arm has run
+
+Author directive (verbatim): "please continue from the runbook. you are autonomous, you just
+need to flag the decisions as yours so i can trace them and correct if I disagree."
+
+1. **[ORCH-RULE 1–3] Σ^φ divisor §7 ruled as recommended:** measure-first (no production
+   adoption); verification plan approved; the b0 arms inherit the corrected slot via the new
+   counterfactual flag `catalogue_global_selection` (implemented, default `"s3d"`
+   byte-identical, 15 dedicated tests; single consumption site — no worker threading exists
+   for this divisor, verified). **[ORCH-RULE 4]** TWIN-FUSED-MATERIAL ratified as amended.
+   **[ORCH-RULE 7]** production r_φ(h) DEFERRED to a cluster task (pool `simulations/injections/`
+   not on this disk — recon-verified); the production-adoption gate stays open.
+2. **[REGISTERED] `PREREGISTRATION_B0_IDENTITY_20260823.md`** — the odds-form identity
+   E_G[(1−w)/w]·C\* = 1 (the §5.2 ensemble phrasing is unsatisfiable in a catalogue-mode venue,
+   corrected at registration); arms B-C/B-T on the fused basis + Σ^φ slot, B-R as the
+   fail-at-predicted-value control (zero-compute rescore); venue **b0i** with the NEW
+   `catalogue_selected` host mode (PA-2) after the design review REFUTED the stock-b0 premise
+   (1/d_L² proxy draw, no S̄_φ acceptance, z_true := listed z).
+3. **Two A20-class reviews pre-commit, both banked verbatim:** design review (Findings 1–8;
+   REFUTED my α_G_φ odds constant → the single C\* = β_G_φ·ρ/β̄_Ḡ_φ; PSIS replaces the trim
+   twin) and implementation verification (BLOCKED: 4 FATAL incl. bare-vs-volume_deconv kernel
+   in my aligned generator and a vacuous B-R control; all fixed and re-verified COMMIT-READY,
+   kernel probe machine-zero). Amendments PA-1…PA-14 registered. My own instruments produced
+   the FATALs; the review mechanism caught every one pre-data — zero compute spent wrong.
+4. **LEV banked (zero-compute, 25 banked b0 seeds, cross-basis, TOTAL displacement):** trimmed
+   −0.916 (O(1) ≫ band resolution ⇒ ≥5× threshold passes); untrimmed 7.8e41 (one
+   near-zero-denominator event; k̂ = 11.1 infinite-mean regime — quotable only with that
+   caveat); dead rows 48/1690 banked as support violations; ρ = 0.98777.
+5. Next: gates (R-B0 replica + E-B0(a) same-venue pair) → pilot → ε_I freeze → 24-evaluate
+   fleet (~12–20 CPU-h disclosed §8) → B-R rescore → score → A20 review → verdict (returns to
+   the author per the §4 map).
