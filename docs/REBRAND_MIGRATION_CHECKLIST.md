@@ -195,6 +195,13 @@ or redirected once taken.
       redirect; `-book` worktree linkage repaired. **Box stays `[~]` until every dev box has
       run `scripts/migrate_local_rename.sh`** — the rename is per-machine, and a box still sitting
       at the old path has a live, broken checkout, not merely a stale one.
+      **Second dev box (`jasper-ThinkPad-T490s`) migrated 2026-08-23** - script run from `$HOME`,
+      steps 1-3 applied (dir renamed, Claude project state re-keyed), step 4 a no-op (the registry
+      already carried the new Path from the first box), step 5 all-skips (references already fixed
+      upstream; only the gitignored `.claude/settings.local.json` was rewritten), `origin` repointed
+      off the redirect, venv relocated via `uv sync --reinstall` (mypy 1.19.1 / pytest 9.0.2 answer),
+      and the two `.claude/worktrees/agent-*` linked worktrees repaired at the new path (the stale
+      `/tmp` scratchpad worktree pruned). Flip §1 to `[x]` if no further box remains.
 - [~] §2: cluster migration EXECUTED 2026-08-13 — `~/MasterThesisCode` -> `~/darksiren-emri`,
       remote repointed, pulled to `e83ed0b9`, venv rebuilt from scratch (`uv sync --extra gpu`),
       stale `master_thesis_code/` removed. Preflight reads **VERDICT: READY ✓** and V-T3
