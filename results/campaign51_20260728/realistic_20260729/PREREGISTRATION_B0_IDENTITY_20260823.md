@@ -342,3 +342,15 @@ UNDETERMINED(a). B-R must land at (Ī(B-T)+1)/R − 1 within 0.05 (PA-13(c)). An
 TIGHTEN post-data (the §4 rule). Pilot Δmean_h(B-T − B-C) = +0.0455 (same sign as the B-SEL
 twin; leverage secondary 3's prior). Fleet launches: 2 arms × 12 seeds, seed 900101 reused
 idempotently (22 fresh evaluates remain).
+
+**PA-16 (2026-08-23 ~21:20; execution-venue split, author-directed).** Author (verbatim): "You
+should be using the cluster for this. If you switch it would still be faster, wouldn't it?"
+The fleet moves to the registered §8 cluster-fallback path mid-fleet: seeds 900101–900104 are
+banked from the LOCAL leg (both arms, complete pairs); seeds 900105–900112 run as a cluster
+job array (both arms per seed on the same machine — the pairing constraint: the primary is a
+paired per-seed statistic, so no seed mixes venues across arms; partial local work roots for
+unbanked seeds deleted before handoff). Same code state (commit of record stamped per A22 in
+every meta; the cluster checkout is synced to it and verified before submission). The
+machine-split is banked per seed in the metas and disclosed to the A20 review; cross-machine
+float non-identity is bounded by the same ≤1e-12-class fallback reasoning as the
+multiprocessing gates — it affects both arms of a pair equally by construction.
