@@ -311,3 +311,16 @@ the pre-PA-11 (bare-kernel) LEV values. The banked artifact of record
 post-PA-11: Ī = 7.814e41 ± 7.814e41, PSIS 5.2405e10, k̂_max = 11.085, trimmed (reported-only)
 −0.9166, dead rows 48/1690, closure floor 1.249e-7, ρ = 0.9877707323280376. No gate, band, or
 the ≥5× LEV conclusion changes. Registration is COMMIT-READY per the banked re-verification.
+
+**PA-15 (2026-08-23 ~14:55; ops incident + instrument correction, NO evaluate() had run in the
+pilot).** The first pilot launch (10:56) OOM-SIGKILLed within ~1 min: `kernel_smeared_survival`
+materialized five (20.8M × 50) float64 intermediates (~40+ GB) building the b0i draw weights
+over the full host pool — the verifier's probes ran at n≤3000 and could not see it; the
+driver's own `mass_companion` had the same lesson (chunked at 20k). Fix: internal 100k-row
+chunking (pure memory-shape transform; probed byte-identical, max abs diff 0.0 at 1.5× the
+chunk size; 8 relevant tests green). The death was silent (no traceback) and BOTH watcher
+generations missed it — a `grep|head` exit-status bug, then a pgrep self-match — detected only
+on the author's ETA query ~4 h later. Watcher protocol corrected: the launcher writes the
+driver PID to a file; the monitor polls `kill -0` on that PID (no pattern matching). Registered
+statistics unaffected (no arm data existed). [OWNED ×3: the unchunked full-pool pass, and two
+defective watchers.]

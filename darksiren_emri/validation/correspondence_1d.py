@@ -1045,6 +1045,8 @@ def build_bsel_selection_objects(
 
 _B0I_KERNEL_QUAD_N = 50  # mirrors _HOST_QUAD_N's default (bayesian_statistics.py:409)
 _GL_NODES_B0I, _GL_WEIGHTS_B0I = roots_legendre(_B0I_KERNEL_QUAD_N)  # on [-1, 1]
+# Max rows per kernel_smeared_survival vectorized pass (see its chunking note).
+_KERNEL_SMEAR_CHUNK: int = 100_000
 # mirrors integration_limit_sigma_multiplier (bayesian_statistics.py:4989/5844/6487).
 _B0I_KERNEL_SIGMA_MULTIPLIER = 4.0
 # mirrors the non-volume_trunc z_min floor (bayesian_statistics.py:5921-5926).
@@ -1185,6 +1187,29 @@ def kernel_smeared_survival(
             f"phi_survival_table has no entry for h={h!r}; keys={sorted(phi_survival_table)}"
         )
     z_arr = np.asarray(z, dtype=np.float64)
+    # Row-chunked evaluation: the (n, 50) node/kernel intermediates cost
+    # n*50*8 B EACH (~8.3 GB apiece at the full 20.8M-row reduced-catalogue
+    # pool, several live at once) -- the unchunked pass OOM-SIGKILLed the b0i
+    # pilot on a 30 GB box (2026-08-23; the same lesson as the driver's
+    # mass_companion chunking). Row-independent function, so chunking is a
+    # pure memory-shape transform (byte-identical results).
+    if z_arr.shape[0] > _KERNEL_SMEAR_CHUNK:
+        z_err_arr = np.asarray(z_error, dtype=np.float64)
+        phi_arr = np.asarray(host_phiS, dtype=np.float64)
+        q_arr = np.asarray(host_qS, dtype=np.float64)
+        out = np.empty(z_arr.shape[0], dtype=np.float64)
+        for start in range(0, z_arr.shape[0], _KERNEL_SMEAR_CHUNK):
+            stop = start + _KERNEL_SMEAR_CHUNK
+            out[start:stop] = kernel_smeared_survival(
+                z_arr[start:stop],
+                z_err_arr[start:stop],
+                phi_survival_table,
+                completeness,
+                phi_arr[start:stop],
+                q_arr[start:stop],
+                h=h,
+            )
+        return out
     z_error_eff = host_z_error_eff(z_arr, z_error)
     lower, upper = _host_kernel_window(z_arr, z_error_eff)
     half = 0.5 * (upper - lower)
