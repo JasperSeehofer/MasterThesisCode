@@ -187,12 +187,12 @@ or redirected once taken.
 
 ## 6. Verification gate for calling this checklist done
 
-- [~] §1: **verified on this dev box 2026-08-15** — a fresh Claude Code session in
+- [x] §1: **verified on this dev box 2026-08-15** — a fresh Claude Code session in
       `/home/jasper/Repositories/darksiren-emri` retrieves prior project memory (44 memory files,
       transcripts back to 2026-07-17) and the vault session-start hook briefs the project, so the
       registry Path resolves. §3 references fixed in `acd1528`; venv relocated
       (`uv sync --reinstall` + `activate*` path rewrite); `origin` repointed off the rename
-      redirect; `-book` worktree linkage repaired. **Box stays `[~]` until every dev box has
+      redirect; `-book` worktree linkage repaired. **Was held at `[~]` until every dev box had
       run `scripts/migrate_local_rename.sh`** — the rename is per-machine, and a box still sitting
       at the old path has a live, broken checkout, not merely a stale one.
       **Second dev box (`jasper-ThinkPad-T490s`) migrated 2026-08-23** - script run from `$HOME`,
@@ -201,7 +201,7 @@ or redirected once taken.
       upstream; only the gitignored `.claude/settings.local.json` was rewritten), `origin` repointed
       off the redirect, venv relocated via `uv sync --reinstall` (mypy 1.19.1 / pytest 9.0.2 answer),
       and the two `.claude/worktrees/agent-*` linked worktrees repaired at the new path (the stale
-      `/tmp` scratchpad worktree pruned). Flip §1 to `[x]` if no further box remains.
+      `/tmp` scratchpad worktree pruned). **This was the last box, so §1 closes `[x]` 2026-08-23.**
 - [~] §2: cluster migration EXECUTED 2026-08-13 — `~/MasterThesisCode` -> `~/darksiren-emri`,
       remote repointed, pulled to `e83ed0b9`, venv rebuilt from scratch (`uv sync --extra gpu`),
       stale `master_thesis_code/` removed. Preflight reads **VERDICT: READY ✓** and V-T3
