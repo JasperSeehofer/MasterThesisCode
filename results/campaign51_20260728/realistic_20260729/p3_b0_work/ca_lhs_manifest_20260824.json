@@ -1,0 +1,441 @@
+{
+  "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_CA_BOUNDED_IDENTITY_20260824.md \u00a72-\u00a73 (instrument: ca_rhs_scorer.py, per CLAIM_B0_FINITE_MOMENT_20260824.md \u00a73.1 + GATE_B_ADJUDICATION_FINITE_MOMENT_20260824.md \u00a73a/\u00a74), --stage manifest (PA-CA-7e)",
+  "description": "Complete sha256 manifest of the 24 banked b0i event_likelihoods.csv + 24 selection_tables_h_0_73.json (bt/bc x 12 seeds each) -- closes the review's Finding-7e gap (retrieval_manifest_20260824.json covered only the cluster-retrieved remainder, seeds 900102/900103 absent).",
+  "n_expected": 48,
+  "n_found": 48,
+  "missing": [],
+  "files": [
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900101_work/seed900101/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "fa064a7252b9a71709798afd4bed186f83f95473e16e497678036b42ddf018e0",
+      "size_bytes": 1159899,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900101,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900101_work/seed900101/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900101,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900102_work/seed900102/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "57c0b185761767955d0d2fcd677214ba345edccdbaa46887e4f74a38e2d2acc5",
+      "size_bytes": 1317763,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900102,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900102_work/seed900102/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900102,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900103_work/seed900103/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "e7050f433aa86047f70277e465e0f451113e3190f36019bd74d8689b567937aa",
+      "size_bytes": 1140571,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900103,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900103_work/seed900103/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900103,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900104_work/seed900104/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "a4d48321e53a0cff7291764da28ab1fb2adca4d8ebb412595fe0cbf0d8a41873",
+      "size_bytes": 1420017,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900104,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900104_work/seed900104/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900104,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900105_work/seed900105/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "0657024b5de63cd82022866ba9221460ab66ed92fc66d6cb59f800dbfbbf39f8",
+      "size_bytes": 1212834,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900105,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900105_work/seed900105/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900105,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900106_work/seed900106/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "a65bc70749c27598b8ec809607e894c1eb5f2523eee709953a2bbae69eae3e04",
+      "size_bytes": 1354499,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900106,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900106_work/seed900106/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900106,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900107_work/seed900107/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "77486c804517975072af1eda224a9a29c91a10e64d6a2eb537ccbc5f313b8fac",
+      "size_bytes": 1223961,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900107,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900107_work/seed900107/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900107,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900108_work/seed900108/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "488ea0100d4e45abf98570547b2e223581fe29ec9aa525e87aef17fcc3dbad98",
+      "size_bytes": 1319943,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900108,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900108_work/seed900108/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900108,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900109_work/seed900109/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "9bd11f3afd240c7459135d109d37a8b084e95bc3b9d97d6ef6699c558002421d",
+      "size_bytes": 1178854,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900109,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900109_work/seed900109/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900109,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900110_work/seed900110/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "3928452863fb4c0d8a2a3ff3e49a2ce55304d797e890ddcafef1f166921a898a",
+      "size_bytes": 1431645,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900110,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900110_work/seed900110/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900110,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900111_work/seed900111/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "ca2f1ed1b63ab121d8d46a49484aaa9785bfbe5a8b3f8256783d8c7eff5c61d2",
+      "size_bytes": 1265703,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900111,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900111_work/seed900111/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900111,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900112_work/seed900112/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "2f1cbbb8bd79e5c76aedb5e5c31e83b88d5b6a6ea4ba4e2ceefd2e42de6fed5f",
+      "size_bytes": 1234041,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900112,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900112_work/seed900112/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "twin",
+      "arm_prefix": "bt",
+      "seed": 900112,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900101_work/seed900101/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "565bae31ad91fbf07bd12b45f0bb3732ee0e7c366ba48ec16450f0a17033317b",
+      "size_bytes": 1159013,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900101,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900101_work/seed900101/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900101,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900102_work/seed900102/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "d383b9ad14194bee8a6fd632f2923e2036e36e6fe79ac9414262c71c46b76aa8",
+      "size_bytes": 1316737,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900102,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900102_work/seed900102/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900102,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900103_work/seed900103/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "20d72d47bc0bacf4816dba9d6ab0c85cf888480a4fc0944b1bc826e6ab634e45",
+      "size_bytes": 1139456,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900103,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900103_work/seed900103/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900103,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900104_work/seed900104/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "03f4a9aecaab7438fe67db62588c83a18f25e4cdfb46c9bcd7c0225a1afe512b",
+      "size_bytes": 1418835,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900104,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900104_work/seed900104/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900104,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900105_work/seed900105/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "facd1a8722dc4ea1429369289407042a5b58a92413988f181396bfbb2dbf32b5",
+      "size_bytes": 1211916,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900105,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900105_work/seed900105/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900105,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900106_work/seed900106/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "330916c24ebc7c7084bcc63d2b1f2c80e10a05521d1641164ef89c67a4acd9be",
+      "size_bytes": 1353439,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900106,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900106_work/seed900106/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900106,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900107_work/seed900107/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "58e60db8e34c5cba6cae4dd36e77ca82654906793b16730b79491b4304ac748f",
+      "size_bytes": 1222910,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900107,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900107_work/seed900107/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900107,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900108_work/seed900108/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "57c3e16d660635150ec20f3993fb8edddd51320a2bd45e6ad4e2fe81e91b8f9a",
+      "size_bytes": 1318779,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900108,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900108_work/seed900108/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900108,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900109_work/seed900109/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "f5648a639af9be2f605fa03c4679c2b39dde6d096e8c21856a67c2f2d5e5ca4e",
+      "size_bytes": 1177836,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900109,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900109_work/seed900109/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900109,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900110_work/seed900110/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "10fd28aa068fecf8aae530cdf73f434c95be0bbd46daf260ae6dfb509b7fe6a3",
+      "size_bytes": 1430341,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900110,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900110_work/seed900110/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900110,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900111_work/seed900111/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "304b69dfc8109e27ad340bd3a63bfd9e83d9b6d89f68924e7f872e4fba32c2ef",
+      "size_bytes": 1264559,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900111,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900111_work/seed900111/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900111,
+      "kind": "selection_table_json"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900112_work/seed900112/simulations/diagnostics/event_likelihoods.csv",
+      "sha256": "8a50bef13b9273a7efcbc964be39ec9646e1fd6ce8d6593ad3a0d3c20d64a86a",
+      "size_bytes": 1232999,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900112,
+      "kind": "event_likelihoods_csv"
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900112_work/seed900112/selection_tables_h_0_73.json",
+      "sha256": "81a714c8684bcebe173a08540a340823165ed5a5240ff4d5775a1ca2d9e7f0cd",
+      "size_bytes": 189,
+      "arm": "coded",
+      "arm_prefix": "bc",
+      "seed": 900112,
+      "kind": "selection_table_json"
+    }
+  ]
+}

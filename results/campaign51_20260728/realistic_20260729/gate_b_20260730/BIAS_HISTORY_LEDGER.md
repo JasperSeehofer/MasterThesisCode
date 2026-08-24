@@ -2686,3 +2686,21 @@ comprehension-first readout of record for this campaign leg.
 4. **Next registration (per the banked §4 advice): C-A** (φ = w; C-TCI robustness twin; F-0
    inside the targets; dead-row convention all-accepted-rows both sides; RHS ~10 CPU-h for
    SE ≈ 0.0005; C-B null pinning ~1 CPU-h alongside; ZERO fresh evaluate() fleets).
+
+## Row #181 — 2026-08-24 — C-A bounded identity test REGISTERED through two review rounds: round-1 FATAL (the dropped P̄_G conditioning factor — a guaranteed ~19σ false verdict, caught pre-commit) + 8 amendment-class fixes; instruments verified COMMIT-READY; banked LHS re-normalized and reproduced to 1e-6-class
+
+1. **[REGISTERED]** `PREREGISTRATION_CA_BOUNDED_IDENTITY_20260824.md` + PA-CA-1…9 (review
+   banked in `A20_REVIEW_CA_DESIGN_20260824.md`, verdict BLOCKED → amended as prescribed).
+   Statistic: T_w(a) = LHS(a) − RHS(a), drawn-count normalized (exact under F-0, NO acceptance
+   model in the verdict path), bounded summands. **Banked LHS (frozen): B-T 0.04233 ± 0.00108 ·
+   B-C 0.03741 ± 0.00095 · Δ +0.004919 ± 0.000146 (12/12) · LHS_BR 0.03571 ± 0.00093** —
+   instrument-reproduced to ≤3e-6. Verdict map: TWIN-CALIBRATED / TWIN-MISCALIBRATED (with the
+   κ̂ coherence criterion — the round-1 map had an unreachable cell) / VENUE-MISSPEC /
+   CONTROL-FAIL. Gates: ACC (99.6% binomial bands, smoke PASS 12/12) · RHS-F (both arms,
+   pre-accumulation) · B-R (exact transformed-integrand form) · W · k̂-as-finding.
+2. **[OWNED]** the round-1 FATAL was the orchestrator's own encoding error (the adjudication
+   §3.1 carried ·P̄_G explicitly; the prereg dropped it). The implementer independently caught
+   and fixed a 19.8-SE chunk-scale acceptance bias in its own smoke ([ORCH-RULE] PA-CA-8: the
+   venue's 200-draw law IS the registered law). PA-CA-9 weight-cache determinism PASS.
+3. Costing (amended): RHS SE 5e-4 ≈ n 4e4 ≈ 6 CPU-h (smoke-anchored: 543 s / 1e3 draws);
+   fallback SE ≤ 1e-3 registered; C-B pinning runs alongside. Zero fresh evaluate fleets.
