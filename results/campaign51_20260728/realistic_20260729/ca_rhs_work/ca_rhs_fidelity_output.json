@@ -1,0 +1,45 @@
+{
+  "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_CA_BOUNDED_IDENTITY_20260824.md \u00a72-\u00a73 (instrument: ca_rhs_scorer.py, per CLAIM_B0_FINITE_MOMENT_20260824.md \u00a73.1 + GATE_B_ADJUDICATION_FINITE_MOMENT_20260824.md \u00a73a/\u00a74), GATE RHS-F",
+  "seed": 900101,
+  "h_gen": 0.73,
+  "catalogue_global_selection_slot": "phi",
+  "rtol": 1e-06,
+  "a22_stamp": {
+    "git_commit_at_start": "ac78c67d24841595bb6c9e4bec98de60d375d1d2",
+    "tree_dirty_incl_instrument": "M darksiren_emri/validation/correspondence_1d.py"
+  },
+  "a22_flags": {
+    "catalogue_global_selection": "phi",
+    "selection_in_completion_numerator": "fused",
+    "catalogue_numerator_survival": {
+      "twin": "phi",
+      "coded": "off"
+    }
+  },
+  "per_arrangement": {
+    "twin": {
+      "n_scored": 106,
+      "n_banked": 106,
+      "n_common": 106,
+      "max_rel": {
+        "L_cat_no_bh": 0.0,
+        "B_num": 0.0,
+        "combined_no_bh": 0.0
+      },
+      "pass": true
+    },
+    "coded": {
+      "n_scored": 106,
+      "n_banked": 106,
+      "n_common": 106,
+      "max_rel": {
+        "L_cat_no_bh": 0.0,
+        "B_num": 0.0,
+        "combined_no_bh": 0.0
+      },
+      "pass": true
+    }
+  },
+  "gate_rhsf_verdict": "PASS",
+  "elapsed_s": 542.0886549949646
+}

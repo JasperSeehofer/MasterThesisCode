@@ -189,3 +189,19 @@ RHS N run under the PA-CA-7(d) cap.
 *(This block + the banked review + the amended instruments + the 24-CSV manifest commit
 together BEFORE the registered instruments run; round-2 focused review on the amendments
 precedes the commit per the established pattern.)*
+
+**PA-CA-10 (2026-08-24; the GATE RHS-F failure → [P3-HGRID] diagnosis → fix; rows #182–#184).**
+The first RHS-F run FAILED (A21 STOP held): the harness widens the estimator's h-bounds to the
+h-list's extremes, and those bounds feed the per-event candidate-ball z-window — so a single-h
+replay sees a NARROWER candidate ball than the banked H_GRID_FULL fleet (L_cat deviations to
+43%, incl. eligibility flips; every other column bit-identical). Proven by controlled replay:
+with the h-list carrying H_GRID_FULL's extremes the replay reproduces the banked bc_900101
+BIT-EXACTLY (max_rel 0.0 on L_cat_no_bh, B_num, combined_no_bh). The intermediate "×1/r_φ slot
+residual" hypothesis was an artifact of a probe chain diffing the WRONG comparand (the
+s3d-vintage fc_900101 from the pre-adoption twin campaign — a true vintage effect there,
+irrelevant to the phi-slot b0i CSVs; comparand-drift owned, caught by cross-checking the E-B0(a)
+evidence). FIX: `run_mirror_seed_inprocess` gains an explicit `h_bounds` kwarg (harness-only);
+the scorer pins `h_bounds = (min(H_GRID_FULL), max(H_GRID_FULL)) = (0.50, 0.86)`; single-h cost
+retained. RHS-F re-runs post-fix and must PASS before any RHS accumulation (unchanged gate).
+The [P3-HGRID] finding itself (the falsified "single-h byte-compatible" documented invariant)
+returns to the author as its own claim card regardless of C-A.

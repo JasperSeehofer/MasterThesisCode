@@ -332,6 +332,11 @@ def _score_events(
             selection_in_completion_numerator=SELECTION_IN_COMPLETION_NUMERATOR,
             catalogue_numerator_survival=catalogue_numerator_survival,
             catalogue_global_selection=CATALOGUE_GLOBAL_SELECTION_SLOT,
+            # PA-CA-10 ([P3-HGRID], rows #182-#184): pin the candidate-ball
+            # h-bounds to the banked fleet's own H_GRID_FULL extremes so the
+            # single-h replay is bit-compatible with the banked CSVs (proven:
+            # bounds alone reproduce bc_900101 exactly, all three columns).
+            h_bounds=(min(c1d.H_GRID_FULL), max(c1d.H_GRID_FULL)),
         )
     at = o5._rows_at_h(diag_csv, H_GEN)
     at.attrs["elapsed_s"] = elapsed

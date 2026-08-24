@@ -2704,3 +2704,61 @@ comprehension-first readout of record for this campaign leg.
    venue's 200-draw law IS the registered law). PA-CA-9 weight-cache determinism PASS.
 3. Costing (amended): RHS SE 5e-4 ≈ n 4e4 ≈ 6 CPU-h (smoke-anchored: 543 s / 1e3 draws);
    fallback SE ≤ 1e-3 registered; C-B pinning runs alongside. Zero fresh evaluate fleets.
+
+## Row #182 — 2026-08-24 — GATE RHS-F FAILED → A21 STOP held → mechanism DIAGNOSED: the catalogue-leg numerator is NOT invariant to the co-evaluated h-grid (documented invariant FALSE for L_cat; every other column bit-identical); a new stage-0 claim [P3-HGRID] opens; the C-A run stays STOPPED pending the exact-line pin
+
+1. **[DIAGNOSED, controlled-replay proof]** Same events (event CSV md5-identical), same code
+   (only the wiring commit in the window; both sides explicit `"phi"`), varying ONLY h_values:
+   1-node and 3-node grids reproduce the deviation (L_cat max_rel 0.432, smooth per-row
+   scatter 0.40–0.98 + eligibility flips in the with-BH leg); the full 46-node grid is
+   **bit-exact to the banked CSVs at every h probed**. `B_num`/`L_comp`/weights all
+   bit-identical throughout — the non-invariance is confined to the catalogue-leg numerators.
+2. **Scope:** production `--evaluate` always runs the full grid — production posteriors
+   unaffected. Exposed: ANY single-h `evaluate()` caller. The C-A RHS scorer's single-h
+   design is exposed by construction — its smoke RHS numbers are grid-convention-skewed;
+   **the registered C-A run is STOPPED** until [P3-HGRID] pins the exact line and either
+   (a) a neutralization is proven at h = 0.73, or (b) the RHS moves to full-grid scoring
+   (×46 cost — cluster-scale), or (c) the pinned mechanism licenses a cheap targeted fix
+   (physics-change-gated if it touches production files).
+3. The banked C-A LHS is UNTOUCHED (reads banked CSVs only — verified at source). GATE RHS-F
+   is amended (PA-CA-10, instrument-side) to full-grid replay compared at h = 0.73.
+4. **[FLAGGED to the author]** the falsified documented invariant ("the single-h path is
+   byte-compatible") is [PHYSICS]-adjacent — it returns as its own claim card regardless of
+   the C-A outcome.
+
+## Row #183 — 2026-08-24 — [P3-HGRID] PINNED (primary): the harness h-bound widening (`correspondence_1d.py:2344-2348` → the candidate-ball z-window `bayesian_statistics.py:4555-4565`); with-BH channel reproduced BIT-EXACTLY by bounds alone; the no-BH residual ≈ ×1.128 — [ORCH-HYPOTHESIS] = 1/r_φ(0.73) exactly, i.e. a Σ-slot divergence in the single-h path (the PA-CA-6 fallback class); confirmation probe launched
+
+1. **[PINNED, probe-proven]** `run_mirror_seed_inprocess` widens `h.lower_limit/upper_limit`
+   to min/max(h_values); the registered default is [0.6, 0.86], so H_GRID_FULL (0.50–0.90)
+   genuinely widens the candidate-ball z-window while (0.73,) and (0.6, 0.73, 0.86) are
+   no-ops — explaining 1-node ≡ 3-node ≠ 46-node exactly. Monkeypatching lower_limit = 0.50
+   alone reproduces banked `L_cat_with_bh` BIT-EXACTLY incl. every eligibility flip.
+2. **Residual (no-BH only): a near-constant ×1.127–1.129 with the Σ^φ table bit-identical.**
+   [ORCH-HYPOTHESIS, flagged for confirmation]: 1/r_φ(0.73) = 1.128688 sits dead-center —
+   suggesting the probe/single-h path lands on the s3d divisor (the PA-CA-6 bare-class
+   fallback) while the banked runs pinned "phi". If confirmed, the [P3-HGRID] non-invariance
+   decomposes as (h-bound widening) ⊕ (slot fallback), both controllable, and the C-A
+   single-h RHS is rescued by pinning {lower_limit = 0.50, upper_limit = 0.90, slot = "phi"}.
+3. **Venue-consistency note (carried into the claim card):** H_GRID_FULL harness runs see
+   WIDER candidate balls than production's H_GRID_41 evaluate would — internally consistent
+   within the b0/C-A chain (both sides full-grid) but a documented venue-vs-production
+   difference for any cross-comparison.
+
+## Row #184 — 2026-08-24 — [P3-HGRID] RESOLVED for the C-A chain: the bounds mechanism alone reproduces the banked b0i CSVs BIT-EXACTLY; the "slot residual" was a probe-chain comparand drift (fc ≠ bc — owned); `h_bounds` kwarg added (harness), scorer pinned (PA-CA-10); **GATE RHS-F PASS (max_rel 0.0, both arms)** — the A21 STOP lifts; the registered RHS pass launches
+
+1. **[PROVEN]** With the h-list (or the new explicit `h_bounds`) carrying H_GRID_FULL's
+   extremes (0.50, 0.86), the single-h replay reproduces banked bc_900101 AND bt_900101 with
+   max_rel = 0.0 on L_cat_no_bh / B_num / combined_no_bh. The full non-invariance = the
+   candidate-ball z-window's dependence on the widened h-bounds; nothing else.
+2. **[OWNED, comparand drift]** The intermediate ×1/r_φ "slot residual" hypothesis (row #183
+   item 2) arose from probe scripts diffing the s3d-vintage fc_900101 (pre-adoption twin
+   campaign) instead of the phi-slot bc_900101 — a true vintage effect on the wrong comparand.
+   Caught by cross-checking the E-B0(a) evidence (bc's phi engagement was already proven).
+   Standing lesson: name the comparand PATH in every probe report.
+3. **[FIX]** `run_mirror_seed_inprocess(h_bounds=…)` (harness-only, explicit, documented at the
+   widening site); `ca_rhs_scorer._score_events` pins (0.50, 0.86); single-h cost retained.
+   RHS-F re-run POST-fix: PASS. The [P3-HGRID] claim card (falsified "single-h
+   byte-compatible" invariant + the H_GRID_FULL-vs-production candidate-ball note) stays open
+   for the author independently of C-A.
+4. The registered C-A measurement launches: RHS n ≈ 45k (SE target 5e-4, PA-CA-7d cap), GATE
+   ACC full pass, C-B null pinning — all zero-evaluate.

@@ -2227,6 +2227,7 @@ def run_mirror_seed_inprocess(
     # scalar twin of the same semantics. "auto" (default) resolves to "phi"
     # under absolute_marginal (production), else "s3d".
     catalogue_global_selection: str = "auto",
+    h_bounds: tuple[float, float] | None = None,
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
 
@@ -2341,11 +2342,19 @@ def run_mirror_seed_inprocess(
         bs = BayesianStatistics()
         # Low-wing widening (see the docstring Note above): no-op when
         # h_values is already inside bs's own registered [0.6, 0.86] bound.
+        # [P3-HGRID] (rows #182-#184): the widened bounds feed the per-event
+        # candidate-ball z-window (bayesian_statistics.py get_redshift_outer
+        # _bounds consumer), so the catalogue-leg numerators at a GIVEN h
+        # depend on the h-list's extremes -- a single-h caller reproducing a
+        # full-grid run's L_cat must pass h_bounds=(min(grid), max(grid))
+        # explicitly (proven bit-exact vs the banked b0i CSVs).
+        eff_lo = min(h_values) if h_bounds is None else h_bounds[0]
+        eff_hi = max(h_values) if h_bounds is None else h_bounds[1]
         bs.cosmological_model.h.lower_limit = min(
-            bs.cosmological_model.h.lower_limit, min(h_values)
+            bs.cosmological_model.h.lower_limit, eff_lo
         )
         bs.cosmological_model.h.upper_limit = max(
-            bs.cosmological_model.h.upper_limit, max(h_values)
+            bs.cosmological_model.h.upper_limit, eff_hi
         )
         start = time.time()
         bs.evaluate(
