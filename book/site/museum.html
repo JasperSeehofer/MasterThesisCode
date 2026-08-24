@@ -8,7 +8,7 @@
 -->
 <title>The Defect Museum | EMRI Dark Siren Book</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="98 hypotheses about an H0 bias, and what each one cost: fourteen exhibits from the project's own falsification ledger, a live quadrature dial, and the archaeology of when it broke." />
+<meta name="description" content="98 hypotheses about an H0 bias, and what each one cost: fifteen exhibits from the project's own falsification ledger, a live quadrature dial, and the archaeology of when it broke." />
 <link rel="stylesheet" href="vendor/katex/katex.min.css" />
 <link rel="stylesheet" href="css/book.css" />
 
@@ -42,6 +42,7 @@
   .mus-exhibit.is-exonerated { border-left-color: #E69F00; }
   .mus-exhibit.is-overturned { border-left-color: var(--planck); }
   .mus-exhibit.is-method { border-left-color: #009E73; }
+  .mus-exhibit.is-confirmed { border-left-color: var(--accent); }
   .mus-exhibit h3 { margin: 0 0 0.15rem; font-size: 1.12rem; }
   .mus-exhibit .mus-num {
     font-size: 0.72rem;
@@ -1357,13 +1358,79 @@
       </noscript>
     </div>
 
+    <!-- ---------- #ex-offcell-sbar ---------- -->
+    <div class="mus-exhibit is-confirmed" id="ex-offcell-sbar">
+      <span class="mus-num">Exhibit 15 · ledger #155 · 2026-08-21</span>
+      <h3>The off-cell S̄<sub>φ</sub> omission
+        <span class="badge finding">MEASURED</span>
+      </h3>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          A from-scratch self-generated control (C-SG) had found the completion leg&rsquo;s
+          own dark-sector conditional failing its own score-zero test at 6.05&sigma; &mdash;
+          but an author-requested adversarial review found two FATAL problems with that first
+          presentation and downgraded the label to PROVISIONAL. Four residual generator-side
+          caveats stood between the finding and a diagnosis, and every one of them had already
+          survived C-SG&rsquo;s own from-scratch construction. Was this a genuine estimator
+          defect, or one of the four caveats in disguise?
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>
+          O4&rsquo;s registration carried, for the first time, a falsifier for the branch that
+          actually fired &mdash; exactly the discipline the FATAL review had found missing the
+          first time (A19): if restoring the registered S̄<sub>φ</sub> zero-extension nulls the
+          score, the violation is a pairing artifact of the executed run, not an estimator
+          defect.
+        </dd>
+        <dt>The decisive test</dt>
+        <dd>
+          A common-domain, common-quadrature re-evaluation of <code>B_num</code> against
+          <code>&beta;&#772;_{G&#772;&#966;}</code>, registered with that falsifier, and a
+          clean-context adversarial review (A20) of the executed run <em>before</em> its verdict
+          banked.
+        </dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          The review caught what the scorer had missed: the executed arm had quietly dropped the
+          registered S̄<sub>φ</sub> zero-extension on a &ldquo;corrected premise&rdquo; whose
+          bands were never re-derived. Restoring exactly that one piece sent the score to
+          <strong>+0.0076 &plusmn; 0.0184</strong> (0.41&sigma;) &mdash; consistent with zero.
+          The banked defect was not &ldquo;deeper estimator math&rdquo;; it was one missing
+          factor in one numerator &mdash; the completion leg&rsquo;s <code>B_num</code> did not
+          carry the survival factor its own normalizer carried &mdash; and three independent
+          fused-cell seeds (O6, O7, O8) confirmed the fix end-to-end
+          <span class="prov-chip">ledger #158</span>
+          <span class="prov-chip">ledger #161</span>
+          <span class="prov-chip">ledger #165</span>.
+        </dd>
+        <dt>What it cost, and what it bought</dt>
+        <dd>
+          Every run-of-record before this campaign &mdash; campaign #51, campaign #53, and
+          C-SG&rsquo;s own first two passes &mdash; had stood on the broken cell without anyone
+          noticing, because a self-consistent harness generates from the same model it analyses
+          and the mismatch cancels identically. Fixing it cost one flag flip in a counterfactual
+          cell (production adoption stays physics-change-gated and pending); it bought the
+          project its first quantitatively confirmed leg-level mechanism inside the
+          catalogue/completion mixture &mdash; and it caught, along the way, a silent scorer bug
+          in the review layer itself before it could bank a wrong verdict.
+        </dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>a harness that generates and
+          evaluates from the same model is structurally blind to a mismatch between a leg&rsquo;s
+          numerator and its own normalizer.</strong> You have to build an instrument that
+          compares a leg against <em>its own</em> conditional, not against a generator that
+          shares its assumptions, to see this class of bug at all.</dd>
+      </dl>
+      <p class="mus-backlink">referenced by <a href="ch10x-anatomy.html">Ch 10&frac12; &mdash; The Anatomy of the Bias</a> &middot; <a href="ch10x-anatomy.html">&larr; back</a></p>
+    </div>
+
     <!-- ==========================================================
          THE LEDGER BROWSER
          ========================================================== -->
     <h2>7. &ldquo;Has this been tried?&rdquo;</h2>
 
     <p>
-      Fourteen exhibits is a curation. The ledger is the collection. Below is all 98 rows,
+      Fifteen exhibits is a curation. The ledger is the collection. Below is all 98 rows,
       searchable. The same digest backs the <em>Has this been tried?</em> box carried at the
       foot of every chapter page — which searches these rows, and seeds itself with the dead
       hypotheses that page&rsquo;s own sandboxes can reach — and it is the source the sandboxes
@@ -1612,7 +1679,7 @@
     // ---------------------------------------------------------------
     // Folded exhibits: never hide content from someone who asked for it
     // ---------------------------------------------------------------
-    // Nine of the fourteen exhibits ship collapsed (REVISION_WORKLIST
+    // Nine of the fifteen exhibits ship collapsed (REVISION_WORKLIST
     // §C-museum, ped-M5). Two ways in must still work: a deep link from a
     // chapter (or from the ledger browser), and print. Both force the fold
     // open — the room stays complete, only the visit is shortened.

@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>Ch. 10½ — The Anatomy of the Bias | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="The −0.1083 headline bias decomposes into three measured contributions, one of which hid inside a numerator convention no arm had ever varied — and the twin thread that follows the same lesson into a still-open adjudication." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is frozen); mirrors ch10's own pattern. */
+  .ch10x-verdict {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--planck);
+    background: var(--paper-raised);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.9rem;
+  }
+  .ch10x-verdict .ch10x-verdict-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--planck);
+    margin-bottom: 0.25rem;
+  }
+  .ch10x-readouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .ch10x-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch10x-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  .ch10x-fwd {
+    display: inline-block; font-size: 0.72rem;
+    border: 1px dashed var(--border); border-radius: 999px;
+    padding: 0 0.45em; color: var(--muted); white-space: nowrap;
+  }
+  .ch10x-interlude {
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--prior);
+    background: var(--paper-raised);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0 1.4rem;
+  }
+  .ch10x-interlude .ch10x-interlude-kicker {
+    display: block;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 0.2rem;
+  }
+  .ch10x-toggles {
+    display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.6rem 0;
+  }
+  .ch10x-toggles button {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--paper-raised);
+    padding: 0.35rem 0.7rem; font-size: 0.84rem; cursor: pointer; color: inherit;
+  }
+  .ch10x-toggles button[aria-pressed="true"] { border-color: var(--accent); font-weight: 600; }
+  .ch10x-toggles button[aria-pressed="false"] { opacity: 0.5; text-decoration: line-through; }
+  .ch10x-tl-card {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--paper-raised);
+    padding: 0.7rem 0.9rem; margin: 0.6rem 0 0; font-size: 0.9rem;
+  }
+  .ch10x-tl-kind {
+    display: inline-block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; border-radius: 999px; padding: 0.05rem 0.55rem;
+    margin-right: 0.5rem; color: #fff;
+  }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 10½ — The Anatomy of the Bias</h1>
+    <p class="subtitle">
+      The &minus;0.1083 was never one thing. It decomposes, with mechanism, into three
+      contributions &mdash; and the decomposition was only trustworthy because every verdict
+      along the way was adversarially amended.
+    </p>
+
+    <div class="callout without">
+      <span class="callout-label">Interlude, not a numbered chapter</span>
+      This page reports a two-day August 2026 campaign that runs entirely inside the
+      catalogue/completion mixture Chapters 5 and 7 already built. It changes no tool and adds
+      no new machinery &mdash; it takes the single number Chapter 8 left on the bias rail and
+      asks where, exactly, it comes from.
+    </div>
+
+    <div class="widget" id="ch10x-coldopen" data-predict-id="ch10x-thirdcontribution">
+      <h4>Predict, then reveal &mdash; where would you look?</h4>
+      <p style="margin-top:0;">
+        A &minus;0.108 bias decomposes into three parts. Two of them you have already met:
+        the catalogue leg&rsquo;s wrong-host candidates <span class="ch10x-fwd">⏮ Ch 5</span>
+        and the host-redshift kernel&rsquo;s own inflation law <span class="ch10x-fwd">⏮ Ch 7</span>.
+        The third was hiding somewhere neither chapter looked. Before reading on: what kind of
+        bug survives every validation harness this project has built?
+      </p>
+      <div class="predict-row" id="ch10x-predict-1" data-predict-id="ch10x-thirdcontribution">
+        <button type="button" data-predict="units">A units or rescaling artifact</button>
+        <button type="button" data-predict="pairing">A numerator that lost a factor its own normalizer kept</button>
+        <button type="button" data-predict="prior">A prior that disagrees with the generator</button>
+        <button type="button" data-predict="quadrature">A quadrature/discretization defect</button>
+      </div>
+      <div class="reveal">
+        <p style="margin-top:0;">
+          <strong>&ldquo;A numerator that lost a factor its own normalizer kept.&rdquo;</strong>
+          The completion leg&rsquo;s numerator <span class="term" data-term="Bnum">$B^{\rm num}$</span>
+          did not carry the survival factor <strong>S̄<sub>φ</sub></strong> that its own
+          normalizer <span class="term" data-term="betaGbar">$\beta_{\bar G\varphi}$</span>
+          carries &mdash; a mismatch inside one leg, invisible to every harness that generates
+          and evaluates from the same model. Section 3 below is the whole story.
+        </p>
+      </div>
+      <noscript>
+        <p><strong>Static fallback (the reveal).</strong> A numerator that lost a factor its own
+        normalizer kept: the completion leg&rsquo;s B_num did not carry the survival factor
+        S̄_φ that its own normalizer carries.</p>
+      </noscript>
+    </div>
+
+    <!-- ================= §1 ================= -->
+    <h2>1. One equation, six rungs</h2>
+    <p>
+      Every per-event likelihood the estimator computes, no-BH-mass analysis, is one equation:
+    </p>
+    $$ \mathrm{combined}(e,h) \;=\; \frac{\beta_{G\varphi}(h)\,\mathcal L_{\rm cat}(e,h) \;+\; B^{\rm num}(e,h)}{\tilde D_\varphi(h)} $$
+    <p>
+      &ldquo;The event&rsquo;s host is either one of the catalogue&rsquo;s candidates (first
+      term) or a galaxy the catalogue doesn&rsquo;t contain (second term), normalized by the
+      total selected population.&rdquo; Everything this chapter says is a name for a piece of
+      that equation, a way of reading it out, a switchable variant of it, or a synthetic
+      universe it was tested in
+      <span class="prov-chip">docs/PRIMER_BIAS_CHANNELS_20260822.md</span>. Six vocabulary
+      rungs stack on top of it, and this book uses them exactly as the primer defines them:
+    </p>
+    <ol>
+      <li><strong>Legs</strong> &mdash; the two numerator terms:
+        <span class="term" data-term="Lcat">catalogue leg</span> = $\beta_{G\varphi}\mathcal L_{\rm cat}$,
+        <span class="term" data-term="Lcomp">completion leg</span> = $B^{\rm num}$.
+        <strong>S̄<sub>φ</sub></strong>, the φ-averaged detection survival at $z$, is the
+        recurring object: which terms carry it, and does each numerator&rsquo;s S̄<sub>φ</sub>
+        match its own normalizer&rsquo;s?</li>
+      <li><strong>Channels</strong> &mdash; three ways to <em>read the posterior out</em>: full
+        (production, as-is), matched (the dark-conditional $B^{\rm num}/\beta_{\bar G\varphi}$
+        &mdash; &ldquo;if we knew the host is not catalogued, what does the completion leg alone
+        say?&rdquo;), pure (full minus the catalogue leg, exact subtraction).</li>
+      <li><strong>Contributions</strong> &mdash; the three-way split of the headline bias itself
+        (§2 below). <strong>&ldquo;Contribution&rdquo; for this split; &ldquo;channel&rdquo;
+        only for rung 2&rsquo;s readouts</strong> &mdash; the two words collided in early
+        reports and the primer retires the collision for good.</li>
+      <li><strong>Cells</strong> &mdash; switchable instrumentation flags that change one
+        numerator convention, always byte-identical to production at their default:
+        <code>selection_in_completion_numerator</code> (&ldquo;off&rdquo; = the legacy
+        defect; &ldquo;fused&rdquo; = the fix) and <code>catalogue_numerator_survival</code>
+        (&ldquo;the twin,&rdquo; §4).</li>
+      <li><strong>Arms and venues</strong> &mdash; which synthetic universe an experiment ran
+        in. <strong>B-SEL</strong>: real candidates, but the true host is <em>never</em> one of
+        them &mdash; powerful for mechanisms, unable to certify catalogue-leg correctness.
+        <strong>C-SG-F</strong>: self-generated, so any deviation from zero is the
+        estimator&rsquo;s own inconsistency. <strong>b0</strong>: genuinely catalogued hosts
+        &mdash; the only venue that can adjudicate (§5).</li>
+      <li><strong>Governance words</strong> &mdash; the A-numbers (A17&hellip;A22) are process
+        amendments earned by specific failures; bands are pre-frozen verdict regions; gates
+        VOID a run rather than shade it. This chapter is as much about rung 6 as about the
+        physics &mdash; the campaign that found the physics is the demonstration of why rung 6
+        exists.</li>
+    </ol>
+
+    <!-- ================= §2 ================= -->
+    <h2>2. Cutting the bias three ways</h2>
+    <p>
+      The B-SEL fleet&rsquo;s headline bias, <strong>mean<sub>h</sub> &minus; 0.73 =
+      &minus;0.108</strong>, was decomposed by two free reads before any design changed
+      <span class="prov-chip">ledger #149</span> <span class="prov-chip">ledger #150</span>.
+      Setting the catalogue leg to exactly zero (<code>L_cat_no_bh ≡ 0</code>) moves the
+      12-seed fleet from &minus;0.1083 to &minus;0.0291 (a coincidence of magnitude only
+      &mdash; unrelated to, and opposite in sign from, the twin&rsquo;s own +0.0291 in §4) &mdash;
+      positive in 12/12 seeds &mdash; which looks like a small residual, until the completion leg
+      is tested against its <em>own</em> dark-sector conditional and fails at &minus;0.0846
+      (SEM 0.0095). The two reads combine into a genuine three-way split:
+    </p>
+    <div class="table-scroll">
+      <table class="num-table">
+        <tr><th>contribution</th><th>size</th><th>what it is</th><th>status</th></tr>
+        <tr><td><strong>impostor drag</strong></td><td>&minus;0.079 (73%)</td>
+          <td>catalogue candidates that are NOT the true host sit at low z and drag h down</td>
+          <td>OPEN &mdash; the venue-physics front</td></tr>
+        <tr><td><strong>dark-fraction tilt</strong></td><td>+0.055</td>
+          <td>a composition effect of the catalogue/dark mixture</td>
+          <td>measured, understood</td></tr>
+        <tr><td><strong>matched-channel violation</strong></td><td>&minus;0.085</td>
+          <td>the completion leg&rsquo;s own broken S̄<sub>φ</sub> pairing</td>
+          <td><strong>RESOLVED</strong> (the fused fix; §3)</td></tr>
+      </table>
+    </div>
+    <p class="ch10x-note">
+      <span class="prov-chip">docs/PRIMER_BIAS_CHANNELS_20260822.md §3</span> &mdash; the
+      canonical table this widget reproduces. Row citations: impostor <span class="prov-chip">ledger #149</span>,
+      tilt and matched <span class="prov-chip">ledger #150</span>.
+    </p>
+
+    <div class="widget" id="ch10x-i101">
+      <h4>I10X.1 &mdash; The Decomposition Bench
+        <span class="prov-chip real">real: banked C-SG arm numbers, ledger rows #149&ndash;#156</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Toggle</strong> each contribution on or off. <strong>Watch</strong> the enabled
+        sum chase the &minus;0.1083 headline &mdash; and notice it never lands exactly on it.
+        These are three independently measured, control-referenced quantities, not three terms
+        of one algebraic identity.
+      </p>
+      <div class="ch10x-toggles" id="ch10x-toggle-row" role="group" aria-label="Contributions">
+        <button type="button" data-c="impostor" aria-pressed="true">impostor drag</button>
+        <button type="button" data-c="tilt" aria-pressed="true">dark-fraction tilt</button>
+        <button type="button" data-c="matched" aria-pressed="true">matched-channel violation</button>
+      </div>
+      <div id="ch10x-bar-plot" class="widget-plot" style="min-height:280px"></div>
+      <div class="ch10x-readouts" id="ch10x-i101-readouts">
+        <span>enabled sum <strong id="ch10x-sum">&mdash;</strong></span>
+        <span>headline <strong id="ch10x-headline">&minus;0.1083</strong></span>
+        <span>gap <strong id="ch10x-gap">&mdash;</strong></span>
+      </div>
+      <div class="ch10x-verdict" id="ch10x-i101-verdict"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch10x-i101-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> impostor drag &minus;0.079 (73%, OPEN) &oplus;
+        dark-fraction tilt +0.055 (measured, understood) &oplus; matched-channel violation
+        &minus;0.085 (RESOLVED) &rArr; naive sum &minus;0.109 against headline &minus;0.1083.
+        Restoring the registered arm (the mechanism control) nulls the matched-channel score at
+        +0.0076 &plusmn; 0.0184 (0.41&sigma;).</p>
+      </noscript>
+    </div>
+
+    <p>
+      That third row &mdash; matched-channel violation &mdash; is the one no chapter before this
+      one has told you about. It needed its own control, and the control is what makes it
+      trustworthy: restoring one registered piece of the arm (the piece the executed run had
+      silently dropped) sends the score to <strong>+0.0076 &plusmn; 0.0184</strong> (0.41&sigma;)
+      &mdash; consistent with zero. A defect that vanishes when you put back exactly the thing
+      that was missing is a diagnosed defect, not a suggestive correlation.
+      <span class="prov-chip">ledger #155</span>
+    </p>
+
+    <!-- ================= §3 ================= -->
+    <h2>3. The cell nobody varied</h2>
+    <p>
+      Here is the mechanism, in one sentence: the completion leg&rsquo;s numerator
+      <span class="term" data-term="Bnum">$B^{\rm num}$</span> does not carry the survival
+      factor S̄<sub>φ</sub> that its own normalizer
+      <span class="term" data-term="betaGbar">$\beta_{\bar G\varphi}$</span> carries. Every
+      run-of-record before this campaign &mdash; campaign #51, campaign #53, every earlier
+      C-SG pass &mdash; stood on this <em>off</em> cell without anyone noticing, because it is
+      invisible to a self-consistent harness: if the harness generates events from the same
+      model it analyses, the mismatched factor cancels between generation and analysis and the
+      effect is identically zero. It took a harness built specifically to break that symmetry
+      &mdash; C-SG&rsquo;s own registered falsifier &mdash; to expose it
+      <span class="prov-chip">ledger #155</span>.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The label, as ratified
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">ledger #155</span>
+        <span class="prov-chip">ledger #157</span>
+      </span>
+      <strong>IMPLEMENTATION-CONVENTION DEFECT &mdash; the off-cell S̄<sub>φ</sub> omission,
+      mechanism identified and quantified.</strong> The 6.05&sigma; non-zero matched-channel
+      score stands as MEASURED; &ldquo;deeper estimator math&rdquo; is withdrawn. The fix
+      (<code>selection_in_completion_numerator="fused"</code>) is confirmed end-to-end across
+      three independent seeds &mdash; O6 (delta +1.94&times;10&#8315;&#8310;, 50&times; inside
+      band, <span class="prov-chip">ledger #158</span>), O7
+      (<span class="prov-chip">ledger #161</span>), and O8 (the fused-replica bias leg closes
+      at +0.00589 &plusmn; 0.01078, <span class="prov-chip">ledger #165</span>). What has
+      <em>not</em> happened is a production switch: this is a harness-side confirmation, and
+      the off→fused change to the runs-of-record is physics-change-gated and still pending.
+    </div>
+
+    <div class="ch10x-interlude">
+      <span class="ch10x-interlude-kicker">A lesson this project has paid for before</span>
+      The shape here &mdash; an un-derived factor sitting quietly inside a leg, invisible to
+      every self-consistent test, caught only by a harness engineered to break that symmetry
+      &mdash; is the same shape as <code>B_scale</code>, an earlier ratio this project found
+      equal to 1 in a correctly assembled mixture and equal to something else in the shipped
+      code <span class="prov-chip">ledger #130</span>. The nearest full exhibit in the museum is
+      the w<sub>G</sub> bookkeeping fix that turned out to relocate a tilt rather than remove it
+      (<a href="museum.html#ex-wg-bookkeeping">the Defect Museum &rarr; the w<sub>G</sub>
+      bookkeeping fix</a>) &mdash; the same family of mistake: a fix that is <em>locally</em>
+      correct and globally wrong until someone asks what the whole mixture, not just one leg,
+      actually needs. The off-cell S̄<sub>φ</sub> omission has now joined that family as its own
+      exhibit &mdash; full write-up:
+      <a href="museum.html#ex-offcell-sbar">the Defect Museum &rarr; the off-cell S̄<sub>φ</sub> omission</a>.
+    </div>
+
+    <!-- ================= §4 ================= -->
+    <h2>4. Leverage is not correctness</h2>
+    <p>
+      The catalogue leg has the same structural shape as the completion leg: its numerator
+      $\mathcal L_{\rm cat}$ is evaluated without S̄<sub>φ</sub>, while
+      $\beta_{G\varphi}$ &mdash; its own normalizer &mdash; integrates it. Inserting it (the
+      catalogue-leg analog of the fused fix, called <strong>the twin</strong>) moves the venue
+      headline by a small, real, positive amount on B-SEL: <strong>+0.0155 &plusmn; 0.0037</strong>
+      (12/12 positive, 4.2&sigma;) <span class="prov-chip">ledger #162</span>. That is where the
+      story could have stopped as a footnote. It did not, because the very next question &mdash;
+      <em>is that the right fix, or just an effective one?</em> &mdash; produced a genuine
+      refutation.
+    </p>
+    <p>
+      A proposed &ldquo;completed pairing&rdquo; (dividing the twin&rsquo;s level back out by a
+      rescale $R = \beta_G/\beta_{G\varphi}$) was checked against its own derivation and
+      <strong>failed</strong>: $\beta_{G\varphi}$ over the global selection sum is a measure
+      conversion whose S̄ cancels algebraically, and re-installing $R$ reinstates exactly the
+      un-derived-multiplier shape of the retired <code>B_scale</code> defect
+      <span class="prov-chip">ledger #168</span>. The twin, taken as measured and nothing more,
+      is the derivation-coherent candidate &mdash; but only <strong>on the fused basis</strong>,
+      because it shares the completion leg&rsquo;s own S̄<sub>φ</sub> pairing question. The
+      author ratified that reading (&ldquo;ratify B, run fused re-measure + b0 test&rdquo;)
+      <span class="prov-chip">ledger #169</span>, and on that basis the twin grew:
+    </p>
+    <div class="ch10x-verdict">
+      <span class="ch10x-verdict-label">TWIN-FUSED-MATERIAL, as banked (amendment-20 quotation)</span>
+      On its coherent (fused) basis, the twin moves the venue headline
+      <strong>+0.0291 &plusmn; 0.0051</strong> (12/12, 5.7&sigma;) &mdash; on the
+      <em>registered, censored grid</em>. The <strong>un-truncated</strong> read, on the full
+      h-grid with no boundary censoring, is <strong>+0.0634 &plusmn; 0.0089</strong> &mdash;
+      2.18&times; the registered figure, because censoring compresses the effect, which makes
+      the registered number the <em>conservative</em> one to quote.
+      <span class="prov-chip">ledger #173</span>
+    </div>
+    <p>
+      Read that pair of numbers as a warning label, not a result: a real, reproducible,
+      derivation-coherent effect of this size is exactly the kind of thing a leverage artifact
+      also looks like. <strong>B-SEL, by construction, can never certify the twin&rsquo;s
+      correctness</strong> &mdash; every candidate in it is an impostor, so any change that
+      suppresses the catalogue leg&rsquo;s pull on an all-impostor venue &ldquo;helps&rdquo;
+      mechanically, whether or not it is physically right
+      <span class="prov-chip">docs/PRIMER_BIAS_CHANNELS_20260822.md §5</span>. The thread had
+      measured a real, sizeable, and derivation-clean effect &mdash; and had run entirely out of
+      venues that could tell it apart from a mechanically favorable coincidence. That is exactly
+      the question §5 was registered to answer.
+    </p>
+
+    <!-- ================= §5 ================= -->
+    <h2>5. The adjudicator</h2>
+    <p>
+      The <strong>b0</strong> venue is the one place in this project where the true host really
+      is a catalogue row &mdash; an aligned generator, not an all-impostor mirror. That licenses
+      an exact identity no other venue can state: for events genuinely drawn from the catalogued
+      class, the class-conditional expectation of the responsibility odds must equal 1,
+    </p>
+    $$ \mathbb E_{d\sim p(d\mid G)}\!\left[\frac{1-w(d)}{w(d)}\right]\cdot\frac{P_G}{P_{\bar G}} \;=\; 1 ,\qquad w(d)=\frac{P_G\,p(d\mid G)}{p(d)} , $$
+    <p>
+      an <strong>odds-form identity</strong> that holds for a correctly arranged mixture and is
+      violated exactly when a leg&rsquo;s numerator/normalizer pairing is broken
+      <span class="prov-chip">PREREGISTRATION_B0_IDENTITY_20260823.md §1</span>. Three arms ran
+      it on the fused basis: the coded (off-cell-corrected) configuration, the twin, and &mdash;
+      as the registered control &mdash; the refuted Appendix-A rescale, run expecting it to
+      <strong>fail</strong> the identity. A control engineered to fail is the sharpest
+      instrument this project has: if the wrong arrangement passes anyway, the test has nothing
+      to say.
+    </p>
+    <p>
+      That is what happened. Through two full rounds of clean-context adversarial review
+      &mdash; eight A20-class reviews across the two days that produced this chapter, zero
+      FATAL findings, and every single verdict materially amended along the way
+      <span class="prov-chip">ledger #173</span> &mdash; the test executed exactly as
+      registered, all gates passed, and it came back <strong>UNDISCRIMINATING</strong>. The
+      registration&rsquo;s own control clause caught the reason: one ordinary event &mdash; not
+      anomalous, just carrying an extremely small responsibility weight &mdash; is enough on its
+      own to inflate the identity statistic&rsquo;s standard error so far that the refuted
+      arrangement passes the identical bands the correct one does. The bands could not tell the
+      two apart, so the test could not adjudicate either
+      <span class="prov-chip">ledger #177</span>.
+    </p>
+
+    <div class="widget" id="ch10x-i102">
+      <h4>I10X.2 &mdash; Verdict Archaeology
+        <span class="prov-chip real">real: PREREGISTRATION_P3_TWIN_20260822.md chain + ledger rows #149&ndash;#178</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Scrub</strong> the twin thread&rsquo;s own trajectory, registration through
+        verdict. <strong>Watch the kind</strong> of each step: a scientific verdict here is a
+        sequence of registrations, amendments, refutations, ratifications and measurements
+        &mdash; not a single number appearing from nowhere.
+      </p>
+      <div class="widget-controls">
+        <label for="ch10x-tl-slider">Event:</label>
+        <input id="ch10x-tl-slider" type="range" aria-describedby="ch10x-tl-card" />
+        <span class="readout"><strong id="ch10x-tl-readout">&mdash;</strong></span>
+      </div>
+      <div id="ch10x-tl-plot" class="widget-plot" style="min-height:220px"></div>
+      <div class="ch10x-tl-card" id="ch10x-tl-card"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch10x-tl-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> 2026-08-21 C-SG v3 measures the matched-channel
+        violation at 6.05&sigma; (provisional) &rarr; adversarial review finds 2 FATAL, downgrades
+        to PROVISIONAL &rarr; O4 registered and then overturned by its own falsifier: mechanism
+        identified, restored arm nulls the score &rarr; author ratifies the label &rarr; O6/O7/O8
+        confirm the fix. 2026-08-22 the twin is measured off-basis (+0.0155) &rarr; the
+        &ldquo;completed pairing&rdquo; is refuted &rarr; the twin is ratified as the candidate of
+        record on the fused basis. 2026-08-23 TWIN-FUSED-MATERIAL banked (+0.0291 on the
+        registered grid, +0.0634 un-truncated) &rarr; the b0 identity test is registered
+        through two review rounds. 2026-08-24
+        the b0 test is executed and adjudicated UNDISCRIMINATING; the author ratifies the verdict
+        and this chapter is authorized to build.</p>
+      </noscript>
+    </div>
+
+    <p>
+      Read the verdict precisely, because it is easy to round it into something it is not.
+      <strong>UNDISCRIMINATING is not a null result and not a confirmation.</strong> The twin was
+      neither confirmed nor refuted; the machinery that was supposed to decide the question
+      turned out not to be sharp enough to decide it, and the registration&rsquo;s own gate
+      caught that fact before anyone could mistake a wide band for an answer. Two things survive
+      the verdict, both explicitly reported-only rather than registered:
+    </p>
+    <ul>
+      <li>In an unregistered, tail-biased reading that drops the one heavy-weighted event, the
+        twin&rsquo;s basis sits closer to the identity&rsquo;s calibrated odds than the coded
+        basis does in <strong>11 of 11</strong> clean seed pairs, and the mean-h difference
+        between the twin and coded bases is positive in all <strong>12 of 12</strong> pairs
+        (+0.0566) &mdash; a direction, reported only, not a verdict
+        <span class="prov-chip">ledger #177</span>.</li>
+      <li>TWIN-FUSED-MATERIAL itself is untouched: it stands as ratified leverage, on its
+        coherent basis, exactly as §4 quoted it. What the b0 test withheld is correctness, not
+        the leverage measurement.</li>
+    </ul>
+    <p>
+      What actually failed was the statistic&rsquo;s own design: a mean of odds ratios is
+      heavy-tailed by construction in a venue this thin, and one legitimately low-responsibility
+      event is enough to break it. The registered next step is not another b0 run on the same
+      statistic &mdash; it is a <strong>finite-moment redesign of the identity statistic
+      itself</strong>, opened and not yet built
+      <span class="prov-chip">ledger #178</span>. That is where the thread actually stands
+      today, and this book stops here rather than rounding it into a verdict the data did not
+      produce &mdash; the same ethos Chapter 11 holds to for the rest of the project&rsquo;s open
+      questions.
+    </p>
+
+    <!-- ================= self-check ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q10½.1 &nbsp; The three contributions in §2 sum to &minus;0.109, not exactly
+      &minus;0.1083. Is that a problem?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          No &mdash; and expecting it to be one is the trap. Each contribution is an
+          independently measured, control-referenced quantity (a different arm, a different
+          conditional, a different held-fixed variable), not a term of one algebraic identity
+          that must telescope exactly. A near-match to four figures would be more suspicious than
+          reassuring &mdash; it would suggest the three measurements were not actually
+          independent. <span class="prov-chip">ledger #150</span>
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q10½.2 &nbsp; Why was the off-cell S̄<sub>φ</sub> omission invisible to every earlier
+      validation harness, including Chapter 10&rsquo;s own P&ndash;P coverage instrument?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because a self-consistent harness generates the data it then analyses from the same
+          model, so a numerator/normalizer mismatch inside one leg cancels between generation and
+          analysis and produces an effect of exactly zero &mdash; the same blindness class
+          Chapter 9&rsquo;s idealized closure has to a population mismatch, and the same reason
+          Chapter 4&rsquo;s starvation exhibit needed an injection scan rather than a coverage
+          run. It took C-SG&rsquo;s registered falsifier, engineered specifically to compare a
+          leg against its <em>own</em> conditional rather than against the generator that shares
+          its assumptions, to expose it. <span class="prov-chip">ledger #155</span>
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q10½.3 &nbsp; TWIN-FUSED-MATERIAL moves the headline +0.0291 (registered grid) or
+      +0.0634 (un-truncated). Which number would you quote in a one-line summary, and what
+      would you say about the other?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Quote +0.0291, and say the un-truncated read is larger (+0.0634) because the registered
+          grid&rsquo;s boundary censoring compresses the effect &mdash; so the registered number
+          is the conservative one, not the complete one. Quoting either number alone, without its
+          companion, is exactly the amendment-20 mistake this project&rsquo;s own governance rules
+          were written to prevent. <span class="prov-chip">ledger #173</span>
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q10½.4 <em>(transfer)</em> &nbsp; The b0 identity test came back UNDISCRIMINATING. Name
+      one thing you now know that you did not know before the test ran, and one thing the test
+      still cannot tell you.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Known now: the identity machinery itself is validated (gates R-B0, E-B0, W-B0 all
+          passed, and the Σ<sup>φ</sup> slot's h-dependent factor was independently confirmed
+          against the production measurement) &mdash; the failure is in the statistic&rsquo;s
+          own heavy tail, not in the test&rsquo;s construction. Still unknown: whether the twin
+          is a correct fix or a leverage artifact that happens to move the number the right way
+          &mdash; the question the test was registered to answer is exactly the one it could not
+          reach. <span class="prov-chip">ledger #177</span> <span class="prov-chip">ledger #178</span>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== Misconception trap ===== -->
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;It moved the number the right way, so it&rsquo;s the fix.&rdquo;</span>
+      TWIN-FUSED-MATERIAL is real, reproducible, and derivation-coherent &mdash; and none of that
+      is correctness, because B-SEL structurally cannot tell a genuine fix from a change that
+      merely suppresses an all-impostor leg&rsquo;s pull. The one venue built to adjudicate came
+      back UNDISCRIMINATING, not confirming. Leverage and correctness are different questions,
+      and this project measured the first one three times before it could even attempt the
+      second. <span class="prov-chip">ledger #177</span>
+    </div>
+
+    <!-- ================= provenance ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel &mdash; every stamp used in this chapter</h4>
+      <ul>
+        <li>Vocabulary <span class="prov-chip">docs/PRIMER_BIAS_CHANNELS_20260822.md</span> &mdash; the one equation, legs/channels/contributions/cells/arms/governance-words, binding on this chapter</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #149</code> / <code>#150</code> &mdash; the three-way decomposition: impostor drag &minus;0.079 (73%), dark-fraction tilt +0.055, matched-channel violation &minus;0.0846</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #155</code> / <code>#157</code> &mdash; mechanism identified (off-cell S̄<sub>φ</sub> omission); restored-arm null +0.0076 &plusmn; 0.0184; label RATIFIED as IMPLEMENTATION-CONVENTION DEFECT</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #158</code> / <code>#161</code> / <code>#165</code> &mdash; the fused fix, confirmed end-to-end (O6/O7/O8)</li>
+        <li><span class="badge refuted">REFUTED</span> <code>ledger #168</code> &mdash; Appendix A (the &ldquo;completed pairing&rdquo; R-rescale), a B_scale-class un-derived multiplier</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #162</code> / <code>#169</code> / <code>#173</code> &mdash; the twin: off-basis +0.0155 &plusmn; 0.0037 &rarr; ratified as candidate of record (Appendix B) &rarr; TWIN-FUSED-MATERIAL +0.0291 &plusmn; 0.0051 (registered grid) / +0.0634 &plusmn; 0.0089 (un-truncated)</li>
+        <li><code>PREREGISTRATION_B0_IDENTITY_20260823.md</code> §1 &mdash; the odds-form identity and the b0 venue&rsquo;s aligned generator</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #177</code> &mdash; b0 identity test ADJUDICATED UNDISCRIMINATING; one-event tail vacuity; 11/11 and 12/12 directional reads, REPORTED-ONLY</li>
+        <li><code>ledger #178</code> &mdash; author ruling: UNDISCRIMINATING ratified; finite-moment identity-statistic redesign OPENED (not built); this chapter authorized</li>
+        <li><span class="badge exonerated">EXONERATED</span>-class lesson recalled: <code>ledger #130</code>&ndash;<code>#131</code> (<code>B_scale</code>) and <a href="museum.html#ex-wg-bookkeeping">the Defect Museum &rarr; the w<sub>G</sub> bookkeeping fix</a></li>
+        <li>New museum exhibit: <a href="museum.html#ex-offcell-sbar">the Defect Museum &rarr; the off-cell S̄<sub>φ</sub> omission</a></li>
+        <li>Not used / not resolved here: production adoption of the fused cell (physics-change-gated, pending); the Σ<sup>φ</sup> divisor proposal's production ruling (pending, <code>ledger #176</code>)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch10x.py</code> (hand-authored from quoted
+      ledger rows, gated on the cited source files existing &mdash; the I11.2 precedent). This
+      page renders fully offline &mdash; Plotly and KaTeX are vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    var C = {
+      accent: "#0072B2", accentDark: "#6fb8e8", warn: "#D55E00",
+      rec: "#CC79A7", ok: "#009E73", guess: "#E69F00", prior: "#9e9e9e",
+    };
+    var KIND_COLOR = {
+      registration: "#0072B2", amendment: "#E69F00", refutation: "#D55E00",
+      ratification: "#009E73", measurement: "#56B4E9", verdict: "#CC79A7",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function muted() { return Book.isDark() ? "#9aa2b1" : "#5b6270"; }
+    function esc(s) {
+      return String(s).replace(/[&<>"]/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+      });
+    }
+    function baseLayout(xTitle, yTitle) {
+      return {
+        margin: { l: 62, r: 18, t: 20, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: false,
+        hovermode: "closest",
+      };
+    }
+    function table(el, headers, rows) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+
+    // ------------------------------------------------- bias ledger rail
+    var PIPS = [
+      { tone: "amber", label: "two branches disagree (0.86 / 0.64) — unresolved",
+        note: "CLAIM C5 — measured, live" },
+      { tone: "amber", label: "C7: kernel inflates at σ_z/z > 0.256",
+        note: "CLAIM C7 — measured, live; collides with G2b's ratified confirmation." },
+      { tone: "amber", label: "w_G ≠ realized rate (z = −11.86) — C9",
+        note: "CLAIM C9 — measured, live" },
+      { tone: "amber",
+        label: "cell B (2026-07-31): estimator owns +0.060 of the 2D +0.083",
+        note: "CELLB_READOUT_20260731.md — the 2D-only share is 72%" },
+      { tone: "grey",
+        label: "b0 identity test — UNDISCRIMINATING (ratified)",
+        note: "ledger #177/#178: the twin neither confirmed nor refuted; one-event tail " +
+              "vacuity in the identity statistic; 11/11 and 12/12 REPORTED-ONLY directional " +
+              "reads; finite-moment redesign opened, not yet built." },
+    ];
+    Book.biasRail({
+      entries: [
+        { label: "cat-only, no D(h)", bias: -0.178,
+          note: "Phase 32 / ledger #9 — MAP 0.60, the bottom of the prior" },
+        { label: "full-volume D(h) (1D)", bias: 0.0, note: "Phase 32 / ledger #9" },
+        { label: "host-z kernel volume_deconv", bias: -0.002, note: "G2b §2.3" },
+        { label: "2D channel, #53 (CANDIDATE)", bias: 0.077,
+          note: "10/10 runs > +2σ. The −0.1083 mirror-venue headline this interlude " +
+                "decomposes is NOT this number — it is B-SEL's own diagnostic bias, " +
+                "measured to isolate mechanism, not the production 2D channel.",
+          active: true },
+      ],
+      pips: PIPS,
+    });
+
+    Book.predictReveal(document.getElementById("ch10x-coldopen"));
+
+    // ===============================================================
+    // I10X.1 — the decomposition bench
+    // ===============================================================
+    Book.loadJSON("data/ch10x_decomposition.json").then(function (d) {
+      var state = { impostor: true, tilt: true, matched: true };
+      var byId = {};
+      d.contributions.forEach(function (c) { byId[c.id] = c; });
+      var colorOf = { impostor: C.warn, tilt: C.guess, matched: C.ok };
+
+      function enabledSum() {
+        var s = 0;
+        d.contributions.forEach(function (c) { if (state[c.id]) s += c.value_precise; });
+        return s;
+      }
+
+      function traces() {
+        var xs = [], ys = [], colors = [], texts = [];
+        d.contributions.forEach(function (c) {
+          xs.push(c.label);
+          ys.push(state[c.id] ? c.value_precise : 0);
+          colors.push(state[c.id] ? colorOf[c.id] : muted());
+          texts.push(c.status);
+        });
+        return [
+          {
+            x: xs, y: ys, type: "bar", marker: { color: colors },
+            text: texts, textposition: "outside",
+            hovertemplate: "%{x}<br>%{y:+.4f}<br>%{text}<extra></extra>",
+          },
+        ];
+      }
+
+      var plot = Book.themedPlot("ch10x-bar-plot", traces(), function () {
+        var L = baseLayout("", "contribution to bias in h");
+        L.yaxis.range = [-0.11, 0.075];
+        L.shapes = [{
+          type: "line", x0: -0.5, x1: 2.5, y0: d.headline_bias, y1: d.headline_bias,
+          line: { color: C.rec, width: 2, dash: "dash" },
+        }];
+        L.annotations = [{
+          x: 2.4, y: d.headline_bias, xanchor: "right", yanchor: "bottom", showarrow: false,
+          text: "headline " + d.headline_bias.toFixed(4), font: { size: 10, color: C.rec },
+        }];
+        return L;
+      });
+
+      function draw() {
+        plot.update(traces());
+        var sum = enabledSum();
+        document.getElementById("ch10x-sum").textContent =
+          (sum >= 0 ? "+" : "") + sum.toFixed(4);
+        var gap = sum - d.headline_bias;
+        document.getElementById("ch10x-gap").textContent =
+          (gap >= 0 ? "+" : "") + gap.toFixed(4);
+        var v = document.getElementById("ch10x-i101-verdict");
+        var nEnabled = Object.keys(state).filter(function (k) { return state[k]; }).length;
+        if (nEnabled === 3) {
+          v.innerHTML = '<span class="ch10x-verdict-label">All three enabled</span>' +
+            "Naive sum " + sum.toFixed(4) + " vs headline " + d.headline_bias.toFixed(4) +
+            " — close, not exact. " + esc(d.sum_note);
+        } else {
+          v.innerHTML = '<span class="ch10x-verdict-label">Partial</span>' +
+            nEnabled + " of 3 contributions enabled; this is NOT a valid partial-bias " +
+            "reconstruction — each row was measured against its own control, not against " +
+            "the other two held fixed.";
+        }
+      }
+
+      document.querySelectorAll("#ch10x-toggle-row button").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var c = btn.getAttribute("data-c");
+          state[c] = !state[c];
+          btn.setAttribute("aria-pressed", String(state[c]));
+          draw();
+        });
+      });
+      draw();
+
+      table(
+        document.getElementById("ch10x-i101-table"),
+        ["contribution", "value", "row", "quote"],
+        d.contributions.map(function (c) {
+          return [esc(c.label), (c.value >= 0 ? "+" : "") + c.value, esc(c.row), esc(c.quote)];
+        }).concat([[
+          "restored-arm null", "+" + d.restored_arm_null.value + " ± " + d.restored_arm_null.sem,
+          esc(d.restored_arm_null.row), esc(d.restored_arm_null.quote),
+        ]])
+      );
+    });
+
+    // ===============================================================
+    // I10X.2 — verdict archaeology
+    // ===============================================================
+    Book.loadJSON("data/ch10x_timeline.json").then(function (d) {
+      var E = d.events;
+      var xs = E.map(function (_e, i) { return i; });
+
+      function traces(sel) {
+        return [{
+          x: xs, y: xs.map(function () { return 0; }), mode: "markers",
+          marker: {
+            size: xs.map(function (i) { return i === sel ? 16 : 9; }),
+            color: E.map(function (e) { return KIND_COLOR[e.kind]; }),
+            line: { width: xs.map(function (i) { return i === sel ? 3 : 0; }), color: ink() },
+          },
+          text: E.map(function (e) { return e.date + " · " + e.kind; }),
+          hovertemplate: "%{text}<extra></extra>",
+        }];
+      }
+      var plot = Book.themedPlot("ch10x-tl-plot", traces(0), function () {
+        var L = baseLayout("", "");
+        L.xaxis.tickmode = "array";
+        L.xaxis.tickvals = xs;
+        L.xaxis.ticktext = E.map(function (e) { return e.date.slice(5); });
+        L.xaxis.tickangle = -60;
+        L.xaxis.tickfont = { size: 9 };
+        L.yaxis.visible = false;
+        L.yaxis.range = [-1, 1];
+        L.margin.b = 74;
+        L.margin.t = 10;
+        return L;
+      });
+
+      var card = document.getElementById("ch10x-tl-card");
+      function kindBadge(kind) {
+        return '<span class="ch10x-tl-kind" style="background:' + KIND_COLOR[kind] + '">' +
+          esc(kind) + "</span>";
+      }
+      function draw(i) {
+        plot.update(traces(i));
+        var e = E[i];
+        card.innerHTML = kindBadge(e.kind) +
+          "<strong>" + esc(e.date) + "</strong><br>" +
+          '<div style="margin-top:0.35rem;">' + esc(e.label) + "</div>" +
+          '<div style="margin-top:0.35rem;font-size:0.8rem;color:var(--muted);">' +
+          '<span class="prov-chip">' + esc(e.row) + "</span></div>";
+        document.getElementById("ch10x-tl-readout").textContent =
+          e.date + " (" + (i + 1) + "/" + E.length + ")";
+      }
+      var slider = document.getElementById("ch10x-tl-slider");
+      Book.gridSlider({ sliderEl: slider, readoutEl: null, steps: xs, onStep: function (_v, i) { draw(i); } });
+      slider.value = "0";
+      draw(0);
+
+      table(
+        document.getElementById("ch10x-tl-table"),
+        ["date", "kind", "event", "row"],
+        E.map(function (e) {
+          return [esc(e.date), kindBadge(e.kind), esc(e.label), esc(e.row)];
+        })
+      );
+    });
+  })();
+</script>

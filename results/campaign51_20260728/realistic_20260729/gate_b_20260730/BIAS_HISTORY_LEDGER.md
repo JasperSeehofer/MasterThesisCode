@@ -2619,3 +2619,47 @@ Author (verbatim): "book addendum is also approved."
 5. Session compute: ~26 CPU-h local + ~20 CPU-h cluster (incl. the agent's unauthorized full
    re-run of 6 cancelled tasks, disclosed) vs the ≤ ~23 CPU-h §8 line — overrun owned,
    attributable to the OOM restart + duplicate cluster work.
+
+## Row #178 — 2026-08-24 — Author ruling: "decisions approved" (verbatim; after the comprehension question on UNDISCRIMINATING was answered) — runbook 31 §1 items granted
+
+Orchestrator-derived itemization of the grant (per the attribution convention; correctable):
+1. **[RULE, granted]** UNDISCRIMINATING ratified as adjudicated (row #177; A21-B0-A/B/C bind).
+2. **[RULE, granted] Σ^φ production adoption** — the PENDING gate-ledger proposal proceeds to
+   implementation under /physics-change (measure-first complete: rows #176–#177); the stale
+   0.9119 comment corrected in the same commit.
+3. **[DO, granted]** Stage-0 finite-moment identity-statistic redesign opens.
+4. **[RULE→DO, granted]** The M_Ḡ common-mode question: re-derive or bound.
+5. **[DO, granted]** Ch 10½ "The Anatomy of the Bias" builds (design amendment 1; the banked
+   UNDISCRIMINATING state is the §5 ending).
+Author also received and acknowledged the plain-language explanation of the verdict's
+structural (not luck) character and the directional-signal caveats — recorded as the
+comprehension-first readout of record for this campaign leg.
+
+## Row #179 — 2026-08-24 — Row-#178 grants EXECUTED: Σ^φ ADOPTED in production ([PHYSICS] e35ea018); stage-0 finite-moment draft delivered with a NEW decision-relevant finding **F-0** (the intake filter's 41.8% class-asymmetric conditioning was outside the b0 blindness list — the 11/11 hint is NOT robust to it); Ch 10½ built
+
+1. **[PHYSICS, adopted]** Σ^φ no-BH divisor is production (`"auto"`→`"phi"` under
+   absolute_marginal; `"s3d"` = counterfactual; stale 0.9119→0.885984 [A11]; independently
+   verified COMMIT-READY; 1741 tests green, zero numeric drift outside the flag's own tests).
+   Pre-#178 banked arm artifacts are s3d-slot (code note + gate-ledger row).
+2. **[AGENT, DRAFT — stage 0, NOT adjudicated]** `CLAIM_B0_FINITE_MOMENT_20260824.md`:
+   **F-0** — production's `distance_relative_error < 0.10` intake filter removes 41.8% of b0i
+   draws (1397/2400 — corroborated by the banked score output's own row count),
+   class-asymmetrically (drops low-z/high-survival), and was in NEITHER the registration's
+   targets nor §7 blindness; the acceptance-conditioned identity targets become B-T → 1.591,
+   B-C → 0.527 (not 1 / not ⟨S̄_φ⟩) ⇒ **the row-#177 REPORTED-ONLY "B-T closer 11/11" hint is
+   not robust to this correction**. Also [AGENT]: M_Ḡ = β̄_Ḡ_φ exact for the odds statistic;
+   the ×2.34 miss decomposed (PA-4's B-C target itself wrong — sharp-GW target is
+   ⟨S̄_φ²⟩/⟨S̄_φ⟩ = 0.3532 — × F-0 conditioning × tail deficits); the §7(ii) common-mode
+   refuted as sole explanation by two-arm simultaneity. Candidate estimands ranked: C-A
+   bounded-transform family (variance ≤ 1/4n proven; RHS model-computable; banked-LHS paired
+   Δ = +0.008544 ± 0.000166); C-B paired catalogue-leg log-LR (bounded; zero-compute probe
+   Λ̄ = −0.02516 ± 0.00454, 12/12 negative, decomposition quantitatively closed — the probe is
+   what discovered F-0); C-C PIT/rank. **Everything [AGENT]-tagged: re-derivation required
+   before any registration (research-cycle rule 2); F-0's row-count corroboration is the only
+   [LOCAL] anchor so far.**
+3. **[DO, done]** Ch 10½ "The Anatomy of the Bias" built per design amendment 1 (page ~2.1k
+   words + gen_ch10x.py + 2 interactives + Museum Exhibit 15 `#ex-offcell-sbar`); the builder's
+   four disclosed paraphrase/structuring choices recorded in its report; §5 ends on the banked
+   UNDISCRIMINATING state, unresolved.
+4. Next session: adversarial adjudication of the stage-0 draft (F-0 first — it re-frames both
+   the b0 readout and the redesign targets), then registration of the chosen estimand.
