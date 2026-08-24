@@ -1404,10 +1404,12 @@ def evaluate(
     # completion_numerator_data_measure.md §6; AMENDMENT A-5): "ratio"
     # (default) is byte-identical to the pre-flag path.
     completion_event_measure: str = "ratio",
-    # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
-    # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)):
-    # "s3d" (default) is byte-identical to the pre-flag path.
-    catalogue_global_selection: str = "s3d",
+    # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
+    # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178):
+    # "auto" (default) resolves to "phi" under absolute_marginal (production),
+    # else "s3d" (byte-identical elsewhere). "s3d" is the explicit
+    # COUNTERFACTUAL under absolute_marginal.
+    catalogue_global_selection: str = "auto",
 ) -> None:
     from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
 

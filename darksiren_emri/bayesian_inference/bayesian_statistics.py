@@ -1745,11 +1745,17 @@ def _smeared_global_pdet_expectation(
 # survival S_3D in the completion/partition legs while the catalogue leg
 # carried the mass-aware S_4D at catalogue masses; nothing enforced the tower
 # identity S_3D = INTEGRAL phi S_4D dM and it failed by 8.8-11.4% (gate (ii-b)
-# r_phi(0.73) = 0.9119 +- 3e-7 on the production object), with 89-133% of the
+# r_phi(0.73) = 0.885984 on the production object, measured 2026-08-23;
+# supersedes the stale "0.9119" quote of unresolved pool provenance --
+# PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md [A11], row #176), with 89-133% of the
 # h-slope of r(h) being that mismatch rather than Malmquist physics. Path (A)
-# replaces S_3D by the phi-marginal of the SAME S_4D in all three slots, so
-# the tower identity holds by construction (r_phi == 1) and the surviving
-# ratio r_Malm = Sigma^4D/Sigma^phi is a pure Malmquist ratio.
+# replaces S_3D by the phi-marginal of the SAME S_4D in the completion and
+# catalogue-numerator slots, so the tower identity holds by construction there
+# (r_phi == 1). The no-BH catalogue GLOBAL DIVISOR is the fourth slot: with
+# catalogue_global_selection="phi" now the production default under
+# absolute_marginal (rows #171-#178), it too carries Sigma^phi, so r_phi == 1
+# now holds for that slot as well. The surviving ratio
+# r_Malm = Sigma^4D/Sigma^phi is a pure Malmquist ratio.
 #
 # References:
 #     Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7) — selection
@@ -2420,7 +2426,11 @@ def path_a_mixture_objects(
     channel's re-derived full-volume normalisation in the same convention).
     ``n_hat_w^phi`` is mass-blind by construction, so ``alpha_G^phi`` is the
     only place the Malmquist-selected catalogue masses enter — ``r_Malm`` is a
-    pure Malmquist ratio and ``r_phi == 1`` identically.
+    pure Malmquist ratio and ``r_phi == 1`` identically for the WITH-BH leg
+    this function assembles. The no-BH catalogue GLOBAL DIVISOR is a separate,
+    fourth slot not consumed here (see ``catalogue_global_selection``); it
+    carries its own r_phi, now also == 1 in production under the "phi"
+    default (rows #171-#178).
 
     Args:
         beta_G_phi: ``beta_G^phi(h)``.
@@ -3210,12 +3220,14 @@ class BayesianStatistics:
     # results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md).
     # "ratio" (default) is byte-identical to the pre-flag path.
     _completion_event_measure: str = "ratio"
-    # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
-    # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)).
-    # "s3d" (default) is byte-identical to the pre-flag path (the no-BH
-    # catalogue divisor is Sigma^3D = _global_cat_denom_no_bh). "phi" swaps
-    # the divisor to Sigma^phi = _global_cat_selection_phi (the SAME table
-    # already built by Path A for the weight chain) -- proposal item 2.
+    # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
+    # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178).
+    # evaluate()'s "auto" default resolves this to "phi" (Sigma^phi =
+    # _global_cat_selection_phi, the SAME table already built by Path A for
+    # the weight chain) under absolute_marginal, else "s3d" (the separately
+    # fitted Sigma^3D = _global_cat_denom_no_bh). This bare class-level
+    # fallback (pre-evaluate() / object.__new__ harnesses) stays the inert
+    # "s3d" literal, matching the other un-resolved instrumentation flags.
     _catalogue_global_selection: str = "s3d"
 
     def __init__(self) -> None:
@@ -3267,9 +3279,10 @@ class BayesianStatistics:
         # completion_numerator_data_measure.md §6; AMENDMENT A-5). "ratio"
         # (default) => the pre-flag production path, byte-identical.
         self._completion_event_measure: str = "ratio"
-        # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
-        # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)):
-        # "s3d" (default) => the pre-flag production path, byte-identical.
+        # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
+        # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178):
+        # "s3d" is this bare pre-evaluate() fallback; evaluate()'s "auto"
+        # default resolves to "phi" under absolute_marginal.
         self._catalogue_global_selection: str = "s3d"
 
     def evaluate(
@@ -3371,17 +3384,20 @@ class BayesianStatistics:
         # with-BH catalogue numerator is deliberately untouched (registered
         # invariant).
         catalogue_numerator_survival: str = "off",
-        # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
-        # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii);
-        # row #172): "s3d" (default) is byte-identical to the pre-flag path
-        # (the no-BH catalogue divisor is the separately fitted Sigma^3D).
-        # "phi" swaps ONLY that divisor to Sigma^phi (the SAME catalogue-
-        # weighted sum Path A already builds for the weight chain, on the
-        # same rows/weights/eligibility as Sigma^4D) -- makes the
-        # estimator's own r_phi==1 docstring invariant true for this slot.
-        # The with-BH leg is deliberately untouched. Not a production
-        # posterior until the verification plan is discharged.
-        catalogue_global_selection: str = "s3d",
+        # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
+        # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178).
+        # "auto" (default) resolves exactly like
+        # selection_in_completion_numerator: "phi" under
+        # normalization_mode="absolute_marginal" (the SAME catalogue-weighted
+        # sum Path A already builds for the weight chain, on the same
+        # rows/weights/eligibility as Sigma^4D -- makes the estimator's own
+        # r_phi==1 docstring invariant true for this slot), else "s3d" (every
+        # other normalization mode stays byte-identical -- the S_bar_phi
+        # table this divisor reads is only built under absolute_marginal).
+        # "s3d" is now the explicit COUNTERFACTUAL (the pre-adoption
+        # production path: the no-BH catalogue divisor is the separately
+        # fitted Sigma^3D). The with-BH leg is deliberately untouched.
+        catalogue_global_selection: str = "auto",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3469,25 +3485,38 @@ class BayesianStatistics:
                 "; K-flat CONSTANT table" if catalogue_numerator_survival == "phi_flat" else "",
             )
         self._catalogue_numerator_survival = catalogue_numerator_survival
-        # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
-        # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)).
-        if catalogue_global_selection not in ("s3d", "phi"):
+        # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
+        # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178).
+        _cat_glob_sel = str(catalogue_global_selection)
+        if _cat_glob_sel not in ("auto", "s3d", "phi"):
             raise ValueError(
-                "catalogue_global_selection must be 's3d' or 'phi', "
+                "catalogue_global_selection must be 'auto', 's3d' or 'phi', "
                 f"got {catalogue_global_selection!r}"
             )
-        if catalogue_global_selection == "phi":
+        if _cat_glob_sel == "auto":
+            # rows #172-#178: Sigma^phi is production under absolute_marginal
+            # (the S_bar_phi table it reads is only built there); every other
+            # normalization mode stays byte-identical on Sigma^3D.
+            _cat_glob_sel = "phi" if normalization_mode == "absolute_marginal" else "s3d"
+        if _cat_glob_sel == "phi":
             if normalization_mode != "absolute_marginal":
                 raise ValueError(
                     "catalogue_global_selection='phi' requires "
                     "normalization_mode='absolute_marginal' (the Sigma^phi table it "
                     f"reads is only built there); got {normalization_mode!r}"
                 )
-            _LOGGER.warning(
-                'COUNTERFACTUAL: catalogue_global_selection="phi" — no-BH '
-                "catalogue divisor Σ^φ ([P3-RPHI] slot). Not a production posterior."
+            _LOGGER.info(
+                '[PHYSICS] catalogue_global_selection="phi" ACTIVE (rows #172-#178): '
+                "the no-BH catalogue divisor is Σ^φ. This is the production "
+                "absolute_marginal estimator."
             )
-        self._catalogue_global_selection = catalogue_global_selection
+        elif normalization_mode == "absolute_marginal":
+            _LOGGER.warning(
+                'COUNTERFACTUAL: catalogue_global_selection="s3d" under '
+                "absolute_marginal — no-BH catalogue divisor Σ³ᴰ (the "
+                "pre-adoption [P3-RPHI] slot). Not a production posterior."
+            )
+        self._catalogue_global_selection = _cat_glob_sel
         # Prod2d closure counterfactual instrument (results/
         # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1,
         # P8): validated here the same way selection_in_completion_numerator

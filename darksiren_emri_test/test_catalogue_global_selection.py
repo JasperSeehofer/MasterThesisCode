@@ -1,14 +1,18 @@
-r"""Tests for the [P3-RPHI] fourth Path-A slot instrumentation counterfactual
-(``--catalogue_global_selection``).
+r"""Tests for the [P3-RPHI] fourth Path-A slot (``--catalogue_global_selection``),
+ADOPTED as production (rows #172-#178).
 
 Spec: ``docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md`` §2 ("New
-formula") and §6(ii) ("an instrumentation counterfactual flag
-(``catalogue_global_selection in {"s3d","phi"}``, default byte-identical)").
+formula") and §6(ii) (the instrumentation counterfactual flag,
+``catalogue_global_selection in {"auto","s3d","phi"}``). "auto" (default)
+resolves exactly like ``selection_in_completion_numerator``: "phi" under
+``normalization_mode="absolute_marginal"`` (production), else "s3d" (every
+other mode stays byte-identical to the pre-adoption path). "s3d" is now the
+explicit COUNTERFACTUAL under absolute_marginal.
 
 The flag touches exactly ONE read site: the no-BH catalogue divisor lookup in
-``p_Di`` (``L_cat_no_bh = A_ball / Sigma``). ``"s3d"`` (default) reads the
-separately fitted, mass-blind ``Sigma^3D`` (``_global_cat_denom_no_bh``);
-``"phi"`` reads ``Sigma^phi`` (``_global_cat_selection_phi``) -- the SAME
+``p_Di`` (``L_cat_no_bh = A_ball / Sigma``). ``"s3d"`` reads the separately
+fitted, mass-blind ``Sigma^3D`` (``_global_cat_denom_no_bh``); ``"phi"``
+reads ``Sigma^phi`` (``_global_cat_selection_phi``) -- the SAME
 catalogue-weighted sum Path A already builds (on the same rows/weights/
 eligibility as ``Sigma^4D``) for the weight chain (``:3878``). The with-BH
 leg (``global_denom_with_bh``) is architecturally untouched: it is read from
@@ -21,7 +25,11 @@ patch (verified by an exhaustive grep of ``_global_cat_denom_no_bh`` across
 ``darksiren_emri/``) -- "scalar and batch parity" below means the SAME
 ``p_Di`` call, exercised through the mocked-pool batch-dispatch machinery
 ``_run_p_Di_phi`` already uses (i.e. the divisor swap is provably
-independent of host-batch mechanics).
+independent of host-batch mechanics). ``_run_p_Di_phi`` sets the RESOLVED
+instance attribute directly (bypassing ``evaluate()``'s "auto" resolution,
+same as every other counterfactual-cell harness in this test suite); the
+resolution logic itself is exercised separately, through ``evaluate()``, in
+the "(b) mode guard" section below.
 
 CPU-only; no GPU, no real pool.
 """
@@ -206,7 +214,7 @@ def test_construct_level_divisor_object_identity() -> None:
 def test_evaluate_rejects_an_unknown_value() -> None:
     """``BayesianStatistics.evaluate`` validates the flag value itself."""
     instance = object.__new__(BayesianStatistics)
-    with pytest.raises(ValueError, match="must be 's3d' or 'phi'"):
+    with pytest.raises(ValueError, match="must be 'auto', 's3d' or 'phi'"):
         BayesianStatistics.evaluate(
             instance,
             galaxy_catalog=MagicMock(),
@@ -216,7 +224,7 @@ def test_evaluate_rejects_an_unknown_value() -> None:
         )
 
 
-def test_evaluate_requires_absolute_marginal_for_phi() -> None:
+def test_evaluate_requires_absolute_marginal_for_explicit_phi() -> None:
     """The Sigma^phi table only exists in ``absolute_marginal``; say so loudly."""
     instance = object.__new__(BayesianStatistics)
     with pytest.raises(ValueError, match="absolute_marginal"):
@@ -230,10 +238,54 @@ def test_evaluate_requires_absolute_marginal_for_phi() -> None:
         )
 
 
-def test_evaluate_accepts_phi_under_absolute_marginal(
+def _reach_catalogue_global_selection(instance: BayesianStatistics, **kwargs: Any) -> None:
+    """Reach the ``catalogue_global_selection`` validation block, then abort on
+    the very next (unrelated) validation so the rest of ``evaluate()`` need
+    not be mocked -- ``catalogue_mass_error_scale != 1.0`` without
+    ``'inflated'`` raises deterministically right after our block.
+    """
+    with pytest.raises(ValueError, match="catalogue_mass_overlap"):
+        BayesianStatistics.evaluate(
+            instance,
+            galaxy_catalog=MagicMock(),
+            cosmological_model=MagicMock(),
+            h_value=0.73,
+            catalogue_mass_error_scale=2.0,
+            **kwargs,
+        )
+
+
+def test_evaluate_accepts_explicit_phi_under_absolute_marginal(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The valid combination passes validation and reaches the COUNTERFACTUAL log."""
+    """Explicit ``"phi"`` under absolute_marginal is now PRODUCTION -- it
+    resolves, is stored, and logs the [PHYSICS] ACTIVE line, not a
+    COUNTERFACTUAL warning."""
+    import darksiren_emri.bayesian_inference.bayesian_statistics as bs_mod
+
+    logged: list[str] = []
+    monkeypatch.setattr(
+        bs_mod._LOGGER,
+        "info",
+        lambda msg, *a, **k: logged.append(msg % a if a else msg),
+    )
+    instance = object.__new__(BayesianStatistics)
+    _reach_catalogue_global_selection(
+        instance,
+        normalization_mode="absolute_marginal",
+        catalogue_global_selection="phi",
+    )
+    assert instance._catalogue_global_selection == "phi"
+    assert any(
+        "[PHYSICS]" in m and "catalogue_global_selection" in m and "ACTIVE" in m for m in logged
+    )
+
+
+def test_evaluate_explicit_s3d_under_absolute_marginal_is_the_counterfactual(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Explicit ``"s3d"`` under absolute_marginal is the pre-adoption
+    COUNTERFACTUAL cell (rows #172-#178) and logs as such."""
     import darksiren_emri.bayesian_inference.bayesian_statistics as bs_mod
 
     logged: list[str] = []
@@ -243,22 +295,46 @@ def test_evaluate_accepts_phi_under_absolute_marginal(
         lambda msg, *a, **k: logged.append(msg % a if a else msg),
     )
     instance = object.__new__(BayesianStatistics)
-    # Reach the catalogue_global_selection validation block, then abort on the
-    # very next (unrelated) validation so the rest of evaluate() need not be
-    # mocked -- catalogue_mass_error_scale != 1.0 without 'inflated' raises
-    # deterministically right after our block.
-    with pytest.raises(ValueError, match="catalogue_mass_overlap"):
-        BayesianStatistics.evaluate(
-            instance,
-            galaxy_catalog=MagicMock(),
-            cosmological_model=MagicMock(),
-            h_value=0.73,
-            normalization_mode="absolute_marginal",
-            catalogue_global_selection="phi",
-            catalogue_mass_error_scale=2.0,
-        )
-    assert instance._catalogue_global_selection == "phi"
+    _reach_catalogue_global_selection(
+        instance,
+        normalization_mode="absolute_marginal",
+        catalogue_global_selection="s3d",
+    )
+    assert instance._catalogue_global_selection == "s3d"
     assert any("COUNTERFACTUAL" in m and "catalogue_global_selection" in m for m in logged)
+
+
+def test_evaluate_auto_resolves_to_phi_under_absolute_marginal() -> None:
+    """(a) "auto" (the default) resolves to "phi" under absolute_marginal --
+    the production behaviour, item 1 of the adoption."""
+    instance = object.__new__(BayesianStatistics)
+    _reach_catalogue_global_selection(
+        instance,
+        normalization_mode="absolute_marginal",
+        catalogue_global_selection="auto",
+    )
+    assert instance._catalogue_global_selection == "phi"
+
+
+def test_evaluate_auto_resolves_to_s3d_under_generator_marginal() -> None:
+    """(a) "auto" resolves to "s3d" under every OTHER normalization mode --
+    byte-identical to the pre-adoption path there."""
+    instance = object.__new__(BayesianStatistics)
+    _reach_catalogue_global_selection(
+        instance,
+        normalization_mode="generator_marginal",
+        catalogue_global_selection="auto",
+    )
+    assert instance._catalogue_global_selection == "s3d"
+
+
+def test_evaluate_default_omits_the_kwarg_and_still_resolves_to_phi() -> None:
+    """The unqualified default (kwarg omitted entirely) is "auto", so the
+    production call site (no ``--catalogue_global_selection`` passed) gets
+    "phi" under absolute_marginal without anyone touching the flag."""
+    instance = object.__new__(BayesianStatistics)
+    _reach_catalogue_global_selection(instance, normalization_mode="absolute_marginal")
+    assert instance._catalogue_global_selection == "phi"
 
 
 # ===========================================================================
@@ -462,19 +538,47 @@ def test_phi_no_bh_leg_is_degree_matched_under_the_weight_chain_scaling() -> Non
     assert scaled_s3d["L_cat_no_bh"] == pytest.approx(base_s3d["L_cat_no_bh"], rel=1e-12, abs=0.0)
 
 
+def test_degree_test_passes_on_the_default_path() -> None:
+    """(e) The S̄->cS̄ degree test now passes on the DEFAULT path.
+
+    ``evaluate()``'s "auto" default resolves to the literal "phi" under
+    absolute_marginal (:func:`test_evaluate_auto_resolves_to_phi_under_absolute_marginal`),
+    which is exactly the string ``p_Di``'s read site dispatches on -- so the
+    invariance already demonstrated for explicit "phi" above IS the
+    default-path result; this test pins that equivalence directly rather
+    than leaving it implicit.
+    """
+    c = 3.7
+    base_default = _run_p_Di_phi(catalogue_global_selection="phi")
+    scaled_default = _run_p_Di_phi(
+        catalogue_global_selection="phi",
+        beta_G_phi=_BETA_G_PHI * c,
+        sigma_phi=_SIGMA_PHI * c,
+    )
+    assert scaled_default["combined_no_bh"] == pytest.approx(
+        base_default["combined_no_bh"], rel=1e-12, abs=0.0
+    )
+
+
 # ===========================================================================
 # CLI plumbing
 # ===========================================================================
-def test_cli_flag_defaults_to_s3d() -> None:
+def test_cli_flag_defaults_to_auto() -> None:
     args = Arguments.create([".", "--evaluate"])
-    assert args.catalogue_global_selection == "s3d"
-    assert args.to_dict()["catalogue_global_selection"] == "s3d"
+    assert args.catalogue_global_selection == "auto"
+    assert args.to_dict()["catalogue_global_selection"] == "auto"
 
 
 def test_cli_flag_parses_and_lands_in_run_metadata_dict() -> None:
     args = Arguments.create([".", "--evaluate", "--catalogue_global_selection", "phi"])
     assert args.catalogue_global_selection == "phi"
     assert args.to_dict()["catalogue_global_selection"] == "phi"
+
+
+def test_cli_flag_accepts_explicit_s3d() -> None:
+    args = Arguments.create([".", "--evaluate", "--catalogue_global_selection", "s3d"])
+    assert args.catalogue_global_selection == "s3d"
+    assert args.to_dict()["catalogue_global_selection"] == "s3d"
 
 
 def test_cli_flag_rejects_unknown_values() -> None:

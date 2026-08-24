@@ -356,15 +356,16 @@ class Arguments:
 
     @property
     def catalogue_global_selection(self) -> str:
-        """[P3-RPHI] the fourth Path-A slot instrumentation counterfactual
-        (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)).
-        's3d' (default) is byte-identical to the pre-flag path: the no-BH
-        catalogue divisor is the separately fitted Sigma^3D
-        (``_global_cat_denom_no_bh``). 'phi' swaps ONLY that divisor to
-        Sigma^phi (``_global_cat_selection_phi``, the same catalogue-weighted
-        sum Path A already builds for the weight chain, on the same
-        rows/weights/eligibility as Sigma^4D). Requires
-        --normalization_mode absolute_marginal. Never a production posterior.
+        """[P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
+        PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178).
+        'auto' (default) resolves to 'phi' under --normalization_mode
+        absolute_marginal (production: the no-BH catalogue divisor is
+        Sigma^phi, ``_global_cat_selection_phi`` -- the same catalogue-
+        weighted sum Path A already builds for the weight chain, on the same
+        rows/weights/eligibility as Sigma^4D), else 's3d' (every other
+        normalization mode stays byte-identical on the separately fitted
+        Sigma^3D, ``_global_cat_denom_no_bh``). 's3d' is the explicit
+        COUNTERFACTUAL under absolute_marginal.
         """
         return str(self._parsed_arguments.catalogue_global_selection)
 
@@ -966,19 +967,21 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--catalogue_global_selection",
         type=str,
-        choices=["s3d", "phi"],
-        default="s3d",
+        choices=["auto", "s3d", "phi"],
+        default="auto",
         help=(
-            "[P3-RPHI] the fourth Path-A slot instrumentation counterfactual "
-            "(docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/"
-            "§6(ii)). 's3d' (default) is byte-identical to the pre-flag "
-            "behaviour: the no-BH catalogue divisor is the separately fitted "
-            "Sigma^3D. 'phi' swaps ONLY that divisor to Sigma^phi (the SAME "
+            "[P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/"
+            "PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-"
+            "#178). 'auto' (default) resolves to 'phi' under "
+            "--normalization_mode absolute_marginal (the production "
+            "behaviour: the no-BH catalogue divisor is Sigma^phi, the SAME "
             "catalogue-weighted sum Path A already builds for the weight "
-            "chain, on the same rows/weights/eligibility as Sigma^4D); the "
-            "with-BH leg is deliberately untouched. Requires "
-            "--normalization_mode absolute_marginal. Never a production "
-            "posterior."
+            "chain, on the same rows/weights/eligibility as Sigma^4D), else "
+            "'s3d' (every other normalization mode stays byte-identical). "
+            "'s3d' is the explicit COUNTERFACTUAL under absolute_marginal: "
+            "the no-BH catalogue divisor is the separately fitted Sigma^3D "
+            "(the pre-adoption production behaviour). The with-BH leg is "
+            "deliberately untouched in either case."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

@@ -319,6 +319,11 @@ REDUCED_CATALOGUE_MD5 = "c52c13b5cab61f6b3f04bbe202550969"
 # row #119 bridge; regenerating a banked off-cell artifact requires passing
 # selection_in_completion_numerator="off" EXPLICITLY (the O6 GATE D6 /
 # P3 GATE R-P3 pattern).
+# Sigma^phi-slot adoption note (row #178, 2026-08-24): catalogue_global_selection
+# defaults to "auto" -> "phi" under absolute_marginal, so every arm/harness run from
+# this commit onward uses the Sigma^phi no-BH divisor. ALL banked arm artifacts
+# produced before row #178 are s3d-slot; regenerating one byte-identically requires
+# passing catalogue_global_selection="s3d" explicitly.
 PRODUCTION_FLAGS: dict[str, str] = {
     "--normalization_mode": "absolute_marginal",
     "--host_z_kernel": "volume_deconv",
@@ -2217,10 +2222,11 @@ def run_mirror_seed_inprocess(
     ],
     completion_event_measure: str = "ratio",
     catalogue_numerator_survival: str = "off",
-    # [P3-RPHI] the fourth Path-A slot instrumentation counterfactual
-    # (docs/derivations/PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii));
-    # scalar twin of the same semantics. "s3d" (default) is byte-identical.
-    catalogue_global_selection: str = "s3d",
+    # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
+    # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178);
+    # scalar twin of the same semantics. "auto" (default) resolves to "phi"
+    # under absolute_marginal (production), else "s3d".
+    catalogue_global_selection: str = "auto",
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
 
