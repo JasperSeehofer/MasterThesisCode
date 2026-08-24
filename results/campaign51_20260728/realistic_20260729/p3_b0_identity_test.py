@@ -522,6 +522,38 @@ def _capture_root_log(log_path: Path) -> Iterator[None]:
         root.setLevel(old_level)
 
 
+OUT_ROOT_DEFAULT: Path = THIS_DIR / "p3_b0_work"
+
+
+def _meta_csv(meta: dict[str, Any]) -> Path:
+    """Resolve a run meta's diagnostics CSV, falling back to the local mirrored layout.
+
+    PA-16 retrieval note (2026-08-24): cluster-run metas record the CLUSTER work-root path in
+    ``diagnostics_csv``; the retrieval mirrors the CSV into the local out-root layout
+    (``<out>/<arm>_<seed>_work/seed<seed>/simulations/diagnostics/event_likelihoods.csv``,
+    sha256-manifest-verified). The meta itself is A22 evidence and is never edited -- this
+    resolver prefers the recorded path and falls back to the mirror, refusing loudly if neither
+    exists.
+    """
+    recorded = Path(meta["diagnostics_csv"])
+    if recorded.is_file():
+        return recorded
+    arm = meta.get("arm")
+    seed = meta.get("seed")
+    work_root = meta.get("work_root", "")
+    sub = Path(work_root).name if work_root else (f"{arm}_{seed}_work" if arm and seed else None)
+    if sub:
+        local = (
+            OUT_ROOT_DEFAULT / sub / f"seed{seed}" / "simulations/diagnostics/event_likelihoods.csv"
+        )
+        if local.is_file():
+            return local
+    raise SystemExit(
+        f"REFUSED: diagnostics CSV not found at recorded path {recorded} nor local mirror -- "
+        f"meta arm={arm} seed={seed}"
+    )
+
+
 def _banked_b0_csv_path(seed: int) -> Path:
     return (
         BANKED_B0_CSV_ROOT
@@ -984,7 +1016,7 @@ def stage_replica(out_root: Path) -> dict[str, Any]:
         venue="b0",
         completion_cell="off",
     )
-    fresh = pd.read_csv(meta["diagnostics_csv"])
+    fresh = pd.read_csv(_meta_csv(meta))
     banked_csv = _banked_b0_csv_path(REPLICA_SEED)
     gate = _compare_columns(fresh, banked_csv, GATE_RB0_COLUMNS, GATE_RB0_RTOL)
     gate["gate"] = "GATE_R-B0"
@@ -1171,7 +1203,7 @@ def stage_rescore(out_root: Path) -> dict[str, Any]:
             missing.append(seed)
             continue
         bt_meta = json.loads(meta_path.read_text())
-        at = _rows_at_h(Path(bt_meta["diagnostics_csv"]), H_GEN)
+        at = _rows_at_h(_meta_csv(bt_meta), H_GEN)
         alpha_g_phi = at["alpha_G_phi"].to_numpy(dtype=np.float64)
         r_malm = at["r_Malm"].to_numpy(dtype=np.float64)
         d_tilde_phi = at["D_tilde_phi"].to_numpy(dtype=np.float64)
@@ -1273,8 +1305,8 @@ def _gate_e_b0a_same_venue(
     scored as the per-h coefficient of variation, ``std(ratio)/mean(ratio) < cv_tol``, AND
     100% of that h's rows are PAIRED-LIVE (a support mismatch at any h fails that node).
     """
-    bc_df = pd.read_csv(bc_seed1_meta["diagnostics_csv"])
-    eb0a_df = pd.read_csv(eb0a_meta["diagnostics_csv"])
+    bc_df = pd.read_csv(_meta_csv(bc_seed1_meta))
+    eb0a_df = pd.read_csv(_meta_csv(eb0a_meta))
     per_h: dict[str, dict[str, Any]] = {}
     all_pass = True
     for h in h_grid:
@@ -1306,7 +1338,14 @@ def _gate_e_b0a_same_venue(
         mean_r = float(np.mean(ratio))
         cv = float(np.std(ratio) / abs(mean_r)) if mean_r != 0.0 else float("nan")
         fraction_paired_live = n_live / n_total
-        h_pass = bool(np.isfinite(cv) and cv < cv_tol) and fraction_paired_live >= 1.0
+        # Registered form (PA-13(a), amendment-18 discipline): the constant-ratio
+        # requirement holds on 100% OF PAIRED-LIVE rows -- the CV check IS that
+        # requirement. Rows outside PAIRED-LIVE are the PA-6(a) dead rows, owned
+        # by the dead-row register, not this gate (first implementation wrongly
+        # demanded fraction_paired_live >= 1.0 over ALL rows and failed on the
+        # one both-arm dead row; fixed 2026-08-24, gates re-scored, fraction
+        # still reported).
+        h_pass = bool(np.isfinite(cv) and cv < cv_tol)
         all_pass = all_pass and h_pass
         per_h[str(h)] = {
             "n_live": n_live,
@@ -1320,7 +1359,7 @@ def _gate_e_b0a_same_venue(
         "gate": "GATE_E-B0(a)_same_venue",
         "pass": bool(all_pass),
         "cv_tol": cv_tol,
-        "min_fraction_paired_live": 1.0,
+        "paired_live_fraction_reported_only": True,
         "denominator": "PAIRED-LIVE per h: rows with L_cat_no_bh > 0 in both B-C and eb0a",
         "per_h": per_h,
         "reference": f"{REGISTRATION_SECTION}, PA-13(a) GATE E-B0(a) same-venue fix",
@@ -1348,8 +1387,8 @@ def _gate_e_b0(
         check, outside the registered statistics" -- see :func:`_scalar_path_smoke` (disclosed
         gap: not attempted, honestly reported).
     """
-    replica_csv = Path(replica_meta["diagnostics_csv"])
-    bc_seed1_csv = Path(bc_metas[REPLICA_SEED]["diagnostics_csv"])
+    replica_csv = _meta_csv(replica_meta)
+    bc_seed1_csv = _meta_csv(bc_metas[REPLICA_SEED])
     replica_at = _rows_at_h(replica_csv, H_GEN)
     bc_seed1_at = _rows_at_h(bc_seed1_csv, H_GEN)
     merged_a = replica_at.merge(
@@ -1372,8 +1411,8 @@ def _gate_e_b0(
     per_seed_fraction_b: dict[int, float] = {}
     per_seed_paired_live: dict[int, int] = {}
     for seed in bc_metas:
-        bc_at = _rows_at_h(Path(bc_metas[seed]["diagnostics_csv"]), H_GEN)
-        bt_at = _rows_at_h(Path(bt_metas[seed]["diagnostics_csv"]), H_GEN)
+        bc_at = _rows_at_h(_meta_csv(bc_metas[seed]), H_GEN)
+        bt_at = _rows_at_h(_meta_csv(bt_metas[seed]), H_GEN)
         merged_b = bc_at.merge(
             bt_at[["event_idx", "L_cat_no_bh"]], on="event_idx", suffixes=("_bc", "_bt")
         )
@@ -1448,7 +1487,13 @@ def _gate_l_b0(
     def _check(metas: dict[int, dict[str, Any]]) -> dict[int, dict[str, bool]]:
         out: dict[int, dict[str, bool]] = {}
         for seed, meta in metas.items():
-            text = Path(meta["log_path"]).read_text()
+            log_path = Path(meta["log_path"])
+            if not log_path.is_file():
+                # PA-16 retrieval: cluster metas record cluster log paths; the
+                # retrieval mirrors logs to OUT_ROOT_DEFAULT/<name> (same rule
+                # as _meta_csv; meta never edited).
+                log_path = OUT_ROOT_DEFAULT / log_path.name
+            text = log_path.read_text()
             out[seed] = {
                 "fused_present": FUSED_LOG_SUBSTRING in text,
                 "sigma_phi_present": SIGMA_PHI_LOG_SUBSTRING in text,
@@ -1576,7 +1621,7 @@ def _sec2_identity_profile(
     for h in h_grid:
         vals = []
         for meta in metas.values():
-            at = _rows_at_h(Path(meta["diagnostics_csv"]), h)
+            at = _rows_at_h(_meta_csv(meta), h)
             score = _identity_score(at)
             if score["I_s"] is not None:
                 vals.append(score["I_s"])
@@ -1609,7 +1654,7 @@ def _sec4_floor_mass(metas: dict[int, dict[str, Any]]) -> dict[str, Any]:
     rows = [
         {
             "seed": seed,
-            "floor_node_mass": floor_mass(Path(meta["diagnostics_csv"])),
+            "floor_node_mass": floor_mass(_meta_csv(meta)),
         }
         for seed, meta in sorted(metas.items())
     ]
@@ -1626,7 +1671,7 @@ def _sec5_score_at_truth(metas: dict[int, dict[str, Any]]) -> dict[str, Any]:
     """
     per_seed = []
     for seed, meta in sorted(metas.items()):
-        df = pd.read_csv(meta["diagnostics_csv"])
+        df = pd.read_csv(_meta_csv(meta))
         full_vals, pure_vals, gate_i, n_events = o2.load_matrices(df)
         per_seed.append(
             {
@@ -1654,7 +1699,7 @@ def _fleet_identity(metas: dict[int, dict[str, Any]]) -> dict[str, Any]:
     this arm's per-seed k-hats (the prereg's "per-arm" wording, disclosed convention)."""
     per_seed = []
     for seed, meta in sorted(metas.items()):
-        at = _rows_at_h(Path(meta["diagnostics_csv"]), H_GEN)
+        at = _rows_at_h(_meta_csv(meta), H_GEN)
         score = _identity_score(at)
         score["seed"] = seed
         per_seed.append(score)

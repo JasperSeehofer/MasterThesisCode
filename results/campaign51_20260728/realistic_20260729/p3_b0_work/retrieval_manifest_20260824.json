@@ -1,0 +1,331 @@
+{
+  "description": "Retrieval manifest for the b0 identity-test fleet remainder (seeds 900105-900112, arms bc/bt) executed on bwUniCluster and pulled back to local p3_b0_work/.",
+  "retrieved_at_utc": "2026-08-24T05:26:57.065585Z",
+  "cluster_repo": "~/darksiren-emri",
+  "cluster_branch": "p3/b0-identity-fleet",
+  "cluster_head_commit": "3bd6b564bc900751fcbed8df16fb5fad3b275edb",
+  "cluster_tag": "p3-b0-identity-fleet-3bd6b564",
+  "local_head_commit": "3bd6b564bc900751fcbed8df16fb5fad3b275edb",
+  "cluster_out_root": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_b0_identity_fleet_20260823",
+  "slurm_jobs": {
+    "6513247": "original 16-task array (0-15); 3 COMPLETED (6,7,14,15 -- note 15 completed too, so 4), 5 CANCELLED (0,3,4,5,13, external SIGTERM/0%-CPU-accounting anomaly), 7 indices (1,2,8,9,10,11,12) vanished from SLURM bookkeeping without ever running (unexplained)",
+    "6531162": "resubmit of array index 0 (bc/900105) -- COMPLETED",
+    "6531789": "resubmit of array index 3 (bc/900108) -- COMPLETED",
+    "6541282": "resubmit of array indices 5,13 (bc/900110, bt/900110) with srun-wrapped fix -- COMPLETED",
+    "6547137": "resubmit of vanished array indices 1,2,4,8,9,10,11,12 with srun-wrapped fix -- 5 COMPLETED (1,2,4,8,9), 3 TIMEOUT at 03:00:15 (10,11,12 -- bt/900107,900108,900109, packed 3-per-node contention)",
+    "6556851": "resubmit of TIMEOUT array indices 10,11,12 (bt/900107,900108,900109) with --time=05:00:00, less-packed nodes -- COMPLETED"
+  },
+  "anomalies": [
+    "Bare `.venv/bin/python` invocation (no srun) in the sbatch script reported CPU Efficiency 0.00% in sacct despite real memory growth (multiprocessing pool doing genuine work, RSS up to 8.6GB) -- a cluster-side mechanism appears to SIGTERM jobs matching that false-idle accounting signature. Direct evidence: array tasks 5 and 13 (different array indices, different start times, different nodes) were both CANCELLED at the IDENTICAL wall-clock instant 2026-08-24T01:52:25.153/.154 -- ruling out per-job timeout/OOM and pointing to an external, time-triggered reaper. Mitigation: wrapped the python invocation in `srun --ntasks=1 --cpus-per-task=$SLURM_CPUS_PER_TASK` (see p3_b0_fleet.sbatch on the cluster), after which slurmstepd correctly attributed CPU time (sstat showed real, nonzero MaxRSS via job steps) and no further anomalous kills occurred.",
+    "7 of the original 16 array indices (1,2,8,9,10,11,12) vanished entirely from SLURM's own bookkeeping (no sacct row, no output file, removed from the pending range) without ever running -- root cause undetermined (not a QOS/GrpTRES limit; PreemptMode=OFF on both partitions; no crontab/at jobs on the login node). All were successfully resubmitted and completed.",
+    "3 tasks packed onto a single node (bt/900107,900108,900109 under job 6547137) ran the full 3-hour original time limit and hit TIMEOUT (03:00:15) due to node-packing contention on the heavier bt arm; resubmitted individually-spread with --time=05:00:00 margin and completed in ~50-55 min each once given less-contended nodes.",
+    "PRE-EXISTING LOCAL CONTAMINATION (discovered during retrieval verification, not introduced by this retrieval): work directories <arm>_<seed>_work/seed<seed>/ for seed in 900105-900110 (both bc and bt arms) already contained ~142 files each (selection_tables_h_*.json, simulations/cramer_rao_bounds.csv, simulations/fisher_quality*.{csv,pdf}, simulations/posteriors*/h_*.json) with local mtimes around 2026-08-23 21:46 CEST -- these are leftover partial writes from an EARLIER, ORPHANED local fleet attempt (fleet_bc.pid=2446636 / fleet_bt.pid=2446637, both dead processes, no meta.json ever written for these seeds locally) that ran further than the PA-16 pair-consistent-split boundary (seeds 900101-900104) before being killed, and predate this cluster retrieval. Only the 3 files this retrieval targeted (<arm>_<seed>_meta.json, <arm>_<seed>.log, <arm>_<seed>_work/seed<seed>/simulations/diagnostics/event_likelihoods.csv) were overwritten/added by this rsync and are VERIFIED byte-identical to the cluster copy via sha256 (spot-checked: bc_900106 diagnostics CSV and bt_900112 meta.json both match cluster-side sha256sum exactly). The surrounding ~142 sibling files per seed were NOT touched by this retrieval, are NOT guaranteed consistent with the cluster run's final numbers (they come from a run that never completed), and should not be read by any consumer -- only the 3 manifested files per seed are authoritative. Seeds 900111/900112 (both arms) have no such contamination (clean, only the retrieved files present) since the orphaned local run never reached them. Not deleted by this retrieval (destructive action on untracked local files, left for the author to dispose of after review)."
+  ],
+  "n_arm_seed_pairs": 16,
+  "files": [
+    {
+      "arm": "bc",
+      "seed": 900105,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900105_work/seed900105/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1211916,
+        "sha256": "facd1a8722dc4ea1429369289407042a5b58a92413988f181396bfbb2dbf32b5"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900105_meta.json",
+        "size_bytes": 1562,
+        "sha256": "f4766ae7c0496848e0878991ab3628b08052ef433bb6dc2f7ad4c9a2d6ff0452"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900105.log",
+        "size_bytes": 2427825,
+        "sha256": "64808c908f43ed7f1dd209b321c1048d738009c7fd6c6e865359bac1dd2da1d1"
+      }
+    },
+    {
+      "arm": "bc",
+      "seed": 900106,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900106_work/seed900106/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1353439,
+        "sha256": "330916c24ebc7c7084bcc63d2b1f2c80e10a05521d1641164ef89c67a4acd9be"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900106_meta.json",
+        "size_bytes": 1563,
+        "sha256": "6b04516c034752542b1eddec48e47c9a818a5bda9d6f90014ed9d4e56d1d4da1"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900106.log",
+        "size_bytes": 2684447,
+        "sha256": "6f24cdc14c65d7eda2d91134202213bf8b99c5647bb4868e7af22bb07f1f360a"
+      }
+    },
+    {
+      "arm": "bc",
+      "seed": 900107,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900107_work/seed900107/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1222910,
+        "sha256": "58e60db8e34c5cba6cae4dd36e77ca82654906793b16730b79491b4304ac748f"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900107_meta.json",
+        "size_bytes": 1561,
+        "sha256": "8293abf8ad4cfd3412ec97f5711792165fd30a71f895d3660b7830d7770b650b"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900107.log",
+        "size_bytes": 2444822,
+        "sha256": "c5ab47417944aa65922f4b75dcb0c63523f35196d0edf8b29e711d58284268b4"
+      }
+    },
+    {
+      "arm": "bc",
+      "seed": 900108,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900108_work/seed900108/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1318779,
+        "sha256": "57c3e16d660635150ec20f3993fb8edddd51320a2bd45e6ad4e2fe81e91b8f9a"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900108_meta.json",
+        "size_bytes": 1561,
+        "sha256": "2ee5dd5960e7ea7fc7232c97bb594d7842d3632b548a3c29e1773556f5d98d2d"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900108.log",
+        "size_bytes": 2628673,
+        "sha256": "6eba822ca8931c6ec6d8c8f8b776a54d7f3890b9434334fb60006ce8bdc6d6bd"
+      }
+    },
+    {
+      "arm": "bc",
+      "seed": 900109,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900109_work/seed900109/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1177836,
+        "sha256": "f5648a639af9be2f605fa03c4679c2b39dde6d096e8c21856a67c2f2d5e5ca4e"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900109_meta.json",
+        "size_bytes": 1562,
+        "sha256": "5820bf78a5b641a7449a8339486702c6e7ef763432815fb6fb976c54292f32c7"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900109.log",
+        "size_bytes": 2362041,
+        "sha256": "dd908dbcad549a8017b611fc628eff35edd00dfcefc8c4f5dbfbc2cdb7966d62"
+      }
+    },
+    {
+      "arm": "bc",
+      "seed": 900110,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900110_work/seed900110/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1430341,
+        "sha256": "10fd28aa068fecf8aae530cdf73f434c95be0bbd46daf260ae6dfb509b7fe6a3"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900110_meta.json",
+        "size_bytes": 1560,
+        "sha256": "8664de709ce6eb77bf9561778a1d5d163c11dda293e5117810681e15e0298a5c"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900110.log",
+        "size_bytes": 2834549,
+        "sha256": "70d038087e963fea4895061c221fbceb2031cfdd9f6e4da77663a09a4268856d"
+      }
+    },
+    {
+      "arm": "bc",
+      "seed": 900111,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900111_work/seed900111/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1264559,
+        "sha256": "304b69dfc8109e27ad340bd3a63bfd9e83d9b6d89f68924e7f872e4fba32c2ef"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900111_meta.json",
+        "size_bytes": 1561,
+        "sha256": "ae1a727995021f329ad9d915477f54e4a7f1eb47e85a1aa8b30d442b955944be"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900111.log",
+        "size_bytes": 2532866,
+        "sha256": "0b76fcfe175db9c15c3677e2baba04d42b92cd097f4860ae999c5f60b2e9ba96"
+      }
+    },
+    {
+      "arm": "bc",
+      "seed": 900112,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900112_work/seed900112/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1232999,
+        "sha256": "8a50bef13b9273a7efcbc964be39ec9646e1fd6ce8d6593ad3a0d3c20d64a86a"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900112_meta.json",
+        "size_bytes": 1563,
+        "sha256": "7377c32edbcbd0486d6129448686b63e92c3e514e04a61d18d1cbc2c6d0399e7"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900112.log",
+        "size_bytes": 2472431,
+        "sha256": "aa5503793fdc0cd3fc37d8e2c84a9a746f5f698b4495fd0ae28f0768958ac301"
+      }
+    },
+    {
+      "arm": "bt",
+      "seed": 900105,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900105_work/seed900105/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1212834,
+        "sha256": "0657024b5de63cd82022866ba9221460ab66ed92fc66d6cb59f800dbfbbf39f8"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900105_meta.json",
+        "size_bytes": 1563,
+        "sha256": "bc2690ba9bbca8898fd716056cfda0653d212560d6cdb98e380e6b5809f16091"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900105.log",
+        "size_bytes": 2427843,
+        "sha256": "52ba4a127fe8774d010f13d5640b84c455a6d1001f9a3b4be69371f5a1901767"
+      }
+    },
+    {
+      "arm": "bt",
+      "seed": 900106,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900106_work/seed900106/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1354499,
+        "sha256": "a65bc70749c27598b8ec809607e894c1eb5f2523eee709953a2bbae69eae3e04"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900106_meta.json",
+        "size_bytes": 1561,
+        "sha256": "00985b5648a86e91fae3828acc47c8ea1ff0c85ac12c742a57d9a7afaa936bdf"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900106.log",
+        "size_bytes": 2684929,
+        "sha256": "de866b076cfde2e7dad405789b408da2fd921594a0ad0204e4a4166b17e14b6f"
+      }
+    },
+    {
+      "arm": "bt",
+      "seed": 900107,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900107_work/seed900107/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1223961,
+        "sha256": "77486c804517975072af1eda224a9a29c91a10e64d6a2eb537ccbc5f313b8fac"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900107_meta.json",
+        "size_bytes": 1560,
+        "sha256": "4d10f1b809ec3e7ff4d62362e2a2036b572601da51e0dbcab8b319b95cbece20"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900107.log",
+        "size_bytes": 2443967,
+        "sha256": "11ce8d657979022c7b6865de6e8ac7086b00dd87c541ebe5a7c7cae2a5b01830"
+      }
+    },
+    {
+      "arm": "bt",
+      "seed": 900108,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900108_work/seed900108/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1319943,
+        "sha256": "488ea0100d4e45abf98570547b2e223581fe29ec9aa525e87aef17fcc3dbad98"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900108_meta.json",
+        "size_bytes": 1562,
+        "sha256": "e709df9bc7b1bef3413ba6c222bb9fff38297645a1b7c1475bc36de9c88f4803"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900108.log",
+        "size_bytes": 2628147,
+        "sha256": "0aa1e281f0c04c0ff63a119c35445d40d7446bbe373546bf3a44612ee8eed74c"
+      }
+    },
+    {
+      "arm": "bt",
+      "seed": 900109,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900109_work/seed900109/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1178854,
+        "sha256": "9bd11f3afd240c7459135d109d37a8b084e95bc3b9d97d6ef6699c558002421d"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900109_meta.json",
+        "size_bytes": 1561,
+        "sha256": "187afc9e2273f5f0d6e82ffc651f353344a94929d257810156c46b96071a11ae"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900109.log",
+        "size_bytes": 2361853,
+        "sha256": "ea94f5f74a68fe61a54fa733e4339eee0159ca561dab6ba4ca0d8db08a6b9561"
+      }
+    },
+    {
+      "arm": "bt",
+      "seed": 900110,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900110_work/seed900110/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1431645,
+        "sha256": "3928452863fb4c0d8a2a3ff3e49a2ce55304d797e890ddcafef1f166921a898a"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900110_meta.json",
+        "size_bytes": 1562,
+        "sha256": "4ded5c3cf8ce9acbccc9025517d1ed4877b65a9417ac3210a484d5d45a4f251f"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900110.log",
+        "size_bytes": 2834360,
+        "sha256": "da29b6f58f28d2e42222609bd9f2a8078a00cef6ca410c04b91c155e35d7064e"
+      }
+    },
+    {
+      "arm": "bt",
+      "seed": 900111,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900111_work/seed900111/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1265703,
+        "sha256": "ca2f1ed1b63ab121d8d46a49484aaa9785bfbe5a8b3f8256783d8c7eff5c61d2"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900111_meta.json",
+        "size_bytes": 1561,
+        "sha256": "d068215158a5f54870263bf84e3e34ef616cc573b70f27df22437f6c2b701f20"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900111.log",
+        "size_bytes": 2532479,
+        "sha256": "d4d5b56948a8045512bf33f641d5337d20ec084e64c838ff1bfe26c1d6a860d5"
+      }
+    },
+    {
+      "arm": "bt",
+      "seed": 900112,
+      "diagnostics_csv": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900112_work/seed900112/simulations/diagnostics/event_likelihoods.csv",
+        "size_bytes": 1234041,
+        "sha256": "2f1cbbb8bd79e5c76aedb5e5c31e83b88d5b6a6ea4ba4e2ceefd2e42de6fed5f"
+      },
+      "meta_json": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900112_meta.json",
+        "size_bytes": 1562,
+        "sha256": "68606845d51d9939dd9910436574f022f82abb3420a5fa7fc4ba4e10cc7e14c0"
+      },
+      "log": {
+        "local_path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bt_900112.log",
+        "size_bytes": 2473337,
+        "sha256": "4586014cd7c88cd6309285207286d52216bf288b405006981fd07da821818b5e"
+      }
+    }
+  ]
+}

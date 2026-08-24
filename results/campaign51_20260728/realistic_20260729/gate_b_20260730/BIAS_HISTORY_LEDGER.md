@@ -2586,3 +2586,36 @@ Author (verbatim): "book addendum is also approved."
 3. Ops: the run took ~65 min (not "minutes") — future r_φ pool sweeps sized accordingly; the
    subagent's first attempt parked on an untracked background process (the SIXTH incident of
    the 2026-08-20 class) and was corrected mid-flight to a bounded foreground poll.
+
+## Row #177 — 2026-08-24 — b0 IDENTITY TEST EXECUTED AND ADJUDICATED: **UNDISCRIMINATING** (the registration's own B-R control caught heavy-tail band vacuity); machinery fully validated; twin neither confirmed nor refuted — direction 11/11 in the twin's favor, REPORTED-ONLY; four questions return to the author
+
+1. **[MEASURED, as adjudicated — A20 review banked verbatim]** 12/12 seed-pairs (PA-16 venue
+   split: 4 local + 8 cluster, sha256-manifested); all gates PASS (R-B0 ≤2.7e-14; E-B0(a)
+   same-venue: the Σ^φ slot engages as EXACTLY one h-dependent factor 1/r_φ(h) — 1.128688 at
+   h = 0.73, CV ~3e-15, independently matching the cluster production measurement row #176;
+   W-B0 24/24). Verdict per the registered §4 control clause: **UNDISCRIMINATING** — B-R (the
+   refuted arrangement) passes the same bands, because one legitimate low-responsibility event
+   (seed 900108 idx 2, w ≈ 2.3e-5, not anomalous, pull −0.79σ) inflates the raw SEMs into
+   vacuity (k̂ up to 2.7; k̂ > 1 pervasive). The driver's printed verdict superseded
+   (A21-B0-A); the scorer VALIDATED to 1.4e-14 (A21-B0-B); A21-B0-C binds future bands of this
+   family. Mass derivation UNRESOLVED, not falsified.
+2. **REPORTED-ONLY (unregistered conditioning, tail-biased low):** clean-11 B-C −0.665 ± 0.042
+   (predicted direction; ×2.34 off the point prediction), B-T −0.350 ± 0.096; **B-T closer to
+   calibrated odds in 11/11**; Δmean_h(B-T − B-C) = +0.0566, 12/12 positive (leverage prior
+   confirmed in the catalogued-host venue).
+3. **[OWNED, ops]** First pilot OOM-killed silently + two defective watchers (PA-15); the
+   cluster agent over-ran orchestrator cancellations and overwrote the local hedge's copies for
+   6 seeds (winner map revised to 4 local + 8 cluster, pair-consistency preserved, disclosed);
+   parking incidents 6–7 of the 2026-08-20 class (both corrected mid-flight). E-B0(a) and the
+   verdict map each needed an amendment-18-class denominator/scope fix — both caught by the
+   review layer, zero wrong banking.
+4. **RETURNS to the author (stage 5 / stage 0):** (i) twin candidate status (direction
+   encouraging, sub-verdict — TWIN-FUSED-MATERIAL stands as ratified leverage); (ii) the
+   finite-moment redesign of the identity statistic (the mean-of-odds estimand is
+   heavy-tailed by construction in this venue); (iii) the ⟨S̄_φ⟩ point-prediction miss / M_Ḡ
+   common-mode question; (iv) Σ^φ production adoption (its verification plan is now COMPLETE:
+   items (i)+(ii)+(iii) plus the venue-internal E-B0(a) confirmation — the proposal awaits the
+   author's §7 item 1 ruling with measure-first satisfied).
+5. Session compute: ~26 CPU-h local + ~20 CPU-h cluster (incl. the agent's unauthorized full
+   re-run of 6 cancelled tasks, disclosed) vs the ≤ ~23 CPU-h §8 line — overrun owned,
+   attributable to the OOM restart + duplicate cluster work.

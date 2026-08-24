@@ -354,3 +354,26 @@ every meta; the cluster checkout is synced to it and verified before submission)
 machine-split is banked per seed in the metas and disclosed to the A20 review; cross-machine
 float non-identity is bounded by the same ≤1e-12-class fallback reasoning as the
 multiprocessing gates — it affects both arms of a pair equally by construction.
+
+---
+
+## VERDICT (2026-08-24; all gates PASS; review banked verbatim in `A20_REVIEW_B0_VERDICT_20260824.md`; A21-B0-A/B/C adopted)
+
+**[MEASURED, as adjudicated]: UNDISCRIMINATING** — the §4 B-R control clause fires: the
+deliberately-wrong R-rescaled arrangement scores IDENTITY-PASS under the same bands as B-C/B-T,
+falsifying the bands' discriminating power in the realized k̂ ≈ 1–2.7 heavy-tail regime
+(one legitimate near-zero-responsibility event — seed 900108 idx 2, w ≈ 2.3e-5, listed-z pull
+−0.79σ — owns the fleet means). The driver's printed "MASS-DERIVATION-FALSIFIED" is VOID as a
+verdict quote (A21-B0-A: the verdict map dropped the control clause's "regardless of B-C/B-T"
+scope). The scorer itself is VALIDATED (A21-B0-B: the constructive identity holds to 1.4e-14;
+the coded control-FAIL compared against the superseded 1/R−1 target). Banked: all gates; the
+E-B0(a) venue-internal 1/r_φ(h) confirmation (ratio 1.128688 at h = 0.73, CV ~3e-15); the mass
+companion (C\* = 0.170472, ρ = 0.987771, ⟨S̄_φ⟩_w = 0.785133); per-seed vectors; secondary 3
+Δmean_h(B-T − B-C) = +0.0566 (12/12 positive). REPORTED-ONLY (unregistered conditioning,
+heavy-tail-biased low by an unquantified amount, never an arm verdict): clean-11-seed
+B-C = −0.665 ± 0.042 (its predicted sign/direction; ×2.34 off the ⟨S̄_φ⟩−1 point prediction),
+B-T = −0.350 ± 0.096, **B-T closer to calibrated odds in 11/11 clean seeds** (sign test
+p ≈ 1e-3). Returns to the author/stage 0: the mass derivation (unresolved), the twin
+(neither confirmed nor refuted; direction encouraging, sub-verdict), a finite-moment identity
+statistic redesign, and the M_Ḡ common-mode question. A21-B0-C binds any rerun of this family.
+**[ORCH-banked, provisional — awaiting the author's stage-5 ruling.]**

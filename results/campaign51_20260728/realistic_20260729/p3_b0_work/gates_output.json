@@ -1,0 +1,603 @@
+{
+  "GATE_E-B0": {
+    "gate": "GATE_E-B0",
+    "pass": true,
+    "a_sigma_phi_slot_same_venue": {
+      "gate": "GATE_E-B0(a)_same_venue",
+      "pass": true,
+      "cv_tol": 1e-09,
+      "paired_live_fraction_reported_only": true,
+      "denominator": "PAIRED-LIVE per h: rows with L_cat_no_bh > 0 in both B-C and eb0a",
+      "per_h": {
+        "0.5": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.2201661658591532,
+          "ratio_cv": 1.4279849340511354e-14,
+          "pass": true
+        },
+        "0.52": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.209398224256508,
+          "ratio_cv": 6.106934247239575e-15,
+          "pass": true
+        },
+        "0.54": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1992787341183677,
+          "ratio_cv": 9.78978475044833e-15,
+          "pass": true
+        },
+        "0.56": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1897768164862297,
+          "ratio_cv": 6.264669185935321e-15,
+          "pass": true
+        },
+        "0.58": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.18086105173687,
+          "ratio_cv": 6.291690204409161e-15,
+          "pass": true
+        },
+        "0.6": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1724932776289325,
+          "ratio_cv": 5.200671438335969e-15,
+          "pass": true
+        },
+        "0.61": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.168497619584336,
+          "ratio_cv": 4.819601513271694e-15,
+          "pass": true
+        },
+        "0.62": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1646225611097571,
+          "ratio_cv": 3.1237005675516185e-15,
+          "pass": true
+        },
+        "0.63": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.160864808783464,
+          "ratio_cv": 2.9973611661398473e-15,
+          "pass": true
+        },
+        "0.64": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1572175767747301,
+          "ratio_cv": 4.77350207984746e-15,
+          "pass": true
+        },
+        "0.65": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1536738116721756,
+          "ratio_cv": 5.2718404810852525e-15,
+          "pass": true
+        },
+        "0.655": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1519402399004885,
+          "ratio_cv": 3.853855782240459e-15,
+          "pass": true
+        },
+        "0.66": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1502323154992942,
+          "ratio_cv": 4.597974099443292e-15,
+          "pass": true
+        },
+        "0.665": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1485481327130544,
+          "ratio_cv": 4.4356053064262285e-15,
+          "pass": true
+        },
+        "0.67": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1468883778779988,
+          "ratio_cv": 3.42086174995886e-15,
+          "pass": true
+        },
+        "0.675": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1452524154670676,
+          "ratio_cv": 4.879090286264373e-15,
+          "pass": true
+        },
+        "0.68": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1436405557525773,
+          "ratio_cv": 2.8285401466969727e-15,
+          "pass": true
+        },
+        "0.685": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1420489881356255,
+          "ratio_cv": 2.9972448723698045e-15,
+          "pass": true
+        },
+        "0.69": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.140480261215169,
+          "ratio_cv": 4.617982855380132e-15,
+          "pass": true
+        },
+        "0.695": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1389342692481896,
+          "ratio_cv": 3.553938001491849e-15,
+          "pass": true
+        },
+        "0.7": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.137408680082999,
+          "ratio_cv": 3.099836730356212e-15,
+          "pass": true
+        },
+        "0.705": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1359047613526876,
+          "ratio_cv": 4.459955485979316e-15,
+          "pass": true
+        },
+        "0.71": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.134421869949444,
+          "ratio_cv": 2.9500153900812588e-15,
+          "pass": true
+        },
+        "0.715": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1329595247917994,
+          "ratio_cv": 2.235406609698762e-15,
+          "pass": true
+        },
+        "0.72": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1315163313330838,
+          "ratio_cv": 4.8086956950534266e-15,
+          "pass": true
+        },
+        "0.725": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1300938775685456,
+          "ratio_cv": 3.3078074465984658e-15,
+          "pass": true
+        },
+        "0.73": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.128688032552639,
+          "ratio_cv": 2.8626660643966026e-15,
+          "pass": true
+        },
+        "0.735": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1273028612920628,
+          "ratio_cv": 3.2507261919180906e-15,
+          "pass": true
+        },
+        "0.74": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1259361762907243,
+          "ratio_cv": 3.509727010009427e-15,
+          "pass": true
+        },
+        "0.745": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1245894398918992,
+          "ratio_cv": 4.78829176299575e-15,
+          "pass": true
+        },
+        "0.75": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1232594785224919,
+          "ratio_cv": 3.887507895730806e-15,
+          "pass": true
+        },
+        "0.755": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1219478027935565,
+          "ratio_cv": 4.299487234039798e-15,
+          "pass": true
+        },
+        "0.76": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1206536681825563,
+          "ratio_cv": 4.010460273048985e-15,
+          "pass": true
+        },
+        "0.765": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.119376895536667,
+          "ratio_cv": 4.178453683426942e-15,
+          "pass": true
+        },
+        "0.77": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.118115334466702,
+          "ratio_cv": 5.2916196636753604e-15,
+          "pass": true
+        },
+        "0.775": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1168702261478596,
+          "ratio_cv": 3.499545089955584e-15,
+          "pass": true
+        },
+        "0.78": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.115641975212001,
+          "ratio_cv": 4.134815137641803e-15,
+          "pass": true
+        },
+        "0.785": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1144298465330358,
+          "ratio_cv": 3.418553206556888e-15,
+          "pass": true
+        },
+        "0.79": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1132319685660632,
+          "ratio_cv": 3.6733658683433194e-15,
+          "pass": true
+        },
+        "0.8": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1108816522936473,
+          "ratio_cv": 6.529586062833304e-15,
+          "pass": true
+        },
+        "0.81": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1085908816269279,
+          "ratio_cv": 5.347524326112028e-15,
+          "pass": true
+        },
+        "0.82": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.106358027341503,
+          "ratio_cv": 5.545727616791336e-15,
+          "pass": true
+        },
+        "0.83": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.104179992484066,
+          "ratio_cv": 4.666335098940627e-15,
+          "pass": true
+        },
+        "0.84": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.1020548462405104,
+          "ratio_cv": 1.2394062267310788e-14,
+          "pass": true
+        },
+        "0.85": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.0999808276481153,
+          "ratio_cv": 6.3850253057917186e-15,
+          "pass": true
+        },
+        "0.86": {
+          "n_live": 105,
+          "n_total": 106,
+          "fraction_paired_live": 0.9905660377358491,
+          "ratio_mean": 1.097957327329194,
+          "ratio_cv": 1.1565439923454156e-14,
+          "pass": true
+        }
+      },
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_B0_IDENTITY_20260823.md (2026-08-23, PA-1..PA-10 amended), PA-13(a) GATE E-B0(a) same-venue fix"
+    },
+    "a_sigma_phi_slot_reported_only": {
+      "fraction_moved": 1.0,
+      "min_fraction": 1.0,
+      "rtol": 1e-09,
+      "n_live_rows": 60,
+      "denominator": "LIVE(a): rows with L_cat_no_bh > 0 in both replica and B-C",
+      "ratio_mean": 8.293664636688888,
+      "ratio_cv": 3.909240743679903,
+      "pass_not_gating": true
+    },
+    "b_twin_cell": {
+      "pooled_fraction_moved": 1.0,
+      "per_seed_fraction_moved": {
+        "900101": 1.0,
+        "900102": 1.0,
+        "900103": 1.0,
+        "900104": 1.0,
+        "900105": 1.0,
+        "900106": 1.0,
+        "900107": 1.0,
+        "900108": 1.0,
+        "900109": 1.0,
+        "900110": 1.0,
+        "900111": 1.0,
+        "900112": 1.0
+      },
+      "per_seed_paired_live_n": {
+        "900101": 105,
+        "900102": 120,
+        "900103": 102,
+        "900104": 129,
+        "900105": 109,
+        "900106": 124,
+        "900107": 111,
+        "900108": 120,
+        "900109": 107,
+        "900110": 130,
+        "900111": 114,
+        "900112": 111
+      },
+      "min_fraction": 0.99,
+      "move_rtol": 1e-06,
+      "denominator": "PAIRED-LIVE: intersection of B-C's and B-T's LIVE(a) sets",
+      "pass": true
+    },
+    "c_dispatch_code_audit": {
+      "statement": "both catalogue_global_selection and catalogue_numerator_survival are validated and consumed inside BayesianStatistics.evaluate() (bayesian_statistics.py:3452-3490) before the per-host dispatch; the scalar single_host_likelihood catalogue-leg branch and the batch _starmap_host_batches call sites (:4692-4721) read the SAME self._catalogue_numerator_survival/self._catalogue_global_selection instance attributes set there -- verified by source read (grep-confirmed, not runtime-measured: production has no runtime call site of the scalar path, per the twin driver's GATE E-P3(c) finding, reused verbatim here).",
+      "scalar_path_smoke": {
+        "attempted": false,
+        "reason": "single_host_likelihood requires BayesianStatistics.evaluate()'s full internal context object graph; no cheap standalone entry point exists without touching darksiren_emri/ source. Flagged for the pre-execution adversarial review / the owning agent to wire a real smoke hook."
+      },
+      "pass": true
+    },
+    "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_B0_IDENTITY_20260823.md (2026-08-23, PA-1..PA-10 amended), S3 GATE E-B0 (PA-7/PA-13(a) amended)"
+  },
+  "GATE_L-B0": {
+    "gate": "GATE_L-B0",
+    "pass": true,
+    "bc_log_flags": {
+      "900101": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      },
+      "900102": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      },
+      "900103": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      },
+      "900104": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      },
+      "900105": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      },
+      "900106": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      },
+      "900107": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      },
+      "900108": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      },
+      "900109": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      },
+      "900110": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      },
+      "900111": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      },
+      "900112": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": false
+      }
+    },
+    "bt_log_flags": {
+      "900101": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      },
+      "900102": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      },
+      "900103": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      },
+      "900104": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      },
+      "900105": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      },
+      "900106": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      },
+      "900107": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      },
+      "900108": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      },
+      "900109": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      },
+      "900110": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      },
+      "900111": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      },
+      "900112": {
+        "fused_present": true,
+        "sigma_phi_present": true,
+        "twin_present": true
+      }
+    },
+    "bc_pass": true,
+    "bt_pass": true,
+    "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_B0_IDENTITY_20260823.md (2026-08-23, PA-1..PA-10 amended), S3 GATE L-B0"
+  },
+  "GATE_W-B0": {
+    "gate": "GATE_W-B0",
+    "pass": true,
+    "closure_pass_all_seeds_bc": true,
+    "closure_pass_all_seeds_bt": true,
+    "selection_json_cross_check_flags": {
+      "bc_900101": true,
+      "bc_900102": true,
+      "bc_900103": true,
+      "bc_900104": true,
+      "bc_900105": true,
+      "bc_900106": true,
+      "bc_900107": true,
+      "bc_900108": true,
+      "bc_900109": true,
+      "bc_900110": true,
+      "bc_900111": true,
+      "bc_900112": true,
+      "bt_900101": true,
+      "bt_900102": true,
+      "bt_900103": true,
+      "bt_900104": true,
+      "bt_900105": true,
+      "bt_900106": true,
+      "bt_900107": true,
+      "bt_900108": true,
+      "bt_900109": true,
+      "bt_900110": true,
+      "bt_900111": true,
+      "bt_900112": true
+    },
+    "selection_json_cross_check_all_pass": true,
+    "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_B0_IDENTITY_20260823.md (2026-08-23, PA-1..PA-10 amended), S3 GATE W-B0, PA-13(b) wired into verdict gating"
+  }
+}

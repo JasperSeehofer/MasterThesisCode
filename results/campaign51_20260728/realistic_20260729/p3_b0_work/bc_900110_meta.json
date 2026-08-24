@@ -1,0 +1,37 @@
+{
+  "subdir": "bc_900110",
+  "seed": 900110,
+  "venue": "b0i",
+  "completion_cell": "fused",
+  "catalogue_numerator_survival": "off",
+  "catalogue_global_selection": "phi",
+  "work_root": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_b0_identity_fleet_20260823/bc_900110_work",
+  "diagnostics_csv": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_b0_identity_fleet_20260823/bc_900110_work/seed900110/simulations/diagnostics/event_likelihoods.csv",
+  "log_path": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_b0_identity_fleet_20260823/bc_900110.log",
+  "wall_time_s": 3509.1178324222565,
+  "elapsed_evaluate_s": 3502.494288444519,
+  "catalogue_pin_ok": true,
+  "mean_h": 0.6506604284980249,
+  "map_h": 0.63,
+  "sigma_h": 0.0380533631275844,
+  "r_low": false,
+  "n_events": 131,
+  "beta_G_phi_at_h_gen": 153322777.12146157,
+  "beta_Gbar_phi_at_h_gen": 888403790.0,
+  "selection_json_cross_check": {
+    "found": true,
+    "path": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_b0_identity_fleet_20260823/bc_900110_work/seed900110/selection_tables_h_0_73.json",
+    "json_beta_G_phi": 153322758.61602736,
+    "json_beta_Gbar_phi": 888403798.0710543,
+    "csv_beta_G_phi": 153322777.12146157,
+    "csv_beta_Gbar_phi": 888403790.0,
+    "rel_err_beta_G_phi": 1.2069593830758522e-07,
+    "rel_err_beta_Gbar_phi": 9.084894005330842e-09,
+    "pass": true
+  },
+  "a22_stamp": {
+    "git_commit_at_start": "3bd6b564bc900751fcbed8df16fb5fad3b275edb",
+    "tree_dirty_incl_instrument": "clean"
+  },
+  "git_commit": "3bd6b564bc900751fcbed8df16fb5fad3b275edb"
+}
