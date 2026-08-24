@@ -374,8 +374,9 @@ TIMELINE: list[dict[str, Any]] = [
         "label": (
             "b0 identity test EXECUTED AND ADJUDICATED: UNDISCRIMINATING — "
             "the registration's own B-R control caught heavy-tail band "
-            "vacuity; twin neither confirmed nor refuted; direction 11/11 in "
-            "the twin's favor, REPORTED-ONLY"
+            "vacuity; twin neither confirmed nor refuted; the 11/11 directional "
+            "read later RETIRED as deterministic ordering (row #180); the "
+            "12/12 mean-h read REPORTED-ONLY"
         ),
     },
     {
@@ -386,6 +387,18 @@ TIMELINE: list[dict[str, Any]] = [
         "label": (
             'Author ruling: "decisions approved" — UNDISCRIMINATING ratified '
             'as adjudicated; Ch 10½ ("The Anatomy of the Bias") builds'
+        ),
+    },
+    {
+        "id": "t20",
+        "date": "2026-08-24",
+        "kind": "refutation",
+        "row": "#180",
+        "label": (
+            "Gate-B adjudication of the successor-statistic draft: F-0 (intake-filter "
+            "conditioning, 41.8%, outside the blindness list) CONFIRMED; the 11/11 "
+            "directional read RETIRED (deterministic ordering, sign test void); the "
+            "successor statistic (bounded-transform family) becomes the next registration"
         ),
     },
 ]

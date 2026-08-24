@@ -2663,3 +2663,26 @@ comprehension-first readout of record for this campaign leg.
    UNDISCRIMINATING state, unresolved.
 4. Next session: adversarial adjudication of the stage-0 draft (F-0 first — it re-frames both
    the b0 readout and the redesign targets), then registration of the chosen estimand.
+
+## Row #180 — 2026-08-24 — Gate-B adjudication of the finite-moment draft: F-0 CONFIRMED in full; **the row-#177 "B-T closer 11/11" quotation is RETIRED (void sign test — the ordering is deterministic, event-wise L^BT < L^BC)**; M_Ḡ exact; PA-4's B-C target corrected to 0.35321; common-mode-only refuted at ~10σ paired; C-A = the next registration (zero fresh evaluate fleets)
+
+1. **[ADJUDICATED, promotions]** F-0 (mechanism at source; 1397/2400 = 0.5821 exact filter-set
+   match on 10 seeds; boundary 0.09934/0.10016; class-asymmetric); M_Ḡ = β̄_Ḡ_φ exact for the
+   odds statistic; the corrected sharp-GW B-C target = the COMPLETION-class second-moment ratio
+   ⟨S̄²⟩/⟨S̄⟩ = 0.35321 (PA-4's ⟨S̄_φ⟩_w was the wrong weighting); the ×2.34 miss decomposition
+   closes to the measured 0.335; single-common-mode explanation refuted (paired γτ_C − γτ_T =
+   +0.226 ± 0.023, 11/11, ~10σ); C-A identity + variance proof + banked LHS (paired
+   Δ = +0.008544 ± 0.000166, 51.5σ, 12/12) + genuine distinctness from the refuted reciprocal;
+   C-B probe Λ̄ = −0.02516 ± 0.00454 (12/12) with its twin-null closure (0.7σ).
+2. **[CORRECTION, binding on all quotations — supersedes the row-#177/#179 hint framing and the
+   orchestrator's own "cautiously good news" answer to the author:** the 11/11 was NEVER a
+   valid sign test (deterministic ordering; p void). Corrected framing, verbatim from the
+   banked adjudication: "both arms undershoot in all 11 clean seeds; the arm ordering is
+   deterministic, so the 11/11 carries no arm-correctness information; against F-0-conditioned
+   targets the deficits are 0.64 (B-C) vs 0.41 (B-T), paired difference 0.226 ± 0.023 —
+   direction-neutral pending C-A's LHS-vs-RHS verdict." Ch 10½ §5 updated to match.
+3. **[CARRIED, unadjudicated]** conditioned-target final digits (±5% acceptance-model caveat;
+   alternatives 1.483/0.492); C-B coded-null ≈ −0.06 (needs the ~1 CPU-h pinning pass).
+4. **Next registration (per the banked §4 advice): C-A** (φ = w; C-TCI robustness twin; F-0
+   inside the targets; dead-row convention all-accepted-rows both sides; RHS ~10 CPU-h for
+   SE ≈ 0.0005; C-B null pinning ~1 CPU-h alongside; ZERO fresh evaluate() fleets).

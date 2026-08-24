@@ -1,0 +1,42 @@
+# GATE-B ADJUDICATION — CLAIM_B0_FINITE_MOMENT_20260824 (banked verbatim, 2026-08-24)
+
+**Adjudicator:** clean-context adversarial agent (inherit-model, xhigh). **Scope:** every [AGENT] claim of the stage-0 draft, re-derived independently (fresh table build; independent 2e5-draw MC with different seed and draw scheme; zero evaluate()). **Disposition:** promotions + corrections executed in ledger row #180; the row-#177 REPORTED-ONLY framing is CORRECTED (the 11/11 quote retired).
+
+---
+## 1. F-0
+
+**1a. Filter exists as claimed — CONFIRMED at source.** `FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.10` (bayesian_statistics.py:386); strict `<` keep in use_detection (:5540-5554); applied after SNR ≥ 20 (:3790-3805). The b0i draw pairs donor-row absolute σ_dL with re-drawn d̂ — low-z hosts with modest-SNR donors fail σ/d̂ < 0.10. Mechanism structurally real.
+
+**1b. Fleet conditioning — CONFIRMED exactly.** Recount over the 24 CSVs: kept 1397/2400 = 0.5821 (per-seed 106,120,105,130,111,124,112,121,108,131,116,113; banked n_rows_total = 1397 matches). On all 10 mirrored seeds the kept event_idx set equals EXACTLY {σ/d̂ < 0.10 ∧ SNR ≥ 20} — zero mismatches. Boundary (900101): kept max 0.09934, dropped min 0.10016; dropped SNR min 20.11 (SNR filter inactive).
+
+**1c. Class asymmetry — CONFIRMED.** Pooled 10 seeds: kept z_true median 0.1830 vs dropped 0.1323; kept S̃ 0.7842 vs dropped 0.8690 — the cut removes low-z, high-survival events.
+
+**1d. Conditioned targets — re-derived independently, CONFIRMED with an AMEND caveat.** Independent derivation reproduces the draft's form; independent MC: P̄_Ḡ = 0.9269, E_μ[S̄·1_acc] = 0.3072 (draft 0.9259/0.3070, within MC noise). Conditioned targets B-T 1.592 / B-C 0.528. AMEND: these inherit the acceptance model's ~7% class-G validation error (P_G model 0.6245 vs realized 0.5821) — they are ±5%-class numbers; always quote with the alternative reads (1.483/0.492) until the kernel-smeared acceptance companion pins them.
+
+**1e. Unregistered — CONFIRMED.** Neither the prereg §7 lists nor PA-4's targets mention the intake filter.
+
+**1f. Effect on the row-#177 hint — AMEND, stronger than the draft states.** On every one of the 1382 paired-live rows L^BT < L^BC (max lnW̃ = −0.0131 < 0, S̄_φ < 1 on the reachable window), so R_BT > R_BC event-wise and I_T ≥ I_C in every seed DETERMINISTICALLY (verified 12/12). Given both clean-seed means undershoot 1 (all 11), "B-T strictly closer to zero" follows mechanically — **the 11/11 was never a valid sign test; the quoted p ≈ 1e-3 is void.** Against the F-0-conditioned targets B-C sits nearer its target (deficit 0.635 vs 0.409). What survives: (i) both arms undershoot in every clean seed (tail truncation ⊕ F-0, direction-neutral); (ii) all paired same-event statistics (Δmean_h +0.0566 12/12; the C-A Δ; Λ) — F-0 cancels to first order; (iii) arms resolvable at ~51σ in bounded statistics. **The 11/11 quotation is RETIRED, not caveated.** VERDICT F-0: CONFIRMED (targets AMEND 1d; hint framing AMEND 1f, toward LESS twin support than the draft states).
+
+## 2. Part B
+
+**2a. M_Ḡ = β̄_Ḡ_φ exact for the odds statistic — CONFIRMED.** N(d_L/d̂;1,σ/d̂) = d̂·N(d̂;d_L,σ) exact pointwise; code premise real (:6059-6061); the event-constant d̂ cancels in R. Twin-leg mass ∫A_BT = β_G_φ·ρ and shape = the generator's joint law — chain re-derived independently, closes. Residuals as stated (erf window 6.3e-5; O(σ²); cross-terms bounded by sharp-pin residual sd 0.023).
+
+**2b. Corrected B-C target — CONFIRMED; PA-4's ⟨S̄_φ⟩_w was the wrong weighting.** Independent derivation: sharp-GW target = ∫(1−f̄)S̄_φ²w_pop / ∫(1−f̄)S̄_φw_pop — the COMPLETION-class second-moment ratio. Recomputed on a fresh build: β_G_φ = 1.53322759e8 ✓, β̄_Ḡ_φ = 8.88403798e8 ✓, ∫(1−f̄)S̄²w_pop = 3.13789597e8 ✓, target 0.35321 ✓. Sharp-pin premise verified in data (lnW̃ vs lnS̄_φ(z_true), 1157 rows: mean +0.0002, sd 0.023 — also proves event_idx row alignment). Decomposition closes: 0.7851/0.3532 = 2.223 × conditioning 1.494 × 0.635 = 0.335 = measured.
+
+**2c. Common-mode-only refutation — CONFIRMED and STRENGTHENED.** Clean-11 recomputed (B-C I+1 = 0.3348 ± 0.0415, B-T 0.6504 ± 0.0958, exact match). Paired per-seed γτ_C − γτ_T = +0.226 ± 0.023, positive 11/11 (~10σ paired) — a single common-mode rescale refuted decisively.
+
+## 3. Candidates
+
+**3a. C-A — identity CONFIRMED; variance proof CONFIRMED (means of [0,C*]-bounded variables); banked LHS reproduced exactly** (B-T 0.07171 ± 0.00129, B-C 0.06317 ± 0.00118, paired Δ = +0.008544 ± 0.000166, positive 12/12, t = 51.5; 900108 mid-pack). RHS distinct from the refuted reciprocal: the RHS is E_{q_Ḡ} of a COMPUTABLE bounded function (model-side synthetic events); the reciprocal needed realized Ḡ-class venue draws. **AMEND (fix at registration):** the exact identity holds over ALL accepted events; dead rows (w = 0, 1−w = 1) are bounded and well-defined yet the banked LHS excludes them — including them shifts the LHS by ~1.5% ≈ 8× the paired SEM. Registration must include dead rows (recommended — removes an unregistered conditioning and the PA-6(a) ambiguity) or condition both sides coherently.
+
+**3b. C-B — Λ̄ CONFIRMED exactly** (center 0.2542072; Λ̄ = −0.02516 ± 0.00454, negative 12/12; clean-11 −0.02417 ± 0.00486; bound respected; 900108 mid-pack −0.036). Closure corroborated data-side without the 20.8M pass (twin-null chain −0.0220 vs measured −0.0252 → 0.7σ; KL +0.01856 ≥ 0 ✓). **Coded-null ≈ −0.06: UNDETERMINED — needs the 1-CPU-h pinning pass** before C-B can decide anything; C-B's twin-PASS direction is partially by construction (the generator IS the twin law): informative capacity = coded-null exclusion + magnitude-vs-KL.
+
+**3c. Independent ranking agrees with the draft:** 1: C-A (tests the registered estimand — mixture/mass calibration — which C-B structurally cannot; bounded; LHS in hand). 2: C-B (free, run first chronologically as corroborator; circular in the twin direction; blind to completion leg and mixture weights). 3: C-C. No refuted-form reproposal.
+
+## 4. C-A registration advice (nothing registered)
+
+F-0 moves INSIDE the design: acceptance-conditioned targets computed by the SAME synthetic-event scorer as the RHS, gate-checked closed-loop (predict per-seed n_kept vs realized 106…131 within binomial bands; the 7% class-G model error must shrink below the band or the venue is amended to a filter-aware draw). Dead-row convention: all-accepted-rows on both sides. Gates: RHS-generator fidelity (score the venue's own drawn events through the RHS scorer; reproduce banked L_cat/B_num to the storage floor); the B-R-style scorer control at R(0.73) = 1.5155; W-B0-closure reuse; A22 stamps; A21-B0-C's k̂ trigger retained as an invariant check (structurally moot — firing would itself be a finding). Bands: pre-freeze BOTH arms' RHS (the coded displacement becomes a derived number); spend ~10 CPU-h for RHS SE ≈ 0.0005 so σ is LHS-limited; REFUTE-twin iff |T_w(B-T)| > max(3σ_comb, 0.005) with the coded arm required at its derived displacement (else VENUE-MISSPEC, F-0-model first suspect); C-TCI τ-profile as robustness twin. Costing: RHS ~4–10 CPU-h + C-B null pinning ~1 CPU-h; ZERO fresh evaluate() fleets. Blindness: PA-2 premise; the four-instrument S̄_φ blind spot; the new RHS scorer code (gate-mitigated); the F-0 acceptance-model error budget, numerically.
+
+## Final disposition
+
+**Promoted [AGENT] → adjudicated:** F-0 in full; M_Ḡ exactness; the corrected sharp-GW B-C target 0.35321 + all model-side moments; the ×2.34 decomposition; the common-mode-only refutation (~10σ paired); the C-A identity/variance/banked-LHS/51.5σ separation; the C-B probe with twin-null closure. **Remaining [AGENT]/unverified:** conditioned targets' final digits (±5%-class caveat; alternatives 1.483/0.492); the C-B coded-null ≈ −0.06; truncated-share curves. **Corrected row-#177 framing (binding):** replace the 11/11 quote with — "both arms undershoot in all 11 clean seeds; the arm ordering is deterministic (L^BT < L^BC event-wise), so the 11/11 carries no arm-correctness information and its sign-test p-value is void; against F-0-conditioned targets the deficits are 0.64 (B-C) vs 0.41 (B-T), paired difference 0.226 ± 0.023, owned by ordered tail truncation ⊕ conditioning, direction-neutral pending C-A's LHS-vs-RHS verdict." **Recommended next registration:** C-A (φ = w, C-TCI twin) with F-0 inside the targets and the dead-row convention fixed; C-B's 1-CPU-h null pinning alongside as the free corroborator.
