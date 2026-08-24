@@ -2762,3 +2762,17 @@ comprehension-first readout of record for this campaign leg.
    for the author independently of C-A.
 4. The registered C-A measurement launches: RHS n ≈ 45k (SE target 5e-4, PA-CA-7d cap), GATE
    ACC full pass, C-B null pinning — all zero-evaluate.
+
+## Row #185 — 2026-08-24 — Author standing guidance on cluster usage (verbatim): "there is no reason for me not to use the cluster, but if we find that we constantly hit the fair share blockade. if thats not the case we can use it as much as possible"
+
+**[STANDING, author]** Cluster-first for compute-heavy work, conditional on fair-share behavior:
+orchestrator-derived operationalization (correctable) — (i) any planned compute ≳2 CPU-h
+defaults to a cluster job array unless registration/instrument constraints make local cheaper
+end-to-end (disclose the comparison in the costing line); (ii) every cluster submission BANKS
+its queue-wait time in the run meta; (iii) if accumulated evidence shows chronic fair-share
+blocking (working definition until corrected: median queue wait > ~50% of run wall-time across
+a campaign), the default reverts to local and the evidence returns to the author. Evidence so
+far: ONE moderate wait (job 6513247, ~2.5 h Priority pending at night; resubmits scheduled
+promptly) — no blockade signal. The in-flight C-A RHS pass stays local ([ORCH-DECIDE]:
+mid-run, migration overhead + instrument-amendment cost exceeds the ~2–3 h saving); future
+RHS-class passes are pre-structured as array-friendly chunk partitions at registration time.
