@@ -1241,7 +1241,7 @@ def test_catalogue_selected_host_draw_weights_matches_independent_computation() 
             theta_i: float = theta_i,
         ) -> float:
             s_bar = float(np.interp(z, z_grid, s_phi_grid))
-            return (
+            return float(
                 norm.pdf(z, loc=z_g, scale=sigma)
                 * _independent_w_pop_f_k(z, phi_i, theta_i, completeness, c1d.H_TRUE)
                 * s_bar
@@ -1254,8 +1254,9 @@ def test_catalogue_selected_host_draw_weights_matches_independent_computation() 
             phi_i: float = phi_i,
             theta_i: float = theta_i,
         ) -> float:
-            return norm.pdf(z, loc=z_g, scale=sigma) * _independent_w_pop_f_k(
-                z, phi_i, theta_i, completeness, c1d.H_TRUE
+            return float(
+                norm.pdf(z, loc=z_g, scale=sigma)
+                * _independent_w_pop_f_k(z, phi_i, theta_i, completeness, c1d.H_TRUE)
             )
 
         numerator, _ = quad(_numerator_integrand, lower[i], upper[i], limit=200, epsabs=1e-14)
