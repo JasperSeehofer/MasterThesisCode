@@ -2801,3 +2801,10 @@ RHS-class passes are pre-structured as array-friendly chunk partitions at regist
    production catalogue-leg physics-change proposal (6-item package; present-then-STOP);
    the [P3-HGRID] claim card; the Ch 10½ §5 update to the calibrated ending (design-entry
    conformant) after ratification.
+
+## Row #187 — 2026-08-25 — Author ruling (verbatim): "approved, that's very exciting!" — TWIN-CALIBRATED RATIFIED; the production catalogue-leg physics-change proposal authoring proceeds; Ch 10½ updates to the calibrated ending and publishes to Pages (author request)
+
+Orchestrator-derived itemization: (1) [RULE, granted] row #186 ratified as banked (scope +
+blindness clauses binding). (2) [DO, granted] the production physics-change proposal (6-item
+package, present-then-STOP). (3) [DO, author-requested] Ch 10½ §5 → the calibrated ending per
+the design entry's quote-the-banked-state rule; push for GitHub Pages deploy.
