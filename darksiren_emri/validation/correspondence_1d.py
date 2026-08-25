@@ -2709,6 +2709,11 @@ def run_mirror_seed_inprocess(
     # scalar twin of the same semantics. "auto" (default) resolves to "phi"
     # under absolute_marginal (production), else "s3d".
     catalogue_global_selection: str = "auto",
+    # [P3-WBHZERO] mass-filter sigma-window instrument (PREREGISTRATION_P3_
+    # WBHZERO_MEASURE_20260825.md §2(ii); row #198). "asymmetric" (default) is
+    # byte-identical to every pre-existing call site; only the registered
+    # WZ-S arm passes "symmetric".
+    mass_filter_sigma: str = "asymmetric",
     h_bounds: tuple[float, float] | None = None,
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
@@ -2854,6 +2859,8 @@ def run_mirror_seed_inprocess(
             # [P3-RPHI] the fourth Path-A slot (docs/derivations/
             # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii)).
             catalogue_global_selection=catalogue_global_selection,
+            # [P3-WBHZERO] mass-filter sigma-window instrument (row #198).
+            mass_filter_sigma=mass_filter_sigma,
             catalogue_mass_overlap=PRODUCTION_FLAGS["--catalogue_mass_overlap"],
             completion_b_scale=PRODUCTION_FLAGS["--completion_b_scale"],
             pdet_dl_bins=int(PRODUCTION_FLAGS["--pdet_dl_bins"]),
