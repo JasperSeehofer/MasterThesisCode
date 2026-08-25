@@ -234,3 +234,14 @@ against the PRE-EXISTING banked prediction; the fleet un-blocks).**
    confirmation (after CF-X-prod); the M2-LINK(iii) monster clause's zero class is now
    MEASURED as the mass-filter class in the linked venue. **The fleet is UN-BLOCKED**; its
    driver gains the mass_filter_sigma A22 stamp before launch.
+
+**PA-2D-6 (2026-08-25 late; pre-fleet driver audit — a STALE FLAG PIN found and fixed before
+launch).** The committed fleet driver pinned `catalogue_numerator_survival="off"` (call site +
+A22 stamp + docstring), contradicting F7's registered text ("the 1D twin production default")
+— the production default has resolved to "phi" since the row-#197 adoption, which PRECEDED the
+driver. Fixed to "phi" at all three sites; the A22 stamp set gains `mass_filter_sigma:
+"symmetric"` (six stamps, PA-2D-4 item 1). Disclosure: the M2-Z pilot (PA-2D-5) ran under the
+stale "off" pin — structurally harmless for that gate (a positive scalar multiplier can
+neither create nor destroy exact zeros, and both arms shared the pin), so its EXACT-MATCH
+verdict stands; no banked statistic consumed the run. The fleet launches only under the
+corrected six-stamp set.

@@ -14,12 +14,13 @@ precedent" -- THIS file: it calls ``run_mirror_seed_inprocess`` DIRECTLY (bypass
 ``run_arm_seed``'s gap entirely), threading all FIVE PA-2D-1/F7-resolved flags explicitly, exactly
 as ``p3_b0_identity_test._run_arm_seed`` already does for the (analogous, 1D) b0i venue.
 
-**The five A22-resolved flags (PA-2D-1 F7, PREREGISTRATION_P3_2D_20260825.md \S 2, this driver's
+**The six A22-resolved flags (PA-2D-1 F7, PREREGISTRATION_P3_2D_20260825.md \S 2, this driver's
 CLI \S3.2):**
 
 1. ``selection_in_completion_numerator="fused"``
-2. ``catalogue_numerator_survival="off"`` (the 1D twin production default -- not this thread's own
-   axis; PREREGISTRATION_P3_TWIN_20260822.md governs THAT flag, unchanged here)
+2. ``catalogue_numerator_survival="phi"`` (the 1D twin PRODUCTION-DEFAULT resolved value post
+   row-#197 adoption -- not this thread's own axis. PA-2D-6: the original "off" pin was STALE
+   (pre-adoption) and violated F7's "(1D twin production default)" registered text)
 3. ``catalogue_global_selection="phi"`` ([P3-RPHI] the fourth Path-A slot, adopted)
 4. ``catalogue_numerator_survival_2d`` -- THIS thread's own axis: ``"off"`` (arm B2-C, coded) or
    ``"mz_sel"`` (arm B2-T, twin)
@@ -157,8 +158,12 @@ def _a22_stamp_2d(arm: str) -> dict[str, Any]:
     return {
         **git_stamp,
         "catalogue_global_selection": "phi",
-        "catalogue_numerator_survival": "off",
+        # PA-2D-6: the 1D twin PRODUCTION DEFAULT resolved value (F7: "never
+        # 'auto'"); was stale-pinned "off" (pre-adoption) until 2026-08-25.
+        "catalogue_numerator_survival": "phi",
         "selection_in_completion_numerator": "fused",
+        # PA-2D-4 item 1: sixth resolved stamp (the adopted symmetric window).
+        "mass_filter_sigma": "symmetric",
         "catalogue_numerator_survival_2d": ARM_FLAGS_2D[arm],
         "catalogue_numerator_survival_2d_center": CENTER,
     }
@@ -426,7 +431,8 @@ def _run_b0i2d_arm_seed(seed: int, arm: str, out_root: Path) -> dict[str, Any]:
         galaxy_catalog=handler,
         h_values=(H_GEN,),
         selection_in_completion_numerator="fused",
-        catalogue_numerator_survival="off",
+        # PA-2D-6 fix: production-default resolved value (F7); was "off".
+        catalogue_numerator_survival="phi",
         catalogue_numerator_survival_2d=ARM_FLAGS_2D[arm],
         catalogue_numerator_survival_2d_center=CENTER,
         catalogue_global_selection="phi",
