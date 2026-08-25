@@ -221,3 +221,25 @@ single-h production read)
    projected two-pass total ≥ 2 CPU-h ⇒ cluster array per row #185 (preflight READY gate);
    else local, with the measured basis disclosed in the banked meta. No multi-h production
    read is registered — h-dependence, if the author wants it, is a fresh costing line.
+
+**PA-WBZ-3 (2026-08-25; the PROD-A0 STOP resolved on measured evidence, [ORCH-DECIDE],
+disclosed to the author with the 6-item package):**
+
+- **PROD-A0 outcome:** INGREDIENT-LEVEL PASS / COMBINED-STEP FAIL. All 12 ingredient columns
+  (both catalogue legs, B_num/B_num_wbh, L_comp, g_frac, every weight) reproduce the banked
+  iiib h=0.73 slice bit-exactly or ≤8.5e-15 over 1588 rows — the reconstructed iiib flag
+  configuration is VALIDATED. The combined columns alone deviate, fully attributed with ZERO
+  residue: the banked run scaled the completion contribution by the constant
+  **0.665035804** (all 606 pure-completion rows — exactly the Gate-B both-zero class — carry
+  ratio 1.503678440 constant to 9 digits); today's code applies no such factor. Mechanism
+  class: the global completion multiplier (B_scale, β̄_Ḡ_φ/β̄_Ḡ) removed as a RATIFIED
+  defect post-iiib (2026-08-20 arc) — a deliberate no-compat-flag physics change.
+- **Re-base ruling ([ORCH-DECIDE], correctness-preserving):** the production counterfactual
+  read runs at TODAY'S production physics. Both arms fresh at HEAD over the iiib CRB: the
+  asymmetric arm = the completed PROD-A0 full pass (banked, `proda0_work/`); the symmetric
+  arm = `--stage prod` as registered. The banked iiib CSV demotes to configuration
+  provenance + the ingredient-level validation comparand — it is NOT a Δ arm. Comparing
+  symmetric-at-HEAD against defect-era-banked would confound the filter question with the
+  ratified defect removal; refused.
+- **Costing realized:** pilot 39.2 s/25 events ⇒ ~42 min/pass; asymmetric pass already
+  complete; remaining = 1 symmetric pass ≈ 42 min ⇒ LOCAL (total well under 2 CPU-h).

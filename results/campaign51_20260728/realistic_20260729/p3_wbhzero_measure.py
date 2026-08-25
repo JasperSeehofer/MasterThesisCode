@@ -1057,26 +1057,28 @@ def _gate_cf_x_prod(out_root: Path) -> dict[str, Any]:
 
 
 def stage_prodreadout(out_root: Path) -> dict[str, Any]:
-    """PA-WBZ-2 item 3: GATE CF-X-prod + the F6 pinned statistics with
-    ``Delta = symmetric (fresh, --stage prod) - banked-iiib (asymmetric, the banked
-    event_likelihoods.csv itself -- NOT proda0's reproduction, per item 1's registered design:
-    "the asymmetric production arm is the BANKED iiib run itself ... it is NOT recomputed")`` at
-    h=0.73. Production is ONE realization -- no per-seed SEM/band; reports the paired per-event
-    distribution stats (sum/mean deltas) plus the zero-rate change. NO verdict-map
-    interpretation (row #198 binding-default).
+    """PA-WBZ-2 item 3 as PA-WBZ-3-AMENDED: GATE CF-X-prod + the F6 pinned statistics with
+    ``Delta = symmetric (fresh, --stage prod) - asymmetric (fresh, the completed PROD-A0 full
+    pass at HEAD)`` at h=0.73. PA-WBZ-3 re-based both arms to TODAY'S production physics: the
+    banked iiib CSV carries a constant 0.665035804 completion multiplier (the B_scale class,
+    removed as a ratified defect post-iiib) and is DEMOTED to configuration provenance +
+    ingredient-level validation -- it is NOT a Delta arm. Production is ONE realization -- no
+    per-seed SEM/band; reports the paired per-event distribution stats (sum/mean deltas) plus
+    the zero-rate change. NO verdict-map interpretation (row #198 binding-default).
     """
     prod_meta_path = out_root / f"{PROD_SYM_SUBDIR}_meta.json"
     if not prod_meta_path.is_file():
         raise SystemExit(f"REFUSED: missing {prod_meta_path} -- run --stage prod first.")
-    if not IIIB_EVENT_LIKELIHOODS_CSV.is_file():
+    proda0_csv = out_root / "proda0_work" / "simulations" / "diagnostics" / "event_likelihoods.csv"
+    if not proda0_csv.is_file():
         raise SystemExit(
-            f"REFUSED: banked iiib event_likelihoods.csv not found: {IIIB_EVENT_LIKELIHOODS_CSV}"
+            f"REFUSED: fresh asymmetric arm (PROD-A0 full pass) not found: {proda0_csv}"
         )
 
     gate_cf_x_prod = _gate_cf_x_prod(out_root)
 
     prod_meta = json.loads(prod_meta_path.read_text())
-    at_banked = o5._rows_at_h(IIIB_EVENT_LIKELIHOODS_CSV, H_GEN)
+    at_banked = o5._rows_at_h(proda0_csv, H_GEN)
     at_sym = o5._rows_at_h(Path(prod_meta["diagnostics_csv"]), H_GEN)
     merged = at_banked.merge(
         at_sym, on="event_idx", suffixes=("_a", "_s"), how="inner", validate="one_to_one"
