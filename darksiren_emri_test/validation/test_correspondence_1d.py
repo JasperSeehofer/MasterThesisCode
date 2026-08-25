@@ -168,14 +168,14 @@ def test_exact_z_catalogue_floors_redshift_error(tmp_path: Path) -> None:
     assert written.iloc[:, z_idx].to_numpy() == pytest.approx(parent_df.iloc[:, z_idx].to_numpy())
 
 
-def test_run_mirror_seed_inprocess_accepts_mass_filter_sigma_default_asymmetric() -> None:
+def test_run_mirror_seed_inprocess_accepts_mass_filter_sigma_default_symmetric() -> None:
     """[P3-WBHZERO] instrument (ii) (PREREGISTRATION_P3_WBHZERO_MEASURE_20260825.md
     §2(ii); row #198): the pass-through parameter exists with the
     production-inert default, following the same inert-plumbing pattern as
     the neighboring ``catalogue_*`` flags on this function."""
     sig = inspect.signature(c1d.run_mirror_seed_inprocess)
     assert "mass_filter_sigma" in sig.parameters
-    assert sig.parameters["mass_filter_sigma"].default == "asymmetric"
+    assert sig.parameters["mass_filter_sigma"].default == "symmetric"
 
 
 # ── Fleet arm-runner CLI tests (task spec item 4: fast, no pool) ────────────

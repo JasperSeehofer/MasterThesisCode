@@ -3237,16 +3237,15 @@ class BayesianStatistics:
     # fallback (pre-evaluate() / object.__new__ harnesses) stays the inert
     # "s3d" literal, matching the other un-resolved instrumentation flags.
     _catalogue_global_selection: str = "s3d"
-    # [DEFECT] candidate-host mass pre-filter window (ledger row #198;
-    # darksiren_emri/galaxy_catalogue/handler.py:get_possible_hosts_from_ball_tree
-    # mass_filter_mask). "asymmetric" (default) is byte-identical to the
-    # pre-flag path: the GW mass window is widened by sigma_multiplier but
-    # the galaxy's own BH_MASS_ERROR is applied at its bare (x1) value.
-    # "symmetric" is the measure-first COUNTERFACTUAL: BH_MASS_ERROR is also
-    # scaled by sigma_multiplier on both sides of the window, matching the
-    # GW-side convention. Single read site: the mask branch in
+    # Candidate-host mass pre-filter window (ledger rows #198-#202; adopted
+    # per docs/derivations/PROPOSAL_MASS_FILTER_SYMMETRIC_20260825.md sec 7(a)).
+    # "symmetric" (default, PRODUCTION) scales BH_MASS_ERROR by
+    # sigma_multiplier on both sides of the window, matching the GW-side
+    # convention. "asymmetric" is the explicit COUNTERFACTUAL pinning the
+    # pre-flag path (galaxy error at its bare x1 value -- the retired
+    # ±1.5σ-vs-±1σ window). Single read site: the mask branch in
     # get_possible_hosts_from_ball_tree; this attribute is inert plumbing.
-    _mass_filter_sigma: str = "asymmetric"
+    _mass_filter_sigma: str = "symmetric"
 
     def __init__(self) -> None:
         self.h_values = []
@@ -3306,9 +3305,10 @@ class BayesianStatistics:
         # "s3d" is this bare pre-evaluate() fallback; evaluate()'s "auto"
         # default resolves to "phi" under absolute_marginal.
         self._catalogue_global_selection: str = "s3d"
-        # [DEFECT] candidate-host mass pre-filter window (ledger row #198):
-        # "asymmetric" => the pre-flag production path, byte-identical.
-        self._mass_filter_sigma: str = "asymmetric"
+        # Candidate-host mass pre-filter window (rows #198-#202 adoption):
+        # "symmetric" (default) = production; "asymmetric" pins the pre-flag
+        # counterfactual.
+        self._mass_filter_sigma: str = "symmetric"
 
     def evaluate(
         self,
@@ -3447,18 +3447,17 @@ class BayesianStatistics:
         # production path: the no-BH catalogue divisor is the separately
         # fitted Sigma^3D). The with-BH leg is deliberately untouched.
         catalogue_global_selection: str = "auto",
-        # [DEFECT] candidate-host mass pre-filter window (ledger row #198;
-        # measure-first counterfactual flag for a verified defect candidate).
-        # "asymmetric" (default) is byte-identical to the pre-flag path: the
-        # GW mass window ((M_z ± M_z_sigma*sigma_multiplier)/(1+z)) is
-        # compared against the galaxy's BH_MASS ± BH_MASS_ERROR (galaxy error
-        # at its bare x1 value -- the asymmetric ±1.5σ-vs-±1σ window). Purely
-        # instrumentation plumbing: validated and read at exactly one site,
-        # the mass_filter_mask branch in
+        # Candidate-host mass pre-filter window (rows #198-#202; adopted per
+        # PROPOSAL_MASS_FILTER_SYMMETRIC_20260825.md sec 7(a)). "symmetric"
+        # (default, PRODUCTION): the GW mass window
+        # ((M_z ± M_z_sigma*sigma_multiplier)/(1+z)) is compared against the
+        # galaxy's BH_MASS ± BH_MASS_ERROR*sigma_multiplier -- the single-k
+        # interval-overlap window. "asymmetric" is the explicit COUNTERFACTUAL
+        # pinning the retired pre-flag path (galaxy error at x1). Purely
+        # plumbing: validated and read at exactly one site, the
+        # mass_filter_mask branch in
         # galaxy_catalogue/handler.py:get_possible_hosts_from_ball_tree.
-        # "symmetric" is the COUNTERFACTUAL: BH_MASS_ERROR is also scaled by
-        # sigma_multiplier on both sides, matching the GW-side convention.
-        mass_filter_sigma: str = "asymmetric",
+        mass_filter_sigma: str = "symmetric",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection

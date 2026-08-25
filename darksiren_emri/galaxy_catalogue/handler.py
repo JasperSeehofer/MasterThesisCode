@@ -567,7 +567,7 @@ class GalaxyCatalogueHandler:
         z_max: float,
         sigma_multiplier: int = 2,
         cov_theta_phi: float = 0.0,
-        mass_filter_sigma: str = "asymmetric",
+        mass_filter_sigma: str = "symmetric",
     ) -> tuple[list[HostGalaxy], list[HostGalaxy]] | None:
         """Find candidate host galaxies within the sky-Fisher error ellipse + mass-redshift cuts.
 
@@ -595,19 +595,19 @@ class GalaxyCatalogueHandler:
                 Default 0.0 reduces to the isotropic-ellipse case.
                 Positioned at the signature tail so that Python's
                 non-default-follows-default rule is respected.
-            mass_filter_sigma: [DEFECT] instrumentation flag for the mass
-                pre-filter window (ledger row #198; measure-first
-                counterfactual for a verified defect candidate). "asymmetric"
-                (default) is byte-identical to the pre-flag path: the galaxy's
-                own ``BH_MASS_ERROR`` is applied at its bare (×1) value while
-                the GW mass window is widened by ``sigma_multiplier`` — an
-                asymmetric ±1.5σ-vs-±1σ window. "symmetric" is the
-                COUNTERFACTUAL: ``BH_MASS_ERROR`` is also scaled by
-                ``sigma_multiplier`` on both sides, matching the GW-side
-                convention. This is the single read/validate site for the
-                flag. Scope: the MASS filter only — the redshift filter
-                above shares the same asymmetric convention but is outside
-                this grant.
+            mass_filter_sigma: mass pre-filter window selector (ledger
+                rows #198–#202; "symmetric" adopted as the production default
+                per ``docs/derivations/PROPOSAL_MASS_FILTER_SYMMETRIC_
+                20260825.md`` §7(a)). "symmetric" (default): ``BH_MASS_ERROR``
+                is scaled by ``sigma_multiplier`` on both sides, matching the
+                GW-side convention — the single-k interval-overlap window.
+                "asymmetric" is the explicit COUNTERFACTUAL pinning the
+                retired pre-flag path: galaxy error at its bare (×1) value —
+                the undocumented ±1.5σ-vs-±1σ window (Gate-B DEFECT, row
+                #196). This is the single read/validate site for the flag.
+                Scope: the MASS filter only — the redshift filter above keeps
+                its own ±1σ galaxy-side convention (out of the row-#198
+                grant's scope).
 
         Returns:
             Tuple of (hosts_without_BH_mass_filter, hosts_with_BH_mass_filter) or None.
@@ -645,13 +645,12 @@ class GalaxyCatalogueHandler:
         )
         candidate_hosts_without_bh_mass = candidate_hosts[redshift_filter_mask]
 
-        # [DEFECT] instrumentation (ledger row #198): single read/validate
-        # site for mass_filter_sigma. "asymmetric" (default) is the pre-flag
-        # production path -- the galaxy's own BH_MASS_ERROR is applied at its
-        # bare (x1) value, an asymmetric window relative to the GW-side
-        # M_z_sigma * sigma_multiplier. "symmetric" scales BH_MASS_ERROR by
-        # the SAME sigma_multiplier on both sides (the measure-first
-        # counterfactual). Scope: the MASS filter only.
+        # Single read/validate site for mass_filter_sigma (rows #198-#202;
+        # "symmetric" adopted as production per PROPOSAL_MASS_FILTER_
+        # SYMMETRIC_20260825.md sec 7(a)): "symmetric" (default) scales
+        # BH_MASS_ERROR by the SAME sigma_multiplier as the GW side on both
+        # window sides; "asymmetric" pins the retired pre-flag counterfactual
+        # (galaxy error at x1). Scope: the MASS filter only.
         if mass_filter_sigma == "asymmetric":
             _bh_mass_error_multiplier: float = 1.0
         elif mass_filter_sigma == "symmetric":

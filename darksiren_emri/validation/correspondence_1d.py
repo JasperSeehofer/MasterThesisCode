@@ -2709,11 +2709,12 @@ def run_mirror_seed_inprocess(
     # scalar twin of the same semantics. "auto" (default) resolves to "phi"
     # under absolute_marginal (production), else "s3d".
     catalogue_global_selection: str = "auto",
-    # [P3-WBHZERO] mass-filter sigma-window instrument (PREREGISTRATION_P3_
-    # WBHZERO_MEASURE_20260825.md §2(ii); row #198). "asymmetric" (default) is
-    # byte-identical to every pre-existing call site; only the registered
-    # WZ-S arm passes "symmetric".
-    mass_filter_sigma: str = "asymmetric",
+    # [P3-WBHZERO] mass-filter sigma-window (rows #198-#202; "symmetric"
+    # adopted as the production default per
+    # PROPOSAL_MASS_FILTER_SYMMETRIC_20260825.md sec 7(a)). "asymmetric" is
+    # the explicit counterfactual pinning the retired pre-flag window (the
+    # wza/wza0/proda0 arms pass it explicitly).
+    mass_filter_sigma: str = "symmetric",
     h_bounds: tuple[float, float] | None = None,
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).

@@ -130,23 +130,35 @@ def _with_bh_indices(hosts: list[HostGalaxy]) -> set[int]:
 
 
 class TestMassFilterSigmaRegression:
-    """(a) Default "asymmetric" reproduces the exact pre-flag mask."""
+    """(a) The DEFAULT is "symmetric" (production adoption, PROPOSAL_MASS_FILTER_
+    SYMMETRIC_20260825.md §7(a) ruling); explicit "asymmetric" pins the exact
+    pre-flag mask as the counterfactual."""
 
-    def test_default_is_asymmetric_and_excludes_boundary_and_outside(self) -> None:
+    def test_default_is_symmetric_and_retains_boundary(self) -> None:
         handler = _make_handler()
         result = handler.get_possible_hosts_from_ball_tree(**_query_kwargs())  # type: ignore[arg-type]
         assert result is not None
         _, with_bh_mass = result
-        assert _with_bh_indices(with_bh_mass) == {0}
+        assert _with_bh_indices(with_bh_mass) == {0, 1}
 
-    def test_explicit_asymmetric_is_bit_identical_to_default(self) -> None:
+    def test_explicit_asymmetric_pins_pre_flag_mask(self) -> None:
+        handler_explicit = _make_handler()
+        result_explicit = handler_explicit.get_possible_hosts_from_ball_tree(
+            mass_filter_sigma="asymmetric",
+            **_query_kwargs(),  # type: ignore[arg-type]
+        )
+        assert result_explicit is not None
+        _, with_bh_explicit = result_explicit
+        assert _with_bh_indices(with_bh_explicit) == {0}
+
+    def test_explicit_symmetric_is_bit_identical_to_default(self) -> None:
         handler_default = _make_handler()
         handler_explicit = _make_handler()
         result_default = handler_default.get_possible_hosts_from_ball_tree(
             **_query_kwargs()  # type: ignore[arg-type]
         )
         result_explicit = handler_explicit.get_possible_hosts_from_ball_tree(
-            mass_filter_sigma="asymmetric",
+            mass_filter_sigma="symmetric",
             **_query_kwargs(),  # type: ignore[arg-type]
         )
         assert result_default is not None
