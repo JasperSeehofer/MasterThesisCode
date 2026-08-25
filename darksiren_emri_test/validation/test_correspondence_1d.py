@@ -22,6 +22,8 @@ from scipy.stats import norm
 from darksiren_emri.emri_rate import R_eff_per_mbh
 from darksiren_emri.validation import correspondence_1d as c1d
 
+from .conftest import requires_artifact
+
 _N_DONOR_ROWS = 12
 _N_HOST_POOL = 20
 
@@ -331,6 +333,7 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     assert c1d.ARM_SEEDS["bden"] == c1d.ARM_SEEDS["bsel"]
 
 
+@requires_artifact(c1d.CRB_CSV_PATH)
 def test_run_arm_seed_threads_selection_cell_to_evaluate_call(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -352,6 +355,13 @@ def test_run_arm_seed_threads_selection_cell_to_evaluate_call(
     re-exercised here) forwards that same value, completely unconditionally
     and with no intervening default, straight into
     ``BayesianStatistics.evaluate(selection_in_completion_numerator=...)``.
+
+    One dependency is NOT stubbed: ``run_arm_seed`` builds a real
+    ``MirrorUniverseGenerator(cfg)``, whose ``__init__`` eagerly
+    ``pd.read_csv``s the pinned production CRB CSV
+    (``c1d.CRB_CSV_PATH``) -- a machine-of-record ``results/`` artifact not
+    committed to VCS. Guarded with ``@requires_artifact`` (skips on CI/any
+    checkout without it, runs+asserts on the data-bearing machine).
     """
     captured: dict[str, str] = {}
 
@@ -429,6 +439,7 @@ def test_run_arm_seed_threads_selection_cell_to_evaluate_call(
     assert all(v == "off" for k, v in c1d.ARM_SELECTION_CELL.items() if k not in ("bself", "b0i"))
 
 
+@requires_artifact(c1d.CRB_CSV_PATH)
 def test_run_arm_seed_threads_event_measure_to_evaluate_call(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

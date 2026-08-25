@@ -26,6 +26,8 @@ import pytest
 from darksiren_emri.validation import correspondence_1d as c1d
 from darksiren_emri.validation import selfgen_control as sg
 
+from .conftest import requires_artifact
+
 _N_DONOR = 200
 _N_PIX = 12
 
@@ -177,6 +179,7 @@ def test_h_gen_for_arm_rejects_unregistered() -> None:
         sg._h_gen_for_arm("not-a-real-arm")
 
 
+@requires_artifact(c1d.CRB_CSV_PATH)
 def test_dl_cross_cov_columns_match_pinned_csv_header() -> None:
     """Every rescale column must exist in the real pinned CRB CSV's header."""
     header = pd.read_csv(c1d.CRB_CSV_PATH, nrows=0).columns
@@ -238,12 +241,18 @@ def test_f_arm_sigma_is_exactly_fixed_fraction_of_true_dl(
     )
 
 
+@requires_artifact(c1d.CRB_CSV_PATH)
 def test_e_arm_sigma_is_iid_empirical_independent_of_z(
     donor_rows: pd.DataFrame,
     fake_completeness: _FakeCompleteness,
     fake_det_full_accept: _FakeDetectionProbability,
 ) -> None:
-    """C-SG-E: sigma_frac drawn i.i.d. from the pinned pool, independent of z."""
+    """C-SG-E: sigma_frac drawn i.i.d. from the pinned pool, independent of z.
+
+    :func:`sg._empirical_sigma_frac_pool` defaults to reading the real pinned
+    CRB CSV (``c1d.CRB_CSV_PATH``), not the ``donor_rows`` fixture -- a
+    machine-of-record ``results/`` artifact not committed to VCS.
+    """
     rows, diag = sg.draw_csg_realization(
         11, "csge", 200, fake_completeness, fake_det_full_accept, donor_rows
     )
@@ -348,11 +357,13 @@ def test_h_gen_threads_to_build_csg_selection_objects(monkeypatch: pytest.Monkey
     sg.build_csg_selection_objects.cache_clear()
 
 
+@requires_artifact(c1d.CRB_CSV_PATH)
 def test_gate_h_reports_h_gen_threading(
     donor_rows: pd.DataFrame,
     fake_completeness: _FakeCompleteness,
     fake_det_full_accept: _FakeDetectionProbability,
 ) -> None:
+    """``sg.gate_h`` internally reads the real pinned CRB CSV (``c1d.CRB_CSV_PATH``)."""
     for arm, h_gen in sg.CSG_H_GEN.items():
         report = sg.gate_h(
             arm,
@@ -374,6 +385,7 @@ def test_gate_h_reports_h_gen_threading(
 # ── GATE Q: cross-covariance rescale keeps a contrived Fisher PD ────────────
 
 
+@requires_artifact(c1d.CRB_CSV_PATH)
 def test_gate_q_before_after_rescale_reduces_nonpd_attrition(
     fake_completeness: _FakeCompleteness, tmp_path: Path
 ) -> None:
@@ -383,6 +395,9 @@ def test_gate_q_before_after_rescale_reduces_nonpd_attrition(
     ``sigma_dL`` so the UN-rescaled 4D block is likely to fail the
     condition-number/PD gate for at least some rows; the rescaled block uses
     the SAME correlation structure at the correct (small) scale.
+
+    NOTE: ``sg.gate_q`` internally reads the real pinned CRB CSV
+    (``c1d.CRB_CSV_PATH``) rather than the ``donor`` DataFrame built below.
     """
     n = 200
     rng = np.random.default_rng(99)
@@ -456,11 +471,13 @@ def test_fisher_pd_exclusion_count_zero_for_diagonal_covariance() -> None:
 # ── GATE D / GATE V return-field checks ──────────────────────────────────────
 
 
+@requires_artifact(c1d.CRB_CSV_PATH)
 def test_gate_d_returns_registered_fields(
     donor_rows: pd.DataFrame,
     fake_completeness: _FakeCompleteness,
     fake_det_full_accept: _FakeDetectionProbability,
 ) -> None:
+    """``sg.gate_d`` internally reads the real pinned CRB CSV (``c1d.CRB_CSV_PATH``)."""
     report = sg.gate_d(
         "csgf",
         910101,
@@ -649,6 +666,7 @@ def test_csg_channel_scores_h_true_not_silently_defaulted(tmp_path: Path, h_gen:
         assert scores_correct[channel]["c50"] != scores_leaked[channel]["c50"], channel
 
 
+@requires_artifact(c1d.CRB_CSV_PATH)
 def test_run_csg_arm_seed_delta_arm_scores_against_own_h_gen(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -657,6 +675,10 @@ def test_run_csg_arm_seed_delta_arm_scores_against_own_h_gen(
     Regression-guards the ACTUAL call site (``run_csg_arm_seed``'s
     ``csg_channel_scores(..., h_true=h_gen)``), not just the function default
     checked above -- catches the kwarg being dropped, not just renamed.
+
+    ``run_csg_arm_seed`` unconditionally ``pd.read_csv``s the real pinned CRB
+    CSV (``c1d.CRB_CSV_PATH``, not injectable/stubbed) -- a machine-of-record
+    ``results/`` artifact not committed to VCS.
     """
     n_events = 8
 
@@ -719,9 +741,11 @@ def test_run_csg_arm_seed_delta_arm_scores_against_own_h_gen(
 # ── run_csg_arm_seed: idempotency + banked-JSON shape (plumbing) ────────────
 
 
+@requires_artifact(c1d.CRB_CSV_PATH)
 def test_run_csg_arm_seed_idempotent_and_banks_expected_fields(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """``run_csg_arm_seed`` unconditionally reads the real pinned CRB CSV (``c1d.CRB_CSV_PATH``)."""
     n_events = 8
 
     def _fake_build_csg_selection_objects(
