@@ -127,3 +127,65 @@ local. Stage 2: costing deferred to its own A21 line (§4). No other `evaluate()
 including re-derivation of the decisive stage-0 numbers (688/688, 689/689, 5/7, 127/129), the
 band anchor, the BIT-A comparability set, and the materiality scale for the POWER clause —
 precedes any instrument run; A20 review before banking.)*
+
+---
+
+## PRE-EXECUTION REVIEW AMENDMENTS PA-WBZ-1 (2026-08-25, NO instrument has run; review verdict PROCEED-with-amendments; findings F1–F9, review banked in the session task record; decisive amendment numbers INDEPENDENTLY RE-DERIVED by the orchestrator before registration: banked-meta flags, event_likelihoods.csv columns, SD(T)=42.55, w̄=0.0884, SD(w̄)=0.00394, catalogue-leg zero-rate 5.01%)
+
+- **F1 (NOTE):** every decisive stage-0/[AGENT] number confirmed by independent re-derivation
+  from the preserved JSONs (688/1588; 688/688 zero residue; symmetric 689/689; pilot 7/7 with
+  5/7 retained; fleet 127/129 — the 2 exceptions are ONE event in two arms, the kernel-zero
+  class; banked-fleet rate 5.01%). The [AGENT] tags on these numbers are lifted.
+- **F2 (NOTE):** the landed flag (9c948ea0) verified as EXACTLY the registered counterfactual
+  (both-sides scaling; ×1.0 IEEE-exact default; single read/validate site; threading traced to
+  the single production call site in the per-detection likelihood loop).
+- **F3 (ADOPTED):** instruments (ii)/(iii) are COMMITTED before any arm runs; the A22 stamp
+  must read clean at launch. (Instrument (ii) committed as `20fae087`.)
+- **F4 (DEFECT-BLOCKING as written → REPLACED):** **GATE BIT-A replaced.** WZ-A runs at
+  adopted production defaults and is NOT compared to the banked fleet — the twin adoption
+  (`bac48696`) post-dates the fleet banking (banked meta: `catalogue_numerator_survival="off"`,
+  re-derived), so bit-identity at today's defaults is impossible by construction; the
+  difference is expected and disclosed, not gated. The flag-default regression is carried by
+  the dedicated control **WZ-A0**: seed 900101 only, run with the banked resolved-flag set
+  from `bc_900101_meta.json` (`catalogue_numerator_survival="off"`,
+  `catalogue_global_selection="phi"`, `mass_filter_sigma` default), single-h (0.73) at the
+  pinned h_bounds; comparand = the h=0.73 row-slice of the banked `bc_900101`
+  `event_likelihoods.csv`; PASS = bit-identical or the documented 9.1e-15 CSV round-trip noise
+  class. On failure, escalate to a full-grid replication of the same seed BEFORE declaring
+  instrument defect (separating single-h-slice non-identity from a flag regression). Failure ⇒
+  VOID (instrument defect).
+- **F5 (ADOPTED):** **GATE CF-X amended.** WZ-P is re-run from the preserved scripts with
+  out-paths redirected into the campaign tree and EXTENDED to all 12 seeds using each fresh
+  arm's banked `prepared_cramer_rao_bounds.csv` (the preserved counterfactual JSON lacks seeds
+  900111/900112 — their banked runs lack CRB artifacts); environment provenance
+  (sklearn/numpy versions) recorded for WZ-P and both arms; on a CF-X mismatch the FIRST
+  forensic step is an environment-provenance diff before VOID. Additionally the monotonicity
+  invariant `n_pass_mass_filter(sym) ≥ n_pass_mass_filter(asym)` (a theorem for
+  sigma_multiplier ≥ 1) is checked on EVERY event of every seed.
+- **F6 (ADOPTED — the Δ readout PINNED):** from each arm's `event_likelihoods.csv` at h=0.73,
+  over the paired live set E = {events with `combined_no_bh + combined_with_bh > 0` in BOTH
+  arms}: primary **T_s = Σ_{e∈E} ln(combined_no_bh + combined_with_bh)**; secondary
+  **w̄_s = mean_{e∈E} combined_with_bh/(combined_no_bh + combined_with_bh)**; reported
+  alongside: the per-arm catalogue-leg zero rate (`L_cat_with_bh==0 & L_cat_no_bh>0` — NOT
+  the combined columns, which completion keeps nonzero; orchestrator-verified 5.01% banked).
+  Δ_s = statistic(WZ-S) − statistic(WZ-A) per seed. The prereg's original "venue's registered
+  per-seed score statistic" phrasing is SUPERSEDED (it was underspecified: the venue's S4
+  identity statistic is near-vacuous under a flag flip and mean_h/map_h need the full grid).
+- **F7 (ADOPTED):** band = 3·SEM_Δ (ratified). POWER materiality scales frozen pre-run from
+  the banked bc fleet: **M_T = 0.5** (the structural flip-relief scale
+  n_flip·(−ln(1−w̄)) ≈ 5.83·0.0925) and **M_w = 0.004** (between-seed SD of w̄). If
+  3·SEM_Δ > M for a statistic, its verdict is UNDERPOWERED, not immaterial. NOTE registered:
+  the direction is close to structurally guaranteed (numerator monotone under window widening,
+  denominators flag-invariant) — an EXCLUSION-MATERIAL-CONTRA outcome is read FIRST as an
+  instrument forensic.
+- **F8 (ADOPTED — [ORCH-COST] corrected):** the ~12 CPU-h estimate confused the full-46-h-grid
+  fleet cost (~2000 s/arm) with the registered single-h arms (~64 s/arm b0i2d precedent).
+  Corrected total: **~1–2 CPU-h** (12 tasks × 2 single-h arms + WZ-A0). This falls BELOW the
+  row-#185 ≥2 CPU-h cluster threshold ⇒ **the fleet runs LOCALLY** (disclosed comparison:
+  local ≈ 30–60 min wall parallelized, zero queue wait vs cluster array setup + queue; the
+  §7 cluster-first line is superseded for this measurement only). WZ-P zero-compute local;
+  stage-2 costing still deferred to its own A21 line.
+- **F9 (NOTES):** instrument (iii) reuses ONE `galaxy_catalog` + one events draw per task for
+  both arms (the pairing rule made explicit); `n_cand_nomass`/`n_pass_mass_filter` per event
+  come from a handler-level recount in the driver (specified at instrument review), not log
+  parsing; 43.3%/30.7% remain barred as mirror comparands.
