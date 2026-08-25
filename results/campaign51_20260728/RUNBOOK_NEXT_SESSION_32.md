@@ -60,6 +60,6 @@ https://claude.ai/code/artifact/ed640faf-33d7-42da-bcf2-4e2c09e59347 · Ch 10½ 
 
 ## 4. Resume recipe (one line)
 
-§0's in-flight arc to its verdict → author rules items 1–2 → the production adoption commit
-([PHYSICS], the row-#178 pattern) → then either the hierarchical thread (item 3, if granted)
-or the paper-facing consolidation.
+Collect the companion JSON (§0) → the author's [P3-WBHZERO] disposition (§1 item 1) →
+un-HOLD + A21-amend + run [P3-2D] to its verdict → the [HIER] prereg → the paper-facing
+consolidation (the twin adoption + the WBHZERO story are both thesis chapters now).
