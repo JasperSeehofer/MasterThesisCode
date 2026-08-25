@@ -2350,12 +2350,8 @@ def run_mirror_seed_inprocess(
         # explicitly (proven bit-exact vs the banked b0i CSVs).
         eff_lo = min(h_values) if h_bounds is None else h_bounds[0]
         eff_hi = max(h_values) if h_bounds is None else h_bounds[1]
-        bs.cosmological_model.h.lower_limit = min(
-            bs.cosmological_model.h.lower_limit, eff_lo
-        )
-        bs.cosmological_model.h.upper_limit = max(
-            bs.cosmological_model.h.upper_limit, eff_hi
-        )
+        bs.cosmological_model.h.lower_limit = min(bs.cosmological_model.h.lower_limit, eff_lo)
+        bs.cosmological_model.h.upper_limit = max(bs.cosmological_model.h.upper_limit, eff_hi)
         start = time.time()
         bs.evaluate(
             galaxy_catalog,
