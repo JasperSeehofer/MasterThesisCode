@@ -2891,3 +2891,8 @@ sirens → photo-z self-calibration in surveys → hierarchical shared-nuisance 
 empirical-Bayes/shrinkage theory." R0 (repo-cited papers, re-read for caveats) FIRST.
 
 ## Row #193 — 2026-08-25 — [HIER] Stage L banked: the field NAMES our exploration as its open direction without building it (Hanselman+ 2024 §IV.5, quote-verified; the seed reference resolved = Vijaykumar+ 2024 ApJ 972 157); the self-calibration math class exists only at survey scale in the INVERSE regime (minority-outlier vs our 49%-median); REPORTABLE ABSENCE: no ensemble error-model+H₀ joint inference in any siren context, no small-N validity statements, no railing/tilt diagnostics literature. Proposal authoring proceeds.
+
+## Row #194 — 2026-08-25 — [P3-WBHZERO] forensic verdict draft: **PRODUCTION-DEFECT-CANDIDATE — the with-BH candidate mass pre-filter's asymmetric σ-window (`handler.py:634-642`) excludes true hosts at ~1σ of their own mass error; 43.3%/30.7% of REAL production diagnostics rows show the zero-with-BH-live-no-BH signature** — Gate-B adversarial verification launched; [P3-2D] fleet HELD pending the ruling; claim card banked with Refute-by
+
+The mechanism chain that found it: the M2-LINK gate (registered for a different defect class)
+→ the pilot STOP → the forensic. Every number [AGENT] until Gate B re-derives.
