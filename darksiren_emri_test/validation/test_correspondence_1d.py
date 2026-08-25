@@ -314,7 +314,7 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     assert len(c1d.ARM_SEEDS["bself"]) == 15
     assert len(c1d.ARM_SEEDS["bden"]) == 15
     assert len(c1d.ARM_SEEDS["b0i"]) == 25
-    assert len(c1d.ARM_SEEDS["b0i2d"]) == 12
+    assert len(c1d.ARM_SEEDS["b0i2d"]) == 24  # PA-2D-1/F14 power decision
     total = sum(len(v) for v in c1d.ARM_SEEDS.values())
     # 25 + 25 + 10 + 10 + 10 + 15 + 2 + 15 + 15 + 15 = 142, the fleet task-list
     # arithmetic (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks + 15 AMENDMENT

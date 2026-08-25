@@ -569,7 +569,7 @@ ARM_SEEDS: dict[str, tuple[int, ...]] = {
     "b0i": tuple(range(900101, 900126)),
     # [P3-2D] (b0i2d, prereg §2/§7): the fresh 12-seed b0i-2D fleet
     # (900101-900112), disjoint arm registry entry, identity-test-only.
-    "b0i2d": tuple(range(900101, 900113)),
+    "b0i2d": tuple(range(900101, 900125)),  # 24 seeds: PA-2D-1/F14 power decision
 }
 
 
