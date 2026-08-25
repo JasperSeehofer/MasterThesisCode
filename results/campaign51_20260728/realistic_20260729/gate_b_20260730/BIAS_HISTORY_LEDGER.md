@@ -2961,3 +2961,16 @@ physics-change package is authored next (present-then-STOP); the adoption return
 author as the registered fresh [RULE]. Noted for the package: the production Δw̄ (+0.00045)
 is an order below the mirror's (+0.0049) while ΔT is comparable — venue-vs-production
 completion-weight structure differs; stated as measured fact, interpretation reserved.
+
+## Row #202 — 2026-08-25 — **Author ruling (via the orchestrator's decision-table presentation of PROPOSAL_MASS_FILTER_SYMMETRIC_20260825.md §7): "(a) Adopt symmetric (Recommended)" — THE SYMMETRIC MASS-FILTER WINDOW IS PRODUCTION PHYSICS** ([PHYSICS] `cf4f8a2a`; gate-ledger rows 2026-08-25 presented/implemented/verified; suite 1827 green; independently verified COMMIT-READY after 6 comment amendments)
+
+`mass_filter_sigma` default "asymmetric"→"symmetric" at the 5 declaration sites; explicit
+"asymmetric" = the counterfactual pinning the retired pre-flag window. The [P3-WBHZERO] arc —
+pilot STOP (row #191) → forensic (row #194) → Gate-B DEFECT (row #196) → measure-first grant
+(row #198) → mirror EXCLUSION-MATERIAL (row #200) → production read (row #201) → adoption —
+CLOSES, one day end to end. Open remainders carried: the filter-vs-kernel model-consistency
+question (proposal §6 caveat 2, un-opened thread); h-dependence unmeasured (caveat 1);
+the redshift filter's shared convention (caveat 4, out of scope); joint_r1 attribution still
+pending the cluster-side r1 artifact. Post-adoption sequencing per rows #196/#198:
+[P3-2D] un-HOLDs calibrated against the SYMMETRIC eligibility model (A21 amendment + M2-LINK
+re-attribution next), then the companion re-run (PA-2D-3 z-fix), then [HIER].
