@@ -2889,3 +2889,5 @@ with the target parameter — self-calibration, shared-nuisance hierarchical Bay
 with validity conditions at small N and large fractional z-errors; ladder: GW dark
 sirens → photo-z self-calibration in surveys → hierarchical shared-nuisance inference →
 empirical-Bayes/shrinkage theory." R0 (repo-cited papers, re-read for caveats) FIRST.
+
+## Row #193 — 2026-08-25 — [HIER] Stage L banked: the field NAMES our exploration as its open direction without building it (Hanselman+ 2024 §IV.5, quote-verified; the seed reference resolved = Vijaykumar+ 2024 ApJ 972 157); the self-calibration math class exists only at survey scale in the INVERSE regime (minority-outlier vs our 49%-median); REPORTABLE ABSENCE: no ensemble error-model+H₀ joint inference in any siren context, no small-N validity statements, no railing/tilt diagnostics literature. Proposal authoring proceeds.
