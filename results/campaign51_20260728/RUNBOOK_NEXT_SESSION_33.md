@@ -66,3 +66,25 @@ bias-state artifact refresh (rows #166–#202); workspace `emri` expires 2026-09
 prediction) → companion re-run w/ segment-aware z-rule → [P3-2D] fleet/RHS₂ to its verdict →
 [HIER] (h,θ)-grid prereg → paper-facing consolidation (the WBHZERO arc is a thesis chapter:
 defect discovery by a registered gate, measure-first chain, one-day adoption).
+
+---
+
+## LATE-EVENING DELTA (2026-08-25 ~23:30; the §4 recipe is PARTIALLY EXECUTED — next session COLLECTS)
+
+- **PA-2D-4/5/6 registered + pushed** (a75515e7 lineage): un-HOLD done; GATE M2-Z ran —
+  as-registered FAIL re-scored to EXACT-MATCH PASS vs the banked Gate-B per-event prediction
+  (events 51/84 = the pull>1.5σ pair; orchestrator mis-registration owned, row #203); the
+  fleet driver's STALE `catalogue_numerator_survival="off"` pin fixed to "phi" + the six-stamp
+  A22 set (PA-2D-6) BEFORE launch.
+- **The 24-seed fleet IS ON THE CLUSTER**: job **6708698**, array 0-23, cpu_il, 16 cpus/task,
+  2 h wall, submitted 21:12:43Z (record: `p3_2d_fleet_submission_20260825.json`; queue-wait
+  banking per row #185 = sacct submit-vs-start on retrieval). **Next session: sacct/squeue →
+  retrieve `$WORKSPACE/p3_2d_fleet_20260825/` → gates → RHS₂ costing decision.**
+- **Companion v2 RUNNING DETACHED locally** (PID 3477465, started ~22:50, ~6.7 h ⇒ ~05:30;
+  writes `ca_rhs_work2d/p3_2d_companion_v2.json` autonomously; log
+  `scratchpad/companion_v2.log` in session abb9d681's scratchpad). Segment-aware z-rule;
+  registered spot-check target 2.916e-9; eligibility-independence = INDEPENDENT (banked
+  in-code + in the JSON). **Next session: collect → verify spot-check ≤ target → freeze C₂\*.**
+- Parking incidents #3/#4 logged (companion + M2-Z builders; both cured by direct resume);
+  the cluster-submission agent ran clean under the strengthened opener + "SLURM is async by
+  design, submit-and-return" instruction — that phrasing worked, reuse it.
