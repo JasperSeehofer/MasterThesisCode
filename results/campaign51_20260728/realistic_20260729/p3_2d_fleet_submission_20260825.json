@@ -3,8 +3,8 @@
   "sbatch": "cluster/p3_2d_fleet.sbatch",
   "driver": "results/campaign51_20260728/realistic_20260729/p3_2d_fleet.py",
   "driver_commit_required": "a75515e7 or later",
-  "cluster_head_at_submit": null,
-  "job_id": null,
+  "cluster_head_at_submit": "fb4ac4ee",
+  "job_id": "6708698",
   "array": "0-23",
   "seeds": "900101-900124 (BASE_SEED=900101, per-task seed = BASE_SEED + SLURM_ARRAY_TASK_ID)",
   "arms_per_task": ["bc", "bt"],
@@ -12,7 +12,7 @@
   "cpus_per_task": 16,
   "time_limit": "02:00:00",
   "out_root": "$WORKSPACE/p3_2d_fleet_20260825",
-  "submit_timestamp_utc": null,
-  "squeue_snapshot": null,
-  "note": "Filled in immediately after submission by the same task; see the launch task's return summary for the final values."
+  "submit_timestamp_utc": "2026-08-25T21:12:43Z",
+  "squeue_snapshot": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n    6708698_[0-23]    cpu_il p3-2d-fl st_ac147 PD       0:00      1 (None)",
+  "note": "Queue-wait bank per row #185. Job submitted PD (pending, array 0-23) immediately after submission; not watched further per the no-parking/no-wait rule."
 }
