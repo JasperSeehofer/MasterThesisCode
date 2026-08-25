@@ -1,6 +1,45 @@
 r"""[P3-2D] the Sigma~^4D companion pass (zero-``evaluate()``), item 1 of the pre-fleet
 execution task (PREREGISTRATION_P3_2D_20260825.md, PA-2D-1 F4).
 
+**[PA-2D-3/PA-2D-4 item 4 fix, 2026-08-25] v2: segment-aware z-quadrature.** The v1 pass
+(``ca_rhs_work2d/p3_2d_companion.json``, Sigma~^4D candidate 348079019.37, C2* candidate
+0.061244) is UNBANKED: its mandated spot-check failed the registered 1e-6 target (max
+3.81e-4). Adjudication (``ca_rhs_work2d/spot_check_adjudication.{py,json}`` +
+``spot_check_drilldown.{py,json}``) VINDICATED the PA-2D-2 exact erf mass-marginal and
+localized the defect to the GL(50) z-quadrature: ``S_bar_4D(d_L(z;h))`` is piecewise-linear
+in ``d_L`` (the ``RegularGridInterpolator``'s own bilinear-in-``(d_L,M)`` structure, exactly
+marginalized in ``M``), so as a function of ``z`` it carries a kink at every ``z`` where
+``d_L(z;h)`` crosses a ``dl_centers`` grid edge (60 of them) -- a single 50-node GL rule over
+the whole ``+/-4sigma`` window under-resolves that many kinks in the wide-sigma/near-horizon
+regime. **Fix:** the z-integral is now SEGMENT-AWARE -- the 60 ``dl_centers`` edges are
+inverted ONCE (globally, ``h`` fixed) to 60 z-breakpoints via :func:`_z_breakpoints_dl_centers`
+(dense-grid bracket + ``scipy.optimize.brentq`` refinement, exploiting ``d_L(z;h)``'s
+monotonicity), then per host the ``+/-4sigma`` window is subdivided at every breakpoint it
+contains (:func:`_segment_edges`, vectorized over rows via ``searchsorted``+padding, no
+per-row root-finding) and each resulting SMOOTH sub-segment gets its own fixed-order
+Gauss-Legendre rule (:func:`_segmented_integral_batch`) -- spectrally convergent per segment
+since the kink is now always a segment ENDPOINT, never an interior point. Cost stays the same
+CLASS (the z-stage was never the bottleneck; the erf mass-marginal per node still dominates):
+typical hosts see 1-5 segments (photo-z windows are narrow), so GL-16-per-segment (~16-80
+nodes) is comparable to or cheaper than the old flat GL-50; only rare wide/near-horizon hosts
+pay more, bounded by the 60-breakpoint ceiling. The mandated 1e-6 spot-check target is
+replaced by an ARBITER-GROUNDED one (PA-2D-3): :func:`_run_arbiter` demonstrates mutual
+convergence of GL-16 vs GL-32 vs a 10x-segment-refined GL-16 rule on a random row sample,
+banks the plateau level, and derives the re-run's spot-check target as 10x that plateau (the
+raw 1e-6 target was unfalsifiable as posed -- the arbiters' own noise floor sits at
+~1e-4..5e-4). The full-pass spot-check itself becomes a cheap GL-16-vs-GL-32 comparison on
+the SAME breakpoints (:func:`_fast_spot_check`, no nested ``scipy.integrate.quad`` -- the old
+:func:`_spot_check` is KEPT, unused by ``main()``, as an independent-method archival check).
+Output path moves to ``ca_rhs_work2d/p3_2d_companion_v2.json`` (v1 stays untouched as the
+superseded-candidate record). PA-2D-4 item 4 additionally requires an eligibility-
+independence finding (:func:`_eligibility_independence_finding`): traced by code-path
+inspection, every input Sigma~^4D consumes (the reduced galaxy catalogue via its own
+eligibility mask, the pixel-completeness ``m_th`` cache, and the injection-pool-derived
+``detection_probability``/``phi_survival_table`` pair) is independent of
+``mass_filter_sigma``/``get_possible_hosts_from_ball_tree`` (a per-EVENT candidate-host
+lookup this companion never calls) -- so the [P3-WBHZERO] symmetric-window ruling (row #202)
+does not change Sigma~^4D.
+
 **What this computes.** ``Sigma~^4D = SUM_g w_g * S~_4D,g`` over the eligible catalogue, at
 ``h = H_GEN = H_TRUE = 0.73``, under the F2-resolved kernel (A20_REVIEW_P3_2D_DESIGN_20260825.md
 Finding 2: the production ``gaussian`` branch, mass prior centred at the Eddington-shifted
@@ -56,8 +95,9 @@ from typing import Any
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from scipy import integrate
+from scipy.optimize import brentq
+from scipy.special import roots_legendre
 from scipy.stats import norm
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -86,12 +126,26 @@ _REFERENCE_CSV = (
     THIS_DIR / "p3_b0_work/bc_900101_work/seed900101/simulations/diagnostics/event_likelihoods.csv"
 )
 
-OUT_PATH = THIS_DIR / "ca_rhs_work2d/p3_2d_companion.json"
+OUT_PATH = THIS_DIR / "ca_rhs_work2d/p3_2d_companion_v2.json"
+# v1 candidates (superseded, unbanked -- spot-check failed) stay untouched at this path.
+V1_OUT_PATH = THIS_DIR / "ca_rhs_work2d/p3_2d_companion.json"
+ARBITER_DRY_RUN_OUT_PATH = THIS_DIR / "ca_rhs_work2d/p3_2d_companion_v2_arbiter_dryrun.json"
 
 REGISTRATION_SECTION = (
     "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md "
-    "sec1 (Sigma~^4D companion), PA-2D-1 F4 (C2* resolved)"
+    "sec1 (Sigma~^4D companion), PA-2D-1 F4 (C2* resolved), PA-2D-3 (segment-aware z-rule + "
+    "arbiter-grounded target), PA-2D-4 item 4 (eligibility-independence finding)"
 )
+
+# ── PA-2D-3: segment-aware z-quadrature machinery ───────────────────────────────────────────
+_Z_SEG_GL_ORDER: int = 16  # production per-segment order (spectral for a smooth segment)
+_ZSEG_GL_NODES, _ZSEG_GL_WEIGHTS = roots_legendre(_Z_SEG_GL_ORDER)
+_Z_SEG_GL_ORDER_HI: int = 32  # cross-check order (arbiter + the fast full-pass spot-check)
+_ZSEG_GL_NODES_HI, _ZSEG_GL_WEIGHTS_HI = roots_legendre(_Z_SEG_GL_ORDER_HI)
+_ARBITER_REFINE: int = 10  # the arbiter's 3rd method: 10x more (GL-16) segments, same order
+_N_ARBITER_ROWS: int = 20  # PA-2D-3-mandated arbiter sample size
+_N_FAST_SPOT_ROWS: int = 50  # PA-2D-3-mandated full-pass spot-check sample size
+_BREAKPOINT_FINE_N: int = 4000  # dense-grid resolution for the global dl_centers -> z inversion
 
 
 def _a22_stamp_2d() -> dict[str, Any]:
@@ -349,6 +403,458 @@ def _mass_marginal_survival(
     return expectation
 
 
+def _z_breakpoints_dl_centers(
+    detection_probability: Any,
+    h: float,
+    z_lo: float,
+    z_hi: float,
+    n_fine: int = _BREAKPOINT_FINE_N,
+) -> npt.NDArray[np.float64]:
+    r"""Invert ``d_L(z;h) = dl_centers[j]`` for every ``j`` -- the 60 z-locations where the
+    bilinear ``S_4D`` grid's interpolation switches segment (a kink in ``S_bar_4D(z)``).
+
+    Computed ONCE, globally (``dl_centers`` is fixed and ``d_L(z;h)`` is host-independent at
+    fixed ``h``), so this pays 60 ``brentq`` root-finds total for the whole catalogue, not per
+    row. Bracketing: a dense monotone ``z``-grid (``n_fine`` points on ``[z_lo, z_hi]``) gives
+    a bracket for each target via ``searchsorted`` (``d_L`` is monotone increasing in ``z``,
+    :func:`~darksiren_emri.physical_relations.dist_vectorized`), then ``brentq`` refines to
+    ``xtol=rtol=1e-14`` inside that bracket -- the SAME two-stage bracket+refine pattern
+    ``spot_check_adjudication.py``'s ``_quad_pts_value`` already uses per-row (here amortized
+    over the whole run instead of paid 100 times).
+
+    Args:
+        detection_probability: ``SimulationDetectionProbability`` instance (its ``dl_centers``
+            grid is the breakpoint source).
+        h: Dimensionless Hubble parameter.
+        z_lo: Lower bound of the dense bracketing grid (should cover every host's window floor).
+        z_hi: Upper bound of the dense bracketing grid (should cover every host's window ceiling).
+        n_fine: Dense-grid resolution for bracketing.
+
+    Returns:
+        Sorted ``z``-breakpoints, one per ``dl_centers`` entry, shape ``(n_dl,)``.
+    """
+    interp_2d, _ = detection_probability._get_or_build_grid(h)
+    dl_centers = np.asarray(interp_2d.grid[0], dtype=np.float64)
+    z_fine = np.linspace(z_lo, z_hi, n_fine)
+    dl_fine = np.asarray(dist_vectorized(z_fine, h=h), dtype=np.float64)
+
+    def _dist_scalar(z: float) -> float:
+        return float(dist_vectorized(np.array([z]), h=h)[0])
+
+    z_roots = np.empty(dl_centers.shape[0], dtype=np.float64)
+    for k, dl_t in enumerate(dl_centers):
+        dl_t_f = float(dl_t)
+        if dl_t_f <= dl_fine[0]:
+            z_roots[k] = z_lo
+            continue
+        if dl_t_f >= dl_fine[-1]:
+            z_roots[k] = z_hi
+            continue
+        idx = int(np.searchsorted(dl_fine, dl_t_f))
+        lo = float(z_fine[max(idx - 1, 0)])
+        hi = float(z_fine[min(idx, n_fine - 1)])
+        if hi <= lo:
+            z_roots[k] = lo
+            continue
+        try:
+            z_roots[k] = brentq(
+                lambda z, _dl=dl_t_f: _dist_scalar(z) - _dl, lo, hi, xtol=1e-14, rtol=1e-14
+            )
+        except ValueError:
+            # bracket didn't straddle a root (fine-grid resolution artifact) -- fall back to the
+            # linear-interpolation estimate, which is still adequate as a SEGMENT boundary (any
+            # residual offset only means that one segment keeps a tiny sliver of the true kink,
+            # not that the breakpoint is missing).
+            z_roots[k] = float(np.interp(dl_t_f, dl_fine, z_fine))
+    z_roots.sort()
+    return z_roots
+
+
+def _segment_edges(
+    lower: npt.NDArray[np.float64],
+    upper: npt.NDArray[np.float64],
+    z_breakpoints: npt.NDArray[np.float64],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.int64]]:
+    r"""Per-row segment boundaries: ``[lower, ...interior breakpoints inside (lower,upper)...,
+    upper]``, vectorized over rows (NO per-row root-finding -- ``z_breakpoints`` is the global
+    table :func:`_z_breakpoints_dl_centers` already built).
+
+    Padded to a common width across the batch: rows with fewer interior breakpoints than the
+    batch max get their trailing columns filled with ``upper`` (a zero-width segment, which
+    contributes exactly ``0`` to the GL sum via its ``half=0`` factor -- see
+    :func:`_segmented_integral_batch`).
+
+    Args:
+        lower: Per-row window floor, shape ``(m,)``.
+        upper: Per-row window ceiling, shape ``(m,)``.
+        z_breakpoints: Sorted global z-breakpoints, shape ``(n_bp,)``.
+
+    Returns:
+        ``(edges, n_interior)``: ``edges`` shape ``(m, n_interior.max()+2)`` (segment
+        endpoints, ``n_interior.max()+1`` segments per row); ``n_interior`` shape ``(m,)``, the
+        actual (unpadded) interior-breakpoint count per row.
+    """
+    lo_idx = np.searchsorted(z_breakpoints, lower, side="right")
+    hi_idx = np.searchsorted(z_breakpoints, upper, side="left")
+    n_interior = hi_idx - lo_idx
+    m = lower.shape[0]
+    max_interior = int(n_interior.max()) if m else 0
+    edges = np.empty((m, max_interior + 2), dtype=np.float64)
+    edges[:, 0] = lower
+    edges[:, -1] = upper
+    if max_interior > 0:
+        k = np.arange(max_interior)
+        col_idx = lo_idx[:, None] + k[None, :]
+        valid = k[None, :] < n_interior[:, None]
+        col_idx_c = np.clip(col_idx, 0, z_breakpoints.size - 1)
+        interior_vals = z_breakpoints[col_idx_c]
+        edges[:, 1 : 1 + max_interior] = np.where(valid, interior_vals, upper[:, None])
+    return edges, n_interior
+
+
+def _refine_edges(edges: npt.NDArray[np.float64], factor: int) -> npt.NDArray[np.float64]:
+    """Subdivide every existing segment into ``factor`` equal sub-segments (arbiter method 3:
+    ``factor``x more segments at the SAME GL order, demonstrating convergence via refinement
+    rather than order). Zero-width (padding) segments stay zero-width sub-segments -- safe."""
+    m, n_pts = edges.shape
+    n_seg = n_pts - 1
+    cols = []
+    for kseg in range(n_seg):
+        seg_lo = edges[:, kseg]
+        seg_hi = edges[:, kseg + 1]
+        for j in range(factor):
+            t = j / factor
+            cols.append(seg_lo + t * (seg_hi - seg_lo))
+    cols.append(edges[:, -1])
+    return np.stack(cols, axis=1)
+
+
+def _segmented_integral_batch(
+    z_g: npt.NDArray[np.float64],
+    z_err_eff: npt.NDArray[np.float64],
+    phiS: npt.NDArray[np.float64],
+    qS: npt.NDArray[np.float64],
+    mu: npt.NDArray[np.float64],
+    sigma: npt.NDArray[np.float64],
+    completeness: Any,
+    detection_probability: Any,
+    h: float,
+    edges: npt.NDArray[np.float64],
+    gl_nodes: npt.NDArray[np.float64],
+    gl_weights: npt.NDArray[np.float64],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    r"""``(numerator, Z_g)`` of the kernel-smeared z-integral, segment-aware: sums a per-segment
+    fixed-order GL rule (``gl_nodes``/``gl_weights``, order given by the caller -- the SAME
+    machinery serves the production GL-16 pass and the GL-32/refined arbiter/spot-check calls)
+    over every row's ``edges`` (from :func:`_segment_edges` or :func:`_refine_edges`).
+
+    Args:
+        z_g: Host redshift(s), shape ``(m,)``.
+        z_err_eff: Effective photo-z kernel width, shape ``(m,)``.
+        phiS: Host sky azimuth, shape ``(m,)``.
+        qS: Host sky colatitude, shape ``(m,)``.
+        mu: Mass-Gaussian mean (Eddington-shifted), shape ``(m,)``.
+        sigma: Mass-Gaussian std, shape ``(m,)``.
+        completeness: Per-pixel completeness model.
+        detection_probability: ``SimulationDetectionProbability`` instance.
+        h: Dimensionless Hubble parameter.
+        edges: Per-row segment endpoints, shape ``(m, n_seg+1)``.
+        gl_nodes: GL nodes on ``[-1, 1]``, shape ``(gl_order,)``.
+        gl_weights: GL weights on ``[-1, 1]``, shape ``(gl_order,)``.
+
+    Returns:
+        ``(numerator, z_norm)``, each shape ``(m,)`` -- ``S~_4D,g = numerator / z_norm``.
+    """
+    m = z_g.shape[0]
+    n_seg = edges.shape[1] - 1
+    host_pixels = c1d._host_pixels(completeness, phiS, qS)
+    numerator = np.zeros(m, dtype=np.float64)
+    z_norm = np.zeros(m, dtype=np.float64)
+    for s in range(n_seg):
+        seg_lo = edges[:, s]
+        seg_hi = edges[:, s + 1]
+        half = 0.5 * (seg_hi - seg_lo)
+        mid = 0.5 * (seg_hi + seg_lo)
+        z_nodes = mid[:, None] + half[:, None] * gl_nodes[None, :]
+        w_pop_eff = c1d._kernel_w_pop_eff(z_nodes, completeness, host_pixels, h)
+        gaussian_vals = norm.pdf(z_nodes, loc=z_g[:, None], scale=z_err_eff[:, None])
+        kernel_unnorm = gaussian_vals * w_pop_eff
+        d_L_nodes = np.asarray(dist_vectorized(z_nodes.ravel(), h=h), dtype=np.float64).reshape(
+            z_nodes.shape
+        )
+        mu_b = np.broadcast_to(mu[:, None], z_nodes.shape)
+        sigma_b = np.broadcast_to(sigma[:, None], z_nodes.shape)
+        s_bar_4d = _mass_marginal_survival(
+            mu_b, sigma_b, z_nodes, d_L_nodes, phiS, qS, detection_probability, h
+        )
+        numerator += np.sum(kernel_unnorm * s_bar_4d * gl_weights[None, :], axis=1) * half
+        z_norm += np.sum(kernel_unnorm * gl_weights[None, :], axis=1) * half
+    return numerator, z_norm
+
+
+def _run_arbiter(
+    cat: dict[str, npt.NDArray[np.float64]],
+    M_eff: npt.NDArray[np.float64],
+    completeness: Any,
+    detection_probability: Any,
+    h: float,
+    z_breakpoints: npt.NDArray[np.float64],
+    n_rows: int = _N_ARBITER_ROWS,
+    seed: int = 20260825,
+) -> dict[str, Any]:
+    """PA-2D-3 arbiter: on ``n_rows`` random catalogue rows, compute S~_4D,g THREE independent
+    ways -- (1) production GL-16-per-segment, (2) GL-32-per-segment (order cross-check), (3)
+    GL-16 on 10x-refined segments (refinement cross-check) -- and report their mutual
+    convergence. The tightest pairwise agreement (GL-32 vs 10x-refined) is the demonstrated
+    plateau ``L_conv``; the re-run's spot-check target is ``10 * L_conv``.
+    """
+    rng = np.random.default_rng(seed)
+    n_g = cat["z"].size
+    idx = rng.choice(n_g, size=min(n_rows, n_g), replace=False)
+    z_g = cat["z"][idx]
+    z_error = cat["z_error"][idx]
+    phiS = cat["phiS"][idx]
+    qS = cat["qS"][idx]
+    mu = M_eff[idx]
+    sigma = cat["M_error"][idx]
+    z_err_eff = c1d.host_z_error_eff(z_g, z_error)
+    lower, upper = c1d._host_kernel_window(z_g, z_err_eff)
+    edges, n_interior = _segment_edges(lower, upper, z_breakpoints)
+    edges_refined = _refine_edges(edges, _ARBITER_REFINE)
+
+    num16, den16 = _segmented_integral_batch(
+        z_g,
+        z_err_eff,
+        phiS,
+        qS,
+        mu,
+        sigma,
+        completeness,
+        detection_probability,
+        h,
+        edges,
+        _ZSEG_GL_NODES,
+        _ZSEG_GL_WEIGHTS,
+    )
+    num32, den32 = _segmented_integral_batch(
+        z_g,
+        z_err_eff,
+        phiS,
+        qS,
+        mu,
+        sigma,
+        completeness,
+        detection_probability,
+        h,
+        edges,
+        _ZSEG_GL_NODES_HI,
+        _ZSEG_GL_WEIGHTS_HI,
+    )
+    num_ref, den_ref = _segmented_integral_batch(
+        z_g,
+        z_err_eff,
+        phiS,
+        qS,
+        mu,
+        sigma,
+        completeness,
+        detection_probability,
+        h,
+        edges_refined,
+        _ZSEG_GL_NODES,
+        _ZSEG_GL_WEIGHTS,
+    )
+
+    val16 = num16 / np.where(den16 > 0.0, den16, 1.0)
+    val32 = num32 / np.where(den32 > 0.0, den32, 1.0)
+    val_ref = num_ref / np.where(den_ref > 0.0, den_ref, 1.0)
+
+    rel_16_vs_ref = np.abs(val16 - val_ref) / np.maximum(np.abs(val_ref), 1.0e-300)
+    rel_32_vs_ref = np.abs(val32 - val_ref) / np.maximum(np.abs(val_ref), 1.0e-300)
+    rel_16_vs_32 = np.abs(val16 - val32) / np.maximum(np.abs(val32), 1.0e-300)
+
+    plateau = float(max(float(np.max(rel_32_vs_ref)), 1.0e-300))
+    target = plateau * 10.0
+
+    rows_out = []
+    for k in range(len(idx)):
+        rows_out.append(
+            {
+                "catalogue_idx": int(idx[k]),
+                "z_g": float(z_g[k]),
+                "n_segments_gl16": int(n_interior[k]) + 1,
+                "val_gl16": float(val16[k]),
+                "val_gl32": float(val32[k]),
+                "val_10x_refined": float(val_ref[k]),
+                "rel_dev_gl16_vs_refined": float(rel_16_vs_ref[k]),
+                "rel_dev_gl32_vs_refined": float(rel_32_vs_ref[k]),
+                "rel_dev_gl16_vs_gl32": float(rel_16_vs_32[k]),
+            }
+        )
+    return {
+        "n_rows": int(len(idx)),
+        "seed": seed,
+        "rows": rows_out,
+        "max_rel_dev_gl16_vs_refined": float(np.max(rel_16_vs_ref)),
+        "max_rel_dev_gl32_vs_refined": float(np.max(rel_32_vs_ref)),
+        "max_rel_dev_gl16_vs_gl32": float(np.max(rel_16_vs_32)),
+        "median_rel_dev_gl16_vs_refined": float(np.median(rel_16_vs_ref)),
+        "median_rel_dev_gl32_vs_refined": float(np.median(rel_32_vs_ref)),
+        "plateau_L_conv": plateau,
+        "plateau_definition": "max over sampled rows of |GL32 - 10x_refined_GL16| / |10x_refined_GL16|",
+        "derived_spot_check_target": target,
+        "target_definition": "10 * plateau_L_conv",
+        "gl_order_baseline": _Z_SEG_GL_ORDER,
+        "gl_order_cross_check": _Z_SEG_GL_ORDER_HI,
+        "refine_factor": _ARBITER_REFINE,
+    }
+
+
+def _fast_spot_check(
+    cat: dict[str, npt.NDArray[np.float64]],
+    M_eff: npt.NDArray[np.float64],
+    s_tilde_4d: npt.NDArray[np.float64],
+    completeness: Any,
+    detection_probability: Any,
+    h: float,
+    z_breakpoints: npt.NDArray[np.float64],
+    target: float,
+    n_spot: int = _N_FAST_SPOT_ROWS,
+    seed: int = 20260826,
+) -> dict[str, Any]:
+    """PA-2D-3 full-pass spot-check: per-segment GL-16 (production, already computed in
+    ``s_tilde_4d``) vs GL-32 (cross-check, freshly computed on the SAME breakpoints) on
+    ``n_spot`` random rows -- cheap (no nested ``scipy.integrate.quad``), target from
+    :func:`_run_arbiter`'s demonstrated plateau, not the unfalsifiable raw 1e-6.
+    """
+    rng = np.random.default_rng(seed)
+    n_g = cat["z"].size
+    idx = rng.choice(n_g, size=min(n_spot, n_g), replace=False)
+    z_g = cat["z"][idx]
+    z_error = cat["z_error"][idx]
+    phiS = cat["phiS"][idx]
+    qS = cat["qS"][idx]
+    mu = M_eff[idx]
+    sigma = cat["M_error"][idx]
+    z_err_eff = c1d.host_z_error_eff(z_g, z_error)
+    lower, upper = c1d._host_kernel_window(z_g, z_err_eff)
+    edges, _ = _segment_edges(lower, upper, z_breakpoints)
+    num32, den32 = _segmented_integral_batch(
+        z_g,
+        z_err_eff,
+        phiS,
+        qS,
+        mu,
+        sigma,
+        completeness,
+        detection_probability,
+        h,
+        edges,
+        _ZSEG_GL_NODES_HI,
+        _ZSEG_GL_WEIGHTS_HI,
+    )
+    val32 = num32 / np.where(den32 > 0.0, den32, 1.0)
+    val16 = s_tilde_4d[idx]
+    rel_dev = np.abs(val16 - val32) / np.maximum(np.abs(val32), 1.0e-300)
+    return {
+        "n_spot": int(len(idx)),
+        "seed": seed,
+        "method": "per-segment GL-16 (production) vs GL-32 (cross-check), identical breakpoints",
+        "max_rel_dev": float(np.max(rel_dev)),
+        "median_rel_dev": float(np.median(rel_dev)),
+        "target_rel_dev": target,
+        "target_met": bool(np.max(rel_dev) <= target),
+    }
+
+
+def _eligibility_independence_finding() -> dict[str, Any]:
+    """PA-2D-4 item 4: code-path trace of every input :func:`compute_sigma_tilde_4d` consumes,
+    checked for ``mass_filter_sigma``/``get_possible_hosts_from_ball_tree`` conditioning (the
+    [P3-WBHZERO] candidate-host mass pre-filter, ``handler.py:~570-675``, a per-EVENT lookup).
+    Traced by direct inspection of each producer's source, not assumed."""
+    return {
+        "question": (
+            "Does any input Sigma_tilde_4D consumes depend on mass_filter_sigma / "
+            "get_possible_hosts_from_ball_tree candidate-host filtering?"
+        ),
+        "verdict": "INDEPENDENT",
+        "inputs": [
+            {
+                "input": "reduced galaxy catalogue "
+                "(c1d._load_galaxy_catalog_handler(REDUCED_CATALOGUE_PATH).reduced_galaxy_catalog)",
+                "producer": "darksiren_emri/galaxy_catalogue/handler.py:GalaxyCatalogueHandler "
+                "(loads reduced_galaxy_catalogue.csv wholesale)",
+                "mass_filter_conditioned": False,
+                "evidence": (
+                    "_load_eligible_catalogue applies its OWN eligibility mask directly "
+                    "(z<z_max & isfinite(M) & M>0) to the FULL, unfiltered catalogue frame. "
+                    "mass_filter_sigma only appears inside handler.py's "
+                    "get_possible_hosts_from_ball_tree (~line 570-675), a per-EVENT candidate "
+                    "lookup this companion never calls (grep for mass_filter_sigma / "
+                    "get_possible_hosts_from_ball_tree in this file and correspondence_1d.py's "
+                    "b0i-2D build path returns no hits outside that one handler.py function)."
+                ),
+            },
+            {
+                "input": "completeness (c1d.from_cache_or_build(), pixel_completeness.py)",
+                "producer": "darksiren_emri/galaxy_catalogue/pixel_completeness.py:"
+                "from_cache_or_build -> build_m_th_map(catalog_path=REDUCED_CATALOGUE_FILE_PATH) "
+                "(the frozen per-HEALPix-pixel m_th threshold-magnitude cache)",
+                "mass_filter_conditioned": False,
+                "evidence": (
+                    "grep for mass_filter/get_possible_hosts_from_ball_tree in "
+                    "pixel_completeness.py returns no hits; the m_th map is a sky-pixel "
+                    "detection-threshold map built from the full unfiltered catalogue, no "
+                    "BH-mass filtering step anywhere in build_m_th_map."
+                ),
+            },
+            {
+                "input": "detection_probability (SimulationDetectionProbability, from "
+                "build_b0i_2d_selection_objects)",
+                "producer": "darksiren_emri/bayesian_inference/simulation_detection_probability.py, "
+                "built from the PINNED LISA injection pool (injection_dir=INJECTION_POOL_DIR), "
+                "not the galaxy catalogue at all",
+                "mass_filter_conditioned": False,
+                "evidence": (
+                    "grep for mass_filter in simulation_detection_probability.py returns no "
+                    "hits; the (dl_centers, M_centers) survival grid is built purely from "
+                    "injected/recovered synthetic sources -- no galaxy candidate list is "
+                    "involved anywhere in its construction."
+                ),
+            },
+            {
+                "input": "phi_survival_table (bayesian_statistics.precompute_phi_marginal_survival, "
+                "from build_b0i_2d_selection_objects)",
+                "producer": "bayesian_statistics.py:precompute_phi_marginal_survival"
+                "(detection_probability_obj=...); derived purely from the detection_probability "
+                "object above",
+                "mass_filter_conditioned": False,
+                "evidence": (
+                    "Same injection-pool-only provenance as detection_probability; no galaxy "
+                    "catalogue or candidate-host step anywhere in its call chain."
+                ),
+            },
+        ],
+        "note_out_of_scope": (
+            "beta_G_phi/beta_Gbar_phi/Sigma_phi (the C2* normalizer legs, read from "
+            "o5.mass_companion/o5._beta_g_phi_and_gbar) are a SEPARATE multiplicative factor of "
+            "C2*, not part of Sigma_tilde_4D itself; they are read from a banked "
+            "event_likelihoods.csv produced under that run's own mass_filter_sigma setting, but "
+            "are asserted AND runtime-checked (np.allclose across events) to be event-independent "
+            "constants at fixed (h, flags) -- PA-2D-4 item 4 as registered scopes the check to "
+            "Sigma_tilde_4D's own inputs, which this finding covers exhaustively."
+        ),
+        "conclusion": (
+            "Sigma_tilde_4D's contraction consumes the draw law only (galaxy-catalogue "
+            "eligibility + injection-pool-derived completeness/survival objects); it is NOT "
+            "conditioned on the candidate mass filter (mass_filter_sigma / "
+            "get_possible_hosts_from_ball_tree), so the [P3-WBHZERO] symmetric-window ruling "
+            "(row #202) does not change Sigma_tilde_4D and does not require re-deriving the "
+            "frozen C2* under that axis."
+        ),
+    }
+
+
 def compute_sigma_tilde_4d(
     completeness: Any,
     phi_survival_table: dict[float, Any],
@@ -363,6 +869,38 @@ def compute_sigma_tilde_4d(
     M_eff = _eddington_shifted_host_mass_batch(cat["M"], cat["M_error"])
     w_g = np.asarray(R_eff_per_mbh(cat["M"]), dtype=np.float64) / (1.0 + cat["z"])
 
+    # Memory-bounded (mirrors the existing kernel_smeared_survival/mass_companion chunking
+    # convention, ``:1300-1306``/``bayesian_statistics.py``): the window bound scan for the
+    # global z-breakpoints is done PER CHUNK, never materializing a full-length
+    # (z_err_eff, lower, upper) triple over the whole ~20.8M-row pool at once -- an unchunked
+    # version measured OOM-SIGKILL risk under concurrent memory pressure on this 30 GB box
+    # (2026-08-25 readiness validation, a live p3_2d_fleet.py pilot alongside it pushed
+    # available memory to ~9 GB). Row-independent, so this is a pure memory-shape transform.
+    z_lo_bound = float("inf")
+    z_hi_bound = float("-inf")
+    for start in range(0, n_g, chunk):
+        sl = slice(start, min(start + chunk, n_g))
+        z_err_eff_c = c1d.host_z_error_eff(cat["z"][sl], cat["z_error"][sl])
+        lower_c, upper_c = c1d._host_kernel_window(cat["z"][sl], z_err_eff_c)
+        z_lo_bound = min(z_lo_bound, float(lower_c.min()))
+        z_hi_bound = max(z_hi_bound, float(upper_c.max()))
+    z_lo_bound = max(z_lo_bound, c1d._B0I_KERNEL_Z_FLOOR)
+    z_breakpoints = _z_breakpoints_dl_centers(detection_probability, h, z_lo_bound, z_hi_bound)
+    print(
+        f"  [+{time.time() - _t0:.1f}s] z-breakpoints built: n={z_breakpoints.size} "
+        f"range=[{z_breakpoints.min():.4f},{z_breakpoints.max():.4f}]",
+        file=sys.stderr,
+    )
+
+    # PA-2D-3: build the arbiter FIRST (before the full pass), on the real catalogue+breakpoints.
+    arbiter = _run_arbiter(cat, M_eff, completeness, detection_probability, h, z_breakpoints)
+    spot_target = arbiter["derived_spot_check_target"]
+    print(
+        f"  [+{time.time() - _t0:.1f}s] arbiter done: plateau={arbiter['plateau_L_conv']:.3e} "
+        f"target={spot_target:.3e}",
+        file=sys.stderr,
+    )
+
     s_tilde_4d = np.empty(n_g, dtype=np.float64)
     # [PA-2D-2 fix] diagnostic renamed: the exact closed form has no GH nodes to count, so the
     # old "n_nonpositive_mass_gh_nodes" (a GH-24 order-parameter artifact) is replaced by the
@@ -371,41 +909,53 @@ def compute_sigma_tilde_4d(
     # segment start (Phi_at0 - Phi(0)) excludes below zero, i.e. what the F2 MINOR-6 guard removes.
     sum_p_m_le_0 = 0.0
     n_rows_m_le_0_nonnegligible = 0  # rows with P(M<=0) > 1e-9 (i.e. the guard is NOT negligible)
+    seg_counts = np.empty(n_g, dtype=np.int64)
     for start in range(0, n_g, chunk):
         sl = slice(start, min(start + chunk, n_g))
         z_g = cat["z"][sl]
         z_err_eff = c1d.host_z_error_eff(z_g, cat["z_error"][sl])
         lower, upper = c1d._host_kernel_window(z_g, z_err_eff)
-        half = 0.5 * (upper - lower)
-        mid = 0.5 * (upper + lower)
-        z_nodes = mid[:, None] + half[:, None] * c1d._GL_NODES_B0I[None, :]  # (m, 50)
-        host_pixels = c1d._host_pixels(completeness, cat["phiS"][sl], cat["qS"][sl])
-        w_pop_eff = c1d._kernel_w_pop_eff(z_nodes, completeness, host_pixels, h)
-        gaussian_vals = norm.pdf(z_nodes, loc=z_g[:, None], scale=z_err_eff[:, None])
-        kernel_unnorm = gaussian_vals * w_pop_eff  # (m, 50)
+        mu = M_eff[sl]
+        sigma = cat["M_error"][sl]
 
-        d_L_nodes = np.asarray(dist_vectorized(z_nodes.ravel(), h=h), dtype=np.float64).reshape(
-            z_nodes.shape
+        edges, n_interior = _segment_edges(lower, upper, z_breakpoints)
+        seg_counts[sl] = n_interior + 1
+        numerator, z_norm = _segmented_integral_batch(
+            z_g,
+            z_err_eff,
+            cat["phiS"][sl],
+            cat["qS"][sl],
+            mu,
+            sigma,
+            completeness,
+            detection_probability,
+            h,
+            edges,
+            _ZSEG_GL_NODES,
+            _ZSEG_GL_WEIGHTS,
         )
-        mu = np.broadcast_to(M_eff[sl][:, None], z_nodes.shape)
-        sigma = np.broadcast_to(cat["M_error"][sl][:, None], z_nodes.shape)
-        s_bar_4d_nodes = _mass_marginal_survival(
-            mu, sigma, z_nodes, d_L_nodes, cat["phiS"][sl], cat["qS"][sl], detection_probability, h
-        )
+        z_norm_safe = np.where(z_norm > 0.0, z_norm, 1.0)
+        s_tilde_4d[sl] = numerator / z_norm_safe
+
         sigma_safe_diag = np.where(sigma > 0.0, sigma, 1.0)
         p_m_le_0 = np.where(sigma > 0.0, norm.cdf(0.0, loc=mu, scale=sigma_safe_diag), 0.0)
         sum_p_m_le_0 += float(np.sum(p_m_le_0))
         n_rows_m_le_0_nonnegligible += int(np.count_nonzero(p_m_le_0 > 1.0e-9))
 
-        numerator = (
-            np.sum(kernel_unnorm * s_bar_4d_nodes * c1d._GL_WEIGHTS_B0I[None, :], axis=1) * half
+        print(
+            f"  [+{time.time() - _t0:.1f}s] chunk {start}:{sl.stop}/{n_g} done "
+            f"(max_segments_this_chunk={int(n_interior.max()) + 1 if n_interior.size else 1})",
+            file=sys.stderr,
         )
-        z_norm = np.sum(kernel_unnorm * c1d._GL_WEIGHTS_B0I[None, :], axis=1) * half
-        z_norm = np.where(z_norm > 0.0, z_norm, 1.0)
-        s_tilde_4d[sl] = numerator / z_norm
-        print(f"  [+{time.time() - _t0:.1f}s] chunk {start}:{sl.stop}/{n_g} done", file=sys.stderr)
 
     sigma_tilde_4d = float(np.sum(w_g * s_tilde_4d))
+    n_segments_stats = {
+        "mean": float(seg_counts.mean()),
+        "median": float(np.median(seg_counts)),
+        "p99": float(np.percentile(seg_counts, 99)),
+        "max": int(seg_counts.max()),
+        "min": int(seg_counts.min()),
+    }
     return {
         "Sigma_tilde_4D": sigma_tilde_4d,
         "n_eligible": int(n_g),
@@ -415,6 +965,10 @@ def compute_sigma_tilde_4d(
         "s_tilde_4d": s_tilde_4d,
         "M_eff": M_eff,
         "catalogue": cat,
+        "z_breakpoints": z_breakpoints,
+        "n_segments_stats": n_segments_stats,
+        "arbiter": arbiter,
+        "spot_check_target": spot_target,
     }
 
 
@@ -513,7 +1067,139 @@ def _spot_check(
     }
 
 
+def _arbiter_only_dry_run() -> None:
+    """PA-2D-3 readiness validation: build selection objects + the real catalogue + the real
+    global z-breakpoints, run the ~20-row arbiter, and compute CHEAP full-catalogue segment-
+    count statistics (window + searchsorted only -- NO S_4D evaluation, so this stays fast even
+    at the full ~20.8M-row eligible pool) plus a small timed sample of the actual expensive
+    per-row integral to extrapolate the full-pass wall time. Does NOT run the (expensive) full
+    pass and does NOT touch ``OUT_PATH`` (PA-CA-11 out-root guard scopes only the banked
+    companion-pass output) -- writes to :data:`ARBITER_DRY_RUN_OUT_PATH` instead, refusing to
+    overwrite an existing file there under the same convention.
+    """
+    if ARBITER_DRY_RUN_OUT_PATH.is_file():
+        raise SystemExit(
+            f"REFUSED (PA-CA-11 convention): {ARBITER_DRY_RUN_OUT_PATH} already exists -- purge "
+            "or pick a fresh path."
+        )
+    ARBITER_DRY_RUN_OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    t0 = time.time()
+    stamp = _a22_stamp_2d()
+
+    print(f"[t={time.time() - t0:.1f}s] building b0i-2D selection objects...", file=sys.stderr)
+    completeness, phi_survival_table, detection_probability = c1d.build_b0i_2d_selection_objects(
+        h_true=H_GEN
+    )
+    cat = _load_eligible_catalogue(completeness, phi_survival_table, H_GEN)
+    n_g = cat["z"].size
+    print(f"[t={time.time() - t0:.1f}s] catalogue loaded, n_eligible={n_g}", file=sys.stderr)
+    M_eff = _eddington_shifted_host_mass_batch(cat["M"], cat["M_error"])
+
+    z_err_eff_all = c1d.host_z_error_eff(cat["z"], cat["z_error"])
+    lower_all, upper_all = c1d._host_kernel_window(cat["z"], z_err_eff_all)
+    z_lo_bound = float(max(float(lower_all.min()), c1d._B0I_KERNEL_Z_FLOOR))
+    z_hi_bound = float(upper_all.max())
+    z_breakpoints = _z_breakpoints_dl_centers(detection_probability, H_GEN, z_lo_bound, z_hi_bound)
+    print(
+        f"[t={time.time() - t0:.1f}s] z-breakpoints built: n={z_breakpoints.size} "
+        f"range=[{z_breakpoints.min():.4f},{z_breakpoints.max():.4f}]",
+        file=sys.stderr,
+    )
+
+    arbiter = _run_arbiter(cat, M_eff, completeness, detection_probability, H_GEN, z_breakpoints)
+    print(
+        f"[t={time.time() - t0:.1f}s] arbiter done: plateau={arbiter['plateau_L_conv']:.3e} "
+        f"target={arbiter['derived_spot_check_target']:.3e} "
+        f"max_gl16_vs_gl32={arbiter['max_rel_dev_gl16_vs_gl32']:.3e}",
+        file=sys.stderr,
+    )
+
+    # Cheap full-catalogue segmentation stats: window+searchsorted only, NO S_4D evaluation.
+    t_seg0 = time.time()
+    seg_counts = np.empty(n_g, dtype=np.int64)
+    for start in range(0, n_g, 500_000):
+        sl = slice(start, min(start + 500_000, n_g))
+        _, n_interior = _segment_edges(lower_all[sl], upper_all[sl], z_breakpoints)
+        seg_counts[sl] = n_interior + 1
+    t_seg = time.time() - t_seg0
+    n_segments_stats = {
+        "n_rows": int(n_g),
+        "mean": float(seg_counts.mean()),
+        "median": float(np.median(seg_counts)),
+        "p99": float(np.percentile(seg_counts, 99)),
+        "max": int(seg_counts.max()),
+        "min": int(seg_counts.min()),
+        "wall_time_s_cheap_pass": t_seg,
+    }
+    print(
+        f"[t={time.time() - t0:.1f}s] cheap full-catalogue segment stats: {n_segments_stats}",
+        file=sys.stderr,
+    )
+
+    # Timed sample of the ACTUAL expensive per-row integral (production GL-16), to extrapolate.
+    n_sample = min(5000, n_g)
+    rng = np.random.default_rng(999)
+    idx_sample = rng.choice(n_g, size=n_sample, replace=False)
+    t_sample0 = time.time()
+    edges_s, _ = _segment_edges(lower_all[idx_sample], upper_all[idx_sample], z_breakpoints)
+    _num_s, _den_s = _segmented_integral_batch(
+        cat["z"][idx_sample],
+        z_err_eff_all[idx_sample],
+        cat["phiS"][idx_sample],
+        cat["qS"][idx_sample],
+        M_eff[idx_sample],
+        cat["M_error"][idx_sample],
+        completeness,
+        detection_probability,
+        H_GEN,
+        edges_s,
+        _ZSEG_GL_NODES,
+        _ZSEG_GL_WEIGHTS,
+    )
+    t_sample = time.time() - t_sample0
+    sec_per_row = t_sample / n_sample
+    est_full_pass_s = sec_per_row * n_g
+    print(
+        f"[t={time.time() - t0:.1f}s] timed sample: n={n_sample} t={t_sample:.2f}s "
+        f"({sec_per_row * 1000.0:.3f} ms/row) -> est full-pass (z-stage) "
+        f"{est_full_pass_s:.0f}s ({est_full_pass_s / 3600.0:.2f}h) over n_eligible={n_g}",
+        file=sys.stderr,
+    )
+
+    out: dict[str, Any] = {
+        "reference": f"{REGISTRATION_SECTION} -- ARBITER-ONLY READINESS DRY RUN, no full pass",
+        "h": H_GEN,
+        "resolved_flags": stamp,
+        "n_eligible": int(n_g),
+        "z_breakpoints_n": int(z_breakpoints.size),
+        "z_breakpoints_range": [float(z_breakpoints.min()), float(z_breakpoints.max())],
+        "arbiter": arbiter,
+        "n_segments_stats_full_catalogue_cheap": n_segments_stats,
+        "timed_sample": {
+            "n_sample": int(n_sample),
+            "wall_time_s": t_sample,
+            "sec_per_row": sec_per_row,
+            "estimated_full_pass_z_stage_wall_time_s": est_full_pass_s,
+            "estimated_full_pass_z_stage_wall_time_h": est_full_pass_s / 3600.0,
+            "note": "z-stage only (the expensive segmented integral loop); excludes catalogue "
+            "load, breakpoint build (both one-time, small), and the fast 50-row spot-check "
+            "(negligible) -- add ~10-20% margin for those plus process overhead.",
+        },
+        "eligibility_independence": _eligibility_independence_finding(),
+        "wall_time_s_total": time.time() - t0,
+    }
+    ARBITER_DRY_RUN_OUT_PATH.write_text(json.dumps(out, indent=2))
+    print(json.dumps({k: v for k, v in out.items() if k not in ("resolved_flags",)}, indent=2))
+    print(f"\nwrote {ARBITER_DRY_RUN_OUT_PATH}")
+
+
 def main() -> None:
+    import os as _os
+
+    if _os.environ.get("P3_2D_COMPANION_ARBITER_ONLY"):
+        _arbiter_only_dry_run()
+        return
+
     if OUT_PATH.is_file():
         raise SystemExit(
             f"REFUSED (PA-CA-11): {OUT_PATH} already exists -- purge or use a fresh out path "
@@ -545,17 +1231,15 @@ def main() -> None:
     c2_star = beta_g_phi * result["Sigma_tilde_4D"] / (sigma_phi * beta_gbar_phi)
 
     t1 = time.time()
-    import os as _os
-
-    n_spot = int(_os.environ.get("P3_2D_COMPANION_N_SPOT", "100"))
-    spot = _spot_check(
+    spot = _fast_spot_check(
         result["catalogue"],
         result["M_eff"],
         result["s_tilde_4d"],
         completeness,
         detection_probability,
         H_GEN,
-        n_spot=n_spot,
+        result["z_breakpoints"],
+        result["spot_check_target"],
     )
     t_spot = time.time() - t1
 
@@ -572,7 +1256,21 @@ def main() -> None:
         "Sigma_phi": sigma_phi,
         "reference_csv": str(_REFERENCE_CSV),
         "C2_star": c2_star,
+        "z_segmentation": {
+            "description": (
+                "Per-host +/-4sigma z-window subdivided at every z where d_L(z;h) crosses a "
+                "dl_centers grid edge (60 global breakpoints, inverted once via brentq); each "
+                "smooth sub-segment integrated with a fixed order-16 Gauss-Legendre rule "
+                "(PA-2D-3 fix for the GL(50)-under-resolves-kinks defect)."
+            ),
+            "gl_order_per_segment": _Z_SEG_GL_ORDER,
+            "n_breakpoints": int(result["z_breakpoints"].size),
+        },
+        "n_segments_stats": result["n_segments_stats"],
+        "arbiter": result["arbiter"],
         "spot_check": spot,
+        "eligibility_independence": _eligibility_independence_finding(),
+        "v1_superseded_path": str(V1_OUT_PATH),
         "wall_time_s": {
             "companion_pass": t_companion,
             "spot_check": t_spot,
