@@ -32,6 +32,7 @@ Covered here (the amended [P5]-1 list):
 CPU-only; no GPU, no pool.
 """
 
+import math
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -324,14 +325,17 @@ def test_pre_fusion_cells_reproduce_the_recorded_pins_exactly(cell: str, h: floa
     row = _run_p_Di(h=h, selection_cell=cell)
     pins = _PRE_FUSION_PINS[(cell, h)]
     for key, value in pins.items():
-        assert row[key] == value, key
+        # rel_tol 1e-12: the recorded pins are machine-of-record values; CI
+        # runners differ at the last ulp (microarch/BLAS), while any formula
+        # change moves these by far more (2026-08-25, run 32817397529).
+        assert math.isclose(row[key], value, rel_tol=1e-12, abs_tol=0.0), key
 
 
 @pytest.mark.parametrize("h", _H_GRID)
 def test_fused_1d_leg_equals_the_1d_cell(h: float) -> None:
     """'fused' B_num == '1d' B_num: [P2] is the promoted branch, unchanged."""
     fused = _run_fused(h, "fused")
-    assert fused["B_num"] == _PRE_FUSION_PINS[("1d", h)]["B_num"]
+    assert math.isclose(fused["B_num"], _PRE_FUSION_PINS[("1d", h)]["B_num"], rel_tol=1e-12)
 
 
 @pytest.mark.parametrize("h", _H_GRID)
@@ -350,7 +354,7 @@ def test_fused_2d_leg_scales_by_the_constant_survival(h: float) -> None:
 def test_2d_cell_touches_only_the_2d_leg(h: float) -> None:
     """'2d' ([P1]-only): B_num stays at the off pin; B_num_wbh carries S."""
     cell = _run_fused(h, "2d")
-    assert cell["B_num"] == _PRE_FUSION_PINS[("off", h)]["B_num"]
+    assert math.isclose(cell["B_num"], _PRE_FUSION_PINS[("off", h)]["B_num"], rel_tol=1e-12)
     np.testing.assert_allclose(
         cell["B_num_wbh"],
         _S_4D_CONST * _PRE_FUSION_PINS[("off", h)]["B_num_wbh"],
