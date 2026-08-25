@@ -2896,3 +2896,18 @@ empirical-Bayes/shrinkage theory." R0 (repo-cited papers, re-read for caveats) F
 
 The mechanism chain that found it: the M2-LINK gate (registered for a different defect class)
 → the pilot STOP → the forensic. Every number [AGENT] until Gate B re-derives.
+
+## Row #195 — 2026-08-25 — Author ruling (verbatim): "all approved, the new finding is huge, lets see what the verification agent returns with."
+
+Orchestrator-derived itemization (binding-default: covers the LISTED pending items whose
+inputs existed; the Gate-B verdict is explicitly NOT pre-approved — the author's own words
+defer it):
+1. **[RULE, granted] Production adoption of the 1D catalogue-leg twin**
+   (`PROPOSAL_CATALOGUE_TWIN_PRODUCTION_20260825.md` §7 item 1 + the §6 verification plan
+   item 2). NOTE: independent of [P3-WBHZERO] — the mass pre-filter affects ONLY the with-BH
+   candidate set; the no-BH channel's candidate ball carries no mass filter (verified at
+   handler.py:634-642 scope). Adoption executes now, the row-#178 pattern.
+2. **[DO, granted] [HIER] §5 items 1+2** — the (h,θ)-grid experiment authorized (prereg →
+   review chain → cluster array, sequenced AFTER [P3-2D]/[P3-WBHZERO] per §5 item 4 as
+   recommended); the [86] (Vijaykumar+ 2024) reading obligation proceeds now.
+3. The [P3-2D] HOLD + M2-LINK re-attribution amendment sequencing RATIFIED.
