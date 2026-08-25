@@ -1,0 +1,26 @@
+{
+  "subdir": "wza_900112",
+  "seed": 900112,
+  "arm": "wza",
+  "venue": "b0i",
+  "mass_filter_sigma": "asymmetric",
+  "work_root": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/wbhzero_work/wza_900112_work",
+  "crb_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/wbhzero_work/wza_900112_work/seed900112/simulations/prepared_cramer_rao_bounds.csv",
+  "diagnostics_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/wbhzero_work/wza_900112_work/seed900112/simulations/diagnostics/event_likelihoods.csv",
+  "hostcounts_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/wbhzero_work/hostcounts_wza_900112.csv",
+  "wall_time_s": 55.17525672912598,
+  "elapsed_evaluate_s": 52.326035022735596,
+  "n_events": 200,
+  "a22_stamp": {
+    "git_commit_at_start": "88230f39f5fc21b88c3660493996c5a2f609d924",
+    "tree_dirty_incl_instrument": "clean",
+    "mass_filter_sigma": "asymmetric",
+    "catalogue_pin_ok": true,
+    "environment_provenance": {
+      "numpy": "2.4.3",
+      "sklearn": "1.8.0",
+      "pandas": "3.0.1"
+    }
+  },
+  "git_commit": "88230f39f5fc21b88c3660493996c5a2f609d924"
+}

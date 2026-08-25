@@ -2945,3 +2945,11 @@ state their σ/kink regime, and a spot-check target is only falsifiable if its a
 demonstrated to converge below it. Adjudication numbers [AGENT], drill-down artifacts
 committed (`ca_rhs_work2d/spot_check_*`); the decisive swap-only-the-z-stage localization
 spot-verified by the orchestrator against the drilldown JSON.
+
+## Row #200 — 2026-08-25 — **[P3-WBHZERO] mirror verdict: EXCLUSION-MATERIAL ([ORCH-banked, provisional] per the registered map; pending the author's stage-5 ruling).** ΔT̄ = +0.6335 ± 0.0379 (band 0.114, M_T 0.5 — powered), Δw̄ = +0.00490 ± 0.00024 (band 0.00073, M_w 0.004 — powered); all 12 seeds positive; direction as predicted; GATE WZ-A0 PASS (106/106 exact after one comparand-slice instrument fix), GATE CF-X PASS (2400/2400 events exactly match the WZ-P structural prediction; monotonicity zero violations), catalogue pin 24/24. Every pooled number independently re-derived by the orchestrator from the arm CSVs (exact agreement). The measured ΔT̄ sits near the pre-run structural anchor (+0.54)
+
+Chain state: mirror measurement DONE per row #198 grant. Next per the grant: the stage-2
+production counterfactual read (costing line to be A21-fixed against this Δ scale), then the
+6-item package, then the adoption returns to the author as the registered fresh [RULE].
+[P3-2D] remains HELD until the author has the symmetric-model calibration question in front
+of them with these numbers.

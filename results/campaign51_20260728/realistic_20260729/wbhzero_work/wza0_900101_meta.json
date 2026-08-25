@@ -1,0 +1,25 @@
+{
+  "subdir": "wza0_900101",
+  "seed": 900101,
+  "venue": "b0i",
+  "catalogue_numerator_survival": "off",
+  "catalogue_global_selection": "phi",
+  "mass_filter_sigma": "asymmetric",
+  "banked_meta_source": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900101_meta.json",
+  "work_root": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/wbhzero_work/wza0_900101_work",
+  "diagnostics_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/wbhzero_work/wza0_900101_work/seed900101/simulations/diagnostics/event_likelihoods.csv",
+  "wall_time_s": 91.96537947654724,
+  "elapsed_evaluate_s": 88.55745077133179,
+  "a22_stamp": {
+    "git_commit_at_start": "c5343172077c5caf01c2213c8814187de7656ce9",
+    "tree_dirty_incl_instrument": "clean",
+    "mass_filter_sigma": "asymmetric",
+    "catalogue_pin_ok": true,
+    "environment_provenance": {
+      "numpy": "2.4.3",
+      "sklearn": "1.8.0",
+      "pandas": "3.0.1"
+    }
+  },
+  "git_commit": "c5343172077c5caf01c2213c8814187de7656ce9"
+}

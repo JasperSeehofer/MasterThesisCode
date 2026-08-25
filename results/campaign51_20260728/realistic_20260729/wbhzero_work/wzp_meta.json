@@ -1,0 +1,19 @@
+{
+  "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_WBHZERO_MEASURE_20260825.md (2026-08-25, PA-WBZ-1 amended), PA-WBZ-1 F5",
+  "instrument": "ported counterfactual_symmetric.py geometry, all 12 seeds",
+  "environment_provenance": {
+    "numpy": "2.4.3",
+    "sklearn": "1.8.0",
+    "pandas": "3.0.1"
+  },
+  "sigma_multiplier": 1.5,
+  "z_cap": 1.5,
+  "h_bounds": [
+    0.5,
+    0.86
+  ],
+  "n_seeds_found": 12,
+  "missing_crb_seeds": [],
+  "n_rows": 2400,
+  "predictions_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/wbhzero_work/wzp_predictions.csv"
+}

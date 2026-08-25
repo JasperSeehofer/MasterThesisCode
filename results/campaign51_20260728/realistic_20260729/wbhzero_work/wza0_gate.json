@@ -1,0 +1,87 @@
+{
+  "pass": true,
+  "key_mismatch": false,
+  "tol": 1e-12,
+  "n_rows_compared": 106,
+  "per_column": {
+    "w_G": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "w_G_legacy": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "w_tilde_G": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "alpha_G_phi": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "r_Malm": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "D_tilde_phi": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "L_cat_no_bh": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "L_cat_with_bh": {
+      "bit_exact": false,
+      "max_rel_err": 1.8875707884498972e-16,
+      "pass": true
+    },
+    "B_num": {
+      "bit_exact": false,
+      "max_rel_err": 1.3494509612983595e-16,
+      "pass": true
+    },
+    "B_num_wbh": {
+      "bit_exact": false,
+      "max_rel_err": 2.2771216039611414e-16,
+      "pass": true
+    },
+    "g_frac": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "L_comp": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "combined_no_bh": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "combined_with_bh": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    }
+  },
+  "banked_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/wbhzero_work/wza0_banked_h073_slice.csv",
+  "fallback_justification": "production evaluate() dispatches per-host likelihood terms through a multiprocessing pool (_starmap_host_batches) whose float-summation order is not guaranteed run-to-run identical, so the registered <= 1e-12 relative fallback is used per GATE R-B0 (GATE R-P3/R4/D6 precedent).",
+  "gate": "GATE_WZA0",
+  "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_WBHZERO_MEASURE_20260825.md (2026-08-25, PA-WBZ-1 amended), PA-WBZ-1 F4",
+  "banked_flags": {
+    "catalogue_numerator_survival": "off",
+    "catalogue_global_selection": "phi",
+    "mass_filter_sigma": "asymmetric"
+  }
+}
