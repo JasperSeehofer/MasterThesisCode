@@ -1,0 +1,112 @@
+{
+  "pass": false,
+  "key_mismatch": false,
+  "tol": 1e-12,
+  "n_rows_compared": 1588,
+  "per_column": {
+    "w_G": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "w_G_legacy": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "w_tilde_G": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "alpha_G_phi": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "r_Malm": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "D_tilde_phi": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "L_cat_no_bh": {
+      "bit_exact": false,
+      "max_rel_err": 4.773802136262819e-15,
+      "pass": true
+    },
+    "L_cat_with_bh": {
+      "bit_exact": false,
+      "max_rel_err": 8.478768661736071e-15,
+      "pass": true
+    },
+    "B_num": {
+      "bit_exact": false,
+      "max_rel_err": 1.6081108122443905e-16,
+      "pass": true
+    },
+    "B_num_wbh": {
+      "bit_exact": false,
+      "max_rel_err": 1.5780886911383933e-15,
+      "pass": true
+    },
+    "g_frac": {
+      "bit_exact": true,
+      "max_rel_err": 0.0,
+      "pass": true
+    },
+    "L_comp": {
+      "bit_exact": false,
+      "max_rel_err": 1.7529785159954804e-16,
+      "pass": true
+    },
+    "combined_no_bh": {
+      "bit_exact": false,
+      "max_rel_err": 0.5036784403292046,
+      "pass": false
+    },
+    "combined_with_bh": {
+      "bit_exact": false,
+      "max_rel_err": 0.503678440329267,
+      "pass": false
+    }
+  },
+  "banked_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/wbhzero_work/proda0_banked_h073_slice.csv",
+  "fallback_justification": "production evaluate() dispatches per-host likelihood terms through a multiprocessing pool (_starmap_host_batches) whose float-summation order is not guaranteed run-to-run identical, so the registered <= 1e-12 relative fallback is used per GATE R-B0 (GATE R-P3/R4/D6 precedent).",
+  "gate": "GATE_PROD_A0",
+  "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_WBHZERO_MEASURE_20260825.md (2026-08-25, PA-WBZ-1 amended), PA-WBZ-2 item 2",
+  "iiib_h_bounds": [
+    0.6,
+    0.86
+  ],
+  "iiib_eval_kwargs": {
+    "normalization_mode": "absolute_marginal",
+    "host_z_kernel": "volume_deconv",
+    "host_mass_kernel": "auto",
+    "selection_in_completion_numerator": "off",
+    "catalogue_mass_overlap": "production",
+    "catalogue_mass_error_scale": 1.0,
+    "completion_b_scale": "derived",
+    "pdet_dl_bins": 60,
+    "pdet_mass_bins": 40,
+    "pdet_estimator": "local_linear",
+    "pdet_z_resolved": true,
+    "pdet_wbh_z_resolved": false,
+    "allow_low_pdet_coverage": false,
+    "smear_global_selection": false,
+    "freeze_g_frac_ref_h": null,
+    "completion_event_measure": "ratio",
+    "eddington_m": "on",
+    "sigma4d_mass_kernel": "point",
+    "catalogue_numerator_survival": "off",
+    "catalogue_numerator_survival_2d": "off",
+    "catalogue_numerator_survival_2d_center": "unset",
+    "catalogue_global_selection": "s3d"
+  },
+  "pilot_wall_time_s": 39.19434928894043,
+  "projected_full_pass_wall_time_s": 2492.7606147766114
+}

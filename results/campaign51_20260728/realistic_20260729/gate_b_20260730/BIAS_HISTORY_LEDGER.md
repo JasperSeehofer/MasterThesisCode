@@ -2953,3 +2953,11 @@ production counterfactual read (costing line to be A21-fixed against this Δ sca
 6-item package, then the adoption returns to the author as the registered fresh [RULE].
 [P3-2D] remains HELD until the author has the symmetric-model calibration question in front
 of them with these numbers.
+
+## Row #201 — 2026-08-25 — **[P3-WBHZERO] production counterfactual read COMPLETE (PA-WBZ-2/3): the measure-first chain of the row-#198 grant is fully executed.** Fresh-at-HEAD paired arms over the iiib CRB (1588 scored rows, h=0.73): ΔT = +0.800030, Δw̄ = +0.000449 (production baseline w̄ 0.12015), catalogue-leg zero rate 43.32% → 0.00% — the defect class ELIMINATED (689/689 predicted retention realized EXACTLY; CF-X-prod PASS; monotonicity zero violations). PROD-A0 ingredient-level validation PASSED (≤8.5e-15 over 12 columns); the banked-vs-HEAD combined-step delta fully attributed to the ratified post-iiib completion-multiplier removal (constant 0.665035804, 606/606 pure-completion rows exact — PA-WBZ-3, [ORCH-DECIDE] re-base disclosed). All readout numbers independently re-derived by the orchestrator (exact agreement)
+
+Chain state: mirror EXCLUSION-MATERIAL (row #200) + production read banked ⇒ the 6-item
+physics-change package is authored next (present-then-STOP); the adoption returns to the
+author as the registered fresh [RULE]. Noted for the package: the production Δw̄ (+0.00045)
+is an order below the mirror's (+0.0049) while ΔT is comparable — venue-vs-production
+completion-weight structure differs; stated as measured fact, interpretation reserved.

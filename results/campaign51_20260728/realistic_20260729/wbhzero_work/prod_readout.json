@@ -1,0 +1,42 @@
+{
+  "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_WBHZERO_MEASURE_20260825.md (2026-08-25, PA-WBZ-1 amended), PA-WBZ-2 item 3",
+  "gate_cf_x_prod": {
+    "gate": "CF-X-prod",
+    "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_WBHZERO_MEASURE_20260825.md (2026-08-25, PA-WBZ-1 amended), PA-WBZ-2 item 3",
+    "iiib_h_bounds": [
+      0.6,
+      0.86
+    ],
+    "gate_b_counterfactual_out_source": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/gate_b_20260730/wbhzero_gate_b_scripts/counterfactual_out.json",
+    "gate_b_counterfactual_out_found": true,
+    "gate_b_keys_checked": 143,
+    "gate_b_iiib_event_overlap": 0,
+    "gate_b_coverage_note": "counterfactual_out.json's preserved predictions cover the b0i/b0i2d MIRROR VENUE only (p3_b0_work/p3_2d_work event keys); zero overlap with iiib production event_idx values is EXPECTED, not a failure -- disclosed per PA-WBZ-2 item 3 'where covered'.",
+    "n_events": 1590,
+    "n_s_def_predicted": 689,
+    "n_s_sym_predicted_retained": 689,
+    "n_s_sym_realized_retained": 689,
+    "retention_prediction_pass": true,
+    "retention_mismatches": [],
+    "monotonicity_pass": true,
+    "monotonicity_failures": [],
+    "predictions_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/wbhzero_work/prod_wzp_predictions.csv",
+    "pass": true
+  },
+  "n_paired_rows": 1588,
+  "n_live": 1588,
+  "T_banked_iiib_asym": -3066.030545032864,
+  "T_prod_sym": -3065.230515257675,
+  "Delta_T": 0.8000297751891594,
+  "sum_Delta_ln_combined": 0.800029775189396,
+  "mean_Delta_ln_combined": 0.0005037970876507531,
+  "wbar_banked_iiib_asym": 0.12015117589914236,
+  "wbar_prod_sym": 0.12060014160250258,
+  "Delta_wbar": 0.0004489657033602268,
+  "sum_Delta_wbh_frac": 0.7129575369360324,
+  "mean_Delta_wbh_frac": 0.0004489657033602219,
+  "catalogue_leg_zero_rate_banked_iiib_asym": 0.4332493702770781,
+  "catalogue_leg_zero_rate_prod_sym": 0.0,
+  "Delta_catalogue_leg_zero_rate": -0.4332493702770781,
+  "note": "Production is ONE realization -- no per-seed SEM/band; paired per-event distribution stats only. NO verdict-map interpretation -- gates and pinned numbers only. Adoption/verdict mapping returns to the author as a fresh [RULE] (row #198 binding-default)."
+}
