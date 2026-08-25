@@ -2851,3 +2851,9 @@ the design entry's quote-the-banked-state rule; push for GitHub Pages deploy.
    photo-z impostor drag per the standing evidence.
 3. Ch 10½ LIVE on Pages (CI green first time since Aug 20; the machine-of-record skipif sweep
    `26795160`). Next: the [P3-2D] registration through the standard review chain.
+
+## Row #190 — 2026-08-25 — [P3-2D] execution STOPPED at the companion pass by its own spot-check (GH-24 biased 1.19% in the wide population-σ regime — a REAL quadrature-regime finding, agent-refused-to-bank, zero cluster spend); PA-2D-2 registers the exact per-cell erf-moment rule + the driver-threading wrapper; gates re-run next
+
+The STOP discipline paid again: the third would-have-been-contaminated number in three days
+caught before banking. The GH-24-vs-wide-σ asymmetry (per-event exact, population-marginal
+biased) is itself a reusable numerical lesson for every S_4D consumer.

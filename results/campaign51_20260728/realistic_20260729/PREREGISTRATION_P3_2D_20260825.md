@@ -146,3 +146,19 @@ precedes any instrument run; A20 review before banking.)*
 - **F17:** every decisive stage-0 number independently re-derived (incl. the Hill-estimator
   corroboration of the unbounded-analog refusal — α ≈ 0.23 < 1, one draw = 100.0000% of the
   pooled sum).
+
+**PA-2D-2 (2026-08-25; A21 instrument STOP, pre-gate, NO registered number banked).** The
+companion pass's mandated spot-check FAILED (1.7–8.5% deviations): the production-borrowed
+GH-24 mass quadrature — exact for the narrow per-event product-Gaussian (σ_cond p50 8.8e-8) —
+carries a diagnosed 1.19% bias in the companion's wide population-σ regime (σ_M 60–200% of
+M_g; the integrand spans many cells of the 40-bin piecewise-linear S_4D grid; arbitrated by a
+4001²-point brute-force rule agreeing with scipy.quad to 1e-6). The agent refused to bank and
+held the STOP (cluster never launched). **Fix registered ([ORCH-DECIDE], instrument-side):**
+the companion integrates ∫N(M;μ,σ)·S_4D(·,M)dM EXACTLY per grid cell via the closed-form
+Gaussian moments over each linear segment (erf-based) — exact for the interpolated S by
+construction, no order parameter, cost class unchanged; validated ≥1e-9 against the
+brute-force arbiter before any banked run. The per-event estimator flag KEEPS GH-24 (its
+regime is narrow by the F2 branch structure — disclosed asymmetry, reviewed at the A20 gate).
+Also registered: the fleet-driver threading gap (run_arm_seed does not thread the 2D flags) is
+closed by a committed driver wrapper mirroring the p3_b0_identity_test._run_arm_seed
+precedent — instrument-side, disclosed.
