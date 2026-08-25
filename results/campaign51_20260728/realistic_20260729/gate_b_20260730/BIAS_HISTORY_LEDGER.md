@@ -2808,3 +2808,21 @@ Orchestrator-derived itemization: (1) [RULE, granted] row #186 ratified as banke
 blindness clauses binding). (2) [DO, granted] the production physics-change proposal (6-item
 package, present-then-STOP). (3) [DO, author-requested] Ch 10½ §5 → the calibrated ending per
 the design entry's quote-the-banked-state rule; push for GitHub Pages deploy.
+
+## Row #188 — 2026-08-25 — Author rulings: **[P3-2D] GRANTED** ("yes P3-2D should be also done"); the remaining-1D-bias hunt continues alongside; posterior-reporting question answered (the A12/A2/coverage ladder; headline = un-truncated posterior mean + coverage as the criterion, never MAP alone); **[F0-SEL] stage 0 OPENED** (orchestrator-flagged new suspect: is the σ_d/d < 0.10 intake cut modeled in the selection normalization, or an unmodeled generator-estimator selection — the D1 class?)
+
+1. **[DO, author-granted] [P3-2D]:** the with-BH catalogue numerator's per-candidate S₄D(z,M)
+   fork — stage 0 opens now (derivation of the 2D bounded identity; instrument = a 2D
+   counterfactual flag, byte-identical default; coded-arm LHS expected zero-compute from the
+   banked b0i CSVs; twin-2D fleet 12 seeds cluster-first per row #185; the full C-A governance
+   stack reused).
+2. **[ORCH-OPENED] [F0-SEL]:** measurement-before-gate code-read — trace whether
+   FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD's intake cut is represented in
+   SimulationDetectionProbability / the Σ-chain normalizations. If unmodeled: a new bias
+   mechanism candidate of the D1 (coverage-invisible) class; Refute by: the code-read itself +
+   an injection-pool acceptance-definition audit.
+3. Posterior-methodology exchange recorded: the author's MAP-arbitrariness intuition confirmed
+   against the banked evidence (P–P "bias small while coverage collapses"; amendment-20
+   grid-censoring); the reporting ladder (A12 score-at-truth · edge-mass/tilt · P–P/coverage ·
+   A2 paired per-event) restated as the standing convention; headline convention: un-truncated
+   posterior mean + censoring disclosure + coverage as the criterion.
