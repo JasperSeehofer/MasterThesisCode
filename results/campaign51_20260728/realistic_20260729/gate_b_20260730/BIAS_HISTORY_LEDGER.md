@@ -2826,3 +2826,28 @@ the design entry's quote-the-banked-state rule; push for GitHub Pages deploy.
    grid-censoring); the reporting ladder (A12 score-at-truth · edge-mass/tilt · P–P/coverage ·
    A2 paired per-event) restated as the standing convention; headline convention: un-truncated
    posterior mean + censoring disclosure + coverage as the criterion.
+
+## Row #189 — 2026-08-25 — [P3-2D] stage 0 DELIVERED (the per-candidate object DERIVED: S_4D inside the candidate's own mass quadrature; the banked fleet holds ZERO twin-2D information — bit-identical with-BH columns; venue mass-law extension required); [F0-SEL] RESOLVED-BOUNDED (UNMODELED, structural, but 0.13–0.59% on production pools — not a residual-bias candidate; the 41.8% was donor-resampling venue physics)
+
+1. **[P3-2D] stage 0 ([AGENT] drafts, banked):** `CLAIM_P3_2D_20260825.md` + `p3_2d_probe.py`.
+   The 2D twin object is `∫ N(x;μ_cond,σ_cond)·p_gal·S_4D(d_L, x·M_z_det) dx` — survival inside
+   the candidate's own (Eddington-shifted) mass posterior quadrature, NOT point-S_4D and NOT
+   S̄_φ(z). The 2D bounded identity: w₂ from the α_G_φ pairing; C₂\* = C\*·r_Malm·(ρ₂/ρ) ≈
+   0.0653; Σ^4D cancellation verified ≤6.9e-8 on all 24 artifacts; bounded-summand k̂ −2.22
+   (the unbounded analog k̂ +4.76, max 2.2e97 — bounded family mandatory). Banked-fleet 2D
+   columns bit-identical across arms ⇒ fresh runs REQUIRED: venue mass-law extension (latent
+   M ~ p_gal; joint (d̂,M̂_z) draw; Bernoulli(S_4D) acceptance) + 12-task cluster array
+   (~2–3 CPU-h, h_bounds-pinned); RHS₂ ~40–180 CPU-h CAPPED per PA-CA-7(d) — cluster-first
+   (row #185). A (d_L,M_z) survival interpolator ALREADY EXISTS in production
+   (`detection_probability_with_bh_mass_interpolated`) — no new table. Four monster events
+   (L_cat_with_bh ~1e-101) exposed the venue's donor-mass misalignment — the coded LHS banks
+   as a venue-drift control only.
+2. **[F0-SEL] verdict (DRAFT banked, `CLAIM_F0_SEL_20260825.md`):** UNMODELED and structurally
+   so (the pool computes SNR only — no Fisher ⇒ the σ_d/d cut cannot enter p_det); one-sided
+   (intake-only); production magnitude 0.13% (seed61000, 2/1590) / 0.59% (seed600 red-team) —
+   bounded MUCH too small for the −0.08 residual; direction (posterior-low) borrowed from the
+   D-1 mirror mechanism, flagged inferred. Registered cheapest next: per-seed dropped-event
+   stats across banked production pools (zero-compute). The 1D residual stays owned by the
+   photo-z impostor drag per the standing evidence.
+3. Ch 10½ LIVE on Pages (CI green first time since Aug 20; the machine-of-record skipif sweep
+   `26795160`). Next: the [P3-2D] registration through the standard review chain.
