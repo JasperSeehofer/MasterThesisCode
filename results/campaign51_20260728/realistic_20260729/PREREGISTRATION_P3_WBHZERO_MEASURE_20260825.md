@@ -189,3 +189,35 @@ precedes any instrument run; A20 review before banking.)*
   both arms (the pairing rule made explicit); `n_cand_nomass`/`n_pass_mass_filter` per event
   come from a handler-level recount in the driver (specified at instrument review), not log
   parsing; 43.3%/30.7% remain barred as mirror comparands.
+
+---
+
+## PA-WBZ-2 (2026-08-25; the §4 stage-2 A21 line, fixed after the mirror verdict per the
+registered deferral; mirror verdict = EXCLUSION-MATERIAL, row #200 — the Δ scale warrants the
+single-h production read)
+
+**Stage-2 design (registered before the instrument exists):**
+
+1. **Arms.** The asymmetric production arm is the BANKED iiib run itself
+   (`results/run_20260804_postfix/iiib/`, h = 0.73 diagnostics slice) — the flag default is
+   byte-identical by construction and WZ-A0-verified at venue scale; it is NOT recomputed.
+   Only the SYMMETRIC arm runs: a wholesale production-path evaluation over the banked iiib
+   `prepared_cramer_rao_bounds.csv` (1590 rows) with `mass_filter_sigma="symmetric"`,
+   single-h read h = 0.73, under the iiib production flag configuration.
+2. **GATE PROD-A0 (runs FIRST).** The same wholesale evaluation at DEFAULT
+   `"asymmetric"` over the identical inputs must reproduce the banked iiib h = 0.73
+   `event_likelihoods.csv` slice bit-identically or within the documented ≤1e-12 class —
+   this simultaneously validates the reconstructed iiib configuration (the Gate-B
+   `prod_reconstruct.py` assumptions: h_bounds, max_redshift, sigma_multiplier) and the flag
+   default on real production data. FAILURE ⇒ STOP (configuration mismatch, no verdict, the
+   config question returns to the record) — the WZ-A0 escalation pattern.
+3. **Readout.** The F6 pinned statistics on the production rows (T, w̄, catalogue-leg zero
+   rate; Δ = symmetric − banked); PLUS the structural gate **CF-X-prod**: the symmetric arm's
+   zero-class must match the Gate-B counterfactual predictions per event where covered
+   (the 688-exclusion class retains ≥1 candidate in 689/689 predicted rows), and the
+   monotonicity invariant on every row. No verdict-map interpretation in the driver; the
+   6-item package consumes the numbers.
+4. **Costing (timing-gated, row #185).** PROD-A0 pilot-times its first ~25 events; if the
+   projected two-pass total ≥ 2 CPU-h ⇒ cluster array per row #185 (preflight READY gate);
+   else local, with the measured basis disclosed in the banked meta. No multi-h production
+   read is registered — h-dependence, if the author wants it, is a fresh costing line.
