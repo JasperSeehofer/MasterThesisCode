@@ -431,7 +431,14 @@ def stage_wza0(out_root: Path) -> dict[str, Any]:
 
     meta = json.loads(meta_path.read_text())
     fresh = pd.read_csv(o5._meta_csv(meta))
-    gate = o5._compare_columns(fresh, BANKED_BC_CSV_PATH, WZA0_COMPARE_COLUMNS, GATE_WZA0_RTOL)
+    # PA-WBZ-1 F4: the registered comparand is the h=0.73 ROW-SLICE of the banked
+    # CSV; passing the full 46-h-grid file makes _compare_columns's outer join
+    # flag every h != 0.73 banked row as a key mismatch (instrument bug caught at
+    # first gate run, 2026-08-25). Slice before comparison.
+    banked_full = pd.read_csv(BANKED_BC_CSV_PATH)
+    banked_slice_path = out_root / "wza0_banked_h073_slice.csv"
+    banked_full[np.isclose(banked_full["h"], H_GEN)].to_csv(banked_slice_path, index=False)
+    gate = o5._compare_columns(fresh, banked_slice_path, WZA0_COMPARE_COLUMNS, GATE_WZA0_RTOL)
     gate["gate"] = "GATE_WZA0"
     gate["reference"] = f"{REGISTRATION_SECTION}, PA-WBZ-1 F4"
     gate["banked_flags"] = {
