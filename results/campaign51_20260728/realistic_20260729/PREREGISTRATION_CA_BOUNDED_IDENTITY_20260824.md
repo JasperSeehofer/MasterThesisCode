@@ -205,3 +205,21 @@ the scorer pins `h_bounds = (min(H_GRID_FULL), max(H_GRID_FULL)) = (0.50, 0.86)`
 retained. RHS-F re-runs post-fix and must PASS before any RHS accumulation (unchanged gate).
 The [P3-HGRID] finding itself (the falsified "single-h byte-compatible" documented invariant)
 returns to the author as its own claim card regardless of C-A.
+
+## σ FREEZE + VERDICT (2026-08-25; all gates PASS — ACC (P_G 0.5886±0.0035 vs 0.5821, 12/12 bands), RHS-F (0.0 both arms), B-R, W; RHS realized SE 6.91e-4 — above the 5e-4 target, within the registered 1e-3 fallback (PA-CA-7d, disclosed); PENDING the A20 review before banking)
+
+RHS (n_syn = 45,000 drawn / 42,222 accepted / 225 chunks, seed 970001, slot "phi", chunk 200):
+RHS_w(twin) = 0.0445175 ± 0.0006913 · RHS_w(coded) = 0.0587500 ± 0.0008386 ·
+D_C comparand E_Ḡ[W̃·w_BC·1_acc] = 0.0391293 ± 0.0006056 · κ̂ = 0.87896 ·
+RHS_BR = 0.0369402 ± 0.0005496.
+
+**Verdict arithmetic (banked `ca_rhs_work/ca_verdict_provisional.json`):**
+- T_w(B-T) = **−0.002188**, σ_comb = 0.001284 (−1.70σ) ≤ band 0.005 → PASS.
+- B-C at derived: LHS(B-C) − D_C = **−0.001718**, σ_comb = 0.001127 (−1.52σ) ≤ 0.005 → AT its
+  derived displacement; naive displacement −0.021339 (−16.8σ) — the coded arrangement is
+  decisively mis-calibrated, by exactly the twin-law-derived amount.
+- B-R control: −0.001233 (−1.14σ) ≤ 0.005 → at predicted value.
+- C-B (REPORT-ONLY): coded-null excluded at ~9σ; realized Λ̄ within ~1σ of the twin-law null.
+
+**⇒ TWIN-CALIBRATED (provisional; [ORCH-computed]; the A20 clean-context review is the banking
+gate; the author's stage-5 ruling follows it).**

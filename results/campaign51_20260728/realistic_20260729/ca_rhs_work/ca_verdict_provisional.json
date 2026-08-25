@@ -1,0 +1,25 @@
+{
+ "T_w_BT": -0.0021875877553740805,
+ "sigma_comb_BT": 0.0012835606091631219,
+ "band_BT": 0.005,
+ "BT_pass": true,
+ "BT_sigma": -1.7043120050251324,
+ "BC_vs_DC": -0.0017182119151452138,
+ "sigma_comb_BC": 0.0011270251512967054,
+ "band_BC": 0.005,
+ "BC_at_derived": true,
+ "BC_sigma": -1.5245550759610955,
+ "BC_naive_displacement": -0.02133891119783833,
+ "BC_naive_sigma": -16.834359492973604,
+ "BR_control": -0.0012332043590411734,
+ "sigma_BR": 0.0010808133348324941,
+ "BR_pass": true,
+ "BR_sigma": -1.1409966173597377,
+ "rhs_se_disclosure": {
+  "target": 0.0005,
+  "realized_twin": 0.000691289713791244,
+  "fallback": 0.001,
+  "within_fallback": true
+ },
+ "verdict_provisional": "TWIN-CALIBRATED"
+}
