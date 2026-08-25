@@ -2921,3 +2921,17 @@ measure-first pattern applies: a counterfactual flag + mirror-venue measurement 
 counterfactual read before any adoption. [P3-2D] remains HELD pending this ruling.
 
 ## Row #197 — 2026-08-25 — **THE TWIN IS PRODUCTION PHYSICS** ([PHYSICS] adoption executed per row #195 grant): `catalogue_numerator_survival` "auto"→"phi" under absolute_marginal (explicit "off" = the counterfactual); implemented + independently verified COMMIT-READY (suite 1821 green; single read site; every other leg bit-unchanged; AMEND-1 applied, AMEND-2 noted). The [P3-IMP] production arc — stage 0 (2026-08-22) → TWIN-CALIBRATED (#186) → adoption — CLOSES. Also banked: the [86] reading (Vijaykumar+ 2024 = a two-step population-fit→propagation pattern, never a joint likelihood — our (h,θ)-grid IS the un-built generalization; STAGE_L_HIER_V86_READING_20260825.md).
+
+## Row #198 — 2026-08-25 — Author ruling on [P3-WBHZERO] (row #196 [RULE]): **the measure-first fix chain is AUTHORIZED** — the author selected, from the orchestrator's AskUserQuestion presentation, the option "Measure-first fix chain (Recommended)" (options presented: measure-first fix chain / ratify as design choice / hold)
+
+Orchestrator-derived scope of the grant (binding-default applies; the post-measurement
+adoption decision is NOT pre-approved and returns to the author as a fresh [RULE]):
+1. **[DO, granted]** implement the counterfactual flag `mass_filter_sigma ∈ {asymmetric,
+   symmetric}` at `handler.py:634-642` (default = asymmetric, bit-identical to current
+   production; symmetric = `sigma_multiplier` applied to BOTH the GW mass uncertainty and
+   the galaxy `BH_MASS_ERROR`), following the row-#197 flag pattern.
+2. **[DO, granted]** mirror-venue measurement of the flag's effect, then the production
+   counterfactual read, then the 6-item package — measurements BEFORE any adoption.
+3. Sequencing per rows #194/#196: [P3-2D] stays HELD until the symmetric-candidate model is
+   measured; it then un-HOLDs calibrated against the measured model, with the A21 prereg
+   amendment (M2-LINK(iii) re-attribution: zeros = filter exclusions).
