@@ -187,20 +187,29 @@ or redirected once taken.
 
 ## 6. Verification gate for calling this checklist done
 
-- [~] §1: **verified on this dev box 2026-08-15** — a fresh Claude Code session in
+- [x] §1: **verified on this dev box 2026-08-15** — a fresh Claude Code session in
       `/home/jasper/Repositories/darksiren-emri` retrieves prior project memory (44 memory files,
       transcripts back to 2026-07-17) and the vault session-start hook briefs the project, so the
       registry Path resolves. §3 references fixed in `acd1528`; venv relocated
       (`uv sync --reinstall` + `activate*` path rewrite); `origin` repointed off the rename
-      redirect; `-book` worktree linkage repaired. **Box stays `[~]` until every dev box has
+      redirect; `-book` worktree linkage repaired. **Was held at `[~]` until every dev box had
       run `scripts/migrate_local_rename.sh`** — the rename is per-machine, and a box still sitting
       at the old path has a live, broken checkout, not merely a stale one.
-- [~] §2: cluster migration EXECUTED 2026-08-13 — `~/MasterThesisCode` -> `~/darksiren-emri`,
+      **Second dev box (`jasper-ThinkPad-T490s`) migrated 2026-08-23** - script run from `$HOME`,
+      steps 1-3 applied (dir renamed, Claude project state re-keyed), step 4 a no-op (the registry
+      already carried the new Path from the first box), step 5 all-skips (references already fixed
+      upstream; only the gitignored `.claude/settings.local.json` was rewritten), `origin` repointed
+      off the redirect, venv relocated via `uv sync --reinstall` (mypy 1.19.1 / pytest 9.0.2 answer),
+      and the two `.claude/worktrees/agent-*` linked worktrees repaired at the new path (the stale
+      `/tmp` scratchpad worktree pruned). **This was the last box, so §1 closes `[x]` 2026-08-23.**
+- [x] §2: cluster migration EXECUTED 2026-08-13 — `~/MasterThesisCode` -> `~/darksiren-emri`,
       remote repointed, pulled to `e83ed0b9`, venv rebuilt from scratch (`uv sync --extra gpu`),
       stale `master_thesis_code/` removed. Preflight reads **VERDICT: READY ✓** and V-T3
       `pin_integrity.pass = True` on the renamed checkout. Job array **6303086**
-      (`cluster/mechanism_isolation.sbatch`) submitted from `~/darksiren-emri`; **box closes when
-      it completes.** Migration notes worth keeping:
+      (`cluster/mechanism_isolation.sbatch`) submitted from `~/darksiren-emri`; **box was gated on
+      its completion; closed 2026-08-23 on the author's confirmation that the cluster rename is
+      done (the job array's own outcome is not recorded here).**
+      Migration notes worth keeping:
       (a) the pull aborted three times on untracked campaign outputs that had since been committed
       from the dev box — 147 files were moved to `~/rename_backup_20260813` only after all 49
       chunk md5s were verified byte-identical to the committed copies, and all 147 re-verified
@@ -214,5 +223,5 @@ or redirected once taken.
       serve current content (verified 2026-08-12; old URL 404s, no redirect)
 - [ ] §5: PyPI name reserved (only if/when publication becomes real)
 
-Until all boxes are checked, treat the GitHub-repo-level rename (Phase 3) as complete but the
-*operational* rebrand as still in progress.
+With §1, §2 and §4 closed, the *operational* rebrand is complete; §5 (PyPI) is conditional on
+publication becoming real and is not a blocker.
