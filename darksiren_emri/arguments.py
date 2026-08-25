@@ -355,6 +355,27 @@ class Arguments:
         return str(self._parsed_arguments.sigma4d_mass_kernel)
 
     @property
+    def catalogue_numerator_survival_2d(self) -> str:
+        """[P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test
+        (results/campaign51_20260728/realistic_20260729/
+        PREREGISTRATION_P3_2D_20260825.md §2(i)). 'off' (default) is
+        byte-identical to the pre-flag path; 'mz_sel' multiplies the WITH-BH
+        catalogue numerator's mass integrand by S_4D(d_L(z;h), x*M_z,det)
+        inside the candidate's own mass quadrature. Never a production
+        posterior.
+        """
+        return str(self._parsed_arguments.catalogue_numerator_survival_2d)
+
+    @property
+    def catalogue_numerator_survival_2d_center(self) -> str:
+        """Centering sub-option for --catalogue_numerator_survival_2d='mz_sel'
+        ('raw'=host_M, 'eff'=host_M_eff). REQUIRED (no silent default) when
+        the twin is engaged; the choice is PENDING the pre-execution review
+        (PREREGISTRATION_P3_2D_20260825.md §2(i)).
+        """
+        return str(self._parsed_arguments.catalogue_numerator_survival_2d_center)
+
+    @property
     def catalogue_global_selection(self) -> str:
         """[P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
         PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178).
@@ -434,6 +455,20 @@ class Arguments:
                 "--catalogue_mass_overlap inflated "
                 f"(got catalogue_mass_overlap={self.catalogue_mass_overlap!r}, "
                 f"catalogue_mass_error_scale={self.catalogue_mass_error_scale!r})."
+            )
+        # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md
+        # §2(i)): the centering sub-option is REFUSED ("unset") until
+        # explicitly set -- CLI-layer defense in depth ahead of the
+        # BayesianStatistics.evaluate() guard.
+        if self.catalogue_numerator_survival_2d == "mz_sel" and (
+            self.catalogue_numerator_survival_2d_center == "unset"
+        ):
+            raise ArgumentsError(
+                "--catalogue_numerator_survival_2d mz_sel requires "
+                "--catalogue_numerator_survival_2d_center to be explicitly "
+                "'raw' or 'eff' (no silent default -- the centering choice is "
+                "PENDING the pre-execution review, "
+                "PREREGISTRATION_P3_2D_20260825.md §2(i))."
             )
 
 
@@ -962,6 +997,38 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "the observable, so the numerator normalizes to the completion "
             "denominator's measure (MFG 2019 arXiv:1809.02063 Eqs. (5)-(7)). "
             "Never a production posterior."
+        ),
+    )
+    parser.add_argument(
+        "--catalogue_numerator_survival_2d",
+        type=str,
+        choices=["off", "mz_sel"],
+        default="off",
+        help=(
+            "[P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test "
+            "(stage 2) (results/campaign51_20260728/realistic_20260729/"
+            "PREREGISTRATION_P3_2D_20260825.md §2(i)). 'off' (default) is "
+            "byte-identical to the pre-flag path. 'mz_sel' multiplies the "
+            "WITH-BH catalogue numerator's mass integrand by "
+            "S_4D(d_L(z;h), x*M_z,det) inside the candidate's own mass "
+            "quadrature (the product-Gaussian identity); requires "
+            "--catalogue_numerator_survival_2d_center. Never a production "
+            "posterior."
+        ),
+    )
+    parser.add_argument(
+        "--catalogue_numerator_survival_2d_center",
+        type=str,
+        choices=["unset", "raw", "eff"],
+        default="unset",
+        help=(
+            "Centering sub-option for --catalogue_numerator_survival_2d "
+            "mz_sel: 'raw' uses the unshifted host_M, 'eff' uses the "
+            "(Eddington-shifted, per --eddington_m) host_M_eff, as the "
+            "product-Gaussian mean fed to the S_4D quadrature. 'unset' "
+            "(default) is REFUSED (not a silent default) whenever "
+            "--catalogue_numerator_survival_2d mz_sel is given -- the "
+            "centering choice is PENDING the pre-execution review."
         ),
     )
     parser.add_argument(

@@ -1215,11 +1215,536 @@ def stage_score(
     return result
 
 
+# ── [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test (stage 2) ───────────────
+#
+# PREREGISTRATION_P3_2D_20260825.md sec2/sec3/sec7 + CLAIM_P3_2D_20260825.md. Implementation
+# scope task-mandated: RHS2 (the SAME q_Gbar draw law --stage score already uses,
+# host_mode="population_selected", UNCHANGED -- the completion class's OWN mass-law extension is
+# NOT attempted here; a disclosed scope limitation, see :func:`stage_score2d`'s docstring) + w2
+# (the EXACT alpha_G_phi pairing, claim sec2.1, Sigma^4D-cancellation verified <=6.9e-8 on the
+# banked artifacts there) + the C-TCI2 profile (the SAME C*-free unscaled-indicator-count form
+# --stage score's own C_TCI_indicator_profile already uses) are IMPLEMENTED. D_C2/kappa_hat2/B-R2
+# are wired to NAMED SLOT functions that raise NotImplementedError -- "the review supplies exact
+# formulas -- sentinel-refuse until amended" (task mandate); --stage score2d does NOT crash on
+# this -- each slot is called inside a try/except and its refusal recorded in the output JSON,
+# never silently omitted. The [P3-2D] estimator flags
+# (catalogue_numerator_survival_2d/catalogue_numerator_survival_2d_center) and their
+# correspondence_1d.py run_mirror_seed_inprocess forwarding are a SEPARATE, already-landed build
+# (bayesian_statistics.py, verified present at HEAD when this module was authored) -- reused
+# here, never reimplemented.
+
+ARRANGEMENT_FLAGS_2D: dict[str, str] = {"twin": "mz_sel", "coded": "off"}
+
+# The b0i-2D fleet's own banked-artifact root (mirrors BANKED_B0I_META_ROOT's bt_<seed>_meta.json/
+# bc_<seed>_meta.json convention -- prereg's B2-T/B2-C arm pairing, one draw per seed scored under
+# BOTH arrangements). Populated by the SEPARATE 12-array-task cluster fleet run (prereg sec7); NOT
+# produced by this module. :func:`stage_lhs2d` reads it if/when it exists; a missing seed is
+# reported, never a crash ("--stage lhs2d computing the fresh-fleet LHS2 once the fleet exists").
+B0I2D_META_ROOT: Path = THIS_DIR / "p3_2d_work"
+
+# Stage-0 banked coded-arm 2D LHS core (CLAIM_P3_2D_20260825.md sec3.2, S2 fleet = 0.390399 +/-
+# 0.010344 over the 12 BANKED b0i (1D) seeds' with-BH columns, which the claim proved are
+# bit-identical bt/bc -- i.e. this IS the coded arm regardless of which arrangement scored it).
+# The venue-drift control :func:`stage_lhs2d` reports (prereg sec3.5(i)): "any twin-2D fleet's
+# coded arm should land near S2 = 0.390 +/- 0.010 IF the mass extension leaves the z-side law
+# intact -- deviations localize the mass-law's effect."
+STAGE0_BANKED_S2_CODED_MEAN: float = 0.390399
+STAGE0_BANKED_S2_CODED_SE: float = 0.010344
+
+
+def _score_events_2d(
+    events: pd.DataFrame,
+    work_root: Path,
+    seed: int,
+    galaxy_catalog: Any,
+    catalogue_numerator_survival_2d: str,
+    catalogue_numerator_survival_2d_center: str,
+) -> pd.DataFrame:
+    """[P3-2D] the with-BH twin of :func:`_score_events`.
+
+    Same wholesale ``run_mirror_seed_inprocess`` call (imported, never reimplemented), the SAME
+    no-BH conventions (``CATALOGUE_GLOBAL_SELECTION_SLOT``/``SELECTION_IN_COMPLETION_NUMERATOR``/
+    the PA-CA-10 ``h_bounds`` pin), PLUS the new [P3-2D] with-BH twin flag pair
+    (PREREGISTRATION_P3_2D_20260825.md sec2(i)) forwarded unconditionally (the no-op default
+    "off"/"unset" makes every non-2D caller of ``run_mirror_seed_inprocess`` byte-identical).
+    """
+    with o5._capture_root_log(work_root.parent / f"{work_root.name}.log"):
+        diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
+            work_root,
+            events,
+            seed,
+            galaxy_catalog=galaxy_catalog,
+            h_values=(H_GEN,),
+            selection_in_completion_numerator=SELECTION_IN_COMPLETION_NUMERATOR,
+            catalogue_numerator_survival_2d=catalogue_numerator_survival_2d,
+            catalogue_numerator_survival_2d_center=catalogue_numerator_survival_2d_center,
+            catalogue_global_selection=CATALOGUE_GLOBAL_SELECTION_SLOT,
+            h_bounds=(min(c1d.H_GRID_FULL), max(c1d.H_GRID_FULL)),
+        )
+    at = o5._rows_at_h(diag_csv, H_GEN)
+    at.attrs["elapsed_s"] = elapsed
+    at.attrs["diag_csv"] = str(diag_csv)
+    return at
+
+
+def _w2_from_csv_columns(at: pd.DataFrame) -> npt.NDArray[np.float64]:
+    """``w2_e = A2_e / (A2_e + B2_e)``, ``A2_e = alpha_G_phi . L_cat_with_bh_e``, ``B2_e =
+    B_num_wbh_e`` -- CLAIM_P3_2D_20260825.md sec2.1's EXACT with-BH class pairing (the Sigma^4D
+    divisor cancellation, verified <=6.9e-8 on the banked artifacts there: ``alpha_G_phi`` is
+    ALREADY the with-BH leg's correct effective divisor, unlike ``w1`` which needed the
+    ``beta_G_phi = alpha_G_phi/r_Malm`` conversion in :func:`_w_from_csv_columns` -- no such
+    conversion applies here). Dead rows (``A2_e = 0``) fall out at ``w2_e = 0`` automatically,
+    same convention as :func:`_w_from_csv_columns`.
+    """
+    alpha_g_phi = at["alpha_G_phi"].to_numpy(dtype=np.float64)
+    l_cat_with_bh = at["L_cat_with_bh"].to_numpy(dtype=np.float64)
+    b_num_wbh = at["B_num_wbh"].to_numpy(dtype=np.float64)
+    a2 = alpha_g_phi * l_cat_with_bh
+    denom = a2 + b_num_wbh
+    w2 = np.divide(a2, denom, out=np.zeros_like(a2), where=denom > 0.0)
+    return np.asarray(w2, dtype=np.float64)
+
+
+def d_c2_accumulator_slot(
+    w_tilde2: npt.NDArray[np.float64], w2_bc: npt.NDArray[np.float64]
+) -> float:
+    """[P3-2D] SLOT: ``D_C2 = E_Gbar[(W~2 - 1) . w2_BC . 1_acc]`` (prereg sec2.3 transfer table,
+    "D-collapsed criterion... transfers with W~2").
+
+    SENTINEL-REFUSED (task mandate: "D_C2/kappa_hat2/B-R2 accumulator SLOTS wired to one named
+    function each -- the review supplies exact formulas -- sentinel-refuse until amended"): the
+    with-BH channel's 6x-higher dead-row rate (stage-0 sec3.3, 6.1% vs the no-BH leg's 1.1%) and
+    the ``W~2``-at-``A2=0`` edge case have not been ratified by the pre-execution review. Args
+    are accepted (the shape the eventual implementation needs) so a reviewer can fill this body
+    in without touching any call site.
+    """
+    raise NotImplementedError(
+        "D_C2 accumulator: PENDING the pre-execution review "
+        "(PREREGISTRATION_P3_2D_20260825.md sec2.3's D_C2/kappa_hat2/B-R2 transfer-table row) -- "
+        "sentinel-refuse per task mandate; do not bank a D_C2 number from this build."
+    )
+
+
+def kappa_hat2_slot(d_c2_mean: float, rhs2_twin_mean: float) -> float:
+    """[P3-2D] SLOT: ``kappa_hat2 = E_Gbar[W~2.w2_BC.1_acc] / E_Gbar[w2_BT.1_acc]``.
+
+    SENTINEL-REFUSED -- see :func:`d_c2_accumulator_slot`'s docstring for why.
+    """
+    raise NotImplementedError(
+        "kappa_hat2: PENDING the pre-execution review "
+        "(PREREGISTRATION_P3_2D_20260825.md sec2.3) -- sentinel-refuse per task mandate; do not "
+        "bank a kappa_hat2 number from this build."
+    )
+
+
+def br2_slot(w2_bt: npt.NDArray[np.float64], r2: float) -> float:
+    """[P3-2D] SLOT: GATE B-R2's model-side companion, ``E_Gbar[w2_BT/(1+(r2-1).w2_BT).1_acc]``.
+
+    SENTINEL-REFUSED: ``r2`` (the 2D analog of GATE B-R's derived scalar rescale ``R(H_GEN)``)
+    "must be DERIVED for the 2D leg (or a registered scalar chosen once)" (prereg sec2.3) -- not
+    yet ratified. Task mandate: sentinel-refuse until amended.
+    """
+    raise NotImplementedError(
+        "B-R2 (RHS_BR2): PENDING the pre-execution review's r2 derivation "
+        "(PREREGISTRATION_P3_2D_20260825.md sec2.3) -- sentinel-refuse per task mandate; do not "
+        "bank a B-R2 number from this build."
+    )
+
+
+def stage_score2d(
+    n_events_target: int,
+    base_seed: int,
+    out_root: Path,
+    out_path: Path,
+    wbh_center: str,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+) -> dict[str, Any]:
+    """[P3-2D] RHS2: chunked draws from ``q_Gbar`` ("population_selected", UNCHANGED), scored
+    under BOTH with-BH arrangements (:data:`ARRANGEMENT_FLAGS_2D`) at ``h=H_GEN``, accumulating
+    the drawn-count-normalized ``RHS2(a)`` (PA-CA-1(a) form) + the C-TCI2 unscaled indicator
+    profile. ``D_C2``/``kappa_hat2``/``B-R2`` are attempted via their named SLOT functions and
+    recorded ``SENTINEL_REFUSED`` (task mandate) rather than silently omitted.
+
+    **Scope limitation, disclosed (task-mandated boundary, not an oversight).** The completion
+    class's OWN mass-law extension (a latent host mass drawn from the POPULATION mass density
+    phi(M), analogous to task A's catalogue-leg p_gal extension) is NOT implemented here --
+    drawn events' ``M``/``M_error`` columns stay at the donor CRB row's own value, unperturbed,
+    the SAME convention every pre-[P3-2D] host mode in ``correspondence_1d.py`` already uses for
+    a host without a "true mass" concept (there is no host at all on the completion leg --
+    ``host_galaxy_index=-1``). Recorded in the output JSON's
+    ``completion_class_mass_law_extension`` field.
+
+    Args:
+        n_events_target: Total DRAWN synthetic events (not accepted; F-0-filtered downstream).
+        base_seed: Base seed for the chunk-seed sequence (chunk ``i`` uses ``base_seed + i``).
+        out_root: PA-CA-11-guarded work root.
+        out_path: Output JSON path.
+        wbh_center: ``catalogue_numerator_survival_2d_center`` for the "twin" arrangement --
+            REQUIRED, no silent default (mirrors the estimator flag's own "no silent default"
+            design, ``bayesian_statistics.py``'s own ``ValueError`` text) -- ``"raw"`` or
+            ``"eff"``, PENDING the pre-execution review (prereg sec2(i)).
+        chunk_size: PA-CA-8 (hard-pinned to :data:`REGISTERED_CHUNK_SIZE` for a registered run).
+    """
+    if wbh_center not in ("raw", "eff"):
+        raise ValueError(
+            "wbh_center must be 'raw' or 'eff' (no silent default -- PENDING the pre-execution "
+            f"review, PREREGISTRATION_P3_2D_20260825.md sec2(i)); got {wbh_center!r}"
+        )
+
+    # PA-CA-11 guard (same convention as stage_score's own).
+    _existing = sorted(out_root.glob("score2d_chunk*_work"))
+    if _existing:
+        raise SystemExit(
+            f"REFUSED (PA-CA-11): out_root {out_root} already holds "
+            f"{len(_existing)} score2d_chunk*_work dir(s) -- purge or use a fresh "
+            "out-root before a banked --stage score2d run."
+        )
+    o5._assert_h_true_in_grid()
+    t0 = time.time()
+    stamp = o5._a22_stamp()
+
+    completeness_obj, phi_survival_table = _completion_class_objects(H_GEN)
+    handler, pool = _load_handler_and_pool()
+
+    chunk = min(chunk_size, DONOR_POOL_SIZE - 2)
+    cfg = c1d.CorrespondenceConfig(sigma_z_scale=1.0, area_scale=1.0, n_events=chunk)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+
+    chunk_means: dict[str, list[float]] = {arm: [] for arm in ARRANGEMENT_FLAGS_2D}
+    tci_chunk_means: dict[str, dict[float, list[float]]] = {
+        arm: {tau: [] for tau in C_TCI_TAUS} for arm in ARRANGEMENT_FLAGS_2D
+    }
+    running: dict[str, dict[str, float]] = {
+        arm: {"sum": 0.0, "n_accepted": 0.0} for arm in ARRANGEMENT_FLAGS_2D
+    }
+    per_chunk: list[dict[str, Any]] = []
+    n_drawn_total = 0
+    chunk_idx = 0
+    while n_drawn_total < n_events_target:
+        seed = base_seed + chunk_idx
+        events = gen.draw_realization(
+            seed,
+            host_pool=pool,
+            host_mode="population_selected",
+            completeness=completeness_obj,
+            phi_survival_table=phi_survival_table,
+        )
+        n_this_chunk = int(events.shape[0])
+        n_drawn_total += n_this_chunk
+
+        idx_by_arm: dict[str, npt.NDArray[np.int64]] = {}
+        w2_by_arm: dict[str, npt.NDArray[np.float64]] = {}
+        for arm_name, flag in ARRANGEMENT_FLAGS_2D.items():
+            center = wbh_center if flag == "mz_sel" else "unset"
+            scored = _score_events_2d(
+                events,
+                out_root / f"score2d_chunk{chunk_idx}_{arm_name}_work",
+                seed,
+                handler,
+                flag,
+                center,
+            )
+            w2_e = _w2_from_csv_columns(scored)
+            idx_by_arm[arm_name] = scored["event_idx"].to_numpy(dtype=np.int64)
+            w2_by_arm[arm_name] = w2_e
+
+            running[arm_name]["sum"] += float(w2_e.sum())
+            running[arm_name]["n_accepted"] += float(w2_e.size)
+            chunk_means[arm_name].append(float(w2_e.sum()) / n_this_chunk)
+
+            r2_e = np.divide(1.0 - w2_e, w2_e, out=np.full_like(w2_e, np.inf), where=w2_e > 0.0)
+            for tau in C_TCI_TAUS:
+                tci_chunk_means[arm_name][tau].append(float(np.sum(r2_e <= tau)) / n_this_chunk)
+
+        # F-0 is arrangement-independent (same reasoning as stage_score's own check).
+        idx_sets = [set(v.tolist()) for v in idx_by_arm.values()]
+        arrangement_consistent = all(s == idx_sets[0] for s in idx_sets[1:])
+        if not arrangement_consistent:
+            print(
+                f"WARNING chunk {chunk_idx} (seed {seed}): accepted event_idx differs between "
+                "2D arrangements -- F-0 is expected to be arrangement-independent; investigate "
+                "before trusting this chunk's contribution.",
+                file=sys.stderr,
+            )
+
+        per_chunk.append(
+            {
+                "chunk": chunk_idx,
+                "seed": seed,
+                "n_drawn": n_this_chunk,
+                "n_accepted_twin": int(w2_by_arm["twin"].size),
+                "n_accepted_coded": int(w2_by_arm["coded"].size),
+                "arrangement_consistent": arrangement_consistent,
+                "mean_w2_twin_chunk_dc": chunk_means["twin"][-1],
+                "mean_w2_coded_chunk_dc": chunk_means["coded"][-1],
+            }
+        )
+        chunk_idx += 1
+
+    def _chunk_agg(vals: list[float]) -> dict[str, Any]:
+        arr = np.array(vals, dtype=np.float64)
+        mean = float(arr.mean()) if arr.size else float("nan")
+        se = float(arr.std(ddof=1) / np.sqrt(arr.size)) if arr.size > 1 else float("nan")
+        return {"mean": mean, "se": se, "n_chunks": int(arr.size)}
+
+    arms_out: dict[str, Any] = {}
+    for arm_name in ARRANGEMENT_FLAGS_2D:
+        agg = _chunk_agg(chunk_means[arm_name])
+        arms_out[arm_name] = {
+            "RHS2_w": agg["mean"],
+            "SE": agg["se"],
+            "n_chunks": agg["n_chunks"],
+            "n_accepted_total": int(running[arm_name]["n_accepted"]),
+        }
+
+    tci_out: dict[str, dict[str, Any]] = {}
+    for arm_name in ARRANGEMENT_FLAGS_2D:
+        tci_out[arm_name] = {
+            f"tau_{int(tau)}": _chunk_agg(tci_chunk_means[arm_name][tau]) for tau in C_TCI_TAUS
+        }
+
+    # D_C2/kappa_hat2/B-R2 SLOTS -- attempted, recorded SENTINEL_REFUSED (task mandate), never
+    # silently omitted from the output.
+    def _try_slot(fn: Any, *args: Any) -> dict[str, Any]:
+        try:
+            return {"status": "computed", "value": fn(*args)}
+        except NotImplementedError as exc:
+            return {"status": "SENTINEL_REFUSED", "reason": str(exc)}
+
+    d_c2_result = _try_slot(d_c2_accumulator_slot, np.array([]), np.array([]))
+    kappa_hat2_result = _try_slot(kappa_hat2_slot, float("nan"), float("nan"))
+    br2_result = _try_slot(br2_slot, np.array([]), float("nan"))
+
+    result: dict[str, Any] = {
+        "reference": f"{REGISTRATION_SECTION}, [P3-2D] RHS2 (--stage score2d, task-mandated)",
+        "h_gen": H_GEN,
+        "catalogue_global_selection_slot": CATALOGUE_GLOBAL_SELECTION_SLOT,
+        "selection_in_completion_numerator": SELECTION_IN_COMPLETION_NUMERATOR,
+        "wbh_center": wbh_center,
+        "a22_stamp": stamp,
+        "a22_flags": {  # PA-CA-6: all resolved values, never "auto"
+            "catalogue_global_selection": CATALOGUE_GLOBAL_SELECTION_SLOT,
+            "selection_in_completion_numerator": SELECTION_IN_COMPLETION_NUMERATOR,
+            "catalogue_numerator_survival_2d": dict(ARRANGEMENT_FLAGS_2D),
+            "catalogue_numerator_survival_2d_center": wbh_center,
+        },
+        "n_events_target": n_events_target,
+        "n_drawn_total": n_drawn_total,
+        "n_syn_total_drawn": n_drawn_total,
+        "base_seed": base_seed,
+        "chunk_size": chunk,
+        "registered_chunk_size": REGISTERED_CHUNK_SIZE,
+        "chunk_size_is_registered": chunk == REGISTERED_CHUNK_SIZE,
+        "n_chunks": chunk_idx,
+        "per_chunk": per_chunk,
+        "arms": arms_out,
+        "D_C2_accumulator": d_c2_result,
+        "kappa_hat2": kappa_hat2_result,
+        "RHS_BR2": br2_result,
+        "C_TCI2_indicator_profile": tci_out,
+        "c_tci_taus": list(C_TCI_TAUS),
+        "completion_class_mass_law_extension": "NOT_ATTEMPTED",
+        "completion_class_mass_law_note": (
+            "q_Gbar,2's drawn M/M_error columns are the donor row's OWN value, unperturbed -- "
+            "the SAME convention every pre-[P3-2D] host mode in correspondence_1d.py already "
+            "uses for a host without a 'true mass' concept. Out of task A's scope (the "
+            "catalogue-leg twin's own mass-law extension only); disclosed, not fudged."
+        ),
+    }
+    result["elapsed_s"] = time.time() - t0
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(result, indent=2))
+    print("=== [P3-2D] ca_rhs_scorer -- RHS2 (--stage score2d) ===")
+    print(f"n_drawn_total={n_drawn_total} (target={n_events_target}), n_chunks={chunk_idx}")
+    if chunk != REGISTERED_CHUNK_SIZE:
+        print(
+            f"WARNING: chunk_size={chunk} != REGISTERED_CHUNK_SIZE={REGISTERED_CHUNK_SIZE} -- "
+            "NON-REGISTERED run (--unsafe-chunk-size), not valid for any banked verdict.",
+            file=sys.stderr,
+        )
+    for arm_name, r in arms_out.items():
+        print(
+            f"  RHS2_w({arm_name}) = {r['RHS2_w']!r}  SE={r['SE']!r}  "
+            f"n_accepted_total={r['n_accepted_total']}  n_chunks={r['n_chunks']}"
+        )
+    print(f"D_C2 = {d_c2_result['status']}")
+    print(f"kappa_hat2 = {kappa_hat2_result['status']}")
+    print(f"B-R2 = {br2_result['status']}")
+    print(f"elapsed = {result['elapsed_s']:.1f} s")
+    print(f"wrote {out_path}")
+    return result
+
+
+def stage_lhs2d(out_path: Path) -> dict[str, Any]:
+    """[P3-2D] the fresh-fleet LHS2, once the 12-seed b0i2d fleet exists.
+
+    Reads ``B0I2D_META_ROOT/b{t,c}_<seed>_meta.json`` (the SAME ``bt``/``bc`` naming convention
+    as the banked 1D b0i fleet's own :func:`stage_lhs`) for every seed in
+    ``c1d.ARM_SEEDS["b0i2d"]`` (prereg sec7's 12 array tasks) -- a missing seed's pair is
+    reported (``missing_seeds``), never a crash ("once the fleet exists"). Also reports the
+    banked-fleet VENUE-DRIFT CONTROL (prereg sec3.5(i)): the fresh coded-arm S2 core fleet mean
+    vs :data:`STAGE0_BANKED_S2_CODED_MEAN`/:data:`STAGE0_BANKED_S2_CODED_SE`.
+
+    LHS2 is quoted under BOTH stage-0 ``rho2`` BRACKET readings (``rho2=rho[1D]`` and
+    ``rho2=1``) -- the true ``rho2`` needs the Sigma~^4D companion pass (prereg sec1), NOT
+    computed by this stage.
+
+    **Zero-compute when the fleet is absent.** ``mass_companion`` (the ``rho`` this stage's
+    ``C2_star`` needs) builds a REAL ``SimulationDetectionProbability`` grid -- NOT free. This
+    stage checks for at least one present meta file BEFORE paying that cost, so a call against
+    an empty/not-yet-run fleet (the expected state before the cluster fleet lands, prereg sec7)
+    returns immediately with every seed reported ``missing``, never building anything.
+    """
+    t0 = time.time()
+    per_seed: dict[str, list[dict[str, Any]]] = {"twin": [], "coded": []}
+    tci_per_seed: dict[str, list[dict[str, Any]]] = {"twin": [], "coded": []}
+    missing: list[int] = []
+    _arm_dirprefix = {"twin": "bt", "coded": "bc"}
+
+    any_meta_present = B0I2D_META_ROOT.is_dir() and any(
+        (B0I2D_META_ROOT / f"{prefix}_{seed}_meta.json").is_file()
+        for seed in c1d.ARM_SEEDS["b0i2d"]
+        for prefix in _arm_dirprefix.values()
+    )
+    if not any_meta_present:
+        out: dict[str, Any] = {
+            "reference": f"{REGISTRATION_SECTION}, [P3-2D] fresh-fleet LHS2 (--stage lhs2d)",
+            "h_gen": H_GEN,
+            "b0i2d_meta_root": str(B0I2D_META_ROOT),
+            "n_registered_seeds": len(c1d.ARM_SEEDS["b0i2d"]),
+            "missing_seeds": list(c1d.ARM_SEEDS["b0i2d"]),
+            "fleet_complete": False,
+            "fleet_present_at_all": False,
+            "elapsed_s": time.time() - t0,
+        }
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(out, indent=2))
+        print("=== [P3-2D] ca_rhs_scorer -- fresh-fleet LHS2 (--stage lhs2d) ===")
+        print(
+            f"No b0i2d fleet artifacts found under {B0I2D_META_ROOT} -- zero-compute early "
+            "exit (the cluster fleet, prereg sec7, has not been run yet)."
+        )
+        print(f"wrote {out_path}")
+        return out
+
+    rho = o5.mass_companion(H_GEN)["rho"]
+
+    for seed in c1d.ARM_SEEDS["b0i2d"]:
+        seed_ok = True
+        for arm_name, prefix in _arm_dirprefix.items():
+            meta_path = B0I2D_META_ROOT / f"{prefix}_{seed}_meta.json"
+            if not meta_path.is_file():
+                seed_ok = False
+                continue
+            meta = json.loads(meta_path.read_text())
+            at = o5._rows_at_h(o5._meta_csv(meta), H_GEN)
+            w2_e = _w2_from_csv_columns(at)
+            beta_g_phi, beta_gbar_phi = o5._beta_g_phi_and_gbar(at)
+            r_malm = float(at["r_Malm"].to_numpy(dtype=np.float64)[0])
+            c2_star_rho = beta_g_phi * r_malm * rho / beta_gbar_phi
+            c2_star_one = beta_g_phi * r_malm * 1.0 / beta_gbar_phi
+            n_rows = int(at.shape[0])
+            s2_s = float(np.sum(1.0 - w2_e) / 200.0)
+            per_seed[arm_name].append(
+                {
+                    "seed": seed,
+                    "n_rows": n_rows,
+                    "S2_core": s2_s,
+                    "C2_star_rho_eq_rho": c2_star_rho,
+                    "C2_star_rho_eq_1": c2_star_one,
+                    "LHS2_s_rho_eq_rho": c2_star_rho * s2_s,
+                    "LHS2_s_rho_eq_1": c2_star_one * s2_s,
+                }
+            )
+
+            r2_e = np.divide(1.0 - w2_e, w2_e, out=np.full_like(w2_e, np.inf), where=w2_e > 0.0)
+            tci_row: dict[str, Any] = {"seed": seed, "n_rows": n_rows}
+            for tau in C_TCI_TAUS:
+                tci_row[f"tau_{int(tau)}"] = float(np.sum(r2_e[r2_e <= tau]) / 200.0)
+            tci_per_seed[arm_name].append(tci_row)
+        if not seed_ok:
+            missing.append(seed)
+
+    def _fleet(vals: list[float]) -> tuple[float, float | None]:
+        arr = np.array(vals, dtype=np.float64)
+        if arr.size == 0:
+            return float("nan"), None
+        mean = float(arr.mean())
+        se = float(arr.std(ddof=1) / np.sqrt(arr.size)) if arr.size > 1 else None
+        return mean, se
+
+    s2_coded_mean, s2_coded_se = _fleet([r["S2_core"] for r in per_seed["coded"]])
+    s2_twin_mean, s2_twin_se = _fleet([r["S2_core"] for r in per_seed["twin"]])
+    lhs2_bt_rho_mean, lhs2_bt_rho_se = _fleet([r["LHS2_s_rho_eq_rho"] for r in per_seed["twin"]])
+    lhs2_bc_rho_mean, lhs2_bc_rho_se = _fleet([r["LHS2_s_rho_eq_rho"] for r in per_seed["coded"]])
+    venue_drift_delta = (
+        (s2_coded_mean - STAGE0_BANKED_S2_CODED_MEAN)
+        if not np.isnan(s2_coded_mean)
+        else float("nan")
+    )
+
+    result: dict[str, Any] = {
+        "reference": f"{REGISTRATION_SECTION}, [P3-2D] fresh-fleet LHS2 (--stage lhs2d)",
+        "h_gen": H_GEN,
+        "b0i2d_meta_root": str(B0I2D_META_ROOT),
+        "n_registered_seeds": len(c1d.ARM_SEEDS["b0i2d"]),
+        "missing_seeds": missing,
+        "fleet_complete": not missing,
+        "per_seed": per_seed,
+        "c_tci2_per_seed": tci_per_seed,
+        "c_tci_taus": list(C_TCI_TAUS),
+        "S2_core_coded_fleet_mean": s2_coded_mean,
+        "S2_core_coded_fleet_se": s2_coded_se,
+        "S2_core_twin_fleet_mean": s2_twin_mean,
+        "S2_core_twin_fleet_se": s2_twin_se,
+        "LHS2_bt_rho_eq_rho_mean": lhs2_bt_rho_mean,
+        "LHS2_bt_rho_eq_rho_se": lhs2_bt_rho_se,
+        "LHS2_bc_rho_eq_rho_mean": lhs2_bc_rho_mean,
+        "LHS2_bc_rho_eq_rho_se": lhs2_bc_rho_se,
+        "rho2_convention_note": (
+            "LHS2 quoted under BOTH stage-0 rho2 BRACKET readings (rho2=rho[1D] and rho2=1); "
+            "the true rho2 needs the Sigma~^4D companion pass -- PENDING, not computed by this "
+            "stage (prereg sec1)."
+        ),
+        "venue_drift_control": {
+            "stage0_banked_S2_coded_mean": STAGE0_BANKED_S2_CODED_MEAN,
+            "stage0_banked_S2_coded_se": STAGE0_BANKED_S2_CODED_SE,
+            "fresh_S2_coded_mean": s2_coded_mean,
+            "delta": venue_drift_delta,
+        },
+    }
+    result["elapsed_s"] = time.time() - t0
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(result, indent=2))
+    print("=== [P3-2D] ca_rhs_scorer -- fresh-fleet LHS2 (--stage lhs2d) ===")
+    if missing:
+        print(f"MISSING seeds (fleet not yet run under {B0I2D_META_ROOT}): {missing}")
+    else:
+        print(f"S2_core(coded) fleet = {s2_coded_mean:.6f} +/- {s2_coded_se}")
+        print(
+            f"venue-drift control: banked={STAGE0_BANKED_S2_CODED_MEAN} "
+            f"fresh={s2_coded_mean} delta={venue_drift_delta}"
+        )
+    print(f"wrote {out_path}")
+    return result
+
+
 def _cli() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--stage",
-        choices=("score", "acceptance", "fidelity", "lhs", "manifest", "determinism"),
+        choices=(
+            "score",
+            "acceptance",
+            "fidelity",
+            "lhs",
+            "manifest",
+            "determinism",
+            "score2d",
+            "lhs2d",
+        ),
         default="score",
     )
     parser.add_argument(
@@ -1264,6 +1789,15 @@ def _cli() -> int:
         type=int,
         default=900101,
         help="--stage determinism: seed for the PA-CA-9 cold/warm-cache draw comparison.",
+    )
+    parser.add_argument(
+        "--wbh-center",
+        type=str,
+        default=None,
+        choices=("raw", "eff"),
+        help="--stage score2d: catalogue_numerator_survival_2d_center for the 'twin' "
+        "arrangement -- REQUIRED (no silent default, PREREGISTRATION_P3_2D_20260825.md sec2(i), "
+        "PENDING the pre-execution review).",
     )
     parser.add_argument("--out-root", type=str, default=str(OUT_ROOT_DEFAULT))
     parser.add_argument("--out", type=str, default=None, help="Override the output JSON path.")
@@ -1310,6 +1844,21 @@ def _cli() -> int:
         out_path = Path(args.out) if args.out else out_root / "ca_rhs_fidelity_output.json"
         result = stage_fidelity(args.fidelity_seed, out_root, out_path)
         return 0 if result["gate_rhsf_verdict"] == "PASS" else 1
+
+    if args.stage == "lhs2d":
+        out_path = Path(args.out) if args.out else out_root / "ca_rhs_lhs2d_output.json"
+        stage_lhs2d(out_path)
+        return 0
+
+    if args.stage == "score2d":
+        if args.wbh_center is None:
+            raise SystemExit(
+                "--stage score2d requires --wbh-center {raw,eff} (no silent default -- "
+                "PREREGISTRATION_P3_2D_20260825.md sec2(i), PENDING the pre-execution review)."
+            )
+        out_path = Path(args.out) if args.out else out_root / "ca_rhs_score2d_output.json"
+        stage_score2d(args.n_events, args.seed, out_root, out_path, args.wbh_center, chunk_size)
+        return 0
 
     out_path = Path(args.out) if args.out else out_root / "ca_rhs_score_output.json"
     stage_score(args.n_events, args.seed, out_root, out_path, chunk_size)

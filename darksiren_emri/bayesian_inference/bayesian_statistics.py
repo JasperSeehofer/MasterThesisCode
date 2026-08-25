@@ -3215,6 +3215,14 @@ class BayesianStatistics:
     # [P3-IMP] catalogue-leg twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2).
     # "off" (default) is byte-identical to the pre-flag path.
     _catalogue_numerator_survival: str = "off"
+    # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test (stage
+    # 2) (results/campaign51_20260728/realistic_20260729/
+    # PREREGISTRATION_P3_2D_20260825.md §2(i)). "off" (default) is
+    # byte-identical to the pre-flag path.
+    _catalogue_numerator_survival_2d: str = "off"
+    # Centering sub-option ("unset"/"raw"/"eff"): REFUSED ("unset") until
+    # explicitly set when the twin above is engaged -- no silent default.
+    _catalogue_numerator_survival_2d_center: str = "unset"
     # B-DEN falsifier instrument (docs/derivations/
     # completion_numerator_data_measure.md §6; AMENDMENT A-5,
     # results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md).
@@ -3275,6 +3283,10 @@ class BayesianStatistics:
         # [P3-IMP] twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2): "off"
         # => the pre-flag production path, byte-identical.
         self._catalogue_numerator_survival: str = "off"
+        # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md
+        # §2(i)): "off" => the pre-flag production path, byte-identical.
+        self._catalogue_numerator_survival_2d: str = "off"
+        self._catalogue_numerator_survival_2d_center: str = "unset"
         # B-DEN falsifier instrument (docs/derivations/
         # completion_numerator_data_measure.md §6; AMENDMENT A-5). "ratio"
         # (default) => the pre-flag production path, byte-identical.
@@ -3384,6 +3396,20 @@ class BayesianStatistics:
         # with-BH catalogue numerator is deliberately untouched (registered
         # invariant).
         catalogue_numerator_survival: str = "off",
+        # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test
+        # (stage 2) (results/campaign51_20260728/realistic_20260729/
+        # PREREGISTRATION_P3_2D_20260825.md §2(i)). "off" (default) is
+        # byte-identical to the pre-flag path; "mz_sel" multiplies the
+        # WITH-BH catalogue numerator's mass integrand by S_4D(d_L(z;h),
+        # x*M_z,det) inside the candidate's own mass quadrature (the
+        # product-Gaussian identity; see _mz_sel_2d_expectation). The
+        # without-BH twin above is deliberately untouched.
+        catalogue_numerator_survival_2d: str = "off",
+        # Centering sub-option ("raw"=host_M, "eff"=host_M_eff) for the
+        # product-Gaussian mean fed to the S_4D quadrature: REQUIRED (no
+        # silent default) when catalogue_numerator_survival_2d="mz_sel" --
+        # the choice is PENDING the pre-execution review (prereg §2(i)).
+        catalogue_numerator_survival_2d_center: str = "unset",
         # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
         # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178).
         # "auto" (default) resolves exactly like
@@ -3485,6 +3511,32 @@ class BayesianStatistics:
                 "; K-flat CONSTANT table" if catalogue_numerator_survival == "phi_flat" else "",
             )
         self._catalogue_numerator_survival = catalogue_numerator_survival
+        # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md §2(i)).
+        if catalogue_numerator_survival_2d not in ("off", "mz_sel"):
+            raise ValueError(
+                "catalogue_numerator_survival_2d must be 'off' or 'mz_sel', "
+                f"got {catalogue_numerator_survival_2d!r}"
+            )
+        if catalogue_numerator_survival_2d == "mz_sel":
+            if catalogue_numerator_survival_2d_center not in ("raw", "eff"):
+                raise ValueError(
+                    "catalogue_numerator_survival_2d='mz_sel' requires "
+                    "catalogue_numerator_survival_2d_center to be explicitly "
+                    "'raw' or 'eff' (no silent default -- the centering "
+                    "choice is PENDING the pre-execution review, "
+                    "PREREGISTRATION_P3_2D_20260825.md §2(i)); got "
+                    f"{catalogue_numerator_survival_2d_center!r}"
+                )
+            _LOGGER.warning(
+                "COUNTERFACTUAL: catalogue_numerator_survival_2d=%r "
+                "(center=%r) — S_4D inside the with-BH catalogue numerator's "
+                "own mass quadrature ([P3-2D] twin cell). Not a production "
+                "posterior.",
+                catalogue_numerator_survival_2d,
+                catalogue_numerator_survival_2d_center,
+            )
+        self._catalogue_numerator_survival_2d = catalogue_numerator_survival_2d
+        self._catalogue_numerator_survival_2d_center = catalogue_numerator_survival_2d_center
         # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
         # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178).
         _cat_glob_sel = str(catalogue_global_selection)
@@ -4786,6 +4838,8 @@ class BayesianStatistics:
             self._eddington_m,
             _cat_surv,
             _cat_surv_table,
+            self._catalogue_numerator_survival_2d,
+            self._catalogue_numerator_survival_2d_center,
         )
 
         results_without_blackhole_mass = _starmap_host_batches(
@@ -4802,6 +4856,8 @@ class BayesianStatistics:
             self._eddington_m,
             _cat_surv,
             _cat_surv_table,
+            self._catalogue_numerator_survival_2d,
+            self._catalogue_numerator_survival_2d_center,
         )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
@@ -5795,6 +5851,133 @@ def _sigma4d_mass_kernel_expectation(
     return out
 
 
+def _mz_sel_2d_expectation(
+    mu_star: npt.NDArray[np.float64],
+    sigma_star: npt.NDArray[np.float64],
+    z_nodes: npt.NDArray[np.float64],
+    d_L_nodes: npt.NDArray[np.float64],
+    det_M: float,
+    detection_probability: Any,
+    host_phiS: float,
+    host_qS: float,
+    h: float,
+) -> npt.NDArray[np.float64]:
+    r"""[P3-2D] scalar host: ``E[S_4D(d_L(z;h), x*M_z,det)]`` under the
+    product-Gaussian ``x ~ N(mu_star, sigma_star^2)``.
+
+    PREREGISTRATION_P3_2D_20260825.md §1/§2: the with-BH catalogue numerator's
+    mass integrand gains the survival INSIDE the candidate's own mass
+    quadrature, ``mz_sel = INTEGRAL N(x;mu_cond,sigma_cond) p_gal(x;z)
+    S_4D(d_L(z;h), x*M_z,det) dx``. The product of the two Gaussians factors
+    (completing the square) as
+
+    .. math::
+
+        \mathcal N(x;\mu_\mathrm{cond},\sigma_\mathrm{cond}^2)\,
+        \mathcal N(x;\mu_\mathrm{gal},\sigma_\mathrm{gal}^2)
+        = \mathcal N(\mu_\mathrm{cond};\mu_\mathrm{gal},
+                     \sigma_\mathrm{cond}^2+\sigma_\mathrm{gal}^2)\,
+          \mathcal N(x;\mu_\star,\sigma_\star^2),
+
+    .. math::
+
+        \mu_\star = \frac{\mu_\mathrm{cond}\sigma_\mathrm{gal}^2 +
+                     \mu_\mathrm{gal}\sigma_\mathrm{cond}^2}
+                    {\sigma_\mathrm{cond}^2+\sigma_\mathrm{gal}^2},
+        \qquad
+        \sigma_\star^2 = \frac{\sigma_\mathrm{cond}^2\sigma_\mathrm{gal}^2}
+                         {\sigma_\mathrm{cond}^2+\sigma_\mathrm{gal}^2},
+
+    so ``mz_sel = mz_integral * E[S_4D]`` where ``mz_integral`` is exactly the
+    analytic Gaussian-product prefactor already computed at the call site
+    (Eq. 14.31 in derivations/dark_siren_likelihood.md) and ``E[S_4D]`` is
+    this function's return value. Gauss-Hermite quadrature (the SAME
+    ``_MT_GH_NODES``/``_MT_GH_WEIGHTS`` the ``mass_trunc`` kernel already uses,
+    :func:`_mass_trunc_mz_integral`) centred on ``mu_star`` resolves ``S_4D``
+    over the product-Gaussian's own narrow support -- no aliasing, no new
+    table (consumes the EXISTING
+    ``detection_probability_with_bh_mass_interpolated`` accessor). Sharp-GW-
+    mass limit (``sigma_star -> 0``): ``E[S_4D] -> S_4D(d_L, mu_cond*M_z,det)``
+    -- the stage-0 §1 registered limit.
+
+    Args:
+        mu_star: Product-Gaussian mean (mass-fraction coordinate), ``(K,)``.
+        sigma_star: Product-Gaussian std (mass-fraction coordinate), ``(K,)``.
+        z_nodes: The z quadrature nodes ``mu_star`` was built at, ``(K,)``
+            (threaded to the accessor only when it is z-resolved,
+            :func:`_wbh_z_kwargs`).
+        d_L_nodes: ``d_L(z_nodes; h)``, ``(K,)``.
+        det_M: The detection's own detector-frame mass ``M_z,det`` [M_sun].
+        detection_probability: ``SimulationDetectionProbability`` instance.
+        host_phiS: Host ecliptic azimuth.
+        host_qS: Host ecliptic polar angle.
+        h: Dimensionless Hubble parameter.
+
+    Returns:
+        ``E[S_4D]``, shape ``(K,)``.
+    """
+    n_g = _MT_GH_NODES.size
+    a_nodes = mu_star[:, None] + np.sqrt(2.0) * sigma_star[:, None] * _MT_GH_NODES  # (K, G)
+    m_z_flat = (a_nodes * det_M).reshape(-1)
+    d_L_flat = np.repeat(np.asarray(d_L_nodes, dtype=np.float64), n_g)
+    z_flat = np.repeat(np.asarray(z_nodes, dtype=np.float64), n_g)
+    S_4D = np.asarray(
+        detection_probability.detection_probability_with_bh_mass_interpolated(
+            d_L_flat,
+            m_z_flat,
+            np.full(d_L_flat.size, host_phiS),
+            np.full(d_L_flat.size, host_qS),
+            h=h,
+            **_wbh_z_kwargs(detection_probability, z_flat),
+        ),
+        dtype=np.float64,
+    ).reshape(mu_star.shape[0], n_g)
+    expectation: npt.NDArray[np.float64] = (S_4D @ _MT_GH_WEIGHTS) / np.sqrt(np.pi)
+    return expectation
+
+
+def _mz_sel_2d_expectation_batch(
+    mu_star: npt.NDArray[np.float64],
+    sigma_star: npt.NDArray[np.float64],
+    z_nodes: npt.NDArray[np.float64],
+    d_L_nodes: npt.NDArray[np.float64],
+    det_M: float,
+    detection_probability: Any,
+    host_phiS: npt.NDArray[np.float64],
+    host_qS: npt.NDArray[np.float64],
+    h: float,
+) -> npt.NDArray[np.float64]:
+    """Host-batched twin of :func:`_mz_sel_2d_expectation`.
+
+    ``mu_star``/``sigma_star``/``z_nodes``/``d_L_nodes`` have shape ``(n, K)``;
+    ``host_phiS``/``host_qS`` have shape ``(n,)``. Row ``i`` is bit-identical
+    to the scalar function called with host ``i``'s arrays -- the arithmetic
+    per ``(host, z-node, GH-node)`` element is unchanged; only the host axis
+    is added, in ONE ``detection_probability_with_bh_mass_interpolated`` call.
+    """
+    n, k = mu_star.shape
+    n_g = _MT_GH_NODES.size
+    a_nodes = mu_star[..., None] + np.sqrt(2.0) * sigma_star[..., None] * _MT_GH_NODES  # (n,k,G)
+    m_z_flat = (a_nodes * det_M).reshape(-1)
+    d_L_flat = np.repeat(d_L_nodes.reshape(-1), n_g)
+    z_flat = np.repeat(z_nodes.reshape(-1), n_g)
+    phi_flat = np.repeat(host_phiS, k * n_g)
+    theta_flat = np.repeat(host_qS, k * n_g)
+    S_4D = np.asarray(
+        detection_probability.detection_probability_with_bh_mass_interpolated(
+            d_L_flat,
+            m_z_flat,
+            phi_flat,
+            theta_flat,
+            h=h,
+            **_wbh_z_kwargs(detection_probability, z_flat),
+        ),
+        dtype=np.float64,
+    ).reshape(n, k, n_g)
+    expectation: npt.NDArray[np.float64] = (S_4D @ _MT_GH_WEIGHTS) / np.sqrt(np.pi)
+    return expectation
+
+
 def single_host_likelihood(
     host_phiS: float,
     host_qS: float,
@@ -5831,6 +6014,20 @@ def single_host_likelihood(
     # of the batch flag — same semantics, same table-slice input.
     catalogue_numerator_survival: str = "off",
     catalogue_survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
+    # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test (stage
+    # 2) (results/campaign51_20260728/realistic_20260729/
+    # PREREGISTRATION_P3_2D_20260825.md §2(i)); scalar twin of the batch flag.
+    # "off" (default) is byte-identical to the pre-flag path; "mz_sel"
+    # multiplies the WITH-BH catalogue numerator's mass integrand by
+    # S_4D(d_L(z;h), x*M_z,det) inside the candidate's own mass quadrature
+    # (see _mz_sel_2d_expectation). The WITHOUT-BH numerator is untouched.
+    catalogue_numerator_survival_2d: str = "off",
+    # Centering sub-option ("raw"=host_M, "eff"=host_M_eff) for the
+    # product-Gaussian mean fed to the S_4D quadrature. REFUSED ("unset",
+    # the default) until explicitly set when the twin is engaged -- the
+    # choice is PENDING the pre-execution review (prereg §2(i)); no silent
+    # default.
+    catalogue_numerator_survival_2d_center: str = "unset",
 ) -> list[float]:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -5859,6 +6056,22 @@ def single_host_likelihood(
         if catalogue_survival_table is None:
             raise ValueError("catalogue_numerator_survival='phi' requires catalogue_survival_table")
         _p3_engagement_log_once("scalar")
+
+    # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md §2(i)).
+    if catalogue_numerator_survival_2d not in ("off", "mz_sel"):
+        raise ValueError(
+            "catalogue_numerator_survival_2d must be 'off' or 'mz_sel', "
+            f"got {catalogue_numerator_survival_2d!r}"
+        )
+    _cat_surv_2d_on = catalogue_numerator_survival_2d == "mz_sel"
+    if _cat_surv_2d_on and catalogue_numerator_survival_2d_center not in ("raw", "eff"):
+        raise ValueError(
+            "catalogue_numerator_survival_2d='mz_sel' requires "
+            "catalogue_numerator_survival_2d_center to be explicitly 'raw' or "
+            "'eff' (no silent default -- the centering choice is PENDING the "
+            "pre-execution review, PREREGISTRATION_P3_2D_20260825.md §2(i)); "
+            f"got {catalogue_numerator_survival_2d_center!r}"
+        )
 
     FIXED_QUAD_N = _HOST_QUAD_N
 
@@ -5900,6 +6113,17 @@ def single_host_likelihood(
         resolve_host_mass_kernel(host_mass_kernel, normalization_mode, host_z_kernel)
         == "trunc_lognormal"
     )
+    # [P3-2D] the twin only composes with the production Gaussian-product
+    # with-BH mass-marginal branch (mz_integral's "else" below) -- guard
+    # pattern, not a silent no-op, when combined with an incompatible
+    # instrument (PREREGISTRATION_P3_2D_20260825.md §2(i)).
+    if _cat_surv_2d_on and (_use_mass_trunc or catalogue_mass_overlap != "production"):
+        raise ValueError(
+            "catalogue_numerator_survival_2d='mz_sel' composes only with the "
+            "production Gaussian-product with-BH mass-marginal branch; got "
+            f"host_mass_kernel resolving to mass_trunc={_use_mass_trunc!r}, "
+            f"catalogue_mass_overlap={catalogue_mass_overlap!r}"
+        )
 
     # [PHYSICS] generator_marginal (E1 FIX-3, approved 2026-07-26): point/point
     # sigma_z pairing. The generator draws hosts at their catalogue z verbatim and
@@ -6328,6 +6552,34 @@ def single_host_likelihood(
                     2 * np.pi * sigma2_sum
                 )
 
+                if _cat_surv_2d_on:
+                    # [P3-2D] the with-BH catalogue-leg twin: S_4D inside the
+                    # candidate's own mass quadrature (product-Gaussian
+                    # identity, see _mz_sel_2d_expectation). "raw"/"eff"
+                    # centering only changes the product-Gaussian MEAN fed to
+                    # the S_4D quadrature; sigma_gal_frac (the measurement
+                    # width) is unchanged either way.
+                    _mu_gal_surv = (
+                        (host_M if catalogue_numerator_survival_2d_center == "raw" else _host_M_eff)
+                        * (1 + z)
+                        / _det_M
+                    )
+                    _mu_star = (
+                        mu_cond * sigma_gal_frac**2 + _mu_gal_surv * _sigma2_cond
+                    ) / sigma2_sum
+                    _sigma_star = np.sqrt(_sigma2_cond * sigma_gal_frac**2 / sigma2_sum)
+                    mz_integral = mz_integral * _mz_sel_2d_expectation(
+                        _mu_star,
+                        _sigma_star,
+                        np.asarray(z, dtype=np.float64),
+                        np.asarray(d_L, dtype=np.float64),
+                        _det_M,
+                        detection_probability,
+                        host_phiS,
+                        host_qS,
+                        h,
+                    )
+
             # Eq. (A.10) in Gray et al. (2020): GW likelihood x mass-marginal x
             # galaxy z-prior; p_det removed from the numerator (denominator-only).
             # Eq. (14.32) in derivations/dark_siren_likelihood.md
@@ -6349,6 +6601,31 @@ def single_host_likelihood(
             _mz_point = np.exp(
                 -0.5 * (_mu_cond_point - _mu_gal_frac_point) ** 2 / _sigma2_sum_point
             ) / np.sqrt(2 * np.pi * _sigma2_sum_point)
+            if _cat_surv_2d_on:
+                # [P3-2D] delta-kernel branch: same product-Gaussian factor,
+                # evaluated at z = z_g (see the quadrature branch above).
+                _mu_gal_surv_point = (
+                    (host_M if catalogue_numerator_survival_2d_center == "raw" else _host_M_eff)
+                    * (1 + _z_point)
+                    / _det_M
+                )
+                _mu_star_point = (
+                    _mu_cond_point * _sigma_gal_frac_point**2 + _mu_gal_surv_point * _sigma2_cond
+                ) / _sigma2_sum_point
+                _sigma_star_point = np.sqrt(
+                    _sigma2_cond * _sigma_gal_frac_point**2 / _sigma2_sum_point
+                )
+                _mz_point = _mz_point * _mz_sel_2d_expectation(
+                    _mu_star_point,
+                    _sigma_star_point,
+                    _z_point,
+                    _d_L_point,
+                    _det_M,
+                    detection_probability,
+                    host_phiS,
+                    host_qS,
+                    h,
+                )
             single_host_likelihood_numerator_with_bh_mass = float((_gw_3d_point * _mz_point)[0])
         else:
             single_host_likelihood_numerator_with_bh_mass = fixed_quad(
@@ -6445,6 +6722,19 @@ def single_host_likelihood_batch(
     # convention as completion_numerator_integrand_sel_1d).
     catalogue_numerator_survival: str = "off",
     catalogue_survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
+    # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test (stage
+    # 2) (results/campaign51_20260728/realistic_20260729/
+    # PREREGISTRATION_P3_2D_20260825.md §2(i)); production dispatch path. "off"
+    # (default) is byte-identical to the pre-flag path; "mz_sel" multiplies
+    # the WITH-BH catalogue numerator's mass integrand by S_4D(d_L(z;h),
+    # x*M_z,det) inside the candidate's own mass quadrature (see
+    # _mz_sel_2d_expectation_batch). The WITHOUT-BH numerator is untouched.
+    catalogue_numerator_survival_2d: str = "off",
+    # Centering sub-option ("raw"=host_M, "eff"=host_M_eff): REFUSED
+    # ("unset", the default) until explicitly set when the twin is engaged --
+    # the choice is PENDING the pre-execution review (prereg §2(i)); no
+    # silent default.
+    catalogue_numerator_survival_2d_center: str = "unset",
 ) -> npt.NDArray[np.float64]:
     """Host-batched twin of :func:`single_host_likelihood`.
 
@@ -6484,6 +6774,11 @@ def single_host_likelihood_batch(
             results/prod2d_closure_20260818/
             PREREGISTRATION_PROD_COUNTERFACTUAL.md §1.
         catalogue_mass_error_scale: Width multiplier ``k`` for "inflated".
+        catalogue_numerator_survival_2d: [P3-2D] twin cell ("off"/"mz_sel");
+            PREREGISTRATION_P3_2D_20260825.md §2(i).
+        catalogue_numerator_survival_2d_center: Centering sub-option
+            ("unset"/"raw"/"eff"); REQUIRED to be "raw" or "eff" when the
+            twin cell is "mz_sel".
 
     Returns:
         Array of shape ``(n, 6)`` when ``evaluate_with_bh_mass`` else
@@ -6716,6 +7011,31 @@ def single_host_likelihood_batch(
             raise ValueError("catalogue_numerator_survival='phi' requires catalogue_survival_table")
         _p3_engagement_log_once("batch")
 
+    # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md §2(i)).
+    if catalogue_numerator_survival_2d not in ("off", "mz_sel"):
+        raise ValueError(
+            "catalogue_numerator_survival_2d must be 'off' or 'mz_sel', "
+            f"got {catalogue_numerator_survival_2d!r}"
+        )
+    _cat_surv_2d_on = catalogue_numerator_survival_2d == "mz_sel"
+    if _cat_surv_2d_on and catalogue_numerator_survival_2d_center not in ("raw", "eff"):
+        raise ValueError(
+            "catalogue_numerator_survival_2d='mz_sel' requires "
+            "catalogue_numerator_survival_2d_center to be explicitly 'raw' or "
+            "'eff' (no silent default -- the centering choice is PENDING the "
+            "pre-execution review, PREREGISTRATION_P3_2D_20260825.md §2(i)); "
+            f"got {catalogue_numerator_survival_2d_center!r}"
+        )
+    # The twin only composes with the production Gaussian-product with-BH
+    # mass-marginal branch (mz_integral's "else" below) -- guard pattern.
+    if _cat_surv_2d_on and (_use_mass_trunc or catalogue_mass_overlap != "production"):
+        raise ValueError(
+            "catalogue_numerator_survival_2d='mz_sel' composes only with the "
+            "production Gaussian-product with-BH mass-marginal branch; got "
+            f"host_mass_kernel resolving to mass_trunc={_use_mass_trunc!r}, "
+            f"catalogue_mass_overlap={catalogue_mass_overlap!r}"
+        )
+
     if _use_generator_point:
         # [PHYSICS] N_g = p(x | z_g, Omega_g): point value, no reduce.
         # DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3.
@@ -6909,6 +7229,30 @@ def single_host_likelihood_batch(
             2 * np.pi * sigma2_sum
         )
 
+        if _cat_surv_2d_on:
+            # [P3-2D] the with-BH catalogue-leg twin: S_4D inside the
+            # candidate's own mass quadrature (product-Gaussian identity, see
+            # _mz_sel_2d_expectation_batch). Flows through BOTH the
+            # generator-point AND quadrature reduce below via mz_integral.
+            _host_M_for_surv = (
+                host_M if catalogue_numerator_survival_2d_center == "raw" else host_M_eff
+            )
+            mu_gal_surv = _host_M_for_surv[:, None] * (1 + y_num_nodes) / _det_M
+            mu_star = (mu_cond * sigma_gal_frac**2 + mu_gal_surv * _sigma2_cond) / sigma2_sum
+            sigma_star = np.sqrt(_sigma2_cond * sigma_gal_frac**2 / sigma2_sum)
+            d_L_at_num = np.asarray(luminosity_distance_fraction * _det_d_L, dtype=np.float64)
+            mz_integral = mz_integral * _mz_sel_2d_expectation_batch(
+                mu_star,
+                sigma_star,
+                y_num_nodes,
+                d_L_at_num,
+                _det_M,
+                detection_probability,
+                host_phiS,
+                host_qS,
+                h,
+            )
+
     if _use_generator_point:
         # [PHYSICS] with-BH point numerator: gw_3d(z_g) * mz(z_g); the galaxy
         # mass-error kernel is retained (issue #24), only the z-kernel collapses.
@@ -7009,6 +7353,8 @@ def _starmap_host_batches(
     eddington_m: str = "on",
     catalogue_numerator_survival: str = "off",
     catalogue_survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
+    catalogue_numerator_survival_2d: str = "off",
+    catalogue_numerator_survival_2d_center: str = "unset",
 ) -> list[list[float]]:
     """Dispatch the batched host kernel over worker processes.
 
@@ -7039,6 +7385,11 @@ def _starmap_host_batches(
         catalogue_survival_table: The per-h ``(z_grid, s_phi_grid)`` slice of
             the phi-marginal survival table; required when the twin cell is
             "phi", ignored otherwise.
+        catalogue_numerator_survival_2d: [P3-2D] the with-BH catalogue-leg
+            twin ("off"/"mz_sel"); PREREGISTRATION_P3_2D_20260825.md §2(i).
+        catalogue_numerator_survival_2d_center: Centering sub-option
+            ("unset"/"raw"/"eff"); REQUIRED to be "raw" or "eff" when the
+            twin cell is "mz_sel".
 
     Returns:
         Per-host result rows in input order.
@@ -7069,6 +7420,8 @@ def _starmap_host_batches(
             eddington_m,
             catalogue_numerator_survival,
             catalogue_survival_table,
+            catalogue_numerator_survival_2d,
+            catalogue_numerator_survival_2d_center,
         )
         for idx in chunk_indices
     ]

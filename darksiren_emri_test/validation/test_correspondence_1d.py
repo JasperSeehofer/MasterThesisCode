@@ -10,6 +10,7 @@ expensive) are exercised by the harness's own CLI (``--stage g0|g1|g2``),
 not by this test module.
 """
 
+import dataclasses
 import json
 from pathlib import Path
 
@@ -183,6 +184,7 @@ def test_arm_specs_registered_mapping() -> None:
         "bself": (1.0, 1.0),
         "bden": (1.0, 1.0),
         "b0i": (1.0, 1.0),
+        "b0i2d": (1.0, 1.0),
     }
 
 
@@ -200,6 +202,7 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
         "bself": "population_selected",
         "bden": "population_selected",
         "b0i": "catalogue_selected",
+        "b0i2d": "catalogue_selected_2d",
     }
     assert c1d.ARM_UNITY_COMPLETENESS == {
         "b0": False,
@@ -213,6 +216,7 @@ def test_arm_host_mode_and_completeness_registered_mapping() -> None:
         "bself": False,
         "bden": False,
         "b0i": False,
+        "b0i2d": False,
     }
     # Every ARM_SPECS key has an entry in both registries (no silent fallback
     # to the default for a registered arm).
@@ -252,12 +256,17 @@ def test_arm_selection_cell_registered_mapping() -> None:
         # PA-2 (b0i): "fused" -- the identity test scores the production
         # runs-of-record cell, not the pre-A-4 "off" basis.
         "b0i": "fused",
+        # [P3-2D] (b0i2d): same convention as b0i.
+        "b0i2d": "fused",
     }
     assert set(c1d.ARM_SELECTION_CELL) == set(c1d.ARM_SPECS)
-    non_bself = {k: v for k, v in c1d.ARM_SELECTION_CELL.items() if k not in ("bself", "b0i")}
+    non_bself = {
+        k: v for k, v in c1d.ARM_SELECTION_CELL.items() if k not in ("bself", "b0i", "b0i2d")
+    }
     assert set(non_bself.values()) == {"off"}
     assert c1d.ARM_SELECTION_CELL["bself"] == "fused"
     assert c1d.ARM_SELECTION_CELL["b0i"] == "fused"
+    assert c1d.ARM_SELECTION_CELL["b0i2d"] == "fused"
     # D2 ruling (ledger row #159, 2026-08-22): the pin is "fused" for all
     # FUTURE runs-of-record; every banked pre-A-4 arm's historical "off" basis
     # lives in ARM_SELECTION_CELL above (regeneration passes it explicitly),
@@ -284,6 +293,7 @@ def test_arm_event_measure_registered_mapping() -> None:
         "bself": "ratio",
         "bden": "data",
         "b0i": "ratio",
+        "b0i2d": "ratio",
     }
     assert set(c1d.ARM_EVENT_MEASURE) == set(c1d.ARM_SPECS)
     non_bden = {k: v for k, v in c1d.ARM_EVENT_MEASURE.items() if k != "bden"}
@@ -304,12 +314,14 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     assert len(c1d.ARM_SEEDS["bself"]) == 15
     assert len(c1d.ARM_SEEDS["bden"]) == 15
     assert len(c1d.ARM_SEEDS["b0i"]) == 25
+    assert len(c1d.ARM_SEEDS["b0i2d"]) == 12
     total = sum(len(v) for v in c1d.ARM_SEEDS.values())
     # 25 + 25 + 10 + 10 + 10 + 15 + 2 + 15 + 15 + 15 = 142, the fleet task-list
     # arithmetic (80 pre-A-2 tasks + 17 AMENDMENT A-2 tasks + 15 AMENDMENT
     # A-3 tasks + 15 AMENDMENT A-4 tasks + 15 AMENDMENT A-5 tasks); PA-2's
-    # b0i (25 seeds) is identity-test-only and not part of that fleet count.
-    assert total == 142 + 25
+    # b0i (25 seeds) and [P3-2D]'s b0i2d (12 seeds) are identity-test-only and
+    # not part of that fleet count.
+    assert total == 142 + 25 + 12
     for arm, seeds in c1d.ARM_SEEDS.items():
         assert seeds[0] == 900101, arm
         assert list(seeds) == sorted(seeds), arm
@@ -416,6 +428,10 @@ def test_run_arm_seed_threads_selection_cell_to_evaluate_call(
     )
     monkeypatch.setattr(c1d.MirrorUniverseGenerator, "draw_realization", _fake_draw_realization)
     monkeypatch.setattr(c1d, "build_bsel_selection_objects", lambda: (None, None))
+    # [P3-2D] (b0i2d): same stub convention as build_bsel_selection_objects
+    # above -- this test exercises the arm -> kwarg wiring only, never the
+    # real SimulationDetectionProbability/injection-pool construction.
+    monkeypatch.setattr(c1d, "build_b0i_2d_selection_objects", lambda: (None, None, None))
     # PA-2 (b0i): the runtime rate-weight parity gate needs the REAL pinned
     # catalogue -- stubbed here too (same convention as build_bsel_selection_objects
     # above), since this test is exercising the arm -> kwarg wiring only.
@@ -434,9 +450,11 @@ def test_run_arm_seed_threads_selection_cell_to_evaluate_call(
 
     # The one arm the amendment actually changes.
     assert c1d.ARM_SELECTION_CELL["bself"] == "fused"
-    # Every other pre-PA-2 arm is provably unchanged (still "off"); b0i
-    # (PA-2) is registered "fused" too, disclosed separately above.
-    assert all(v == "off" for k, v in c1d.ARM_SELECTION_CELL.items() if k not in ("bself", "b0i"))
+    # Every other pre-PA-2 arm is provably unchanged (still "off"); b0i/b0i2d
+    # are registered "fused" too, disclosed separately above.
+    assert all(
+        v == "off" for k, v in c1d.ARM_SELECTION_CELL.items() if k not in ("bself", "b0i", "b0i2d")
+    )
 
 
 @requires_artifact(c1d.CRB_CSV_PATH)
@@ -506,6 +524,10 @@ def test_run_arm_seed_threads_event_measure_to_evaluate_call(
     )
     monkeypatch.setattr(c1d.MirrorUniverseGenerator, "draw_realization", _fake_draw_realization)
     monkeypatch.setattr(c1d, "build_bsel_selection_objects", lambda: (None, None))
+    # [P3-2D] (b0i2d): same stub convention as build_bsel_selection_objects
+    # above -- this test exercises the arm -> kwarg wiring only, never the
+    # real SimulationDetectionProbability/injection-pool construction.
+    monkeypatch.setattr(c1d, "build_b0i_2d_selection_objects", lambda: (None, None, None))
     # PA-2 (b0i): the runtime rate-weight parity gate needs the REAL pinned
     # catalogue -- stubbed here too (same convention as build_bsel_selection_objects
     # above), since this test is exercising the arm -> kwarg wiring only.
@@ -1456,3 +1478,301 @@ def test_catalogue_mode_byte_unchanged_regression(tmp_path: Path) -> None:
     np.testing.assert_allclose(events["qS"].to_numpy(), expected_qS, rtol=0.0, atol=0.0)
     assert events["host_galaxy_index"].to_numpy().tolist() == expected_host_idx
     assert "host_draw_mode" not in events.columns
+
+
+# ── [P3-2D] (prereg PREREGISTRATION_P3_2D_20260825.md) -- the b0i-2D venue
+# mass-law extension ("catalogue_selected_2d" host mode). Same pool-free,
+# synthetic-test-double convention as the PA-2 (b0i) tests above.
+
+
+class _FakeS4D:
+    """Test double for ``SimulationDetectionProbability.detection_probability_with_bh_mass_interpolated``:
+    a HIGH constant survival by default (so the rejection-sampling loop
+    converges in ~1-2 rounds during tests), or a caller-supplied constant
+    (e.g. ``0.0`` to exercise the GATE-ACC-style non-convergence STOP).
+    """
+
+    def __init__(self, value: float = 0.9) -> None:
+        self.value = value
+        self.calls: list[tuple[int, float]] = []  # (batch size, h) per call, for assertions
+
+    def detection_probability_with_bh_mass_interpolated(
+        self,
+        d_L: np.ndarray,
+        M_z: np.ndarray,
+        phi: np.ndarray,
+        theta: np.ndarray,
+        *,
+        h: float,
+        z: np.ndarray | None = None,
+    ) -> np.ndarray:
+        d_l_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
+        self.calls.append((int(d_l_arr.size), float(h)))
+        return np.full_like(d_l_arr, self.value, dtype=np.float64)
+
+
+def _make_host_pool_with_mass_and_error(n_pool: int = _N_HOST_POOL) -> c1d.HostPool:
+    """The SAME pool :func:`_make_host_pool_with_mass` builds, PLUS a source-frame
+    BH mass 1-sigma uncertainty column (10% of mass -- well inside the
+    Eddington-shift quadrature's guard, ``_eddington_shifted_host_mass_batch``)."""
+    pool = _make_host_pool_with_mass(n_pool)
+    rng = np.random.default_rng(5679)
+    assert pool.M is not None
+    m_error = pool.M * rng.uniform(0.05, 0.2, n_pool)
+    return dataclasses.replace(pool, M_error=m_error)
+
+
+def _make_donor_csv_2d(
+    tmp_path_factory: pytest.TempPathFactory, n_rows: int = _N_DONOR_ROWS
+) -> str:
+    """The SAME donor CSV :func:`_make_donor_csv` builds, PLUS the (M,
+    delta_M_delta_M, delta_luminosity_distance_delta_M) columns the
+    ``"catalogue_selected_2d"`` joint (d_hat, M_hat_z) draw needs."""
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n_rows)
+    df = pd.read_csv(donor_csv)
+    # Independent RNG draws (a fresh generator) so this fixture's mass columns
+    # do not perturb the base fixture's own stream/values.
+    rng = np.random.default_rng(4321)
+    df["M"] = rng.uniform(1.0e5, 1.0e6, n_rows)
+    df["delta_M_delta_M"] = rng.uniform(1.0e6, 1.0e8, n_rows)  # (M_sun)^2-scale variance
+    # Small, physically-plausible d_L-M correlation (|corr| << 1 -- Cholesky-safe).
+    sigma_dl = np.sqrt(df["delta_luminosity_distance_delta_luminosity_distance"].to_numpy())
+    sigma_m = np.sqrt(df["delta_M_delta_M"].to_numpy())
+    corr = rng.uniform(-0.1, 0.1, n_rows)
+    df["delta_luminosity_distance_delta_M"] = corr * sigma_dl * sigma_m
+    df.to_csv(donor_csv, index=False)
+    return donor_csv
+
+
+def test_catalogue_selected_2d_draw_realization_requires_phi_survival_table(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Mode guard: host_mode='catalogue_selected_2d' without phi_survival_table raises."""
+    n = 6
+    donor_csv = _make_donor_csv_2d(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass_and_error()
+    with pytest.raises(ValueError, match="phi_survival_table"):
+        gen.draw_realization(
+            seed=1,
+            host_pool=pool,
+            host_mode="catalogue_selected_2d",
+            completeness=_FakeIncompleteness(),
+            detection_probability=_FakeS4D(),  # type: ignore[arg-type]
+        )
+
+
+def test_catalogue_selected_2d_draw_realization_requires_detection_probability(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Mode guard: host_mode='catalogue_selected_2d' without detection_probability raises."""
+    n = 6
+    donor_csv = _make_donor_csv_2d(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass_and_error()
+    table = _fake_phi_survival_table(z_max=1.0)
+    with pytest.raises(ValueError, match="detection_probability"):
+        gen.draw_realization(
+            seed=1,
+            host_pool=pool,
+            host_mode="catalogue_selected_2d",
+            completeness=_FakeIncompleteness(),
+            phi_survival_table=table,
+        )
+
+
+def test_catalogue_selected_2d_host_pool_requires_mass_error() -> None:
+    """Mode guard: a HostPool with M but no M_error raises for the [P3-2D] latent draw."""
+    pool = _make_host_pool_with_mass()  # M set, M_error left None
+    table = _fake_phi_survival_table()
+    completeness = _FakeIncompleteness()
+    host_w, _w_g, s_tilde = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+    with pytest.raises(ValueError, match="M_error"):
+        c1d._draw_2d_accepted_latents(
+            np.random.default_rng(1),
+            pool,
+            host_w,
+            s_tilde,
+            table,
+            completeness,
+            _FakeS4D(),  # type: ignore[arg-type]
+            5,
+        )
+
+
+def test_catalogue_selected_2d_draw_realization_is_deterministic(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Determinism under a fixed seed (host/z/mass/joint-observation/Bernoulli draws)."""
+    n = 8
+    donor_csv = _make_donor_csv_2d(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass_and_error()
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    detection_probability = _FakeS4D(value=0.9)
+    a = gen.draw_realization(
+        seed=5,
+        host_pool=pool,
+        host_mode="catalogue_selected_2d",
+        completeness=completeness,
+        phi_survival_table=table,
+        detection_probability=detection_probability,  # type: ignore[arg-type]
+    )
+    b = gen.draw_realization(
+        seed=5,
+        host_pool=pool,
+        host_mode="catalogue_selected_2d",
+        completeness=completeness,
+        phi_survival_table=table,
+        detection_probability=detection_probability,  # type: ignore[arg-type]
+    )
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_catalogue_selected_2d_draw_realization_seed_sensitivity(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Different seeds must not reproduce the same M_true/z_true draw."""
+    n = 8
+    donor_csv = _make_donor_csv_2d(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass_and_error()
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    a = gen.draw_realization(
+        seed=5,
+        host_pool=pool,
+        host_mode="catalogue_selected_2d",
+        completeness=completeness,
+        phi_survival_table=table,
+        detection_probability=_FakeS4D(value=0.9),  # type: ignore[arg-type]
+    )
+    b = gen.draw_realization(
+        seed=6,
+        host_pool=pool,
+        host_mode="catalogue_selected_2d",
+        completeness=completeness,
+        phi_survival_table=table,
+        detection_probability=_FakeS4D(value=0.9),  # type: ignore[arg-type]
+    )
+    assert not a["z_true"].equals(b["z_true"])
+    assert not a["M_true"].equals(b["M_true"])
+
+
+def test_catalogue_selected_2d_draw_realization_records_columns(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Task spec item 4: M_true, M_z_true, M_z_obs, s4d_at_truth, link_id, host_draw_mode,
+    z_true, s_tilde_phi_host are all recorded, and the "monster event" class is
+    structurally absent (M_z_obs sits near its OWN event's M_z_true, not an
+    unrelated donor-row value)."""
+    n = 10
+    donor_csv = _make_donor_csv_2d(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass_and_error()
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    detection_probability = _FakeS4D(value=0.9)
+    events = gen.draw_realization(
+        seed=9,
+        host_pool=pool,
+        host_mode="catalogue_selected_2d",
+        completeness=completeness,
+        phi_survival_table=table,
+        detection_probability=detection_probability,  # type: ignore[arg-type]
+    )
+
+    assert (events["host_draw_mode"] == "catalogue_selected_2d").all()
+    assert (events["host_galaxy_index"].to_numpy() >= 0).all()
+    assert bool(events["in_catalog"].all())
+    for col in (
+        "M_true",
+        "M_z_true",
+        "M_z_obs",
+        "s4d_at_truth",
+        "link_id",
+        "z_true",
+        "s_tilde_phi_host",
+    ):
+        assert col in events.columns
+
+    assert np.all(events["M_true"].to_numpy() > 0.0)
+    assert np.all(events["M"].to_numpy() == events["M_z_obs"].to_numpy())
+    assert np.all((events["s4d_at_truth"].to_numpy() >= 0.0) & (events["s4d_at_truth"] <= 1.0))
+    # GATE M2-LINK forensics (structural): link_id indexes the donor CRB pool
+    # this event's (d_hat, M_hat_z) covariance was drawn from -- in range and
+    # distinct from a "the mass is just whatever the donor row happened to
+    # carry" configuration: M_z_obs must sit within a generous many-sigma
+    # window of ITS OWN event's M_z_true (never an unrelated donor value --
+    # the donor CSV's mass column spans [1e5, 1e6], an entirely different
+    # scale from a typical M_z_true here, so a monster mismatch would be
+    # obvious as an outlier far outside this window).
+    assert np.all(events["link_id"].to_numpy() >= 0)
+    assert np.all(events["link_id"].to_numpy() < n)
+    diff = np.abs(events["M_z_obs"].to_numpy() - events["M_z_true"].to_numpy())
+    sigma_m = np.sqrt(pd.read_csv(donor_csv)["delta_M_delta_M"].to_numpy())
+    assert np.all(diff < 15.0 * sigma_m)  # generous many-sigma bound, not a tight physics check
+
+
+def test_catalogue_selected_2d_rejection_loop_stops_on_zero_survival(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """GATE-ACC-style closed-loop STOP: a venue where S_4D is identically 0 can never
+    accept -- the rejection loop must raise RuntimeError, not spin/hang or silently
+    under-fill."""
+    n = 4
+    donor_csv = _make_donor_csv_2d(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass_and_error()
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    with pytest.raises(RuntimeError, match="did not converge"):
+        gen.draw_realization(
+            seed=1,
+            host_pool=pool,
+            host_mode="catalogue_selected_2d",
+            completeness=completeness,
+            phi_survival_table=table,
+            detection_probability=_FakeS4D(value=0.0),  # type: ignore[arg-type]
+        )
+
+
+def test_catalogue_selected_mode_does_not_enter_catalogue_selected_2d_code_path(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression guard: host_mode='catalogue_selected' (the 1D mode) must never touch the
+    new [P3-2D] machinery. Monkeypatches the new entry point to raise; a
+    'catalogue_selected' draw must complete unaffected (and gain none of the new columns)."""
+
+    def _boom(*args: object, **kwargs: object) -> None:
+        raise AssertionError(
+            "catalogue_selected_2d code path entered by host_mode='catalogue_selected'"
+        )
+
+    monkeypatch.setattr(c1d, "_draw_2d_accepted_latents", _boom)
+
+    n = 6
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    events = gen.draw_realization(
+        seed=1,
+        host_pool=pool,
+        host_mode="catalogue_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+    )
+    assert (events["host_draw_mode"] == "catalogue_selected").all()
+    assert "M_true" not in events.columns
+    assert "s4d_at_truth" not in events.columns
+    assert "link_id" not in events.columns
