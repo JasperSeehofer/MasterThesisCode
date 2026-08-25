@@ -1,38 +1,40 @@
-# Runbook — next session (written 2026-08-25 ~14:15, supersedes RUNBOOK_NEXT_SESSION_31; written CLEAR-SAFE while [P3-2D] round-2 execution is IN FLIGHT — §0 tells you exactly where it stands)
+# Runbook — next session (REVISED 2026-08-25 ~16:55 at the deliberate context reset, supersedes the morning revision; rows now #174 → #197; everything committed AND PUSHED, CI green)
 
-**Read first:** ledger rows **#174 → #190**; `PREREGISTRATION_CA_BOUNDED_IDENTITY_20260824.md`
-(TWIN-CALIBRATED banked #186, ratified #187); `PROPOSAL_CATALOGUE_TWIN_PRODUCTION_20260825.md`
-(**PENDING §7 — the author has NOT yet ruled adoption**); `PREREGISTRATION_P3_2D_20260825.md`
-(+PA-2D-1/2) with `A20_REVIEW_P3_2D_DESIGN_20260825.md`; session board
-https://claude.ai/code/artifact/ed640faf-33d7-42da-bcf2-4e2c09e59347. Ch 10½ is LIVE on Pages.
+**Read first:** ledger rows **#186 → #197** (the arc: TWIN-CALIBRATED → author ratification →
+**the twin ADOPTED in production** ([PHYSICS] `bac48696`, gate-ledger rows 2026-08-25) → the
+**[P3-WBHZERO] Gate-B-verified DEFECT candidate** (rows #194/#196 — the with-BH mass filter's
+undocumented σ-asymmetry, 43.3% of production iiib rows, 688/688 exact attribution, no
+normalization counterpart)). Session board:
+https://claude.ai/code/artifact/ed640faf-33d7-42da-bcf2-4e2c09e59347 · Ch 10½ LIVE on Pages.
 
-## 0. [P3-2D] round-2 execution state (the in-flight arc; workflow wf_5702d3e7-44c)
+## 0. In-flight state at the reset
 
-Sequence: Fix (DONE — exact per-cell erf-moment companion rule validated, banked
-`ca_rhs_work2d/p3_2d_exact_mass_integral_validation.json`; fleet driver `p3_2d_fleet.py`
-committed-in-tree) → Gates (RUNNING as of 14:09: the FULL companion pass
-`p3_2d_companion.py`, log in the session scratchpad; then pilot seed 900101 both arms +
-M2-LINK/RHS-F₂/F10(c)/ACC-extended; STOP-gated) → Cluster (fires only on gates PASS: bundle-
-sync to HEAD, 24-task b0i2d fleet array + capped RHS₂ score2d array (SE ≤ 6.38e-4, ~40 CPU-h
-cap), retrieval + sha256 manifest; queue-waits banked per row #185). **Resume recipe if
-orphaned:** check `ca_rhs_work2d/p3_2d_companion.json` (companion banked?) → run
-`p3_2d_fleet.py --stage gates` locally → on PASS submit the arrays per the prereg §7 costing
-(the sbatch conventions = correspondence_fleet.sbatch + srun-wrap; NEVER resubmit cancelled
-tasks) → retrieve → `--stage lhs2d` + score2d aggregation → A20 review (clean-context, xhigh;
-the C-A verdict-review prompt is the template) → verdict [ORCH-banked provisional] → author.
-C₂\* freezes at companion landing; POWER GATE (PA-2D-1/F14) before any TWIN2 verdict.
+- **The [P3-2D] fleet + RHS₂ are HELD** (rows #191/#194) pending the author's [P3-WBHZERO]
+  ruling — deliberately: the 2D twin should be calibrated against whichever eligibility model
+  the author chooses. The pilot artifacts, the M2-LINK re-attribution note (zeros = filter
+  exclusions), and the PA-2D-1/2-amended prereg are all committed.
+- **The Σ̃^4D companion pass is RUNNING DETACHED** (PID on this box; started ~14:05; its slow
+  scipy-quad spot-check was at ~70/100 at the reset) — it writes
+  `results/campaign51_20260728/realistic_20260729/ca_rhs_work2d/p3_2d_companion.json`
+  autonomously. Next session: collect + bank it (spot-check table included) — note Σ̃^4D is
+  draw-law-side and likely filter-ruling-independent, but VERIFY that before freezing C₂\*.
+- No cluster jobs; SSH master live (watchdog dies with this session — re-arm on demand).
 
 ## 1. OPEN AUTHOR DECISIONS
 
-1. **[RULE] `PROPOSAL_CATALOGUE_TWIN_PRODUCTION_20260825.md` §7 item 1** — production adoption
-   of the 1D catalogue-leg twin (the full ladder is banked; presented-then-STOP).
-2. **[RULE when it lands] the [P3-2D] verdict** (returns per §0).
-3. **[DO?] the hierarchical/ensemble-coherence thread** — the ONE unexplored impostor-drag
-   axis (lit-campaign finding: unproven at our σ_z/z); weeks-scale design question; NOT opened
-   — awaiting an explicit author go.
-4. Carried: the [P3-HGRID] claim card (falsified single-h invariant — rows #182–#184); MFG-a
-   verbatim check before paper quotation; the F0-SEL cheap follow-up (per-seed dropped-event
-   stats); landscape/T1; workspace `emri` expires 2026-09-23.
+1. **[RULE — the gate for everything 2D] the [P3-WBHZERO] disposition** (row #196): ratify the
+   filter asymmetry retroactively as a design choice, OR authorize the measure-first fix chain
+   (counterfactual flag `mass_filter_sigma ∈ {asymmetric, symmetric}` → mirror-venue
+   measurement → production counterfactual read → the 6-item package). On the ruling:
+   un-HOLD [P3-2D] (A21-amend its prereg for the chosen eligibility model + the M2-LINK
+   re-attribution), then run its fleet/RHS₂ per the registered costing.
+2. **[DO, granted+sequenced] [HIER]** (rows #192/#193/#195/#197): the (h,θ)-grid prereg drafts
+   after [P3-2D]; the [86] mapping is banked (`STAGE_L_HIER_V86_READING_20260825.md` — our
+   instrument IS the un-built generalization).
+3. Carried: [P3-HGRID] claim card; joint_r1 attribution (needs the cluster-side r1
+   observed-catalogue artifact); MFG-a verbatim check before paper quotation; F0-SEL cheap
+   follow-up; the AMEND-2 stale log-substring gates (fix on next instrument use);
+   bias-state artifact refresh (rows #166–#197); workspace `emri` expires 2026-09-23.
 
 ## 2. Standing rules & session-earned ops (delta over runbook 31)
 
