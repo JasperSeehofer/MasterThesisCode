@@ -321,7 +321,7 @@ def test_arm_seeds_registered_paired_discipline() -> None:
     # A-3 tasks + 15 AMENDMENT A-4 tasks + 15 AMENDMENT A-5 tasks); PA-2's
     # b0i (25 seeds) and [P3-2D]'s b0i2d (12 seeds) are identity-test-only and
     # not part of that fleet count.
-    assert total == 142 + 25 + 12
+    assert total == 142 + 25 + 24  # b0i2d at 24 (PA-2D-1/F14)
     for arm, seeds in c1d.ARM_SEEDS.items():
         assert seeds[0] == 900101, arm
         assert list(seeds) == sorted(seeds), arm
