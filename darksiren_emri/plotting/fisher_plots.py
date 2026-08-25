@@ -830,7 +830,14 @@ def plot_fisher_diagnostics(
     ax_scatter.set_title("Parameter space scatter", fontsize="small")
     ax_scatter.legend(fontsize="x-small", loc="upper right")
 
-    fig.tight_layout()
+    try:
+        fig.tight_layout()
+    except RuntimeError:
+        # matplotlib refuses to switch layout engines once a colorbar exists
+        # ("Colorbar layout of new layout engine not compatible ..."); the
+        # figure is still renderable — a diagnostic plot must never kill an
+        # evaluate() run (cluster task 6708698_14, seed 900115, 2026-08-25).
+        pass
     save_figure(fig, os.path.join(output_dir, "fisher_quality_diagnostic"))
 
 
