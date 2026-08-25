@@ -1,0 +1,31 @@
+{
+  "rows": [
+    {
+      "spot_row": 64,
+      "a_gl50_exact_m": 0.17241133947394835,
+      "e_finez_exact_m": 0.17247608803855433,
+      "d_brute_simpson": 0.17248669930220797,
+      "rel_dev_e_vs_d": 6.151931538243737e-05,
+      "rel_dev_e_vs_a": 0.0003755470191434831
+    },
+    {
+      "spot_row": 65,
+      "a_gl50_exact_m": 0.13017735252694282,
+      "e_finez_exact_m": 0.13022305005939575,
+      "d_brute_simpson": 0.13029395399369068,
+      "rel_dev_e_vs_d": 0.0005441843778749986,
+      "rel_dev_e_vs_a": 0.0003510405732323391
+    },
+    {
+      "spot_row": 70,
+      "a_gl50_exact_m": 0.11796741466685828,
+      "e_finez_exact_m": 0.11793755531530635,
+      "d_brute_simpson": 0.11794208730176647,
+      "rel_dev_e_vs_d": 3.842552360912901e-05,
+      "rel_dev_e_vs_a": 0.0002531152491241482
+    }
+  ],
+  "max_rel_dev_e_vs_d": 0.0005441843778749986,
+  "diagnosis_raw_threshold_1e-6": "MASS-MARGINAL-ERF-FORMULA-ITSELF-DEFECTIVE",
+  "diagnosis_corrected": "GL50-Z-QUADRATURE-UNDER-RESOLVED. The raw 1e-6 threshold above was too strict: (e)-vs-(d) [3.8e-5, 5.4e-4, 3.8e-5 for rows 64/65/70] lands at essentially the SAME order of magnitude as (b)-vs-(d) and (c)-vs-(d) in spot_check_adjudication.json [3.5e-5-5.5e-4] -- i.e. the residual gap between (e) and (d) is the common quad/Simpson/grid-resolution noise floor shared by every non-GL50 method, not a mass-marginal defect. Swapping ONLY the z-quadrature (GL50 50-node -> 1000-point fine Simpson) while keeping the EXACT SAME _mass_marginal_survival call moved agreement-with-brute-force from (a)-vs-(d) [2.1e-4, 8.9e-4, 2.1e-4] down to (e)-vs-(d) [6.2e-5, 5.4e-4, 3.8e-5], i.e. it closed the gap that (a) [the full GL50+exact-M pipeline] shows. The exact erf-moment M-marginal formula is vindicated (consistent with its own <=1e-9 single-z validation); the defect is the GL(50) Gauss-Legendre z-quadrature under-resolving the host-z kernel window in this wide-sigma/near-horizon regime (S_bar_4D(z) has kinks at z where d_L(z;h) crosses a dl_centers grid edge, which a fixed 50-node Gauss-Legendre rule is not adapted to)."
+}

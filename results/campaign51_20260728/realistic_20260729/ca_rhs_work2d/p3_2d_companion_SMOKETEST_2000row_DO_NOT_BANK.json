@@ -1,0 +1,34 @@
+{
+  "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md sec1 (Sigma~^4D companion), PA-2D-1 F4 (C2* resolved)",
+  "h": 0.73,
+  "resolved_flags": {
+    "git_commit_at_start": "c2b69cd1a7d94b89ce37acde05c958d41cda932b",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "off",
+    "selection_in_completion_numerator": "fused",
+    "catalogue_numerator_survival_2d": "mz_sel",
+    "catalogue_numerator_survival_2d_center": "eff",
+    "acceptance_model_version": "F12-extended-class-G-replay"
+  },
+  "Sigma_tilde_4D": 101907.46487210858,
+  "n_eligible": 2000,
+  "n_nonpositive_mass_gh_nodes": 982100,
+  "beta_G_phi": 153322777.12146157,
+  "beta_Gbar_phi": 888403790.0,
+  "Sigma_phi": 980867125.6740596,
+  "reference_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900101_work/seed900101/simulations/diagnostics/event_likelihoods.csv",
+  "C2_star": 1.793048732022221e-05,
+  "spot_check": {
+    "n_spot": 5,
+    "max_rel_dev": 0.08528795088822694,
+    "median_rel_dev": 0.03264447707421585,
+    "target_rel_dev": 1e-06,
+    "target_met": false
+  },
+  "wall_time_s": {
+    "companion_pass": 48.90917086601257,
+    "spot_check": 30.98526430130005,
+    "total": 441.9253466129303
+  }
+}

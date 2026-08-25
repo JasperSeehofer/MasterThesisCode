@@ -162,3 +162,22 @@ regime is narrow by the F2 branch structure — disclosed asymmetry, reviewed at
 Also registered: the fleet-driver threading gap (run_arm_seed does not thread the 2D flags) is
 closed by a committed driver wrapper mirroring the p3_b0_identity_test._run_arm_seed
 precedent — instrument-side, disclosed.
+
+**PA-2D-3 (2026-08-25; A21 instrument STOP #2 on the companion, NO registered number banked).**
+The companion full pass COMPLETED (`ca_rhs_work2d/p3_2d_companion.json`; Σ̃^4D candidate
+348079019.37, C₂\* candidate 0.061244) but its mandated spot-check FAILED the registered 1e-6
+target (max 3.81e-4, median 5.7e-5, 100 rows) — the candidates are COLLECTED, NOT BANKED.
+Adjudication (four/five-method drill-down, `ca_rhs_work2d/spot_check_adjudication.{py,json}` +
+`spot_check_drilldown.{py,json}`): the PA-2D-2 exact erf mass-marginal is VINDICATED (swapping
+only the z-stage closes the gap); the defect is the companion's **GL(50) z-quadrature**, which
+under-resolves the host-z kernel window (kinks where d_L(z;h) crosses dl_centers cell edges) in
+the wide-σ/near-horizon regime — the same borrowed-quadrature-regime lesson as PA-2D-2, one
+axis over. **Fix registered ([ORCH-DECIDE], instrument-side):** the companion's z-integration
+becomes segment-aware (breakpoints at every dl_centers edge inside the window, or an
+equivalently exact per-segment rule); the re-run's spot-check target is re-derived from an
+arbiter demonstrated to converge below it (the current brute/quad arbiters share a ~1e-4–5e-4
+noise floor, so the raw 1e-6 target was unfalsifiable as posed); re-run + re-spot-check before
+any C₂\* freeze. Additionally registered (runbook-32 §0 carry): before the freeze, VERIFY
+whether Σ̃^4D's draw-law contraction is independent of the [P3-WBHZERO] eligibility ruling
+(the mass filter shapes the candidate set the draw law binds to). Companion re-run sequenced
+AFTER the WBHZERO mirror fleet vacates the box.

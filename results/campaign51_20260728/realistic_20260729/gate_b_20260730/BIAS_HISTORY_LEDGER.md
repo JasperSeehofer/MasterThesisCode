@@ -2935,3 +2935,13 @@ adoption decision is NOT pre-approved and returns to the author as a fresh [RULE
 3. Sequencing per rows #194/#196: [P3-2D] stays HELD until the symmetric-candidate model is
    measured; it then un-HOLDs calibrated against the measured model, with the A21 prereg
    amendment (M2-LINK(iii) re-attribution: zeros = filter exclusions).
+
+## Row #199 — 2026-08-25 — [P3-2D] companion COLLECTED, NOT BANKED: the Σ̃^4D full pass completed (candidates 348079019.37 / C₂\* 0.061244) but the mandated spot-check FAILED its 1e-6 target (max 3.81e-4) — adjudicated to the companion's OWN GL(50) z-quadrature (the erf mass-marginal VINDICATED; the orchestrator's quad-kink hypothesis REFUTED by the drill-down); PA-2D-3 registers the segment-aware z-fix + arbiter-grounded target + the eligibility-independence check; re-run sequenced after the WZ fleet
+
+The fourth contaminated-number catch of the arc, again by the registered spot-check refusing to
+bank. Reusable lesson (PA-2D-2's sibling, one axis over): a quadrature borrowed from a
+narrow regime silently biases in a wide one — BOTH integration axes of a 2D companion must
+state their σ/kink regime, and a spot-check target is only falsifiable if its arbiter is
+demonstrated to converge below it. Adjudication numbers [AGENT], drill-down artifacts
+committed (`ca_rhs_work2d/spot_check_*`); the decisive swap-only-the-z-stage localization
+spot-verified by the orchestrator against the drilldown JSON.
