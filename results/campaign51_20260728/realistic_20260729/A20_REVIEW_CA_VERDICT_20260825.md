@@ -1,0 +1,31 @@
+# A20 CLEAN-CONTEXT REVIEW — C-A bounded identity VERDICT (banking gate; banked verbatim, 2026-08-25)
+
+**Reviewer:** clean-context adversarial agent (inherit-model, xhigh). **Verdict: BANK-WITH-AMENDMENTS** — the F3 contamination (stale smoke rows appended into chunks 0–4) found and CURED with a bit-identity proof; the corrected full-225 verdict lands in the SAME cell with larger margins. **Disposition:** PA-CA-11 adopted; corrected values banked; instrument out-root guard queued.
+
+---
+
+## Numbered findings
+
+**F1. LHS — CONFIRMED, exact.** Recomputed from the 24 raw banked CSVs with independently-coded w_e = β_G_φ·L_cat/(β_G_φ·L_cat+B_num): B-T 0.04232995 ± 0.00108150, B-C 0.03741109 ± 0.00095051, paired Δ +0.0049189 ± 0.0001456 (12/12), LHS_BR 0.0357070 ± 0.0009306. Per-seed LHS_s match the banked JSON to 0.0. C* = 0.17047175343526458 identical across all 24 frames (ρ = 0.987771); 15 dead rows per arm-fleet included. Banked fleet verified 46 h-nodes, extremes (0.50, 0.86).
+
+**F2. Verdict/band arithmetic — CONFIRMED as computed** (every digit of ca_verdict_provisional.json reproduces from the per_chunk records; the t₁₁ convention moot — both 3σ and 3.35σ < the 0.005 anchor). But see F3.
+
+**F3. FATAL DEFECT FOUND — the banked RHS input data were contaminated (chunks 0–4) — CURED in this review; the verdict survives; every banked RHS digit replaced.** Chunks 0–4 recorded n_accepted = 367/370/370/376/364 of 200 drawn — impossible. At source: the registered run APPENDED into work dirs left by the pre-PA-CA-10 smoke (production appends to existing diagnostics CSVs; stage_score keys dirs by chunk index and never purges) — 170 duplicated event_idx, mixed vintages. Chunks 5–224 swept exhaustively: clean. Cure: chunks 0–4 re-scored at their registered seeds 970001–970005 in fresh dirs; the rescore is BIT-IDENTICAL to each contaminated CSV's appended (second) block — the registered run's own scores were intact. Corrected full-225 verdict: RHS_w(twin) 0.0436235 ± 0.0005711 · RHS_w(coded) 0.0575733 ± 0.0006607 · D_C 0.0383376 ± 0.0004967 · κ̂ 0.87883 · RHS_BR 0.0362018 ± 0.0004442 · accepted 41307/45000 · T_w(B-T) −0.001294 ± 0.001223 (−1.06σ) PASS · LHS(B-C)−D_C −0.000927 ± 0.001072 (−0.86σ) at derived · naive coded −0.020162 ± 0.001158 (−17.4σ) · B-R −0.000495 (−0.48σ). Every cell moves TOWARD zero; same verdict cell, larger margins. (The contamination had also manufactured a spurious 12σ clash with GATE ACC's P̄_Ḡ; post-cure ~2.1σ — dissolved.)
+
+**F4. Identity-leak hunt — CONFIRMED clean (with the disclosed blindness).** (i) draw_realization takes no arrangement flag; identical accepted event sets in all 225 chunks score both arms — the RHS generator is arrangement-neutral on the tested axis. (ii) F-0 enters both sides through production's own intake — identical by construction. (iii) Normalizations exactly compatible (both E[·1_acc] under the 200-draw law). (iv) h_bounds pin = the banked fleet's own grid extremes (verified). The banked RHS-F PASS had run on a dirty tree (A22 gap); re-run at HEAD, clean tree: PASS 0.0 both arms — gap closed.
+
+**F5. The −17.4σ logic — CONFIRMED with the mandatory scope caveat.** D_C presupposes the twin generator law — and the venue's G-class generator IS the twin law by code construction. Under H0 "coded correct" the signature would INVERT (B-C at zero, B-T off by ≈ +0.02); the data show the twin-generator signature decisively. The test verifies quantitative closure of the entire chain at the 0.005 level; it CANNOT distinguish "twin calibrated" from "both mis-calibrated with a compensating error common to venue draw law and model predictive" (the S̄_φ common mode). §5's blindness travels with the verdict.
+
+**F6. Gates — CONFIRMED.** ACC band [98,137] and σ_P = 0.010652 reproduce; joint false-STOP 4.7%. B-R clean (−0.48σ). GATE W discharged (all-24 closure + the 48-file manifest, spot-hashes match). C-TCI (clean): twin profile in band at every τ (≤1.2σ_τ); coded discrepant ~10–14σ — corroborating.
+
+**F7. C-B Λ̄ discrepancy — EXPLAINED.** The pinning script's −0.022011 includes the 15 dead rows at Λ = +center (log-floor artifact); the banked probe's −0.02516 is live-only (reviewer's live-only recompute: −0.025157 ✓). Pure convention. Under either: nulls separate 9.4σ; realized sits 0.7–1.4σ from the twin null, ~8–8.7σ from the coded null; REPORT-ONLY per PA-CA-7c.
+
+**F8. k̂ invariant — AMEND (report item not executed), discharged by review:** PSIS k̂ of the (1−w) summands, per seed, both arms: all ≤ −0.42 — deeply sub-threshold.
+
+**F9. Minor quotation defects:** the σ-FREEZE digits superseded by PA-CA-11; row-#183's "(0.50–0.90)" reads 0.86.
+
+## VERDICT: BANK-WITH-AMENDMENTS (PA-CA-11 adopted; bankable sentence and licensed/not-licensed scope as reproduced in the prereg's banked-verdict block).
+
+## Plain-language summary (verbatim)
+
+I tried hard to kill TWIN-CALIBRATED and half-succeeded: the numbers died, the verdict survived. Every headline figure reproduced digit-for-digit from the artifacts — but the artifacts themselves were corrupted: the first five of the 225 Monte-Carlo chunks silently contained a stale pre-registration smoke run's rows appended in the same files (367 "accepted" events out of 200 drawn — impossible, and nobody's gate caught it). I re-scored those five chunks at their registered seeds in clean directories, proved the re-score bit-identical to the registered run's own portion of the contaminated files, and recomputed everything. The cure moves every cell toward agreement: the twin arrangement closes its identity at −1.1σ, the coded arrangement is off by −17.4σ and lands exactly where the twin-law derivation says it must, the control and robustness profile pass. The C-B discrepancy is a dead-row convention (explained exactly), the missing k̂ report is discharged (all deeply negative), and I re-ran the fidelity gate at a clean tree (bit-exact pass). One honest caveat stands: the venue's generator is the twin law by construction, so this is a decisive self-consistency calibration of the full chain — it licenses the production proposal, not a claim about the real universe. Bank with the corrected numbers and the appended contamination disclosure; and make the scorer refuse a dirty output directory before it ever runs for record again.

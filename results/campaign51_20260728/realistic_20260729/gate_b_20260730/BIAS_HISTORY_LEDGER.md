@@ -2776,3 +2776,28 @@ far: ONE moderate wait (job 6513247, ~2.5 h Priority pending at night; resubmits
 promptly) — no blockade signal. The in-flight C-A RHS pass stays local ([ORCH-DECIDE]:
 mid-run, migration overhead + instrument-amendment cost exceeds the ~2–3 h saving); future
 RHS-class passes are pre-structured as array-friendly chunk partitions at registration time.
+
+## Row #186 — 2026-08-25 — **TWIN-CALIBRATED banked (BANK-WITH-AMENDMENTS; A20 review found and CURED an input-contamination FATAL — chunks 0–4 held a stale smoke run's appended rows; bit-identity cure; the corrected verdict lands in the SAME cell with LARGER margins)** — the production catalogue-leg proposal is now LICENSED (author-gated); [ORCH-banked, provisional]
+
+1. **[MEASURED, as amended — banked values, full 225 clean chunks]** T_w(B-T) =
+   **−0.001294 ± 0.001223 (−1.06σ)** within the 0.005 band; the coded arrangement displaced
+   **−0.020162 ± 0.001158 (−17.4σ)** from its own model value while landing at its
+   twin-law-derived displacement (−0.86σ); B-R control at predicted value (−0.48σ); C-TCI twin
+   τ-profile in band at every τ (coded discrepant 10–14σ); C-B REPORT-ONLY (coded-null excluded
+   ~8–9σ; Λ̄ convention discrepancy EXPLAINED — dead-row floor artifact). Gates ACC/RHS-F/B-R/W
+   all PASS (RHS-F re-run clean-tree at HEAD: 0.0 both arms — the dirty-tree A22 gap closed).
+   Bankable sentence + licensed/not-licensed scope = the prereg's banked-verdict block
+   (venue- and h-conditional; the S̄_φ common-mode and aligned-generator-premise blindness
+   TRAVEL WITH the verdict — this is self-consistency calibration of the pipeline's own
+   mixture, not a real-universe claim).
+2. **[OWNED ×2]** the contamination (stage_score appended into a stale smoke out-root — the
+   THIRD stale-work-root incident of the campaign; PA-CA-11 guard now in the instrument) and
+   the banked RHS-F's dirty-tree stamp. Both found by the review layer; zero wrong banking.
+3. **What this settles:** the coded (Gray/MFG-convention) catalogue leg is NOT the
+   self-consistent scoring of the pipeline's own mixture; the twin is, at the 0.005 identity
+   level. The chain [P3-IMP] rows #149→#186: decomposition → off-cell fix → twin → basis →
+   b0/UNDISCRIMINATING → C-A/TWIN-CALIBRATED is complete through stage 4.
+4. **Returns to the author:** [RULE] ratify TWIN-CALIBRATED as banked; [DO, licensed] the
+   production catalogue-leg physics-change proposal (6-item package; present-then-STOP);
+   the [P3-HGRID] claim card; the Ch 10½ §5 update to the calibrated ending (design-entry
+   conformant) after ratification.

@@ -1006,6 +1006,17 @@ def stage_score(
     each chunk drawn with a FRESH internal seed (``base_seed + chunk_index``, disjoint from every
     registered campaign seed range).
     """
+
+    # PA-CA-11 guard (A20_REVIEW_CA_VERDICT_20260825.md F3): production APPENDS to
+    # existing diagnostics CSVs; a stale work root contaminated chunks 0-4 of the
+    # first registered pass. A banked run REFUSES a non-empty out-root.
+    _existing = sorted(out_root.glob("score_chunk*_work"))
+    if _existing:
+        raise SystemExit(
+            f"REFUSED (PA-CA-11): out_root {out_root} already holds "
+            f"{len(_existing)} score_chunk*_work dir(s) -- purge or use a fresh "
+            "out-root before a banked --stage score run."
+        )
     o5._assert_h_true_in_grid()
     t0 = time.time()
     stamp = o5._a22_stamp()  # A22: written BEFORE any scoring call.

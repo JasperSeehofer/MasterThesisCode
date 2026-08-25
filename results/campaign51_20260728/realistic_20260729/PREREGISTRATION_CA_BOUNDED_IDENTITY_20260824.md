@@ -223,3 +223,37 @@ RHS_BR = 0.0369402 ± 0.0005496.
 
 **⇒ TWIN-CALIBRATED (provisional; [ORCH-computed]; the A20 clean-context review is the banking
 gate; the author's stage-5 ruling follows it).**
+
+## PA-CA-11 + VERDICT AS BANKED (2026-08-25; A20 banking review banked verbatim in `A20_REVIEW_CA_VERDICT_20260825.md`, verdict BANK-WITH-AMENDMENTS; reviewer's amendment text verbatim)
+
+**PA-CA-11.** The 2026-08-25 score pass read appended diagnostics CSVs in chunks 0–4 (the
+pre-fix smoke had written into the registered out-root; production appends; the instrument
+neither purged nor refused) — n_accepted 364–376 of 200 drawn, duplicate event_idx, mixed code
+vintages. Cure: chunks 0–4 re-scored at their registered seeds 970001–970005 in fresh
+directories; the rescore is bit-identical to each contaminated CSV's appended block, proving
+the registered run's own scores intact. **Banked values (full 225 clean chunks):
+RHS_w(twin) 0.0436235 ± 0.0005711 · RHS_w(coded) 0.0575733 ± 0.0006607 ·
+D_C 0.0383376 ± 0.0004967 · κ̂ 0.87883 · RHS_BR 0.0362018 ± 0.0004442 ·
+T_w(B-T) = −0.001294 ± 0.001223 (−1.06σ) · LHS(B-C) − D_C = −0.000927 ± 0.001072 (−0.86σ) ·
+naive coded displacement −0.020162 ± 0.001158 (−17.4σ) · B-R −0.000495 (−0.48σ) · realized
+SE 5.71e-4 (within the 1e-3 fallback).** The σ-FREEZE block's digits are superseded.
+Instrument amendment: `stage_score` must refuse or purge a non-empty out-root before any
+future banked run. Also discharged by review: the k̂ invariant (max −0.42, both arms — deeply
+sub-threshold); RHS-F re-run at HEAD, clean tree: PASS 0.0 both arms (the banked RHS-F's
+dirty-tree A22 gap closed). Row-#183's "(0.50–0.90)" reads 0.86.
+
+**VERDICT [BANKED, as amended — ORCH-provisional pending the author's stage-5 ruling]:
+TWIN-CALIBRATED** — bankable sentence (reviewer's, verbatim): "on the b0i venue (the mixture's
+own generative model; catalogue-class hosts drawn ∝ w_g·S̃_φ,g) at the single node h = 0.73,
+Σ^φ slot, fused cell: the twin (per-candidate S̄_φ catalogue-numerator) arrangement closes the
+C-A bounded identity (T_w = −0.0013 ± 0.0012, band 0.005), while the coded arrangement is
+displaced from its own model value by −0.0202 ± 0.0012 (−17.4σ), landing exactly at its
+twin-law-derived displacement (−0.86σ), with the B-R control at predicted value and the C-TCI
+twin τ-profile in band. Venue- and h-conditional; blind to the PA-2 aligned-generator premise,
+the five-instrument S̄_φ-table common mode (a mis-calibration shared by venue and model
+cancels in T_w), residual scorer-code defects beyond RHS-F/B-R coverage, and the
+H_GRID_FULL-vs-production candidate-ball difference." **Licensed:** authoring the production
+catalogue-leg physics-change proposal (author-gated) on the ground that the coded arrangement
+is not the self-consistent scoring of the pipeline's own mixture. **Not licensed:** any claim
+about real-catalogue venues, H₀-bias magnitude in production, other h-nodes, or absolute
+physical correctness of the twin.
