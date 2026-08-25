@@ -1,0 +1,18 @@
+{
+  "reference": "PREREGISTRATION_P3_2D_20260825.md §2/§7, PA-2D-1 F14, PA-2D-4/5/6",
+  "sbatch": "cluster/p3_2d_fleet.sbatch",
+  "driver": "results/campaign51_20260728/realistic_20260729/p3_2d_fleet.py",
+  "driver_commit_required": "a75515e7 or later",
+  "cluster_head_at_submit": null,
+  "job_id": null,
+  "array": "0-23",
+  "seeds": "900101-900124 (BASE_SEED=900101, per-task seed = BASE_SEED + SLURM_ARRAY_TASK_ID)",
+  "arms_per_task": ["bc", "bt"],
+  "partition": "cpu_il",
+  "cpus_per_task": 16,
+  "time_limit": "02:00:00",
+  "out_root": "$WORKSPACE/p3_2d_fleet_20260825",
+  "submit_timestamp_utc": null,
+  "squeue_snapshot": null,
+  "note": "Filled in immediately after submission by the same task; see the launch task's return summary for the final values."
+}
