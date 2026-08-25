@@ -34,3 +34,31 @@ re-attributed by this forensic (filter exclusions, not unlinked masses) — A21 
 **Exoneration check:** no prior exoneration covers the candidate mass filter (searched the
 claim files' Exonerated lists + ledger §2 — the with-BH channel's candidate ELIGIBILITY has
 never been an arm in any campaign).
+
+---
+
+## GATE-B VERIFICATION (2026-08-25; clean-context adversarial, inherit/xhigh; banked verbatim summary — full findings in the ledger row #196 statement)
+
+**Adjudication: DEFECT (candidate-confirmed; the claim stands).** Highlights of the
+independent re-derivation: (1) the asymmetry real as characterized; design intent
+UNDOCUMENTED (thesis-era commits 75b5e2a6/33d0082a, pre-gate-ledger, no rationale anywhere;
+MATH_REVIEW F5 + IDEALIZATION_LEDGER I4/I7 flag the window but never ratify the asymmetry;
+the neighboring z-filter shares the same unwritten convention — consistency, not a record).
+(2) **iiib: 688/1588 = 43.3% confirmed AND fully attributed — 688/688 fall exactly in the
+reconstructed "mass filter emptied a non-empty z-passed ball" class, zero residue; the
+empty-ball alternative is the DISJOINT 606-row both-zero class; a symmetric ±1.5σ window
+retains ≥1 candidate in 689/689.** (3) joint_r1: 30.7% numerically confirmed; structural
+attribution UNDETERMINED (runs on observed-catalogue realization r1; deciding artifact = the
+r1 catalogue CSV, cluster-side). (4) Pilot 7/7 reproduced (event 113 at 1.12σ of its own mass
+error); symmetric retains 5/7. Fleet: 127/129 analyzable zeros filter-emptied (2 = a distinct
+rare kernel-zero class, ~1.6%; 20 lack CRB artifacts). (5) **No normalization counterpart
+anywhere** (Σ^4D sums all masses event-independently; B_num_wbh none) — unmodeled ONE-SIDED
+numerator selection: a bias-mechanism class for the with-BH mixture weight (toward
+completion/no-BH), magnitude and h-dependence unmeasured. **Claim AMENDS:** the exoneration
+check corrected (CODE_INVENTORY.md §7 touches this filter on the membership question — a
+different axis, not covering starvation); the "149" quotation decomposed (140 fleet + 9
+eb0a/replica). Verification scripts + JSONs preserved in the session scratchpad
+(counterfactual_symmetric.py, prod_reconstruct.py + outputs).
+
+**STATUS: Gate-B-verified DEFECT-CANDIDATE — the disposition (retroactive ratification of the
+asymmetry as a design choice vs a physics-change-gated fix) is the author's [RULE].**

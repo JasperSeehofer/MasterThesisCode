@@ -2911,3 +2911,11 @@ defer it):
    review chain → cluster array, sequenced AFTER [P3-2D]/[P3-WBHZERO] per §5 item 4 as
    recommended); the [86] (Vijaykumar+ 2024) reading obligation proceeds now.
 3. The [P3-2D] HOLD + M2-LINK re-attribution amendment sequencing RATIFIED.
+
+## Row #196 — 2026-08-25 — **Gate-B VERIFIED [P3-WBHZERO]: DEFECT (candidate-confirmed).** The ledger-safe statement (reviewer's, verbatim): the `handler.py:634-642` mass-filter asymmetry (GW ±1.5σ vs galaxy ±1σ) is real and recorded nowhere as a design choice; production iiib 688/1588 = 43.3% of h=0.73 rows confirmed AND fully attributed (688/688 in the "filter emptied a non-empty z-passed ball" class, zero residue; empty-ball = the disjoint 606-row both-zero class; symmetric ±1.5σ retains 689/689); joint_r1 30.7% confirmed, attribution UNDETERMINED pending the r1 observed-catalogue artifact; pilot 7/7 reproduced, symmetric retains 5/7; fleet 127/129 filter-emptied (2 = a distinct rare kernel-zero class); Σ^4D/B_num_wbh carry NO matching cut — unmodeled one-sided numerator selection, a bias mechanism for the with-BH channel (direction: toward completion/no-BH; magnitude/h-dependence unmeasured); one exoneration-check amendment (CODE_INVENTORY §7, different axis)
+
+**Returns to the author as [RULE]:** ratify the asymmetry retroactively as a design choice, or
+authorize the physics-change-gated fix (the natural candidate: σ-multiplier applied to BOTH
+error terms — the verified counterfactual already quantifies candidate retention). The
+measure-first pattern applies: a counterfactual flag + mirror-venue measurement + production
+counterfactual read before any adoption. [P3-2D] remains HELD pending this ruling.
