@@ -567,6 +567,7 @@ class GalaxyCatalogueHandler:
         z_max: float,
         sigma_multiplier: int = 2,
         cov_theta_phi: float = 0.0,
+        mass_filter_sigma: str = "asymmetric",
     ) -> tuple[list[HostGalaxy], list[HostGalaxy]] | None:
         """Find candidate host galaxies within the sky-Fisher error ellipse + mass-redshift cuts.
 
@@ -594,6 +595,19 @@ class GalaxyCatalogueHandler:
                 Default 0.0 reduces to the isotropic-ellipse case.
                 Positioned at the signature tail so that Python's
                 non-default-follows-default rule is respected.
+            mass_filter_sigma: [DEFECT] instrumentation flag for the mass
+                pre-filter window (ledger row #198; measure-first
+                counterfactual for a verified defect candidate). "asymmetric"
+                (default) is byte-identical to the pre-flag path: the galaxy's
+                own ``BH_MASS_ERROR`` is applied at its bare (×1) value while
+                the GW mass window is widened by ``sigma_multiplier`` — an
+                asymmetric ±1.5σ-vs-±1σ window. "symmetric" is the
+                COUNTERFACTUAL: ``BH_MASS_ERROR`` is also scaled by
+                ``sigma_multiplier`` on both sides, matching the GW-side
+                convention. This is the single read/validate site for the
+                flag. Scope: the MASS filter only — the redshift filter
+                above shares the same asymmetric convention but is outside
+                this grant.
 
         Returns:
             Tuple of (hosts_without_BH_mass_filter, hosts_with_BH_mass_filter) or None.
@@ -631,13 +645,31 @@ class GalaxyCatalogueHandler:
         )
         candidate_hosts_without_bh_mass = candidate_hosts[redshift_filter_mask]
 
+        # [DEFECT] instrumentation (ledger row #198): single read/validate
+        # site for mass_filter_sigma. "asymmetric" (default) is the pre-flag
+        # production path -- the galaxy's own BH_MASS_ERROR is applied at its
+        # bare (x1) value, an asymmetric window relative to the GW-side
+        # M_z_sigma * sigma_multiplier. "symmetric" scales BH_MASS_ERROR by
+        # the SAME sigma_multiplier on both sides (the measure-first
+        # counterfactual). Scope: the MASS filter only.
+        if mass_filter_sigma == "asymmetric":
+            _bh_mass_error_multiplier: float = 1.0
+        elif mass_filter_sigma == "symmetric":
+            _bh_mass_error_multiplier = float(sigma_multiplier)
+        else:
+            raise ValueError(
+                f"mass_filter_sigma must be 'asymmetric' or 'symmetric', got {mass_filter_sigma!r}"
+            )
+
         mass_filter_mask = (
             (M_z - M_z_sigma * sigma_multiplier) / (1 + z_max)
             <= candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
             + candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
+            * _bh_mass_error_multiplier
         ) & (
             candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
             - candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
+            * _bh_mass_error_multiplier
             <= (M_z + M_z_sigma * sigma_multiplier) / (1 + z_min)
         )
 

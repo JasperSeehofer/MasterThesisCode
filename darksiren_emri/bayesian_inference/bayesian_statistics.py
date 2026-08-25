@@ -3237,6 +3237,16 @@ class BayesianStatistics:
     # fallback (pre-evaluate() / object.__new__ harnesses) stays the inert
     # "s3d" literal, matching the other un-resolved instrumentation flags.
     _catalogue_global_selection: str = "s3d"
+    # [DEFECT] candidate-host mass pre-filter window (ledger row #198;
+    # darksiren_emri/galaxy_catalogue/handler.py:get_possible_hosts_from_ball_tree
+    # mass_filter_mask). "asymmetric" (default) is byte-identical to the
+    # pre-flag path: the GW mass window is widened by sigma_multiplier but
+    # the galaxy's own BH_MASS_ERROR is applied at its bare (x1) value.
+    # "symmetric" is the measure-first COUNTERFACTUAL: BH_MASS_ERROR is also
+    # scaled by sigma_multiplier on both sides of the window, matching the
+    # GW-side convention. Single read site: the mask branch in
+    # get_possible_hosts_from_ball_tree; this attribute is inert plumbing.
+    _mass_filter_sigma: str = "asymmetric"
 
     def __init__(self) -> None:
         self.h_values = []
@@ -3296,6 +3306,9 @@ class BayesianStatistics:
         # "s3d" is this bare pre-evaluate() fallback; evaluate()'s "auto"
         # default resolves to "phi" under absolute_marginal.
         self._catalogue_global_selection: str = "s3d"
+        # [DEFECT] candidate-host mass pre-filter window (ledger row #198):
+        # "asymmetric" => the pre-flag production path, byte-identical.
+        self._mass_filter_sigma: str = "asymmetric"
 
     def evaluate(
         self,
@@ -3434,6 +3447,18 @@ class BayesianStatistics:
         # production path: the no-BH catalogue divisor is the separately
         # fitted Sigma^3D). The with-BH leg is deliberately untouched.
         catalogue_global_selection: str = "auto",
+        # [DEFECT] candidate-host mass pre-filter window (ledger row #198;
+        # measure-first counterfactual flag for a verified defect candidate).
+        # "asymmetric" (default) is byte-identical to the pre-flag path: the
+        # GW mass window ((M_z ± M_z_sigma*sigma_multiplier)/(1+z)) is
+        # compared against the galaxy's BH_MASS ± BH_MASS_ERROR (galaxy error
+        # at its bare x1 value -- the asymmetric ±1.5σ-vs-±1σ window). Purely
+        # instrumentation plumbing: validated and read at exactly one site,
+        # the mass_filter_mask branch in
+        # galaxy_catalogue/handler.py:get_possible_hosts_from_ball_tree.
+        # "symmetric" is the COUNTERFACTUAL: BH_MASS_ERROR is also scaled by
+        # sigma_multiplier on both sides, matching the GW-side convention.
+        mass_filter_sigma: str = "asymmetric",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3602,6 +3627,11 @@ class BayesianStatistics:
                 "pre-adoption [P3-RPHI] slot). Not a production posterior."
             )
         self._catalogue_global_selection = _cat_glob_sel
+        # [DEFECT] candidate-host mass pre-filter window (ledger row #198):
+        # opaque plumbing only -- validated at the single read site
+        # (get_possible_hosts_from_ball_tree's mass_filter_mask branch), not
+        # here, so there is exactly one place that interprets the value.
+        self._mass_filter_sigma = str(mass_filter_sigma)
         # Prod2d closure counterfactual instrument (results/
         # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1,
         # P8): validated here the same way selection_in_completion_numerator
@@ -4660,6 +4690,7 @@ class BayesianStatistics:
                 M_z=self.detection.M,
                 M_z_sigma=self.detection.M_uncertainty,
                 sigma_multiplier=1.5,  # type: ignore[arg-type]
+                mass_filter_sigma=self._mass_filter_sigma,
             )
 
             if possible_hosts is None:
