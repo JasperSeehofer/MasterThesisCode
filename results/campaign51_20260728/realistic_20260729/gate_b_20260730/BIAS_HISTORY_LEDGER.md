@@ -2919,3 +2919,5 @@ authorize the physics-change-gated fix (the natural candidate: σ-multiplier app
 error terms — the verified counterfactual already quantifies candidate retention). The
 measure-first pattern applies: a counterfactual flag + mirror-venue measurement + production
 counterfactual read before any adoption. [P3-2D] remains HELD pending this ruling.
+
+## Row #197 — 2026-08-25 — **THE TWIN IS PRODUCTION PHYSICS** ([PHYSICS] adoption executed per row #195 grant): `catalogue_numerator_survival` "auto"→"phi" under absolute_marginal (explicit "off" = the counterfactual); implemented + independently verified COMMIT-READY (suite 1821 green; single read site; every other leg bit-unchanged; AMEND-1 applied, AMEND-2 noted). The [P3-IMP] production arc — stage 0 (2026-08-22) → TWIN-CALIBRATED (#186) → adoption — CLOSES. Also banked: the [86] reading (Vijaykumar+ 2024 = a two-step population-fit→propagation pattern, never a joint likelihood — our (h,θ)-grid IS the un-built generalization; STAGE_L_HIER_V86_READING_20260825.md).

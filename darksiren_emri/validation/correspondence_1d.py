@@ -2693,7 +2693,11 @@ def run_mirror_seed_inprocess(
         "--selection_in_completion_numerator"
     ],
     completion_event_measure: str = "ratio",
-    catalogue_numerator_survival: str = "off",
+    # [P3-IMP] catalogue-leg twin, ADOPTED (docs/derivations/
+    # PROPOSAL_CATALOGUE_TWIN_PRODUCTION_20260825.md §2/§6; row #195);
+    # scalar twin of the same semantics. "auto" (default) resolves to "phi"
+    # under absolute_marginal (production), else "off".
+    catalogue_numerator_survival: str = "auto",
     # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test (stage
     # 2) (PREREGISTRATION_P3_2D_20260825.md §2(i)). "off" (default) is
     # byte-identical to the pre-flag path; requires

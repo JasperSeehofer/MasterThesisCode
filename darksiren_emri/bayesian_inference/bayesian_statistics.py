@@ -3386,16 +3386,26 @@ class BayesianStatistics:
         # measure as the completion denominator (MFG 2019 arXiv:1809.02063
         # Eqs. (5)-(7)).
         completion_event_measure: str = "ratio",
-        # [P3-IMP] catalogue-leg twin counterfactual cell (results/
-        # campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_TWIN_20260822.md
-        # §2; branch-only instrument, row #160 grant 3): "off" (default) is
-        # byte-identical to the pre-flag path; "phi" multiplies the WITHOUT-BH
-        # catalogue numerator integrand per host by the phi-marginal survival
-        # S_bar_phi(z;h) read from the SAME precompute_phi_marginal_survival
-        # table the mixture normalizer beta_G_phi integrates (:2065). The
-        # with-BH catalogue numerator is deliberately untouched (registered
-        # invariant).
-        catalogue_numerator_survival: str = "off",
+        # [P3-IMP] catalogue-leg twin, ADOPTED (docs/derivations/
+        # PROPOSAL_CATALOGUE_TWIN_PRODUCTION_20260825.md §2/§6; row #195):
+        # "auto" (default) resolves exactly like catalogue_global_selection
+        # and selection_in_completion_numerator: "phi" under
+        # normalization_mode="absolute_marginal" (the S_bar_phi table this
+        # cell reads is only built there), else "off" (every other
+        # normalization mode stays byte-identical to the pre-adoption path).
+        # "off" is now the explicit COUNTERFACTUAL under absolute_marginal
+        # (the pre-adoption production path: no per-candidate survival factor
+        # in the WITHOUT-BH catalogue numerator). "phi" multiplies the
+        # WITHOUT-BH catalogue numerator integrand per host by the
+        # phi-marginal survival S_bar_phi(z;h) read from the SAME
+        # precompute_phi_marginal_survival table the mixture normalizer
+        # beta_G_phi integrates (:2065). "phi_flat" (the K-flat kill arm) is
+        # NOT touched by "auto" -- it stays an explicit-only counterfactual
+        # cell, same as before. The with-BH catalogue numerator is
+        # deliberately untouched (registered invariant); beta_G_phi, D~_phi,
+        # and the Sigma-chain are UNTOUCHED (proposal §2, Appendix B as
+        # ratified).
+        catalogue_numerator_survival: str = "auto",
         # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test
         # (stage 2) (results/campaign51_20260728/realistic_20260729/
         # PREREGISTRATION_P3_2D_20260825.md §2(i)). "off" (default) is
@@ -3490,27 +3500,50 @@ class BayesianStatistics:
                 "absolute_marginal — the legacy pre-#118 estimator (no survival "
                 "factor in either completion leg). Not a production posterior."
             )
-        # [P3-IMP] catalogue-leg twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2).
-        if catalogue_numerator_survival not in ("off", "phi", "phi_flat"):
+        # [P3-IMP] catalogue-leg twin, ADOPTED (docs/derivations/
+        # PROPOSAL_CATALOGUE_TWIN_PRODUCTION_20260825.md §2/§6; row #195).
+        _cat_num_surv = str(catalogue_numerator_survival)
+        if _cat_num_surv not in ("auto", "off", "phi", "phi_flat"):
             raise ValueError(
-                "catalogue_numerator_survival must be 'off', 'phi' or 'phi_flat', "
-                f"got {catalogue_numerator_survival!r}"
+                "catalogue_numerator_survival must be 'auto', 'off', 'phi' or "
+                f"'phi_flat', got {catalogue_numerator_survival!r}"
             )
-        if catalogue_numerator_survival in ("phi", "phi_flat"):
+        if _cat_num_surv == "auto":
+            # row #195: per-candidate S_bar_phi in the catalogue numerator is
+            # production under absolute_marginal (the S_bar_phi table it
+            # reads is only built there); every other normalization mode
+            # stays byte-identical on "off". "phi_flat" (the K-flat kill arm)
+            # is never reached by "auto" -- explicit-only, as before.
+            _cat_num_surv = "phi" if normalization_mode == "absolute_marginal" else "off"
+        if _cat_num_surv in ("phi", "phi_flat"):
             if normalization_mode != "absolute_marginal":
                 raise ValueError(
                     "catalogue_numerator_survival='phi' requires "
                     "normalization_mode='absolute_marginal' (the S_bar_phi table it "
                     f"reads is only built there); got {normalization_mode!r}"
                 )
+            if _cat_num_surv == "phi":
+                _LOGGER.info(
+                    '[PHYSICS] catalogue_numerator_survival="phi" ACTIVE (row #195): '
+                    "the WITHOUT-BH catalogue numerator carries per-candidate "
+                    "S_bar_phi(z;h) inside the z-quadrature. This is the production "
+                    "absolute_marginal estimator."
+                )
+            else:
+                _LOGGER.warning(
+                    "COUNTERFACTUAL: catalogue_numerator_survival=%r — per-host "
+                    "S_bar_phi in the catalogue numerator ([P3-IMP] twin cell; "
+                    "K-flat CONSTANT table). Not a production posterior.",
+                    _cat_num_surv,
+                )
+        elif normalization_mode == "absolute_marginal":
             _LOGGER.warning(
-                "COUNTERFACTUAL: catalogue_numerator_survival=%r — per-host "
-                "S_bar_phi in the catalogue numerator ([P3-IMP] twin cell%s). "
-                "Not a production posterior.",
-                catalogue_numerator_survival,
-                "; K-flat CONSTANT table" if catalogue_numerator_survival == "phi_flat" else "",
+                'COUNTERFACTUAL: catalogue_numerator_survival="off" under '
+                "absolute_marginal — the pre-adoption WITHOUT-BH catalogue "
+                "numerator (no per-candidate survival factor). Not a production "
+                "posterior."
             )
-        self._catalogue_numerator_survival = catalogue_numerator_survival
+        self._catalogue_numerator_survival = _cat_num_surv
         # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md §2(i)).
         if catalogue_numerator_survival_2d not in ("off", "mz_sel"):
             raise ValueError(

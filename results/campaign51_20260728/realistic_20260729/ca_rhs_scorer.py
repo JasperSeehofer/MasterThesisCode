@@ -1279,6 +1279,10 @@ def _score_events_2d(
             catalogue_numerator_survival_2d=catalogue_numerator_survival_2d,
             catalogue_numerator_survival_2d_center=catalogue_numerator_survival_2d_center,
             catalogue_global_selection=CATALOGUE_GLOBAL_SELECTION_SLOT,
+            # AMEND-1 (twin-adoption verification, 2026-08-25): pin the 1D cell
+            # explicitly -- the production default is now "auto"->"phi" (row
+            # #195); the registered score2d basis is the fleet's pinned "off".
+            catalogue_numerator_survival="off",
             h_bounds=(min(c1d.H_GRID_FULL), max(c1d.H_GRID_FULL)),
         )
     at = o5._rows_at_h(diag_csv, H_GEN)
