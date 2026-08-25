@@ -401,6 +401,28 @@ TIMELINE: list[dict[str, Any]] = [
             "successor statistic (bounded-transform family) becomes the next registration"
         ),
     },
+    {
+        "id": "t21",
+        "date": "2026-08-24",
+        "kind": "registration",
+        "row": "#181 / PREREGISTRATION_CA_BOUNDED_IDENTITY_20260824.md",
+        "label": (
+            "The C-A bounded identity test REGISTERED through two review rounds (a FATAL "
+            "conditioning factor caught in the registration's own encoding pre-commit)"
+        ),
+    },
+    {
+        "id": "t22",
+        "date": "2026-08-25",
+        "kind": "verdict",
+        "row": "#186 (ratified #187)",
+        "label": (
+            "TWIN-CALIBRATED banked as amended: the twin closes the bounded identity "
+            "(-0.0013+-0.0012); the coded arrangement displaced -17.4 sigma, landing at its "
+            "twin-law-derived value; the banking review found and cured a chunk "
+            "contamination with a bit-identity proof"
+        ),
+    },
 ]
 
 KIND_ORDER = ("registration", "amendment", "refutation", "ratification", "measurement", "verdict")
