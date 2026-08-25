@@ -181,3 +181,29 @@ any C₂\* freeze. Additionally registered (runbook-32 §0 carry): before the fr
 whether Σ̃^4D's draw-law contraction is independent of the [P3-WBHZERO] eligibility ruling
 (the mass filter shapes the candidate set the draw law binds to). Companion re-run sequenced
 AFTER the WBHZERO mirror fleet vacates the box.
+
+**PA-2D-4 (2026-08-25 late; the [P3-2D] un-HOLD — A21 amendment per rows #196/#198/#202
+sequencing; the HOLD of row #194 is LIFTED).**
+
+1. **Eligibility model:** the venue and every scoring path calibrate against POST-ADOPTION
+   production — `mass_filter_sigma` at its production default (**"symmetric"**, [PHYSICS]
+   `cf4f8a2a`, row #202), left un-overridden in BOTH arms so the venue tracks production
+   exactly (the same convention as the other adopted flags). The A22 resolved-flag stamp set
+   gains `mass_filter_sigma` (now SIX stamps).
+2. **M2-LINK(iii) re-attribution (the row-#191 monster clause):** the pilot's 7/84
+   both-arms-zero events are RE-ATTRIBUTED to mass-filter exclusions (the [P3-WBHZERO]
+   forensic, rows #194/#196) — NOT unlinked masses. The −50-nats monster-absence clause stays
+   for its original class; the zero-with-BH part is superseded by:
+3. **GATE M2-Z (registered FREE PREDICTION, runbook 33):** under the adopted symmetric window
+   the pilot's exact-zero with-BH class VANISHES — re-run the seed-900101 pilot (both arms)
+   and require `L_cat_with_bh > 0` on ALL 7 previously-zero events (their balls are non-empty
+   and z-passed; symmetric retains >=1 candidate — the WZ-P-class prediction). Residual zeros
+   beyond the rare kernel-zero class (~1.6%, row #196 fleet forensic) => STOP. This gate runs
+   BEFORE the fleet.
+4. **Companion (PA-2D-3 chain):** re-run with the segment-aware z-rule + arbiter-grounded
+   target; ADDITIONALLY verify eligibility-independence: the companion's Sigma~^4D contraction
+   must be shown (by code-path inspection, banked with the re-run meta) to consume the draw
+   law only — if any consumed table or pool object is candidate-mass-filter-conditioned, the
+   filter ruling changes Sigma~^4D and the frozen C2* must be computed under the symmetric
+   model; state the finding either way in the re-run JSON.
+5. Fleet/RHS2 costing (sec 7 + PA-2D-1 F14/F15) unchanged; cluster-first per row #185.
