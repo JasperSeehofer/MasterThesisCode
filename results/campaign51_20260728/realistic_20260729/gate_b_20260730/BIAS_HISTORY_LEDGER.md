@@ -2857,3 +2857,22 @@ the design entry's quote-the-banked-state rule; push for GitHub Pages deploy.
 The STOP discipline paid again: the third would-have-been-contaminated number in three days
 caught before banking. The GH-24-vs-wide-σ asymmetry (per-event exact, population-marginal
 biased) is itself a reusable numerical lesson for every S_4D consumer.
+
+## Row #191 — 2026-08-25 — [P3-2D] pilot STOP: GATE M2-LINK part (iii) FAILED — **7/84 live events (8.3%) return L_cat_with_bh = EXACTLY 0.0 in BOTH arms despite s4d_at_truth 0.30–0.999** — a suspected PRE-EXISTING production with-BH-numerator defect, exposed by the first mass-LINKED venue; **[P3-WBHZERO] opened at stage 0**; fleet NOT launched
+
+1. Pilot (seed 900101, both arms, ~64 s/arm local): M2-LINK (ii) PASS (Mahalanobis max 10.4 <
+   24.4 — the linkage works); (iii) FAIL as above; (i) 9.1e-15 CSV round-trip noise (check-
+   strictness artifact, disclosed). ACC-extended reports p̄ = 0.25 [0.220, 0.280] (F12: no
+   fixed reference). F10(c) KS-fail flagged PROXY-ONLY (plausibly the expected 2D-acceptance
+   signature; real verdict needs the RHS₂ completion replay).
+2. **The decisive fact:** the SAME 7 event indices die in coded AND twin arms ⇒ not the new
+   instrument; the erf-rule work (PA-2D-2) had left the per-event GH-24 leaf in place as
+   "narrow-regime exact" — the zeros implicate either that leaf's low-survival/boundary
+   regime, an underflow/clamp in the with-BH numerator chain, or a candidate-eligibility
+   effect. Forensic launched (measurement-before-gate): pin the exact zero mechanism per
+   event; and — zero-compute — count the L_cat_with_bh==0-with-live-no-BH class in BANKED
+   PRODUCTION diagnostics to establish production relevance directly.
+3. Companion full pass continues in background (the banked erf-rule pass; the spot-check
+   costing question rides with it). Cluster untouched. The M2-LINK (iii) predicate is
+   VINDICATED as written — it caught exactly the class it was registered to catch, one venue
+   generation later than expected.
