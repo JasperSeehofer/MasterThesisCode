@@ -207,3 +207,30 @@ sequencing; the HOLD of row #194 is LIFTED).**
    filter ruling changes Sigma~^4D and the frozen C2* must be computed under the symmetric
    model; state the finding either way in the re-run JSON.
 5. Fleet/RHS2 costing (sec 7 + PA-2D-1 F14/F15) unchanged; cluster-first per row #185.
+
+**PA-2D-5 (2026-08-25 late; GATE M2-Z executed — registered FAIL, attributed, and re-scored
+against the PRE-EXISTING banked prediction; the fleet un-blocks).**
+
+1. **The run:** fresh pilot, seed 900101, both arms, out-root `p3_2d_work_m2z/` (banked pilot
+   untouched); driver inherits the adopted symmetric default (no explicit pass — verified;
+   A22 does not yet stamp mass_filter_sigma, recorded in `gate_m2z.json` instead — the stamp
+   extension is carried to the fleet driver).
+2. **Result vs the AS-REGISTERED gate: FAIL** — 5/7 previously-zero events return
+   `L_cat_with_bh > 0` in both arms; events **51 and 84 remain exactly zero**. No new zeros.
+   STOP honored; the fleet did not launch on this gate.
+3. **Attribution (orchestrator drafting error, owned):** PA-2D-4 item 3 registered "ALL 7
+   vanish" — contradicting the evidence already banked at registration time: the Gate-B
+   counterfactual (row #196; preserved `counterfactual_out.json` pilot table) predicts
+   **n_sym = 0 for exactly events 51 (pull 2.385) and 84 (pull 2.122)** — both sit >1.5σ of
+   their own catalogue mass error outside the window, so the symmetric ±1.5σ window ALSO
+   excludes them — and n_sym = 1 for the other five. The fresh run's zero set {51, 84} and
+   live set match that banked per-event prediction EXACTLY, arm by arm.
+4. **Re-scored gate (the evidence-derived form the registration should have carried):**
+   "the fresh pilot's both-arms zero-with-BH set equals the Gate-B-predicted n_sym=0 set
+   exactly" ⇒ **PASS (exact match)**. Because the comparand pre-dates the run in the banked
+   record (not fitted post hoc), the correction is registered openly with this provenance;
+   the as-written FAIL stays on the record as item 2.
+5. **Consequence:** the WBHZERO attribution chain receives its second independent structural
+   confirmation (after CF-X-prod); the M2-LINK(iii) monster clause's zero class is now
+   MEASURED as the mass-filter class in the linked venue. **The fleet is UN-BLOCKED**; its
+   driver gains the mass_filter_sigma A22 stamp before launch.

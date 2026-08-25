@@ -1,0 +1,90 @@
+{
+  "gate": "M2-Z",
+  "reference": "PREREGISTRATION_P3_2D_20260825.md PA-2D-4 item 3",
+  "seed": 900101,
+  "fresh_out_root": "results/campaign51_20260728/realistic_20260729/p3_2d_work_m2z",
+  "banked_out_root": "results/campaign51_20260728/realistic_20260729/p3_2d_work",
+  "seven_indices": [
+    11,
+    51,
+    84,
+    107,
+    113,
+    192,
+    195
+  ],
+  "per_event": {
+    "11": {
+      "before_bc": 0.0,
+      "before_bt": 0.0,
+      "after_bc": 0.0048617104787628,
+      "after_bt": 0.0048059103711535
+    },
+    "51": {
+      "before_bc": 0.0,
+      "before_bt": 0.0,
+      "after_bc": 0.0,
+      "after_bt": 0.0
+    },
+    "84": {
+      "before_bc": 0.0,
+      "before_bt": 0.0,
+      "after_bc": 0.0,
+      "after_bt": 0.0
+    },
+    "107": {
+      "before_bc": 0.0,
+      "before_bt": 0.0,
+      "after_bc": 0.0090778669036,
+      "after_bt": 0.0090734339517856
+    },
+    "113": {
+      "before_bc": 0.0,
+      "before_bt": 0.0,
+      "after_bc": 0.0019567868740792,
+      "after_bt": 0.0019037227102109
+    },
+    "192": {
+      "before_bc": 0.0,
+      "before_bt": 0.0,
+      "after_bc": 0.0053249842123156,
+      "after_bt": 0.0051838580630686
+    },
+    "195": {
+      "before_bc": 0.0,
+      "before_bt": 0.0,
+      "after_bc": 4.6792956681146e-08,
+      "after_bt": 3.9078104985416724e-08
+    }
+  },
+  "new_zero_both_arms_beyond_seven": [],
+  "n_events_before_bc": 84,
+  "n_events_before_bt": 84,
+  "n_events_after_bc": 84,
+  "n_events_after_bt": 84,
+  "verdict": "FAIL",
+  "driver_stamps_mass_filter_sigma": false,
+  "mass_filter_sigma_production_default": "symmetric",
+  "mass_filter_sigma_commit": "cf4f8a2a35fe54b1d707ba26abb81be97d8abe01",
+  "a22_stamp_bc": {
+    "git_commit_at_start": "7dbbaa9ea56bffdddcaeee55a3bc5b5e8404f677",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "off",
+    "selection_in_completion_numerator": "fused",
+    "catalogue_numerator_survival_2d": "off",
+    "catalogue_numerator_survival_2d_center": "eff"
+  },
+  "a22_stamp_bt": {
+    "git_commit_at_start": "7dbbaa9ea56bffdddcaeee55a3bc5b5e8404f677",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "off",
+    "selection_in_completion_numerator": "fused",
+    "catalogue_numerator_survival_2d": "mz_sel",
+    "catalogue_numerator_survival_2d_center": "eff"
+  },
+  "git_commit_at_start": "7dbbaa9ea56bffdddcaeee55a3bc5b5e8404f677",
+  "wall_time_s_bc": 93.49868273735046,
+  "wall_time_s_bt": 76.04506254196167
+}

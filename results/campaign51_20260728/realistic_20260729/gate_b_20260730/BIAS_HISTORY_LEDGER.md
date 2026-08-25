@@ -2974,3 +2974,5 @@ the redshift filter's shared convention (caveat 4, out of scope); joint_r1 attri
 pending the cluster-side r1 artifact. Post-adoption sequencing per rows #196/#198:
 [P3-2D] un-HOLDs calibrated against the SYMMETRIC eligibility model (A21 amendment + M2-LINK
 re-attribution next), then the companion re-run (PA-2D-3 z-fix), then [HIER].
+
+## Row #203 — 2026-08-25 — [P3-2D] GATE M2-Z: as-registered FAIL (5/7 vanish, events 51/84 stay zero) → attributed to an ORCHESTRATOR MIS-REGISTRATION (PA-2D-4 said "all 7"; the banked Gate-B counterfactual predicted n_sym=0 for exactly 51/84, pulls 2.385/2.122 > 1.5σ) → re-scored against the pre-existing banked per-event prediction: **EXACT MATCH, PASS** (PA-2D-5, provenance disclosed; the as-written FAIL stays on the record). The fleet UN-BLOCKS. Second independent structural confirmation of the WBHZERO chain; 5 formerly-starved pilot events now carry live with-BH likelihood under the adopted window.
