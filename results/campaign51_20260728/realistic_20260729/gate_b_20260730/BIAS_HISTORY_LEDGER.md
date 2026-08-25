@@ -2876,3 +2876,16 @@ biased) is itself a reusable numerical lesson for every S_4D consumer.
    costing question rides with it). Cluster untouched. The M2-LINK (iii) predicate is
    VINDICATED as written — it caught exactly the class it was registered to catch, one venue
    generation later than expected.
+
+## Row #192 — 2026-08-25 — Author ruling: "I approve the coherence exploration" — the hierarchical/ensemble-coherence thread [HIER] OPENS (stage L first, then the reviewable proposal with the (h,θ)-grid self-calibration experiment); conceptual scope clarified with the author (interpretation-layer coherence — shared photo-z error-model hyperparameters + shared latent z of overlapping candidates — NOT the LISA global-fit data-stream problem; events stay physically and measurement-independent; the global-fit-correlations consumer note recorded as a thesis-discussion item)
+
+Stage-L symptom card (searcher receives THIS, never the suspect list): "ensemble H₀ inference
+from N≈40–200 standard-siren events against a photometric galaxy catalogue; per-event
+z-uncertainty σ_z/z median ≈ 49%; posteriors rail at grid edges; the per-event score-at-truth
+tilt is z-structured (≈0 below z≈0.4, ≈−1 by z≈0.9) and accumulates N-coherently to a
+multi-σ ensemble bias; per-event selection p_det ≈ 1 in the relevant regime. Sought: methods
+where an ensemble jointly infers the photometric error model (bias curve/scatter/outliers)
+with the target parameter — self-calibration, shared-nuisance hierarchical Bayes, shrinkage —
+with validity conditions at small N and large fractional z-errors; ladder: GW dark
+sirens → photo-z self-calibration in surveys → hierarchical shared-nuisance inference →
+empirical-Bayes/shrinkage theory." R0 (repo-cited papers, re-read for caveats) FIRST.
