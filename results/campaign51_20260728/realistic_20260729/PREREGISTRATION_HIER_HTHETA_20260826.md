@@ -1355,3 +1355,480 @@ disarm D7's early exit and re-scope Stage 0 to S0-A + S0-C only (PA-HIER-3); (4)
 (PA-HIER-4); (5) register the θ prior + the prior-sensitivity leg (PA-HIER-6); (6) pin the
 identifiability statistic's h-treatment (PA-HIER-7); (7) re-anchor `b` on a measured catalogue
 statistic (PA-HIER-9). Items (4)–(7) change no node and no costing line.
+
+---
+
+## ZERO-COMPUTE BLOCKER RESOLUTION PASS — PA-HIER-19 … PA-HIER-26
+**(2026-08-27, NO instrument has run, zero compute spent. Independent source re-verification of the
+six LAUNCH-BLOCKED items, run as two adversarial reads — blocker A: generator law / truth-θ / hook
+side; blocker B: control / prior / identifiability / wiring. Purpose: turn each blocker from
+"unknown" into a decision the author can answer in one line, or resolve it outright where it is a
+matter of fact rather than judgement. This pass rules on nothing. Nothing above the divider is
+edited; each block names what it supersedes.)**
+
+---
+
+### PA-HIER-19 — PA-HIER-1 RESOLVED as fact-finding. The five generator laws are enumerated and truth-θ is derived per mode: exactly **two** modes admit truth-θ = (0, 1), and the prereg's implicit default is not one of them.
+**Date:** 2026-08-27 · **Instrument run:** none · **Severity:** BLOCKER (fact half RESOLVED) · **Status:** OPEN-FOR-AUTHOR (one [RULE])
+**Supersedes:** PA-HIER-1's *"Correction (required before commit)"* paragraph (discharged by the
+table below); §5.1 (adds the missing invariant); §2.1's S0-A/S0-R arm rows insofar as they assume
+the default law.
+
+**Found.** `draw_realization`'s `host_mode` is a five-valued `Literal`, default `"catalogue"`
+(`correspondence_1d.py:1897-1903`), assigned per arm by `ARM_HOST_MODE` (`:452-473`). The truth
+value of θ = (b, s) was derived from each branch's own generating law at source:
+
+| `host_mode` | arms (`:452-473`) | generating law for `z_true` | truth-θ = (b, s) |
+|---|---|---|---|
+| `catalogue` **(default)** | b0, bsig005, bsig025, eden05, eden2, bf1 | delta at the catalogue's own listed z — `host_z = pool.z[host_idx]`, `true_d_L = dist_vectorized(host_z, h=H_TRUE)` (`:2003-2012`, `:2141`); no separate z_true draw | b **undefined** (zero width), **s → 0** — confirms PA-HIER-1 |
+| `population` | bout | `draw_population_redshifts(rng, n, h=H_TRUE)` (`:2013-2020`); no catalogue `z_g`/`z_error` involved | **axis inapplicable** |
+| `population_selected` | bsel, bself, bden | `draw_selected_population_redshifts(rng, n, completeness, phi_survival_table, h=H_TRUE)` (`:2021-2052`); same | **axis inapplicable** |
+| `catalogue_selected` | **b0i** | per-event draw from `k_g(z)·w_pop·f_k·S̄_φ(z; H_TRUE)` on the host's own ±4σ window (`:2053-2088`; kernel `:1440-1499`) | **(0, 1)** |
+| `catalogue_selected_2d` | b0i2d | byte-for-byte the same z-draw law (`:2090-2131`; `_B0i2DLatents` docstring `:1572-1575`, *"UNCHANGED from the 1D `catalogue_selected` mode"*), plus an orthogonal latent-mass extension | **(0, 1)** |
+
+**One finding stronger than PA-HIER-1.** The two `population*` modes are not merely "truth-θ is
+something else" — those hosts carry **no `(z_g, z_error)` pair at all** (`host_index_col = -1`,
+`in_catalog = False`), so the θ = (b, s) photo-z kernel is **not a term in their generative law**.
+Those arms carry **zero [HIER] information content on θ**, in any direction, at any node. PA-HIER-1
+contrasted only `catalogue` against `catalogue_selected*` and did not reach this.
+
+**Correction, registered.** (i) `host_mode` is added to §5.1 as an invariant, with its file:line,
+pinned per arm. (ii) The [HIER] venue is registered as **`host_mode="catalogue_selected"` (arm
+b0i)**, with `"catalogue_selected_2d"` (b0i2d) as its z-axis-identical sibling should the 2D mass
+extension ever be wanted. This is a **one-line `host_mode` change** from the prereg's implicit
+default (arm b0), **not a redesign**. (iii) No other mode is admissible: `"catalogue"` gives
+s → 0 and both `population*` modes make the axis inapplicable. This is a structural fact about the
+harness, not a detail — there is exactly one available venue for this experiment.
+
+**What remains for the author.** Only the [RULE] itself: ratify the venue switch b0 → b0i on the
+evidence in this document. The fact-finding is complete.
+
+---
+
+### PA-HIER-20 — PA-HIER-1's demanded generator/estimator kernel-identity audit, executed. **Five legs certified at source; two legs NOT certified**, one of them the PA-2D-2/-3 borrowed-quadrature failure shape one axis over.
+**Date:** 2026-08-27 · **Instrument run:** none · **Severity:** BLOCKER (audit half RESOLVED) · **Status:** RESOLVED (5 legs) / NEEDS-CODE (2 legs) + one author line
+**Supersedes:** PA-HIER-1's closing sentence (*"that identity is an unaudited load-bearing invariant
+and must be added to §5.1 with `NEVER` and audited this cycle"*) — the audit is below; §5.2 item 3's
+blindness statement.
+
+**Certified at source (b0i / `catalogue_selected`).**
+
+1. **Gaussian loc/scale match exactly at (b, s) = (0, 1).** Generator: `norm.pdf(z_i_grid,
+   loc=host_z[i], scale=z_error_eff[i])` — loc **unshifted**, scale **unscaled**
+   (`correspondence_1d.py:1490`, inside `_draw_kernel_survival_redshifts`). Estimator:
+   `galaxy_redshift_normal_distribution = norm(loc=host_z, scale=host_z_error_eff)`
+   (`bayesian_statistics.py:6247`). Same two arguments, same law.
+2. **`w_pop · f_k` is live estimator-side, not a generator-only artefact.** It is the estimator's own
+   `volume_deconv` host-z prior (`bayesian_statistics.py:6335-6339`), live because
+   `PRODUCTION_FLAGS["--host_z_kernel"] = "volume_deconv"` (`correspondence_1d.py:328-337`).
+3. **The `S̄_φ` factor is live estimator-side.** `catalogue_numerator_survival` defaults to `"auto"`
+   and resolves `"phi" if normalization_mode == "absolute_marginal" else "off"`
+   (`bayesian_statistics.py:3535-3541`, quote-verified), and the mirror venue runs
+   `absolute_marginal` (`correspondence_1d.py:328-337`). So the generator's extra
+   `w_pop·f_k·S̄_φ` factors are **the estimator's own terms**, not a mismatch.
+4. **Both sides call the same imported production functions** — `comoving_volume_element`,
+   `_completeness_at_host_nodes`, `_host_pixels`, `precompute_phi_marginal_survival`
+   (`correspondence_1d.py:227-262`) — not parallel reimplementations.
+5. **The `S̃_φ` normalization quadrature matches production's, and this is explicitly NOT a
+   PA-2D-2/-3-class mismatch.** Generator: `_B0I_KERNEL_QUAD_N = 50`, *"mirrors `_HOST_QUAD_N`'s
+   default"* (`correspondence_1d.py:1156-1157`). Estimator: `_HOST_QUAD_N = 50`, `FIXED_QUAD_N =
+   _HOST_QUAD_N` (`bayesian_statistics.py:409`, `:6139`). Same rule (Gauss–Legendre), same node
+   count. Recorded so the review's silence is not read as an omission.
+
+Consequently the generator's *"draw z_true given the fixed observed z_g"* conditional equals, by
+Gaussian symmetry, the forward-model conditional a true (z_true ~ prior, z_g = z_true + N(0, σ))
+process would produce, at (b, s) = (0, 1) and only there. **Registered caveat on what this buys:**
+truth-θ = (0, 1) at b0i is a *self-consistency* identity of the venue's own construction, so a null
+at S0-A certifies **wiring and arithmetic**, not physics. §4.1's B0-A′ disposition (a non-zero score
+here is a bug, STOP) is correct precisely because of that, and is now on a certified footing.
+
+**Ancillary fact, registered.** `SIGMA_V_PEC_KM_S = 0.0` (`constants.py:95`), so
+`host_z_error_eff` is presently the **identity** on the quoted `z_error` on both sides
+(`correspondence_1d.py:1186-1188`; `bayesian_statistics.py:6223-6224`, `:6878-6879`). Parity is
+exact and `s` scales the quoted column directly, with no peculiar-velocity floor damping it. If that
+constant is ever set non-zero, `s` stops being a pure scale on the catalogue column and this
+amendment must be revisited.
+
+**NOT certified — two legs, both requiring compute or new code.**
+
+(a) **Value-identity of the two independently constructed `phi_survival_table` objects** — the
+    generator's (via `build_bsel_selection_objects`) versus `evaluate()`'s own internal build. Both
+    are deterministic given identical inputs, but **no runtime equality assertion exists** anywhere
+    in the code read. This is an assumed, unasserted invariant sitting directly under leg 3.
+(b) **The 401-node uniform inverse-CDF draw grid** (`_B0I_ZTRUE_GRID_N = 401`,
+    `correspondence_1d.py:1164`, consumed at `:1490-1498` via `np.linspace` + `_inverse_cdf_draw`)
+    is a **different numerical operation** from the GL-50 normalization certified in leg 5, and it
+    is **un-audited in the wide-window / near-horizon regime**. This is exactly the
+    PA-2D-2/PA-2D-3 borrowed-quadrature failure shape, one axis over. It needs a
+    convergence / brute-force spot-check (401 vs 4001 nodes, and against a direct rejection sample)
+    **before any b0i-mode number is banked**. That check costs compute and is out of this pass's
+    zero-compute scope.
+
+**Registered as §5.1 invariants with `NEVER`-audited status** for (a) and (b), pending the author's
+line on whether they are pre-launch gate items or disclosed residual risk.
+
+---
+
+### PA-HIER-21 — The θ instrumentation **does not exist anywhere in the repository**. Six estimator-side hook sites are pinned here; the generator-side site is excluded; and because the hook lands inside a physics-trigger file, the §1.5 scope question is re-opened as an author decision.
+**Date:** 2026-08-27 · **Instrument run:** none · **Severity:** BLOCKER · **Status:** NEEDS-CODE + OPEN-FOR-AUTHOR ([DO] + a /physics-change scope ruling)
+**Supersedes:** §2.4's site table (as already amended by PA-HIER-2/-10/-11) — re-stated in full
+below; the LAUNCH VERDICT's *"Cheapest path back to LAUNCH-READY (all zero-compute)"* framing;
+`correspondence_1d.py:1173`'s docstring citation.
+
+**Found.** `grep -n "theta_b\|theta_s\|--theta" darksiren_emri/arguments.py` returns **zero hits**.
+Nothing in the repository implements θ — no CLI flag, no parameter, no hook, no default. Every
+[HIER] stage, **including the cheapest one (S0-A)**, requires new code before a single CPU-h can be
+spent. The LAUNCH VERDICT's seven-item path is correctly described as zero-compute, but it is not a
+path to a runnable experiment: it leaves the instrument unbuilt. That is registered here so the
+distinction between *"the registration is clean"* and *"the experiment can run"* is never elided.
+
+**The six σ_z sites, re-stated with their θ dispositions.**
+
+| site | file:line | role | θ hook |
+|---|---|---|---|
+| **2.1** | `bayesian_statistics.py:6223-6224` (width); kernel object `:6247`; prior `:6335-6339` | scalar `single_host_likelihood` | **YES** |
+| **2.2** | `bayesian_statistics.py:6878-6879` (width); window `:6899-6901` | `single_host_likelihood_batch` — production's **actual** dispatch path | **YES** |
+| **2.3** | `bayesian_statistics.py:1669-1672` (`sigma_eff`); window `:1675-1679`; `precompute_global_catalog_selection` `:2657-2882`, call `:2872` | global selection denominator — a per-h **scalar** shared by every event | **YES** (per PA-HIER-10) |
+| **2.7** | `bayesian_statistics.py:7518-7519` | integration-testing fidelity twin | **NO** — regression obligation only (PA-HIER-11) |
+| **2.4** | `correspondence_1d.py:1167-1188`, callers `:1323`, `:1485` | **GENERATOR-side** | **FORBIDDEN** — GATE GEN-FROZEN (PA-HIER-2) |
+| — | `validation/pp_coverage.py` | independent reimplementation | OUT OF SCOPE (§2.4) |
+
+**The reparametrization, registered.** θ = (b, s) enters as a new parameter threaded into
+`BayesianStatistics.evaluate()`, applying `host_z → host_z + b·(1 + host_z)` and
+`host_z_error_eff → s · host_z_error_eff` at each in-scope estimator site, with a **literal
+early-return/skip at (b, s) == (0.0, 1.0)** per GATE T-ID (§3.1, as read by PA-HIER-16). It is
+**not** implemented at `correspondence_1d.host_z_error_eff` — that would make θ move the data
+(PA-HIER-2), and GATE GEN-FROZEN forbids it.
+
+**Scope question, re-opened and handed to the author.** `bayesian_statistics.py` is on CLAUDE.md's
+`/physics-change` trigger list. The REVIEW SUMMARY's judgement — byte-identical default at (0, 1) ⇒
+no computed production value changes ⇒ no gate — is defensible, and this pass does not dispute it.
+But it is a **ruling the author owns, not an assumption a reviewer may bank**, for two reasons: the
+edit is to a trigger file by the letter of the rule, and PA-HIER-10's now-unconditional
+`smear_sigma_z = True` arm pin changes how a **shipped production flag resolves** as a function of
+an instrument parameter. Registered as an explicit decision, with the REVIEW SUMMARY's own
+mitigation retained: the forcing must be reachable only from θ-instrumented entry points, and a
+regression test asserting the production default stays `False` ships in the same commit.
+
+**Trivial fix, bundled.** `correspondence_1d.py:1173` cites *"`bayesian_statistics.py:5908-5909`"*
+as the byte-identical production form. Confirmed **stale** at source (that range is unrelated code).
+Correct targets: `:6223-6224` (scalar) and `:6878-6879` (batch). Non-scientific; authorize with the
+hook commit. This is the drift GATE PARITY flagged, now with its replacement text.
+
+---
+
+### PA-HIER-22 — PA-HIER-3 upgraded from AUTHOR-RULING-NEEDED to **NEEDS-CODE**, and the obvious control construction is shown to carry **its own confound**. No configuration anywhere in this repository injects a z-kernel misspecification.
+**Date:** 2026-08-27 · **Instrument run:** none · **Severity:** BLOCKER · **Status:** NEEDS-CODE (residual choice OPEN-FOR-AUTHOR)
+**Supersedes:** PA-HIER-3's *"Correction"* paragraph (its two proposed constructions are shown
+incomplete below); PA-HIER-15 registration 3's contingency.
+
+**Found, re-verified at the correct path.** The control lives in
+`darksiren_emri/galaxy_catalogue/observed_realization.py`, not under `validation/`.
+
+1. **`z_error` is round-tripped verbatim, deliberately.** `_realize_and_write`'s write block
+   (`:454-462`) rewrites only the z, M\*, and M\*-error columns; the z-error column is never
+   touched. The docstring states the property that makes S0-R a null instrument, in the harness's
+   own words (`:185-187`): *"the z width law is scale-free in z, so the stored column IS the width
+   the kernel consumes and `sigma_kernel == sigma_realized` identically."*
+2. **One catalogue handler serves both sides.** `host_pool_for_sigma_scale`
+   (`correspondence_1d.py:1850-1891`) returns a single `GalaxyCatalogueHandler`, and its own
+   docstring (`:1868-1871`) says it is *"the SAME object the host pool was extracted from, for
+   direct reuse as `BayesianStatistics.evaluate`'s `galaxy_catalog` argument"* — confirmed at
+   `run_mirror_seed_inprocess:2844`. **The generating width and the estimator's quoted width are the
+   identical number at every `sigma_scale`.** `sigma_scale` perturbs *which galaxy sits at which z*,
+   never a width mismatch. PA-HIER-3 is confirmed in full.
+3. **No knob exists.** Grep over `arguments.py`, `correspondence_1d.py` and `observed_realization.py`
+   found no `z_error`-only scale parameter. `--smear_global_selection` (`arguments.py:773-786`) only
+   toggles whether site 2.3 integrates a kernel at all; it has no bearing on data generation.
+
+**Two new findings that change the shape of the fix.**
+
+(a) **Trap, flagged.** Feeding the estimator the *unscattered parent* catalogue does **not** inject
+    an s-axis mismatch. It reproduces PA-HIER-1's `s → 0` confound instead, and additionally moves
+    the assumed **centre**, not only the width. It is not a fallback and must not be used as one.
+
+(b) **The obvious construction is not equivalent to the θ hook — it perturbs the candidate list.**
+    Because `SIGMA_V_PEC_KM_S = 0.0` (`constants.py:95`), writing `z_error_est = z_error_gen /
+    s_gen` into an estimator-facing copy would reproduce the s-scaling **exactly** at sites
+    2.1/2.2/2.3 (PA-HIER-20's ancillary fact). But the quoted `z_error` column is **also a
+    candidate-list input**: `handler.py:250` prunes the parent catalogue on `redshift −
+    redshift_error ≤ z_max`, and `handler.py:636-644` builds each event's candidate-host list on
+    `z_min ≤ z + z_error` and `z_max ≥ z − z_error`. A column-rewrite control therefore changes
+    **which galaxies are candidates at all**, which the estimator-side θ hook does not — the
+    production comment at `bayesian_statistics.py:6218-6222` records that the candidate window
+    *intentionally* keeps the bare catalogue `z_error`. **The control and the lever would not be
+    measuring the same perturbation.** That is a CONTROL-FAIL of the PA-2D-9 class built into the
+    control's own construction, and PA-HIER-3's proposed *"multiply the quoted `z_error` column by
+    1/1.5"* fix walks straight into it.
+
+**What a genuine s-axis positive control now requires** (all new code, none of it a parameter tweak):
+(i) a second, **estimator-facing** catalogue that byte-copies the generator-facing realization and
+rewrites only the quoted width column; (ii) new driver plumbing to carry **two decoupled catalogue
+handlers** through one mirror-seed run — today there is exactly one, shared; and (iii) an explicit
+decision on the candidate-list confound — either freeze the candidate list from the
+**generator-facing** column (new code inside `handler.py`'s search path, i.e. a third instrument) or
+disclose the confound and accept that the control perturbs candidacy as well as width, in which case
+its verdict is REPORTED-ONLY by construction.
+
+**Unchanged and reinforced:** PA-HIER-3's ruling that **no LEVER-DEAD-AT-N verdict may bank** and
+that D7's early exit is **unarmed** stands. The residual author choice is build-vs-fallback, where
+the fallback is: disarm D7's early exit and re-scope Stage 0 to **S0-A + S0-C only**.
+
+---
+
+### PA-HIER-23 — GATE ENG's toggle matrix given a decisive, registered numeric form. The site-2.3 vacuity is closed by testing the shift's **uniformity and independent recomputation**, not an event-count fraction.
+**Date:** 2026-08-27 · **Instrument run:** none · **Severity:** MEDIUM · **Status:** RESOLVED as registration; NEEDS-CODE to implement
+**Supersedes:** PA-HIER-16's *"Correction, registered"* paragraph (sharpened, not reversed) and §3.4.
+
+**Registered form.** A **path-isolated one-at-a-time (OAT) toggle matrix**, not a full 2³ factorial:
+baseline (θ = (0, 1), all hooks disabled — today's T-ID), then one run per in-scope site
+(2.1-only, 2.2-only, 2.3-only) at a non-zero θ with that site's hook active and the **others forced
+to their θ = (0, 1) evaluation**, plus one all-sites run. Site 2.4 is excluded by construction
+(GATE GEN-FROZEN forbids a hook there).
+
+**Measurement.** Extend the existing per-event diagnostics CSV to decompose each event's `ln L` into
+its **numerator-log-term** and **denominator-log-term** separately. Reading only the aggregate
+`ln L` is exactly what cannot catch a missing site while the others are live.
+
+- **Sites 2.1 / 2.2 (per-host numerator).** PRESENT iff (i) ≥ 10 % of events move ≥ 1e-6 relative in
+  the **numerator-log-term**, **and** (ii) the per-event magnitude tracks that host's own
+  `(z, z_error)` — spot-check 2–3 hosts against a hand-computed closed form to machine precision.
+  **MISSING = zero numerator-log-term movement in that site's own single-site run**, decisive
+  regardless of what the all-sites run shows.
+- **Site 2.3 (global denominator).** Its correct positive signature is a **single shift applied
+  identically to every event**, not heterogeneity. PRESENT requires (i) the shift is bit-identical
+  in magnitude across all events; (ii) it is bit-identical to baseline (i.e. absent) in the 2.1-only
+  and 2.2-only runs, confirming isolation held; and (iii) it matches an **independent
+  recomputation** of `_smeared_global_pdet_expectation` (`bayesian_statistics.py:1619-1720`)
+  evaluated directly at the same (h, θ) outside the pipeline. MISSING = zero denominator-log-term
+  movement in the 2.3-only run. This is what breaks the *"100 % of events moved, trivially"*
+  vacuity: the test is on the shift's **uniformity and independent match**, never on a raw
+  event-count fraction.
+
+**Complementary, not a substitute.** PA-HIER-16's hook-inventory assertion (the driver asserts each
+site's θ-aware code object was imported and its counter incremented, stamped in the task JSON) proves
+the path was **entered**; it does not prove the arithmetic **took effect** — a compute-then-discard
+bug passes it. It is retained as a cheap corroborant; the toggle-matrix numeric test is the decisive
+evidence.
+
+**Cost.** The toggle matrix is 4 extra single-h runs at Stage-0 scale (well inside §7.2's Stage-0
+line); the diagnostics columns and the site-toggle switch are instrumentation-only and ship in the
+same commit as PA-HIER-21's hook.
+
+---
+
+### PA-HIER-24 — PA-HIER-6 (θ prior): three candidate measures enumerated and costed. **Option B is free**, is consistent with the document's own log-uniform commitment, and one author line closes the blocker.
+**Date:** 2026-08-27 · **Instrument run:** none · **Severity:** BLOCKER · **Status:** OPEN-FOR-AUTHOR (one line)
+**Supersedes:** nothing — this discharges PA-HIER-6's correction item (i) as fact-finding and adds a
+second sensitivity leg.
+
+**The three options, with their consequences.**
+
+- **(A) Discrete uniform on the registered grid nodes, equal weight.** The implicit reading of the
+  present text. `k` is then set almost entirely by the grid's own half-width rather than by data —
+  and PA-HIER-9's own measured b-anchor correction (4–10× wider than the registered ±0.04) would
+  change `k` and could flip FAVOURABLE ↔ UNFAVOURABLE TRADE with **zero new likelihood
+  evaluations**. Also carries an edge-weighting bias at the grid boundary.
+- **(B) Uniform in `b`, uniform in `ln s`, over an explicitly STATED continuous support, realized by
+  proper quadrature weights (Simpson/trapezoid) on the SAME already-computed nodes.** Zero marginal
+  compute; removes A's edge-weighting bias for free. The *"support = grid extent"* limitation
+  persists, because nothing exists outside the registered nodes — that is a fact about the design,
+  not about the prior, and must be disclosed either way.
+- **(C) A stated weakly-informative continuum prior** (e.g. Gaussian, scale tied to a measured
+  catalogue statistic) **with its own quadrature nodes.** Only trustworthy with **more** likelihood
+  evaluations than the registered grid provides — a real costing consequence against an already
+  807–3537 CPU-h Stage F — and it collapses back to B if forced onto the existing 5 nodes.
+
+**Recommendation (not a ruling): B.** It discharges PA-HIER-6 at zero marginal compute, matches this
+document's already-registered log-uniform-in-`s` convention (§2.3's ×√2 grid spacing; PA-HIER-4's
+`score_lns`; §4.1's B0-M and B0-P bands, all stated in `ln s`), and removes A's discretization bias
+for free.
+
+**Two independent sensitivity legs, both free, answering different questions.**
+(i) **Support-width sensitivity** — PA-HIER-6's own registered leg: recompute `k`, `t` and the §4.4
+rank on the 3-node Stage-P sub-grid; a verdict that flips under narrower support is REPORTED-ONLY.
+(ii) **Weighting-scheme sensitivity (new)** — recompute under A vs B on the **same** full node set; a
+verdict that flips under weighting alone is numerically fragile and **must be reported, not
+dropped**. The two legs are not redundant: (i) tests the support, (ii) tests the measure on a fixed
+support.
+
+**Sub-choices the author owns even though the document's own conventions nearly force them:** node
+weighting (equal-count vs quadrature); whether the stated support is a **hard truncation** or a
+**merely-affordable window** — this decides whether a passing verdict may be CALIBRATED or must stay
+REPORTED-ONLY; and the coupled h-prior/support choice (PA-HIER-14's `H_GRID_41`-vs-`H_GRID_FULL`
+disagreement, shared with PA-HIER-25).
+
+**Coupling, restated:** PA-HIER-9's b-anchor decision **is** option B's stated support. The two must
+be answered together, and both sensitivity legs re-run afterwards, before any width-inflation
+verdict is called final.
+
+---
+
+### PA-HIER-25 — PA-HIER-7 (identifiability) RESOLVED as fact-finding. **PROFILED is the only statistic with a valid χ²₂ correspondence**; PA-HIER-7's pin is confirmed correct and the reason is now on the record.
+**Date:** 2026-08-27 · **Instrument run:** none · **Severity:** BLOCKER (fact half RESOLVED) · **Status:** RESOLVED; one residual author line (h support)
+**Supersedes:** nothing — this supplies the derivation PA-HIER-7's correction asserted without.
+
+**Derived.** The registered anchors `χ²₂(0.95)/2 = 2.9957` and `χ²₂(0.6827)/2 = 1.1479` are **Wilks
+profile-likelihood-ratio** anchors, valid for `k = 2` **tested** parameters (b, s) with **any**
+number of nuisance parameters (here h) profiled out — the nuisance count never enters the degrees of
+freedom. PA-HIER-7's pin (`Δ ln L = max_h Σᵢ ln Lᵢ(h, truth-θ) − max_h Σᵢ ln Lᵢ(h, corner)`) is
+therefore **correct**, and the two alternatives fail for stateable reasons:
+
+- **FIXED-h** (h held at 0.73 on both sides) has **no valid χ²₂ correspondence** when a genuine h–b
+  ridge exists: it crosses the ridge's full transverse curvature without letting h compensate. It can
+  clear the 3.00-nat IDENTIFIABLE bar while the operationally relevant profiled number sits below
+  1.15 (UNIDENTIFIABLE) **on the same cubes**. It **systematically overstates identifiability** — and
+  the direction of that error is toward authorizing Stage F's 424.4 CPU-h.
+- **MARGINALIZED** (∫dh with a prior) has **no general Wilks-type asymptotic guarantee at all**.
+  Bayesian evidence ratios and profile-likelihood ratios coincide only under regularity + flat-prior
+  conditions that a 41-node, potentially boundary-railing h-posterior cannot be assumed to satisfy —
+  this repository's own documented H₀-railing pathology is exactly that non-regular behaviour.
+  Applying the χ²₂ bands to it is **unfalsifiable as posed**. It stays **REPORTED-ONLY regardless of
+  its numeric value, never band-bearing.**
+
+**Why the three differ along a ridge** (registered so the reported spread is interpretable, not
+alarming): PROFILED re-maximizes h at each θ node — it climbs back up the ridge — leaving only the
+ridge-**transverse** residual; FIXED-h skips that re-optimization and so measures a strictly larger,
+inflated quantity; MARGINALIZED integrates rather than maximizes, generically diluting the contrast
+further and making the number prior-dependent.
+
+**Registered to report alongside the pinned PROFILED number:** the fixed-h and marginalized variants
+(REPORTED-ONLY); `ĥ(θ)` at **every** grid node — the ridge itself, a free byproduct of profiling;
+`ρ(h, b)` and `ρ(h, ln s)` (§4.2's own anticipated secondary read); and PA-HIER-7's registered
+precondition `lnL(truth-θ) ≥ lnL(θ)` at every other Stage-P node — if it fails, the "truth ≈ MLE"
+premise the Wilks anchor requires does not hold on a 3×3 / 5×5 grid and the read downgrades to
+REPORTED-ONLY.
+
+**Residual for the author:** only the h support for the profile — `H_GRID_41` (§5.1 invariant 2)
+versus `H_GRID_FULL` (PA-HIER-14's disagreement at `correspondence_1d.py:3788-3789`). One line,
+shared with PA-HIER-24's sub-choice (iii).
+
+---
+
+### PA-HIER-26 — LOW. PA-HIER-17's window-truncation table is computed for a **Gaussian** truth and is exactly right for **neither** registered mode; and its constant citation is off by four lines.
+**Date:** 2026-08-27 · **Instrument run:** none · **Severity:** LOW · **Status:** FIXED (corrected numbers registered)
+**Supersedes:** PA-HIER-17's table and its `_B0I_KERNEL_SIGMA_MULTIPLIER` line citation.
+
+**Found.** Under `host_mode="catalogue"` the truth is a **delta at z_g**, which is the estimator
+window's own centre — the fraction outside is identically **0 at every s**, so GATE WINDOW is
+**vacuous** there (the s-misspecification is total by construction instead, PA-HIER-1). Under the
+recommended `catalogue_selected` venue the truth is drawn **on the estimator's own ±4σ window**
+(`_host_kernel_window`, `_B0I_KERNEL_SIGMA_MULTIPLIER = 4.0` at `correspondence_1d.py:1161` — **not
+`:1157`**, which is the `roots_legendre` line; draw at `:1490-1498`), so the truth is a
+**±4σ-truncated**, `w_pop·f_k·S̄_φ`-tilted Gaussian, not a Gaussian.
+
+| node | estimator window | PA-HIER-17 (untruncated Gaussian) | corrected, ±4σ-truncated, pre-tilt |
+|---|---|---|---|
+| s = 1/√2 (a `score_lns` node) | ±2.828σ | 0.4678 % | **0.4615 %** |
+| s = 0.50 (Stage-P/F corner) | ±2.000σ | 4.5500 % | **4.5440 %** |
+
+PA-HIER-17's two figures are **re-verified as exactly correct for their stated Gaussian
+assumption**; the corrections are second-order. The `w_pop·f_k·S̄_φ` tilt is not analytic and must be
+measured — which GATE WINDOW already does empirically.
+
+**Conclusion unchanged and reinforced.** s = 0.50 still exceeds GATE WINDOW's 1 % bar by ≈ 4.5×, so
+the Stage-P/F `s = 0.50` corner nodes are **expected to arrive REPORTED-ONLY**, and §4.2's `Δ ln L`
+must be defined on a corner that survives GATE WINDOW or the identifiability read has no
+band-bearing corner at all. **Registered:** GATE WINDOW's measured counts are the operative numbers;
+PA-HIER-17's table is a Gaussian-truth approximation and is **not** a band anchor.
+
+---
+
+## LAUNCH GATE, RE-STATED `[OPUS-ORCH 2026-08-27]`
+
+*(Supersedes the LAUNCH VERDICT block above — its verdict is unchanged, its "cheapest path"
+inventory is not. Zero compute spent; no instrument has run.)*
+
+### (i) Blockers now RESOLVED — and how
+
+| was | now | how |
+|---|---|---|
+| **PA-HIER-1** (generator law unregistered; truth-θ ≠ (0,1)) | **RESOLVED as fact** (PA-HIER-19) — one author [RULE] remains | Five `host_mode` laws enumerated at source and truth-θ derived per mode. Exactly two admit (0, 1): `catalogue_selected` (b0i) and `catalogue_selected_2d` (b0i2d). `catalogue` gives s → 0; both `population*` modes make the axis **inapplicable** (their hosts carry no `(z_g, z_error)` pair at all). Fix is a **one-line `host_mode` change**. |
+| **PA-HIER-1's kernel-identity audit** (an unaudited load-bearing invariant) | **RESOLVED, 5 legs of 7** (PA-HIER-20) | Gaussian loc/scale identical at (0,1); `w_pop·f_k` and `S̄_φ` are the **estimator's own** live terms under PRODUCTION_FLAGS; both sides call the same imported production functions; the `S̃_φ` quadrature is GL-50 on both sides — explicitly **not** a PA-2D-2/-3 mismatch. Two legs remain uncertified (below). |
+| **PA-HIER-3** (S0-R is a null instrument) | **CONFIRMED and upgraded to NEEDS-CODE** (PA-HIER-22) | The harness's own docstring states the property: `sigma_kernel == sigma_realized` identically. One shared handler serves generator and estimator. No knob exists. **Additionally:** PA-HIER-3's own proposed fix carries a candidate-list confound. |
+| **PA-HIER-7** (identifiability statistic's h-treatment) | **RESOLVED** (PA-HIER-25) — one residual line on h support | PROFILED is the only variant with a valid χ²₂ correspondence (nuisance count never enters the d.o.f.); FIXED-h systematically **overstates** identifiability toward authorizing Stage F; MARGINALIZED has no Wilks guarantee and is REPORTED-ONLY regardless of value. |
+| **PA-HIER-16** (GATE ENG cannot isolate site 2.3) | **RESOLVED as registration** (PA-HIER-23) | Path-isolated OAT matrix on a per-term `ln L` decomposition; site 2.3 judged on **uniformity + independent recomputation**, not an event-count fraction. |
+| **PA-HIER-17** (window truncation) | **numbers corrected** (PA-HIER-26) | Re-derived on the actual truncated truth law; citation `:1157` → `:1161`. Conclusion unchanged: the s = 0.50 corner is expected REPORTED-ONLY. |
+
+**Already FIXED by the first review and untouched here:** PA-HIER-4 (`score_lns`), PA-HIER-2
+(CoR-M re-pin + GATE GEN-FROZEN), PA-HIER-8, -10, -11, -12, -13, -15, -18.
+
+### (ii) Genuinely OPEN-FOR-AUTHOR — each answerable in one word
+
+1. **[RULE] Venue.** Ratify the switch `host_mode="catalogue"` (arm b0) → `host_mode="catalogue_selected"` (arm b0i) as the [HIER] venue? *(No other mode gives truth-θ = (0,1).)* — **ratified / not**
+2. **[DO] θ hook.** Authorize implementing θ = (b, s) as a new parameter threaded into `BayesianStatistics.evaluate()` at sites 2.1 / 2.2 / 2.3, **not** at `correspondence_1d.host_z_error_eff`? — **approved / not**
+3. **[RULE] Physics-change scope.** Does the θ hook — an edit to `bayesian_statistics.py` (a trigger file) with a byte-identical default at (0,1), plus PA-HIER-10's unconditional `smear_sigma_z=True` arm pin — require the `/physics-change` protocol, or is §1.5's instrumentation guard sufficient? — **gate / no gate**
+4. **[RULE] Certification bar.** Are PA-HIER-20's two uncertified legs — the `phi_survival_table` value-identity assertion, and the 401-node inverse-CDF grid convergence spot-check — **pre-launch gate items**, or **disclosed residual risk**? — **gate / disclose**
+5. **[DO] Control.** Build the two-catalogue s-axis control (new code, own registration, plus a decision on the candidate-list confound), or take the free fallback — disarm D7's early exit and re-scope Stage 0 to **S0-A + S0-C only**? — **build / fallback**
+6. **[RULE] θ prior.** Adopt option B (uniform in `b`, uniform in `ln s`, quadrature-weighted on the registered nodes, support pinned to the registered half-widths), or state a different prior explicitly? — **B / other**
+7. **[RULE] b-grid anchor** *(PA-HIER-9, load-bearing for #6 — it **is** option B's support)*. Re-anchor `b`'s half-width on a measured catalogue statistic (free, one pandas read), or keep ±0.04 and restate its anchor as an arbitrary local-probe convention? — **re-anchor / keep**
+8. **[RULE] h support.** Pin the profile's h grid (and the §4.4 rank/KS null) to `H_GRID_41` for both cited functions, per §5.1 invariant 2? — **H_GRID_41 / other**
+9. **[RULE] Support semantics** *(§4.4/§4.5 currency)*. Is option B's stated support a **hard truncation** (a passing verdict may be CALIBRATED) or a **merely-affordable window** (REPORTED-ONLY)? — **hard / affordable**
+
+Items 1, 4, 6, 7, 8, 9 are [RULE]s on evidence now fully in front of the author. Items 2 and 5 are
+[DO]s. Item 3 is a scope ruling this pass deliberately declines to make on the author's behalf.
+
+### (iii) NEEDS-CODE — the instruments that do not exist
+
+| # | Instrument | Why it is needed | Scope note |
+|---|---|---|---|
+| C1 | **The θ hook itself** — a `(b, s)` parameter threaded into `evaluate()`, reparametrizing `host_z → host_z + b(1+host_z)` and `host_z_error_eff → s·host_z_error_eff` at sites 2.1 / 2.2 / 2.3, with a literal early-return at (0,1) | `grep -n "theta_b\|theta_s\|--theta" darksiren_emri/arguments.py` → **zero hits**. **Nothing** in the repo implements θ. Without C1, **no [HIER] stage can run at all**, including S0-A. | Lands **inside `bayesian_statistics.py`**, a `/physics-change` trigger file → re-opens the scope question (author item 3). Ships with: the production-default `False` regression test, the PA-HIER-11 twin-parity assertion, and the `:1173` docstring fix. |
+| C2 | **Per-term `ln L` diagnostics + a per-site toggle switch** (PA-HIER-23) | The GATE ENG toggle matrix is undecidable on aggregate `ln L`; the site-2.3 test needs a separable denominator term. | Instrumentation-only; same commit as C1. Adjacent to the same trigger file. |
+| C3 | **The two-catalogue s-axis positive control** (PA-HIER-22) — an estimator-facing catalogue with a rewritten quoted-width column, **plus** driver plumbing for two decoupled handlers in one mirror-seed run, **plus** a resolution of the candidate-list confound | S0-R injects **nothing**; today's harness cannot produce an s-mismatch by any parameter setting. Without C3, D7's early exit stays unarmed and **no LEVER-DEAD-AT-N verdict may bank**. | Option (iii) of the fix — freezing the candidate list from the generator-facing column — would touch **`galaxy_catalogue/handler.py`'s search path**, i.e. a third new instrument adjacent to production selection code. Needs its own pre-registration. |
+| C4 | **The 401-node inverse-CDF convergence spot-check** (PA-HIER-20 leg b) | The b0i z-draw grid is a *different* numerical operation from the certified GL-50 normalization, un-audited in the wide-window / near-horizon regime — the PA-2D-2/-3 borrowed-quadrature failure shape one axis over. | Small compute (401 vs 4001 nodes, plus a rejection-sampling cross-check), zero production risk. Gate-vs-disclose is author item 4. |
+| C5 | **The `phi_survival_table` value-identity assertion** (PA-HIER-20 leg a) | Two independently constructed tables are assumed equal at runtime with no assertion anywhere. | One assertion; trivial. Gate-vs-disclose is author item 4. |
+
+**Standing note on scope:** C1, C2 and C3(iii) all place new code in or immediately adjacent to
+files on CLAUDE.md's physics-change trigger list. The REVIEW SUMMARY's byte-identical-default
+argument is retained and is defensible, but it is the **author's ruling**, and it must be made once,
+explicitly, before the first line of C1 is written — not inferred after the fact from a passing
+GATE T-ID.
+
+### (iv) LAUNCH VERDICT — **LAUNCH-BLOCKED (unchanged), and the reason has changed shape**
+
+No `sbatch` for any [HIER] stage and no Stage-0 CPU-h.
+
+The first review left [HIER] blocked on **six unresolved questions**. This pass answers the
+factual half of five of them and, in doing so, replaces the diagnosis. The honest statement of
+where the thread stands:
+
+1. **A venue with truth-θ = (0, 1) does exist** — `host_mode="catalogue_selected"` (arm b0i) — and
+   the generator/estimator kernel identity on it is now **audited and certified on five of seven
+   legs at source**. The self-consistency arm S0-A is therefore a real, well-posed measurement after
+   a one-line venue change. That is the good news, and it is genuine: PA-HIER-1's worst reading —
+   that no mode admits truth-θ = (0,1) — is **refuted**.
+
+2. **But no existing configuration anywhere in this repository injects a z-kernel misspecification.**
+   At every `sigma_scale`, the generating width and the estimator's quoted width are **the identical
+   number**, by the harness's own deliberate design, and one catalogue handler serves both sides. The
+   `s` axis has **no positive control** today, and the obvious way to build one perturbs the
+   candidate list as well as the width, so it would not even be measuring the same perturbation as
+   the lever it certifies. **The `s` axis cannot currently be shown to be alive at all.**
+
+3. **And the instrument itself does not exist.** θ has **zero occurrences** in the codebase. Every
+   [HIER] number — S0-A included — requires new code inside a physics-trigger file before a single
+   CPU-h can be spent. The first review's *"cheapest path back to LAUNCH-READY (all zero-compute)"*
+   is accurate about registration and silent about this; the two are not the same thing, and this
+   amendment exists partly to stop that elision from carrying forward.
+
+**The unwelcome finding, stated plainly.** The (h, θ) experiment **as designed is not runnable on
+the current mirror venue without new generator-side and estimator-side code.** The venue problem is
+a one-line fix; the instrument problem (C1/C2) is a bounded, well-specified build; but the **control
+problem (C3) is a new instrument with a confound of its own**, and until it exists the thread can
+demonstrate that θ is *wired* (GATE ENG) and that the venue is *self-consistent* (S0-A) without ever
+demonstrating that the `s` axis carries information about a real misspecification. A thread that can
+only measure its own self-consistency is not yet testing the hypothesis it was opened to test.
+
+**What that implies, without softening.** The author's item-5 choice is not a convenience call. Taking
+the **fallback** (S0-A + S0-C only, D7 disarmed) yields a defensible but **strictly weaker** thread:
+it can certify wiring, measure identifiability, and report the h–θ ridge, but it can **never** bank a
+LEVER-DEAD-AT-N verdict, and any null it produces is confounded with "the axis was never shown to be
+live". Taking **build** costs a new instrument, its own pre-registration, and a candidate-list
+decision — and only then does the registered question become answerable as posed. There is no third
+option in which the existing harness answers it.
+
+**Path to LAUNCH-READY.** Author items 1–9 (all one-liners, all zero-compute) → C5 + C4 (small) →
+C1 + C2 as one commit under whatever scope item 3 rules → GATE T-ID, GATE ENG (PA-HIER-23 form),
+GATE PARITY, GATE MASS-KERNEL → S0-A. C3 gates only the S0-R / D7 / LEVER-DEAD-AT-N branch and can
+proceed in parallel or be dropped per item 5. **No Stage-P grant is re-opened by this pass**;
+§7.2's ceilings stand unchanged.

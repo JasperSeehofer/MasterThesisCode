@@ -134,3 +134,135 @@ Author rules on the nine pending [P3-MKER]/[HIER] decisions above (§1) → on r
 archive-or-migrate the `emri` cluster workspace before 2026-09-23 (zero extensions) →
 paper-facing consolidation (WBHZERO one-day arc + [P3-2D] forensic discipline are both
 thesis-chapter material).
+
+## 4. OVERNIGHT ADDENDUM 2026-08-27 [OPUS-ORCH]
+
+Two threads ran overnight, autonomously, Opus-orchestrated, local-CPU-only (no cluster, no SSH,
+no source edits). Both are chair verdicts on chair-and-verifier evidence — **not** author-ratified.
+
+### 4.1 [WGEO] — window geometry as a bias lead — **LEAD-DEAD, banked as a CLOSED NULL**
+
+New file: `results/campaign51_20260728/realistic_20260729/CLAIM_WGEO_20260827.md` (552 lines).
+
+**Hypothesis.** The mass-eligibility window is linear-symmetric while the catalogue BH-mass error
+model is log-normal, so the induced cut is asymmetric in ln M; if that asymmetry varies with z it
+would be a z-structured selection bias matching the dark-class high-z base tilt.
+
+**Killed on four independent sufficient grounds:**
+
+1. **Flat where the tilt is structured.** The window-asymmetry statistic (median 1.5·CV −
+   ln(1+1.5·CV)) is **flat across the four banked dark-class tilt z-bins** — 0.3990 / 0.3990 /
+   0.3987 / 0.3987, spread 0.08% — while the banked score over those same bins runs
+   −0.465 / −0.743 / −0.902 / −1.081, a factor 2.3 of growth. No z-structure for the tilt to be
+   attributed to.
+2. **Wrong-signed where structure exists.** Where CV does show z-dependence it is low-z-only and
+   mechanically GLADE stellar-mass-error quantization, not window geometry
+   (Spearman(z, CV) = −0.6521 marginal, decaying to −0.1703 over 0.4 ≤ z < 1.0) — the wrong
+   direction for H1.
+3. **Structurally impossible.** The C-C control is `L_cat_no_bh == 0` at `handler.py:646`, strictly
+   **upstream** of `mass_filter_mask` at `handler.py:663-674` — there is no arm on which the
+   window's effect can even be isolated from the class the tilt is measured on.
+4. **Channel-identical.** The tilt is 1D 0.6001 vs 2D C-C 0.6004 — statistically indistinguishable
+   — but the 1D leg never sees the mass window at all.
+
+**THE MOST IMPORTANT FINDING — HB rediscovery.** The lead was **already measured and
+self-refuted** on 2026-07-30 as exoneration **HB** (`CLAIM_2D_BIAS_20260730.md:732-734`): "hard
+mass window as support truncation (tilt −0.317 nats = 0.063% of the target, sign-inverted, 40-50×
+too small)". HB's banked rationale at `HANDOFF_20260730.md:102-109` is the [WGEO] hypothesis
+almost verbatim (negative lower edge, one-sidedness, 193 low-side vs 1 high-side rejections,
+h-dependence). One of the three stage-0 reads reported "rule-1 PASSED" and "the window's H0
+contribution is UNCONSTRAINED" — **both refuted by the adversarial verifier**, whose rule-1 check
+found the coupling read had stopped two lines short of HB in the exoneration list it was
+supposedly checking against. The card as originally read was written to CORROBORATE HB, not
+challenge it — the correct rule-1 outcome, reached only on the second pass.
+
+**Directional correction (secondary but registered):** the original framing — that a log-symmetric
+window would be narrower — is **refuted**: the log window admits FEWER candidates
+(n_log/n_lin = 0.4437 on a cone-exact fleet reconstruction), because the linear window's
+non-positive lower edge makes the too-heavy-side exclusion vacuous for 99.61% of the catalogue.
+
+**Not blocked on rows #198-#202** (the symmetric-window adoption concerns which side's uncertainty
+gets the multiplier — orthogonal to linear-vs-log shape; delimitation verified at source).
+
+**Also filed:** citation drift — `BIAS_HISTORY_LEDGER.md:130` points at
+`CLAIM_2D_BIAS_20260730.md:191-204` for the exoneration list, which now begins at line 721 (HB at
+:732-734). The pointer is stale.
+
+**New pending author items** (add to §1 below): R-WGEO-1, R-WGEO-2, D-WGEO-1, R-WGEO-3.
+
+### 4.2 [HIER] — blocker discharge — amendments PA-HIER-19..26 + a re-stated LAUNCH GATE
+
+Modified file: `results/campaign51_20260728/realistic_20260729/PREREGISTRATION_HIER_HTHETA_20260826.md`
+(1357 → 1834 lines, append-only, verified).
+
+- **PA-HIER-1's worst reading REFUTED.** Of five `host_mode` generator laws, exactly two
+  (`catalogue_selected` / arm b0i, and `catalogue_selected_2d`) give a genuine truth-θ = (0, 1);
+  the default `catalogue` gives s → 0 and both `population*` modes make the axis inapplicable.
+  **Fix is a one-line `host_mode` change, not a redesign.**
+- 5 of 7 kernel-identity legs certified at source; the S̃_φ quadrature is GL-50 on both sides —
+  explicitly **not** a PA-2D-2/3 borrowed-quadrature mismatch.
+- PA-HIER-7 resolved: PROFILED is the only variant with a valid χ²₂ correspondence; FIXED-h
+  overstates identifiability in the direction that would authorize Stage F's 424.4 CPU-h;
+  MARGINALIZED is REPORTED-ONLY.
+- **The critical remaining problem — the null arm is NOT rescuable by one line, and the obvious
+  control is itself confounded.** No configuration anywhere in the repo injects a z-kernel
+  misspecification: at every `sigma_scale` the generating width and the estimator's quoted width
+  are the identical number, by design (`observed_realization.py:454-462`, docstring :185-187).
+  Worse, the obvious control (rewriting the quoted `z_error` column) is **confounded**: that column
+  also feeds candidate selection (`handler.py:250`, `:636-644`), so it would change which galaxies
+  are candidates — a perturbation the lever never makes. That is a built-in CONTROL-FAIL of the
+  PA-2D-9 class inside the proposed remedy itself.
+- **Verdict: LAUNCH-BLOCKED (unchanged), reason changed shape.** The venue problem is now a
+  one-line fix (good news, genuine); the instrument (θ hook, C1/C2) does not exist anywhere in the
+  codebase (zero occurrences); the control (C3, the s-axis positive control) is a new instrument
+  with its own confound and needs its own pre-registration.
+- Nine author one-liners now registered (§(ii) of the re-stated LAUNCH GATE, all zero-compute,
+  six [RULE] + two [DO] + one scope [RULE]); five NEEDS-CODE items C1-C5, of which **C1, C2, and
+  C3(iii)** land in or adjacent to physics-trigger files and **re-open the `/physics-change` scope
+  question** the prereg's §1.5 currently closes.
+
+**New pending author items** (add to §1 below): the nine [HIER] one-liners — venue ratification,
+θ-hook authorization, physics-change scope ruling, certification-bar gate/disclose, control
+build/fallback, θ-prior adoption, b-grid re-anchor, h-support pin, and support-semantics
+hard/affordable ruling. (Full text: PREREGISTRATION_HIER_HTHETA_20260826.md §(ii), lines
+1756-1769.)
+
+### 4.3 Updated open-decision list (added overnight to the nine already in §1)
+
+- **[RULE] R-WGEO-1** ratify the [WGEO] KILL and closed-null banking.
+- **[RULE] R-WGEO-2** ratify the rule-1 finding that HB governs this object; no window-as-bias
+  claim may be banked without new evidence engaging HB's −0.317-nat/0.063%/sign-inverted
+  measurement directly.
+- **[DO] D-WGEO-1** authorize a ≤1h zero-compute records read reconciling the window-removal
+  counterfactual quoted at two magnitudes (+0.010 at `CLAIM_2D_BIAS_20260730.md:726-727` vs
+  +0.0015 at `HANDOFF_20260730.md:87-88`, factor ≈7) — until resolved, HB's bound is not quotable
+  as a point value.
+- **[RULE] R-WGEO-3** rule on whether the linear→log switch's eligible-set mean-redshift moment
+  (−14.5%, ✓VER-only) raises the priority of pending D-MKER-2.
+- **[HIER] items 1-9** (§4.2 above) — venue, θ-hook, physics-change scope, certification bar,
+  control build/fallback, θ-prior, b-grid anchor, h-support, support semantics.
+
+### 4.4 Session-earned ops
+
+- **THE BIG ONE.** A stage-0 rule-1 check by a single agent is NOT sufficient. The [WGEO] coupling
+  read reported "rule-1 PASSED" and the governing exoneration (HB) was two lines below the entries
+  it quoted from the ledger. Rule-1 checks must grep the exoneration list **exhaustively for the
+  mechanism**, not just the tag, and should be adversarially re-checked before a lead is allowed to
+  proceed past stage 0.
+- **Measure-first discipline paid.** [WGEO] died at stage 0 for a few minutes of local CPU instead
+  of a pre-registration + fleet run — the flat-asymmetry check and the HB collision were both
+  cheap, decisive, and zero-compute.
+- **Citation drift in the ledger's own cross-references is now demonstrated, not hypothetical.**
+  `BIAS_HISTORY_LEDGER.md:130`'s pointer into `CLAIM_2D_BIAS_20260730.md` is stale by ~530 lines.
+  Line-number pointers into growing files go stale; prefer anchor text (e.g. the exoneration's
+  short-name, "HB") as the primary key and treat the line number as a convenience that must be
+  re-verified, not trusted.
+
+### 4.5 Revised resume recipe (one line)
+
+Author rules on the thirteen pending [WGEO]/[HIER] one-liners in §4.3 (superset of old §1's nine)
+→ on ratification, [HIER]'s venue one-liner (item 1) unblocks S0-A while C1-C3 are built/scoped,
+and D-WGEO-1's records read repairs HB's quotable bound before D-MKER-2 is decided → [P3-2D]
+resume when fresh (S̄_φ fix first, then the symptom card to a Stage-L searcher) →
+archive-or-migrate the `emri` cluster workspace before 2026-09-23 (zero extensions) →
+paper-facing consolidation.
