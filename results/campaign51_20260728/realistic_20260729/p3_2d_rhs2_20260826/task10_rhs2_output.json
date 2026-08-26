@@ -1,0 +1,235 @@
+{
+  "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_CA_BOUNDED_IDENTITY_20260824.md \u00a72-\u00a73 (instrument: ca_rhs_scorer.py, per CLAIM_B0_FINITE_MOMENT_20260824.md \u00a73.1 + GATE_B_ADJUDICATION_FINITE_MOMENT_20260824.md \u00a73a/\u00a74), [P3-2D] RHS2 (--stage rhs2, PA-2D-1 F7-F16)",
+  "h_gen": 0.73,
+  "r2_registered": 2.6124925,
+  "catalogue_global_selection_slot": "phi",
+  "selection_in_completion_numerator": "fused",
+  "wbh_center": "eff",
+  "a22_stamp": {
+    "git_commit_at_start": "7e4f1c64b79e43c4688c7c1e5bff25e75a928632",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "selection_in_completion_numerator": "fused",
+    "catalogue_numerator_survival": "off",
+    "catalogue_numerator_survival_2d": {
+      "twin": "mz_sel",
+      "coded": "off"
+    },
+    "catalogue_numerator_survival_2d_center": "eff",
+    "mass_filter_sigma": "symmetric"
+  },
+  "a22_flags": {
+    "catalogue_global_selection": "phi",
+    "selection_in_completion_numerator": "fused",
+    "catalogue_numerator_survival": "off",
+    "catalogue_numerator_survival_2d": {
+      "twin": "mz_sel",
+      "coded": "off"
+    },
+    "catalogue_numerator_survival_2d_center": "eff",
+    "mass_filter_sigma": "symmetric"
+  },
+  "env_provenance": {
+    "python_version": "3.13.3 (main, Apr 28 2025, 00:00:00) [GCC 14.2.0]",
+    "platform": "Linux-5.14.0-570.128.1.el9_6.x86_64-x86_64-with-glibc2.34",
+    "numpy_version": "2.4.3",
+    "pandas_version": "3.0.1"
+  },
+  "n_draws_target": 800,
+  "n_drawn_total": 800,
+  "n_syn_total_drawn": 800,
+  "base_seed": 981001,
+  "chunk_size": 200,
+  "registered_chunk_size": 200,
+  "chunk_size_is_registered": true,
+  "n_chunks": 4,
+  "per_chunk": [
+    {
+      "chunk": 0,
+      "seed": 981001,
+      "n_drawn": 200,
+      "n_accepted_twin": 180,
+      "n_accepted_coded": 180,
+      "arrangement_consistent": true,
+      "mean_w2_twin_chunk_dc": 0.021833689453063236,
+      "mean_w2_coded_chunk_dc": 0.02311686930804169,
+      "dc2_term_chunk": -0.0024337175410402644,
+      "br2_term_chunk": 0.012302176254980845,
+      "tci_twin": {
+        "tau_30": 0.07,
+        "tau_100": 0.12,
+        "tau_300": 0.14,
+        "tau_1000": 0.185
+      },
+      "tci_coded": {
+        "tau_30": 0.07,
+        "tau_100": 0.12,
+        "tau_300": 0.145,
+        "tau_1000": 0.19
+      }
+    },
+    {
+      "chunk": 1,
+      "seed": 981002,
+      "n_drawn": 200,
+      "n_accepted_twin": 183,
+      "n_accepted_coded": 183,
+      "arrangement_consistent": true,
+      "mean_w2_twin_chunk_dc": 0.018717792700657886,
+      "mean_w2_coded_chunk_dc": 0.019695034840613884,
+      "dc2_term_chunk": -0.0016866338035699286,
+      "br2_term_chunk": 0.012207288690957947,
+      "tci_twin": {
+        "tau_30": 0.08,
+        "tau_100": 0.12,
+        "tau_300": 0.17,
+        "tau_1000": 0.22
+      },
+      "tci_coded": {
+        "tau_30": 0.08,
+        "tau_100": 0.13,
+        "tau_300": 0.175,
+        "tau_1000": 0.22
+      }
+    },
+    {
+      "chunk": 2,
+      "seed": 981003,
+      "n_drawn": 200,
+      "n_accepted_twin": 181,
+      "n_accepted_coded": 181,
+      "arrangement_consistent": true,
+      "mean_w2_twin_chunk_dc": 0.011452250520708413,
+      "mean_w2_coded_chunk_dc": 0.011875565845203474,
+      "dc2_term_chunk": -0.0005403224015553299,
+      "br2_term_chunk": 0.006605694141027698,
+      "tci_twin": {
+        "tau_30": 0.04,
+        "tau_100": 0.06,
+        "tau_300": 0.095,
+        "tau_1000": 0.125
+      },
+      "tci_coded": {
+        "tau_30": 0.045,
+        "tau_100": 0.06,
+        "tau_300": 0.095,
+        "tau_1000": 0.13
+      }
+    },
+    {
+      "chunk": 3,
+      "seed": 981004,
+      "n_drawn": 200,
+      "n_accepted_twin": 185,
+      "n_accepted_coded": 185,
+      "arrangement_consistent": true,
+      "mean_w2_twin_chunk_dc": 0.015427668118217186,
+      "mean_w2_coded_chunk_dc": 0.015978247037884266,
+      "dc2_term_chunk": -0.0009190624862106255,
+      "br2_term_chunk": 0.010084987422103184,
+      "tci_twin": {
+        "tau_30": 0.07,
+        "tau_100": 0.11,
+        "tau_300": 0.135,
+        "tau_1000": 0.19
+      },
+      "tci_coded": {
+        "tau_30": 0.07,
+        "tau_100": 0.115,
+        "tau_300": 0.135,
+        "tau_1000": 0.195
+      }
+    }
+  ],
+  "arms": {
+    "twin": {
+      "RHS2_w": 0.01685785019816168,
+      "SE": 0.0022264375703854866,
+      "n_chunks": 4,
+      "n_accepted_total": 729
+    },
+    "coded": {
+      "RHS2_w": 0.01766642925793583,
+      "SE": 0.0024187909449228796,
+      "n_chunks": 4,
+      "n_accepted_total": 729
+    }
+  },
+  "D_C2_accumulator": {
+    "mean": -0.0013949340580940372,
+    "se": 0.00042041395298475536,
+    "n_chunks": 4
+  },
+  "kappa_hat2": 0.9652176884106002,
+  "RHS_BR2": {
+    "mean": 0.010300036627267419,
+    "se": 0.0013335599627060234,
+    "n_chunks": 4
+  },
+  "C_TCI2_indicator_profile": {
+    "twin": {
+      "tau_30": {
+        "mean": 0.065,
+        "se": 0.008660254037844388,
+        "n_chunks": 4
+      },
+      "tau_100": {
+        "mean": 0.1025,
+        "se": 0.014361406616345072,
+        "n_chunks": 4
+      },
+      "tau_300": {
+        "mean": 0.135,
+        "se": 0.015411035007422445,
+        "n_chunks": 4
+      },
+      "tau_1000": {
+        "mean": 0.18,
+        "se": 0.019895560643855538,
+        "n_chunks": 4
+      }
+    },
+    "coded": {
+      "tau_30": {
+        "mean": 0.06625,
+        "se": 0.00746519702798705,
+        "n_chunks": 4
+      },
+      "tau_100": {
+        "mean": 0.10625,
+        "se": 0.015728821740147395,
+        "n_chunks": 4
+      },
+      "tau_300": {
+        "mean": 0.13749999999999998,
+        "se": 0.01652018966799917,
+        "n_chunks": 4
+      },
+      "tau_1000": {
+        "mean": 0.18375000000000002,
+        "se": 0.019080421903092185,
+        "n_chunks": 4
+      }
+    }
+  },
+  "c_tci_taus": [
+    30.0,
+    100.0,
+    300.0,
+    1000.0
+  ],
+  "F10c_zmarginal_gate": {
+    "gate": "F10(c)",
+    "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_CA_BOUNDED_IDENTITY_20260824.md \u00a72-\u00a73 (instrument: ca_rhs_scorer.py, per CLAIM_B0_FINITE_MOMENT_20260824.md \u00a73.1 + GATE_B_ADJUDICATION_FINITE_MOMENT_20260824.md \u00a73a/\u00a74), PA-2D-1 F10(c) (registered FREE prediction)",
+    "n_accepted_this_run": 729,
+    "n_reference_pool": 1842,
+    "reference_base_seed": 990001,
+    "reference_target_n_drawn": 2000,
+    "ks_statistic": 0.026518858102885127,
+    "ks_pvalue": 0.8440552931427913,
+    "pass": true,
+    "scope": "REAL (this scorer's own completion-class accepted-z replay vs a zero-evaluate reference pool from the SAME law) -- supersedes p3_2d_fleet.py's _gate_f10c_zmarginal_proxy (which compared against a DIFFERENT venue's, the b0i 1D fleet's, z_true CSV, disclosed there as PROXY ONLY -- this is the registered 'real verdict' F10(c) itself calls for)."
+  },
+  "complete": true,
+  "elapsed_s": 1170.8977191448212
+}

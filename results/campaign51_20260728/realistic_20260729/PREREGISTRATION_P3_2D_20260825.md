@@ -302,3 +302,33 @@ F15 fresh costing line GRANTED).**
    adjudicate on the pooled gate. (ii) F14 POWER heads-up: smoke |D_C₂| ≈ 5e-4…1.5e-3 vs
    band ≈ 2.3–2.6e-3 — the B-C discrimination clause will likely be UNDERPOWERED, the
    registered return-to-author outcome; no TWIN2 verdict is expected from that clause.
+
+**PA-2D-9 (2026-08-26; σ freeze + the registered verdict: CONTROL-FAIL — banked, no TWIN2
+statement; the fail-at-predicted-value control did its job).**
+
+1. **σ freeze (all realized, frozen):** LHS₂(B-T) = 0.00500770 ± 0.00011615; LHS₂(B-C) =
+   0.00431338 ± 0.00010642 (24 seeds each, frozen C₂\*); RHS₂(twin) = 0.01451300 ±
+   0.00045293; RHS₂(coded) = 0.01507225 ± 0.00046202 (N = 25,600, 128 pooled chunks, zero
+   duplicate seeds); D_C₂ = −0.00083037 ± 0.00003897; κ̂₂ = 0.98132; RHS₂,BR = 0.00908280 ±
+   0.00023752. Realized RHS SE 4.53e-4 ≤ the F15 fallback 6.38e-4 ✓ (the PA-2D-8 costing
+   delivered as forecast). F10(c): 0/32 task-level fails (the combined-flag False is a
+   flag-aggregation artifact to be checked — no task failed).
+2. **GATE B2-R: FAIL.** Banked side LHS₂,BR = 0.00332207 ± 0.00009164 (24 seeds, F9 form) vs
+   the model prediction 0.00908280 ± 0.00023752 — |Δ| = 0.00576 ≈ 3.0× the band
+   max(3.35σ_comb, ε₂) = 1.914e-3. **Registered verdict: CONTROL-FAIL** (the C-A map): no
+   TWIN2-CALIBRATED/MISCALIBRATED statement banks; the identity comparison frame is defective
+   until diagnosed.
+3. **Diagnostic (zero-compute, [ORCH], banked with its falsifier):** ONE global factor
+   explains everything measured: banked-side × r₂ (= 2.6124925, the registered α↔β guard)
+   brings BOTH the primary identity (0.01308 vs 0.01451, |Δ| = 1.43e-3 < ε₂) AND the B2-R
+   transform (0.00868 vs 0.00908, |Δ| = 4.0e-4 < ε₂) into band simultaneously — the exact
+   signature F9 registered r₂ to catch, localized to the banked side's C₂\* pairing (F4:
+   C₂\* ≡ β_G_φ·Σ̃^4D/(Σ^φ·β̄_Ḡ_φ) — the Σ^φ-vs-Σ^4D denominator choice). Falsifier: a
+   re-derivation of the F4 cancellation showing Σ^φ is correct would refute this and leave
+   CONTROL-FAIL unattributed. NOTE: the F4 formula is REVIEWER-DERIVED registered text —
+   correcting it requires a fresh derivation + review, never an orchestrator edit.
+4. **Return to the author (stage-5):** verdict CONTROL-FAIL + the single-factor diagnostic;
+   proposed next: one derivation pass re-deriving the F4 C₂\* pairing from the tower identity
+   (the suspect step: which Σ the venue draw-law contraction actually cancels against),
+   reviewed, then the verdict re-scored from the SAME frozen numbers (zero re-compute — only
+   C₂\* changes). All frozen numbers above are pairing-independent measurements.

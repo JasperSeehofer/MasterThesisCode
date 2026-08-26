@@ -1,0 +1,435 @@
+{
+  "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_CA_BOUNDED_IDENTITY_20260824.md \u00a72-\u00a73 (instrument: ca_rhs_scorer.py, per CLAIM_B0_FINITE_MOMENT_20260824.md \u00a73.1 + GATE_B_ADJUDICATION_FINITE_MOMENT_20260824.md \u00a73a/\u00a74), [P3-2D] RHS2 combine (--stage rhs2-combine)",
+  "n_tasks": 32,
+  "task_summaries": [
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task0_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task10_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task11_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task12_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task13_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task14_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task15_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task16_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task17_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task18_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task19_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task1_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task20_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task21_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task22_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task23_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task24_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task25_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task26_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task27_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task28_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task29_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task2_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task30_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task31_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task3_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task4_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task5_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task6_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task7_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task8_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    },
+    {
+      "path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task9_rhs2_output.json",
+      "complete": true,
+      "n_chunks": 4,
+      "n_drawn_total": 800
+    }
+  ],
+  "n_drawn_total": 25600,
+  "arms": {
+    "twin": {
+      "mean": 0.01451299925862582,
+      "se": 0.000452928637191005,
+      "n_chunks_pooled": 128,
+      "n_accepted_total": 23446
+    },
+    "coded": {
+      "mean": 0.01507225070293873,
+      "se": 0.0004620223812027737,
+      "n_chunks_pooled": 128,
+      "n_accepted_total": 23446
+    }
+  },
+  "D_C2_accumulator": {
+    "mean": -0.0008303742962684042,
+    "se": 3.8973871796417684e-05,
+    "n_chunks_pooled": 128
+  },
+  "kappa_hat2": 0.9813186201470828,
+  "RHS_BR2": {
+    "mean": 0.00908280315226783,
+    "se": 0.00023752333986244988,
+    "n_chunks_pooled": 128
+  },
+  "r2_registered": 2.6124925,
+  "C_TCI2_indicator_profile_pooled": {
+    "twin": {
+      "tau_30": {
+        "mean": 0.056679687500000006,
+        "se": 0.0014011443225509926,
+        "n_chunks_pooled": 128
+      },
+      "tau_100": {
+        "mean": 0.08949218749999999,
+        "se": 0.0017501404644749145,
+        "n_chunks_pooled": 128
+      },
+      "tau_300": {
+        "mean": 0.124453125,
+        "se": 0.0021402262330457327,
+        "n_chunks_pooled": 128
+      },
+      "tau_1000": {
+        "mean": 0.16804687499999998,
+        "se": 0.002473552511956139,
+        "n_chunks_pooled": 128
+      }
+    },
+    "coded": {
+      "tau_30": {
+        "mean": 0.05914062500000001,
+        "se": 0.0014205819053050473,
+        "n_chunks_pooled": 128
+      },
+      "tau_100": {
+        "mean": 0.09312500000000001,
+        "se": 0.0017546689684884659,
+        "n_chunks_pooled": 128
+      },
+      "tau_300": {
+        "mean": 0.1290234375,
+        "se": 0.0021849032631130728,
+        "n_chunks_pooled": 128
+      },
+      "tau_1000": {
+        "mean": 0.174609375,
+        "se": 0.002544274159924834,
+        "n_chunks_pooled": 128
+      }
+    }
+  },
+  "F10c_zmarginal_gate_per_task": [
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task0_rhs2_output.json",
+      "ks_pvalue": 0.7781158010357612,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task10_rhs2_output.json",
+      "ks_pvalue": 0.8440552931427913,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task11_rhs2_output.json",
+      "ks_pvalue": 0.5327182173194378,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task12_rhs2_output.json",
+      "ks_pvalue": 0.47899605510039905,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task13_rhs2_output.json",
+      "ks_pvalue": 0.3458422338187457,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task14_rhs2_output.json",
+      "ks_pvalue": 0.16944590611080407,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task15_rhs2_output.json",
+      "ks_pvalue": 0.446147638231078,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task16_rhs2_output.json",
+      "ks_pvalue": 0.8490782058877752,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task17_rhs2_output.json",
+      "ks_pvalue": 0.7034871403239277,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task18_rhs2_output.json",
+      "ks_pvalue": 0.8392412296845952,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task19_rhs2_output.json",
+      "ks_pvalue": 0.46869984379477414,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task1_rhs2_output.json",
+      "ks_pvalue": 0.5708823595596096,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task20_rhs2_output.json",
+      "ks_pvalue": 0.019671546244768773,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task21_rhs2_output.json",
+      "ks_pvalue": 0.23410860566602287,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task22_rhs2_output.json",
+      "ks_pvalue": 0.5490698113819769,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task23_rhs2_output.json",
+      "ks_pvalue": 0.9043387906084577,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task24_rhs2_output.json",
+      "ks_pvalue": 0.17738311801213527,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task25_rhs2_output.json",
+      "ks_pvalue": 0.39198591976136044,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task26_rhs2_output.json",
+      "ks_pvalue": 0.2959521268523084,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task27_rhs2_output.json",
+      "ks_pvalue": 0.46869984379477414,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task28_rhs2_output.json",
+      "ks_pvalue": 0.15487765604725393,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task29_rhs2_output.json",
+      "ks_pvalue": 0.017583759259224008,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task2_rhs2_output.json",
+      "ks_pvalue": 0.8515486256998123,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task30_rhs2_output.json",
+      "ks_pvalue": 0.527953836056458,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task31_rhs2_output.json",
+      "ks_pvalue": 0.8148133761849959,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task3_rhs2_output.json",
+      "ks_pvalue": 0.16248191992667857,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task4_rhs2_output.json",
+      "ks_pvalue": 0.00977190462789853,
+      "pass": false
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task5_rhs2_output.json",
+      "ks_pvalue": 0.3407389789423946,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task6_rhs2_output.json",
+      "ks_pvalue": 0.49900192701175694,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task7_rhs2_output.json",
+      "ks_pvalue": 0.6245805863659765,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task8_rhs2_output.json",
+      "ks_pvalue": 0.6574508367893578,
+      "pass": true
+    },
+    {
+      "task_path": "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_20260826/task9_rhs2_output.json",
+      "ks_pvalue": 0.6012765322113691,
+      "pass": true
+    }
+  ],
+  "F10c_n_accepted_pooled": 23446,
+  "F10c_all_pass": false
+}
