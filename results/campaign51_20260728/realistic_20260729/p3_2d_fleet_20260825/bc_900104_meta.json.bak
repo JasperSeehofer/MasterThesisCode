@@ -1,0 +1,29 @@
+{
+  "subdir": "bc_900104",
+  "seed": 900104,
+  "arm": "bc",
+  "venue": "b0i2d",
+  "catalogue_numerator_survival_2d": "off",
+  "work_root": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bc_900104_work",
+  "crb_csv": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bc_900104_work/seed900104/simulations/prepared_cramer_rao_bounds.csv",
+  "diagnostics_csv": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bc_900104_work/seed900104/simulations/diagnostics/event_likelihoods.csv",
+  "wall_time_s": 121.22328472137451,
+  "elapsed_evaluate_s": 114.59052801132202,
+  "catalogue_pin_ok": true,
+  "n_events": 200,
+  "rhs_f2_provenance_bitcheck": {
+    "pass": false,
+    "max_rel_dev": 1.533718864004511e-14
+  },
+  "a22_stamp": {
+    "git_commit_at_start": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "phi",
+    "selection_in_completion_numerator": "fused",
+    "mass_filter_sigma": "symmetric",
+    "catalogue_numerator_survival_2d": "off",
+    "catalogue_numerator_survival_2d_center": "eff"
+  },
+  "git_commit": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0"
+}

@@ -1,0 +1,29 @@
+{
+  "subdir": "bt_900103",
+  "seed": 900103,
+  "arm": "bt",
+  "venue": "b0i2d",
+  "catalogue_numerator_survival_2d": "mz_sel",
+  "work_root": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_2d_fleet_20260825/bt_900103_work",
+  "crb_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_2d_fleet_20260825/bt_900103_work/seed900103/simulations/prepared_cramer_rao_bounds.csv",
+  "diagnostics_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_2d_fleet_20260825/bt_900103_work/seed900103/simulations/diagnostics/event_likelihoods.csv",
+  "wall_time_s": 124.24416947364807,
+  "elapsed_evaluate_s": 117.72932386398315,
+  "catalogue_pin_ok": true,
+  "n_events": 200,
+  "rhs_f2_provenance_bitcheck": {
+    "pass": false,
+    "max_rel_dev": 7.804110921978637e-15
+  },
+  "a22_stamp": {
+    "git_commit_at_start": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "phi",
+    "selection_in_completion_numerator": "fused",
+    "mass_filter_sigma": "symmetric",
+    "catalogue_numerator_survival_2d": "mz_sel",
+    "catalogue_numerator_survival_2d_center": "eff"
+  },
+  "git_commit": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0"
+}

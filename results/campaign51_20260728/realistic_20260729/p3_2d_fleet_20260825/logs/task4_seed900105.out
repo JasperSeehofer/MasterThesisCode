@@ -1,0 +1,74 @@
+=== p3-2d-fleet task=4 seed=900105 out_root=/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825 host=uc2n844.localdomain commit=fb4ac4eea8bb415e38d542f6f458b3dd259060f0 ===
+--- arm=bc seed=900105 ---
+{
+  "subdir": "bc_900105",
+  "seed": 900105,
+  "arm": "bc",
+  "venue": "b0i2d",
+  "catalogue_numerator_survival_2d": "off",
+  "work_root": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bc_900105_work",
+  "crb_csv": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bc_900105_work/seed900105/simulations/prepared_cramer_rao_bounds.csv",
+  "wall_time_s": 110.96414399147034,
+  "elapsed_evaluate_s": 104.41005206108093,
+  "catalogue_pin_ok": true,
+  "n_events": 200,
+  "rhs_f2_provenance_bitcheck": {
+    "pass": false,
+    "max_rel_dev": 3.3522754478495176e-15
+  },
+  "a22_stamp": {
+    "git_commit_at_start": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "phi",
+    "selection_in_completion_numerator": "fused",
+    "mass_filter_sigma": "symmetric",
+    "catalogue_numerator_survival_2d": "off",
+    "catalogue_numerator_survival_2d_center": "eff"
+  },
+  "git_commit": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0"
+}
+{
+  "arm": "bc",
+  "reused": [],
+  "freshly_ran": [
+    900105
+  ]
+}
+--- arm=bt seed=900105 ---
+{
+  "subdir": "bt_900105",
+  "seed": 900105,
+  "arm": "bt",
+  "venue": "b0i2d",
+  "catalogue_numerator_survival_2d": "mz_sel",
+  "work_root": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bt_900105_work",
+  "crb_csv": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bt_900105_work/seed900105/simulations/prepared_cramer_rao_bounds.csv",
+  "wall_time_s": 111.19004535675049,
+  "elapsed_evaluate_s": 104.69253897666931,
+  "catalogue_pin_ok": true,
+  "n_events": 200,
+  "rhs_f2_provenance_bitcheck": {
+    "pass": false,
+    "max_rel_dev": 3.3522754478495176e-15
+  },
+  "a22_stamp": {
+    "git_commit_at_start": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "phi",
+    "selection_in_completion_numerator": "fused",
+    "mass_filter_sigma": "symmetric",
+    "catalogue_numerator_survival_2d": "mz_sel",
+    "catalogue_numerator_survival_2d_center": "eff"
+  },
+  "git_commit": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0"
+}
+{
+  "arm": "bt",
+  "reused": [],
+  "freshly_ran": [
+    900105
+  ]
+}
+=== done: task=4 seed=900105 ===

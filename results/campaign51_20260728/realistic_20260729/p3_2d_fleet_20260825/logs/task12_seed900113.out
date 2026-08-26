@@ -1,0 +1,74 @@
+=== p3-2d-fleet task=12 seed=900113 out_root=/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825 host=uc2n633.localdomain commit=fb4ac4eea8bb415e38d542f6f458b3dd259060f0 ===
+--- arm=bc seed=900113 ---
+{
+  "subdir": "bc_900113",
+  "seed": 900113,
+  "arm": "bc",
+  "venue": "b0i2d",
+  "catalogue_numerator_survival_2d": "off",
+  "work_root": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bc_900113_work",
+  "crb_csv": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bc_900113_work/seed900113/simulations/prepared_cramer_rao_bounds.csv",
+  "wall_time_s": 122.84440732002258,
+  "elapsed_evaluate_s": 116.2838237285614,
+  "catalogue_pin_ok": true,
+  "n_events": 200,
+  "rhs_f2_provenance_bitcheck": {
+    "pass": false,
+    "max_rel_dev": 4.28065839926943e-15
+  },
+  "a22_stamp": {
+    "git_commit_at_start": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "phi",
+    "selection_in_completion_numerator": "fused",
+    "mass_filter_sigma": "symmetric",
+    "catalogue_numerator_survival_2d": "off",
+    "catalogue_numerator_survival_2d_center": "eff"
+  },
+  "git_commit": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0"
+}
+{
+  "arm": "bc",
+  "reused": [],
+  "freshly_ran": [
+    900113
+  ]
+}
+--- arm=bt seed=900113 ---
+{
+  "subdir": "bt_900113",
+  "seed": 900113,
+  "arm": "bt",
+  "venue": "b0i2d",
+  "catalogue_numerator_survival_2d": "mz_sel",
+  "work_root": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bt_900113_work",
+  "crb_csv": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bt_900113_work/seed900113/simulations/prepared_cramer_rao_bounds.csv",
+  "wall_time_s": 124.93414807319641,
+  "elapsed_evaluate_s": 118.45506715774536,
+  "catalogue_pin_ok": true,
+  "n_events": 200,
+  "rhs_f2_provenance_bitcheck": {
+    "pass": false,
+    "max_rel_dev": 4.28065839926943e-15
+  },
+  "a22_stamp": {
+    "git_commit_at_start": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "phi",
+    "selection_in_completion_numerator": "fused",
+    "mass_filter_sigma": "symmetric",
+    "catalogue_numerator_survival_2d": "mz_sel",
+    "catalogue_numerator_survival_2d_center": "eff"
+  },
+  "git_commit": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0"
+}
+{
+  "arm": "bt",
+  "reused": [],
+  "freshly_ran": [
+    900113
+  ]
+}
+=== done: task=12 seed=900113 ===

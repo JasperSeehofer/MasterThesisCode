@@ -118,7 +118,9 @@ ARM_FLAGS_2D: dict[str, str] = {
 }
 
 OUT_ROOT_DEFAULT: Path = THIS_DIR / "p3_2d_work"
-COMPANION_JSON_DEFAULT: Path = THIS_DIR / "ca_rhs_work2d" / "p3_2d_companion.json"
+# Row #204: v1 (GL-50 z-quadrature) is SUPERSEDED; the FROZEN C2* comes from the
+# PA-2D-3 segment-aware v2 pass. A11 provenance-freshness: never read v1.
+COMPANION_JSON_DEFAULT: Path = THIS_DIR / "ca_rhs_work2d" / "p3_2d_companion_v2.json"
 # GATE ACC-extended's own independent-replay scratch catalogue cache (host_pool_for_sigma_scale
 # needs a directory to build/cache the sigma_z_scale=1.0 catalogue variant into -- byte-identical
 # to the one the fleet task itself already built, so this is a cheap re-materialization, never a

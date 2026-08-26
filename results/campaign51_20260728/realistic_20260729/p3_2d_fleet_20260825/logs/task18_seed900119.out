@@ -1,0 +1,74 @@
+=== p3-2d-fleet task=18 seed=900119 out_root=/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825 host=uc2n679.localdomain commit=fb4ac4eea8bb415e38d542f6f458b3dd259060f0 ===
+--- arm=bc seed=900119 ---
+{
+  "subdir": "bc_900119",
+  "seed": 900119,
+  "arm": "bc",
+  "venue": "b0i2d",
+  "catalogue_numerator_survival_2d": "off",
+  "work_root": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bc_900119_work",
+  "crb_csv": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bc_900119_work/seed900119/simulations/prepared_cramer_rao_bounds.csv",
+  "wall_time_s": 113.08721828460693,
+  "elapsed_evaluate_s": 106.67196035385132,
+  "catalogue_pin_ok": true,
+  "n_events": 200,
+  "rhs_f2_provenance_bitcheck": {
+    "pass": false,
+    "max_rel_dev": 1.9840086301576092e-15
+  },
+  "a22_stamp": {
+    "git_commit_at_start": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "phi",
+    "selection_in_completion_numerator": "fused",
+    "mass_filter_sigma": "symmetric",
+    "catalogue_numerator_survival_2d": "off",
+    "catalogue_numerator_survival_2d_center": "eff"
+  },
+  "git_commit": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0"
+}
+{
+  "arm": "bc",
+  "reused": [],
+  "freshly_ran": [
+    900119
+  ]
+}
+--- arm=bt seed=900119 ---
+{
+  "subdir": "bt_900119",
+  "seed": 900119,
+  "arm": "bt",
+  "venue": "b0i2d",
+  "catalogue_numerator_survival_2d": "mz_sel",
+  "work_root": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bt_900119_work",
+  "crb_csv": "/pfs/work9/workspace/scratch/st_ac147838-emri/p3_2d_fleet_20260825/bt_900119_work/seed900119/simulations/prepared_cramer_rao_bounds.csv",
+  "wall_time_s": 109.09386396408081,
+  "elapsed_evaluate_s": 102.66465473175049,
+  "catalogue_pin_ok": true,
+  "n_events": 200,
+  "rhs_f2_provenance_bitcheck": {
+    "pass": false,
+    "max_rel_dev": 1.9840086301576092e-15
+  },
+  "a22_stamp": {
+    "git_commit_at_start": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "phi",
+    "selection_in_completion_numerator": "fused",
+    "mass_filter_sigma": "symmetric",
+    "catalogue_numerator_survival_2d": "mz_sel",
+    "catalogue_numerator_survival_2d_center": "eff"
+  },
+  "git_commit": "fb4ac4eea8bb415e38d542f6f458b3dd259060f0"
+}
+{
+  "arm": "bt",
+  "reused": [],
+  "freshly_ran": [
+    900119
+  ]
+}
+=== done: task=18 seed=900119 ===
