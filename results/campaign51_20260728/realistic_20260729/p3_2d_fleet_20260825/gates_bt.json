@@ -1,0 +1,855 @@
+{
+  "arm": "bt",
+  "n_seeds": 24,
+  "M2_LINK_per_seed": {
+    "900101": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 10.40510796256434,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": false,
+        "n_monster": 2,
+        "n_live": 84,
+        "threshold_nats": -50.0
+      },
+      "pass": false
+    },
+    "900102": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 15.461705628212819,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": false,
+        "n_monster": 5,
+        "n_live": 94,
+        "threshold_nats": -50.0
+      },
+      "pass": false
+    },
+    "900103": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 12.786553778084569,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": false,
+        "n_monster": 1,
+        "n_live": 84,
+        "threshold_nats": -50.0
+      },
+      "pass": false
+    },
+    "900104": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 9.831638570091986,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 106,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900105": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 11.72972630556616,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 84,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900106": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 11.58474703501315,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 96,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900107": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 14.486500551631947,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 94,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900108": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 12.651306748919733,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 95,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900109": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 21.74491309960477,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 92,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900110": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 9.943528254477112,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 99,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900111": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 14.554199046087176,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": false,
+        "n_monster": 2,
+        "n_live": 89,
+        "threshold_nats": -50.0
+      },
+      "pass": false
+    },
+    "900112": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 13.946354701859203,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 92,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900113": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 9.802900696378874,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 93,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900114": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 10.846185201224126,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 93,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900115": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 10.641714918066164,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 92,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900116": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 19.11860911022238,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 101,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900117": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 17.651835371300972,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 94,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900118": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 11.787771795958719,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 96,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900119": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 13.223493796860945,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": true,
+        "n_monster": 0,
+        "n_live": 99,
+        "threshold_nats": -50.0
+      },
+      "pass": true
+    },
+    "900120": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 15.998045328583213,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": false,
+        "n_monster": 1,
+        "n_live": 94,
+        "threshold_nats": -50.0
+      },
+      "pass": false
+    },
+    "900121": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 11.471493436729597,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": false,
+        "n_monster": 2,
+        "n_live": 88,
+        "threshold_nats": -50.0
+      },
+      "pass": false
+    },
+    "900122": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 11.241814733303242,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": false,
+        "n_monster": 2,
+        "n_live": 95,
+        "threshold_nats": -50.0
+      },
+      "pass": false
+    },
+    "900123": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 9.87023999808169,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": false,
+        "n_monster": 1,
+        "n_live": 95,
+        "threshold_nats": -50.0
+      },
+      "pass": false
+    },
+    "900124": {
+      "gate": "M2-LINK",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F11",
+      "part_i_rhs_f2_provenance_bitcheck": {
+        "pass": true,
+        "max_rel_dev": 0.0
+      },
+      "part_ii_mahalanobis": {
+        "pass": true,
+        "max_mahalanobis_sq": 9.988104439213387,
+        "chi2_2_threshold": 24.412145291047246,
+        "n_singular_covariance": 0
+      },
+      "part_iii_monster_absence": {
+        "pass": false,
+        "n_monster": 1,
+        "n_live": 88,
+        "threshold_nats": -50.0
+      },
+      "pass": false
+    }
+  },
+  "M2_LINK_all_pass": false,
+  "ACC_extended_per_seed": {
+    "900101": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900101,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900102": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900102,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900103": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900103,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900104": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900104,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900105": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900105,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900106": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900106,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900107": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900107,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900108": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900108,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900109": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900109,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900110": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900110,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900111": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900111,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900112": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900112,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900113": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900113,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900114": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900114,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900115": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900115,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900116": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900116,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900117": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900117,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900118": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900118,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900119": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900119,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900120": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900120,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900121": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900121,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900122": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900122,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900123": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900123,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    },
+    "900124": {
+      "gate": "ACC-extended",
+      "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md (2026-08-25, PA-2D-1/PA-2D-2 amended); A20_REVIEW_P3_2D_DESIGN_20260825.md (F2/F4/F7-F16 adopted verbatim), F12",
+      "seed": 900124,
+      "n_events": 200,
+      "n_drawn_total": 800,
+      "n_rounds": 1,
+      "p_bar_s": 0.25,
+      "p_bar_s_ci95": [
+        0.2199943020227793,
+        0.2800056979772207
+      ],
+      "note": "REPORTING gate (F12): the pre-2D 1D fleet rate 0.5821 is explicitly NOT a reference under the extended class-G law -- n_kept/p_bar_s may legitimately move."
+    }
+  },
+  "F10c_zmarginal_proxy": {
+    "pass": false,
+    "ks_statistic": 0.29333333333333333,
+    "ks_pvalue": 4.101898735213335e-15,
+    "scope": "PROXY ONLY (generator z_true histogram, not the RHS2 scorer's completion-class replay) -- see _gate_f10c_zmarginal_proxy docstring"
+  }
+}
