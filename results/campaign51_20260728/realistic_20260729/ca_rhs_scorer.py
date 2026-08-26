@@ -111,11 +111,25 @@ Usage:
     uv run python .../ca_rhs_scorer.py --stage score --n-events 5000 --seed 960001
     uv run python .../ca_rhs_scorer.py --stage manifest
     uv run python .../ca_rhs_scorer.py --stage determinism
+    uv run python .../ca_rhs_scorer.py --stage rhs2 --wbh-center eff --n-draws 1500 \
+        --seed 980001 --out-root ca_rhs_work/rhs2_task0 --out ca_rhs_work/rhs2_task0.json
+    uv run python .../ca_rhs_scorer.py --stage rhs2-combine --out-root ca_rhs_work \
+        --rhs2-task-glob 'rhs2_task*.json'
+
+[P3-2D] RHS2 (``--stage rhs2``/``--stage rhs2-combine``, PREREGISTRATION_P3_2D_20260825.md S2
+instrument (iii), PA-2D-1 F7-F16): the with-BH catalogue-leg twin's own RHS scorer -- see the
+"[P3-2D] RHS2" section below (near the end of this file) for the full derivation citations. Adds
+``RHS2 = E_Gbar[w2.1_acc]``, the F8 ``D_C2``/``kappa_hat2`` coherence accumulators, the F9 GATE
+B2-R2 model side (``r2 = 2.6124925`` hardcoded), the C-TCI2 profile, and the F10(c) FREE
+Gbar-class z-marginal consistency gate in its REAL (not fleet-proxy) form. ``rhs2-combine``
+pools independent-seed cluster-array-task JSONs (``cluster/p3_2d_rhs2.sbatch``) at the chunk
+level into the fleet RHS2 +/- SE.
 """
 
 import argparse
 import functools
 import json
+import platform
 import sys
 import time
 from pathlib import Path
@@ -1279,10 +1293,12 @@ def _score_events_2d(
             catalogue_numerator_survival_2d=catalogue_numerator_survival_2d,
             catalogue_numerator_survival_2d_center=catalogue_numerator_survival_2d_center,
             catalogue_global_selection=CATALOGUE_GLOBAL_SELECTION_SLOT,
-            # AMEND-1 (twin-adoption verification, 2026-08-25): pin the 1D cell
-            # explicitly -- the production default is now "auto"->"phi" (row
-            # #195); the registered score2d basis is the fleet's pinned "off".
-            catalogue_numerator_survival="off",
+            # PA-2D-6 precedent + verifier F9 (2026-08-26): the 1D cell at the
+            # production-default RESOLVED value "phi" (row #197 adoption; F7:
+            # "never 'auto'"), matching the fleet driver. Verified inert for
+            # every 2D object (the flag multiplies only the no-BH catalogue
+            # numerator; w2/D_C2/B-R2/C-TCI2 read with-BH columns only).
+            catalogue_numerator_survival="phi",
             h_bounds=(min(c1d.H_GRID_FULL), max(c1d.H_GRID_FULL)),
         )
     at = o5._rows_at_h(diag_csv, H_GEN)
@@ -1735,6 +1751,631 @@ def stage_lhs2d(out_path: Path) -> dict[str, Any]:
     return result
 
 
+# ── [P3-2D] RHS2: the extended-venue RHS scorer (--stage rhs2) ───────────────
+#
+# PREREGISTRATION_P3_2D_20260825.md sec2 instrument (iii) + PA-2D-1 F7-F16 + PA-2D-4 item 1.
+# Supersedes --stage score2d's SENTINEL-REFUSED D_C2/kappa_hat2/B-R2 slots now that PA-2D-1 F8/F9
+# registers their exact forms (score2d itself is left untouched -- historical, out of this
+# task's scope); adds the SIX-stamp A22 set (mass_filter_sigma, PA-2D-4 item 1), the F9 GATE
+# B2-R2 model side (r2 = R2_REGISTERED, hardcoded, never re-derived here -- mirrors
+# R_H_GEN_REGISTERED_LITERAL's own "registered literal, printed not re-derived" convention), and
+# the F10(c) FREE Gbar-class z-marginal consistency gate in its REAL (not b0i2d-fleet-proxy)
+# form. Draw law: host_mode="population_selected", UNCHANGED (F10(c): "the completion-class
+# z-marginal is unchanged from the 1D scorer's law" -- the [P3-2D] mass-law extension applies
+# ONLY to the catalogue leg's own generator, host_mode="catalogue_selected_2d", the b0i2d
+# fleet's own venue (p3_2d_fleet.py); there is no host (host_galaxy_index=-1) on the completion
+# leg to extend a mass law for -- disclosed in stage_score2d's own docstring, carried here
+# unchanged, and independently re-confirmed by the F10(c) gate below rather than merely
+# asserted). Reuses c1d.MirrorUniverseGenerator.draw_realization and
+# c1d.draw_selected_population_redshifts VERBATIM (the A13 dispatch-path rule) -- no draw law
+# is reimplemented anywhere in this section.
+
+RHS2_BASE_SEED_DEFAULT: int = 980001  # disjoint from 960001 (stage_score)/970001 (stage_acceptance)
+F10C_REFERENCE_BASE_SEED: int = 990001  # disjoint zero-evaluate reference-pool seed stream
+F10C_REFERENCE_N_DEFAULT: int = 20_000  # target drawn events for the zero-evaluate reference pool
+
+# PA-2D-1 F9: r2 = 1/r_Malm(H_GEN) = Sigma^phi/Sigma^4D = 2.6124925 -- pre-derived, banked
+# (guards the alpha<->beta mix-up class, the most likely 2D scorer defect); a REGISTERED
+# LITERAL, never re-derived by this module (mirrors R_H_GEN_REGISTERED_LITERAL's convention).
+R2_REGISTERED: float = 2.6124925
+
+
+def _replay_completion_host_z(
+    seed: int,
+    n: int,
+    gen: Any,
+    completeness_obj: Any,
+    phi_survival_table: Any,
+) -> npt.NDArray[np.float64]:
+    """[P3-2D] F10(c): recover ``host_z`` for a ``host_mode="population_selected"``
+    ``draw_realization`` call -- NOT written to any output column for that host_mode
+    (``correspondence_1d.py`` :2021-2049 writes no ``z_true`` for ``"population_selected"``,
+    unlike ``"catalogue_selected"``/``"catalogue_selected_2d"``). Byte-identical replay of
+    ``draw_realization``'s OWN rng-consumption order: (b) the SNR-weighted donor-row draw runs
+    FIRST (consumed here, discarded -- order only), THEN (a) the host-z draw via the SAME
+    REGISTERED generator function (:func:`c1d.draw_selected_population_redshifts`), reused
+    verbatim -- the ``p3_2d_fleet.gate_acc_extended`` precedent for recovering a value
+    ``draw_realization`` computes internally but does not return as a column.
+    """
+    rng = np.random.default_rng(seed)
+    snr = gen._donor_rows["SNR"].to_numpy(dtype=np.float64)
+    row_p = snr / snr.sum()
+    rng.choice(len(gen._donor_rows), size=n, replace=False, p=row_p)
+    host_z = c1d.draw_selected_population_redshifts(
+        rng, n, completeness_obj, phi_survival_table, h=c1d.H_TRUE
+    )
+    return np.asarray(host_z, dtype=np.float64)
+
+
+def _f10c_reference_pool(
+    base_seed: int,
+    n_target: int,
+    pool: Any,
+    completeness_obj: Any,
+    phi_survival_table: Any,
+    chunk_size: int,
+) -> npt.NDArray[np.float64]:
+    """F10(c) reference pool: a zero-``evaluate()`` accepted-``z`` histogram from the completion
+    class's OWN draw law (``host_mode="population_selected"``) at a large N and a seed stream
+    disjoint from any scored chunk -- the "real" F10(c) comparand (never the b0i2d-fleet's
+    unrelated 1D ``z_true`` CSV proxy, ``p3_2d_fleet._gate_f10c_zmarginal_proxy``'s disclosed
+    scope limit). F-0 applied directly from the drawn columns (the GATE ACC convention -- no
+    scoring needed: acceptance depends only on ``(d_hat, sigma_dL, SNR)``, never on ``z`` or the
+    with-BH arrangement).
+    """
+    cfg = c1d.CorrespondenceConfig(sigma_z_scale=1.0, area_scale=1.0, n_events=chunk_size)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    accepted_z: list[npt.NDArray[np.float64]] = []
+    n_drawn = 0
+    chunk_idx = 0
+    while n_drawn < n_target:
+        seed = base_seed + chunk_idx
+        events = gen.draw_realization(
+            seed,
+            host_pool=pool,
+            host_mode="population_selected",
+            completeness=completeness_obj,
+            phi_survival_table=phi_survival_table,
+        )
+        n_this = int(events.shape[0])
+        host_z = _replay_completion_host_z(seed, n_this, gen, completeness_obj, phi_survival_table)
+        d_hat = events["luminosity_distance"].to_numpy(dtype=np.float64)
+        sigma_dl = np.sqrt(
+            events["delta_luminosity_distance_delta_luminosity_distance"].to_numpy(dtype=np.float64)
+        )
+        snr = events["SNR"].to_numpy(dtype=np.float64)
+        frac_err = sigma_dl / np.clip(d_hat, 1.0e-12, None)
+        acc = (frac_err < FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD) & (snr >= SNR_THRESHOLD)
+        accepted_z.append(host_z[acc])
+        n_drawn += n_this
+        chunk_idx += 1
+    return np.concatenate(accepted_z) if accepted_z else np.array([], dtype=np.float64)
+
+
+def _aggregate_rhs2(
+    chunk_means: dict[str, list[float]],
+    tci_chunk_means: dict[str, dict[float, list[float]]],
+    dc2_chunk_means: list[float],
+    br2_chunk_means: list[float],
+    running: dict[str, dict[str, float]],
+    per_chunk: list[dict[str, Any]],
+    n_drawn_total: int,
+    n_draws_target: int,
+    base_seed: int,
+    chunk: int,
+    chunk_idx: int,
+    wbh_center: str,
+    stamp: dict[str, Any],
+    env_provenance: dict[str, Any],
+    complete: bool,
+    t0: float,
+    f10c_result: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Shared aggregation for both the per-chunk checkpoint write and the final
+    ``--stage rhs2`` output -- so a walltime-killed task's LAST WRITTEN checkpoint is exactly
+    the same schema (minus ``F10c_zmarginal_gate``, computed once at the end) as a completed
+    run's output (cluster gotcha 9: JSON-only-at-end instruments lose everything on a kill).
+    """
+
+    def _chunk_agg(vals: list[float]) -> dict[str, Any]:
+        arr = np.array(vals, dtype=np.float64)
+        mean = float(arr.mean()) if arr.size else float("nan")
+        se = float(arr.std(ddof=1) / np.sqrt(arr.size)) if arr.size > 1 else float("nan")
+        return {"mean": mean, "se": se, "n_chunks": int(arr.size)}
+
+    arms_out: dict[str, Any] = {}
+    for arm_name in ARRANGEMENT_FLAGS_2D:
+        agg = _chunk_agg(chunk_means[arm_name])
+        arms_out[arm_name] = {
+            "RHS2_w": agg["mean"],
+            "SE": agg["se"],
+            "n_chunks": agg["n_chunks"],
+            "n_accepted_total": int(running[arm_name]["n_accepted"]),
+        }
+    dc2_agg = _chunk_agg(dc2_chunk_means)
+    br2_agg = _chunk_agg(br2_chunk_means)
+    twin_mean = arms_out["twin"]["RHS2_w"]
+    coded_mean = arms_out["coded"]["RHS2_w"]
+    # F8 REGISTERED form (verifier F3 fix, 2026-08-26): kappa_hat2 =
+    # E[W~2 * w2_BC * 1_acc] / E[w2_BT * 1_acc] = (D_C2 + RHS2_coded)/RHS2_twin.
+    kappa_hat2 = (
+        (dc2_agg["mean"] + coded_mean) / twin_mean
+        if twin_mean and not np.isnan(twin_mean) and twin_mean != 0.0
+        else float("nan")
+    )
+
+    tci_out: dict[str, dict[str, Any]] = {}
+    for arm_name in ARRANGEMENT_FLAGS_2D:
+        tci_out[arm_name] = {
+            f"tau_{int(tau)}": _chunk_agg(tci_chunk_means[arm_name][tau]) for tau in C_TCI_TAUS
+        }
+
+    return {
+        "reference": f"{REGISTRATION_SECTION}, [P3-2D] RHS2 (--stage rhs2, PA-2D-1 F7-F16)",
+        "h_gen": H_GEN,
+        "r2_registered": R2_REGISTERED,
+        "catalogue_global_selection_slot": CATALOGUE_GLOBAL_SELECTION_SLOT,
+        "selection_in_completion_numerator": SELECTION_IN_COMPLETION_NUMERATOR,
+        "wbh_center": wbh_center,
+        "a22_stamp": stamp,
+        "a22_flags": {  # PA-2D-4 item 1: SIX resolved values, never "auto"
+            "catalogue_global_selection": CATALOGUE_GLOBAL_SELECTION_SLOT,
+            "selection_in_completion_numerator": SELECTION_IN_COMPLETION_NUMERATOR,
+            "catalogue_numerator_survival": "off",  # AMEND-1: score2d/rhs2 basis pin
+            "catalogue_numerator_survival_2d": dict(ARRANGEMENT_FLAGS_2D),
+            "catalogue_numerator_survival_2d_center": wbh_center,
+            "mass_filter_sigma": "symmetric",
+        },
+        "env_provenance": env_provenance,
+        "n_draws_target": n_draws_target,
+        "n_drawn_total": n_drawn_total,
+        "n_syn_total_drawn": n_drawn_total,
+        "base_seed": base_seed,
+        "chunk_size": chunk,
+        "registered_chunk_size": REGISTERED_CHUNK_SIZE,
+        "chunk_size_is_registered": chunk == REGISTERED_CHUNK_SIZE,
+        "n_chunks": chunk_idx,
+        "per_chunk": per_chunk,
+        "arms": arms_out,
+        "D_C2_accumulator": dc2_agg,  # F8: E_Gbar[(W~2-1).w2_BC.1_acc]
+        "kappa_hat2": kappa_hat2,  # F8: E_Gbar[W~2.w2_BC.1_acc] / E_Gbar[w2_BT.1_acc]
+        "RHS_BR2": br2_agg,  # F9: E_Gbar[w2_BT/(1+(r2-1).w2_BT).1_acc]
+        "C_TCI2_indicator_profile": tci_out,
+        "c_tci_taus": list(C_TCI_TAUS),
+        "F10c_zmarginal_gate": f10c_result,
+        "complete": complete,
+        "elapsed_s": time.time() - t0,
+    }
+
+
+def stage_rhs2(
+    n_draws_target: int,
+    base_seed: int,
+    out_root: Path,
+    out_path: Path,
+    wbh_center: str,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    f10c_reference_n: int = F10C_REFERENCE_N_DEFAULT,
+) -> dict[str, Any]:
+    """[P3-2D] RHS2 -- prereg S2 instrument (iii): ``RHS2 = E_Gbar[w2.1_acc]`` (PA-CA-1
+    drawn-count form) with the per-draw F-0 filter, plus F8 (``D_C2``, ``kappa_hat2``), F9
+    (GATE B2-R2, ``r2 = R2_REGISTERED``), the C-TCI2 unscaled-indicator profile, and F10(c) (the
+    REAL Gbar-class z-marginal consistency gate).
+
+    Draw law: ``host_mode="population_selected"`` (UNCHANGED, F10(c)) via
+    :meth:`c1d.MirrorUniverseGenerator.draw_realization` -- reused verbatim, never
+    reimplemented. Scored under BOTH with-BH arrangements (:data:`ARRANGEMENT_FLAGS_2D`) at
+    ``h=H_GEN`` via :func:`_score_events_2d` (the SAME ``run_mirror_seed_inprocess`` wholesale
+    call the b0i2d fleet uses).
+
+    Checkpointed EVERY chunk (cluster gotcha 9): the accumulator JSON at ``out_path`` is
+    rewritten after each chunk with ``"complete": False`` until the loop finishes, so a
+    walltime-killed array task still leaves a usable partial accumulation on disk.
+    """
+    if wbh_center not in ("raw", "eff"):
+        raise ValueError(
+            "wbh_center must be 'raw' or 'eff' (F2 ruling resolved this to 'eff' -- "
+            f"PREREGISTRATION_P3_2D_20260825.md PA-2D-1 F2); got {wbh_center!r}"
+        )
+    # PA-CA-11 guard (same convention as stage_score/stage_score2d's own).
+    _existing = sorted(out_root.glob("rhs2_chunk*_work"))
+    if _existing:
+        raise SystemExit(
+            f"REFUSED (PA-CA-11): out_root {out_root} already holds "
+            f"{len(_existing)} rhs2_chunk*_work dir(s) -- purge or use a fresh out-root before "
+            "a banked --stage rhs2 run."
+        )
+    o5._assert_h_true_in_grid()
+    t0 = time.time()
+    # A22: SIX resolved flags (PA-2D-4 item 1 adds mass_filter_sigma), git commit/dirty --
+    # written BEFORE any evaluate() call.
+    stamp: dict[str, Any] = {
+        **o5._a22_stamp(),
+        "catalogue_global_selection": CATALOGUE_GLOBAL_SELECTION_SLOT,
+        "selection_in_completion_numerator": SELECTION_IN_COMPLETION_NUMERATOR,
+        "catalogue_numerator_survival": "off",
+        "catalogue_numerator_survival_2d": dict(ARRANGEMENT_FLAGS_2D),
+        "catalogue_numerator_survival_2d_center": wbh_center,
+        "mass_filter_sigma": "symmetric",
+    }
+    env_provenance: dict[str, Any] = {
+        "python_version": sys.version,
+        "platform": platform.platform(),
+        "numpy_version": np.__version__,
+        "pandas_version": pd.__version__,
+    }
+
+    completeness_obj, phi_survival_table = _completion_class_objects(H_GEN)
+    handler, pool = _load_handler_and_pool()
+
+    chunk = min(chunk_size, DONOR_POOL_SIZE - 2)
+    cfg = c1d.CorrespondenceConfig(sigma_z_scale=1.0, area_scale=1.0, n_events=chunk)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+
+    chunk_means: dict[str, list[float]] = {arm: [] for arm in ARRANGEMENT_FLAGS_2D}
+    tci_chunk_means: dict[str, dict[float, list[float]]] = {
+        arm: {tau: [] for tau in C_TCI_TAUS} for arm in ARRANGEMENT_FLAGS_2D
+    }
+    dc2_chunk_means: list[float] = []
+    br2_chunk_means: list[float] = []
+    running: dict[str, dict[str, float]] = {
+        arm: {"sum": 0.0, "n_accepted": 0.0} for arm in ARRANGEMENT_FLAGS_2D
+    }
+    accepted_z_pool: list[npt.NDArray[np.float64]] = []
+    per_chunk: list[dict[str, Any]] = []
+    n_drawn_total = 0
+    chunk_idx = 0
+
+    # Verifier F8 fix (2026-08-26): task base seeds are strided by 100 in the
+    # sbatch (SEED = 980001 + 100*TID); a task may therefore never consume more
+    # than 100 chunk seeds or tasks collide.
+    if (n_draws_target + REGISTERED_CHUNK_SIZE - 1) // REGISTERED_CHUNK_SIZE > 100:
+        raise SystemExit("A21 STOP: n_draws implies >100 chunks -- seed stride exhausted")
+    while n_drawn_total < n_draws_target:
+        seed = base_seed + chunk_idx
+        events = gen.draw_realization(
+            seed,
+            host_pool=pool,
+            host_mode="population_selected",
+            completeness=completeness_obj,
+            phi_survival_table=phi_survival_table,
+        )
+        n_this_chunk = int(events.shape[0])
+        n_drawn_total += n_this_chunk
+
+        host_z = _replay_completion_host_z(
+            seed, n_this_chunk, gen, completeness_obj, phi_survival_table
+        )
+
+        idx_by_arm: dict[str, npt.NDArray[np.int64]] = {}
+        w2_by_arm: dict[str, npt.NDArray[np.float64]] = {}
+        l_wbh_by_arm: dict[str, npt.NDArray[np.float64]] = {}
+        tci_this_chunk: dict[str, dict[str, float]] = {}
+        for arm_name, flag in ARRANGEMENT_FLAGS_2D.items():
+            center = wbh_center if flag == "mz_sel" else "unset"
+            scored = _score_events_2d(
+                events,
+                out_root / f"rhs2_chunk{chunk_idx}_{arm_name}_work",
+                seed,
+                handler,
+                flag,
+                center,
+            )
+            w2_e = _w2_from_csv_columns(scored)
+            idx_by_arm[arm_name] = scored["event_idx"].to_numpy(dtype=np.int64)
+            w2_by_arm[arm_name] = w2_e
+            l_wbh_by_arm[arm_name] = scored["L_cat_with_bh"].to_numpy(dtype=np.float64)
+
+            running[arm_name]["sum"] += float(w2_e.sum())
+            running[arm_name]["n_accepted"] += float(w2_e.size)
+            chunk_means[arm_name].append(float(w2_e.sum()) / n_this_chunk)
+
+            r2_e = np.divide(1.0 - w2_e, w2_e, out=np.full_like(w2_e, np.inf), where=w2_e > 0.0)
+            tci_this_chunk[arm_name] = {}
+            for tau in C_TCI_TAUS:
+                val = float(np.sum(r2_e <= tau)) / n_this_chunk
+                tci_chunk_means[arm_name][tau].append(val)
+                tci_this_chunk[arm_name][f"tau_{int(tau)}"] = val
+
+        idx_sets = [set(v.tolist()) for v in idx_by_arm.values()]
+        arrangement_consistent = all(s == idx_sets[0] for s in idx_sets[1:])
+        if not arrangement_consistent:
+            # Verifier F2 amendment (2026-08-26): F-0 is arrangement-independent
+            # by construction, so an inconsistent chunk is an instrument defect
+            # -- A21 STOP, never a zero-valued contribution.
+            raise SystemExit(
+                f"A21 STOP chunk {chunk_idx} (seed {seed}): accepted event_idx differs between "
+                "2D arrangements -- F-0 is expected to be arrangement-independent; investigate "
+                "before trusting this chunk's contribution."
+            )
+
+        # F10(c): accepted z (arrangement-independent set) -> host_z lookup. event_idx ==
+        # the original row position in `events` (run_mirror_seed_inprocess writes `events`
+        # verbatim; evaluate()'s detection_index is the CRB CSV's own row index -- o5/
+        # _score_events docstring's "already F-0-accepted" convention).
+        acc_idx = np.array(sorted(set.intersection(*idx_sets)) if idx_sets else [], dtype=np.int64)
+        if acc_idx.size:
+            accepted_z_pool.append(host_z[acc_idx])
+
+        # F8: D_C2 = E_Gbar[(W~2-1).w2_BC.1_acc], W~2 = L_cat_with_bh^twin/L_cat_with_bh^coded,
+        # aligned by event_idx (SAME accepted rows scored under both arrangements this chunk).
+        if arrangement_consistent and idx_by_arm["twin"].size:
+            twin_order = np.argsort(idx_by_arm["twin"])
+            coded_order = np.argsort(idx_by_arm["coded"])
+            l_twin_sorted = l_wbh_by_arm["twin"][twin_order]
+            l_coded_sorted = l_wbh_by_arm["coded"][coded_order]
+            w2_bc_sorted = w2_by_arm["coded"][coded_order]
+            w_tilde2 = np.divide(
+                l_twin_sorted,
+                l_coded_sorted,
+                out=np.zeros_like(l_twin_sorted),
+                where=l_coded_sorted > 0.0,
+            )
+            dc2_term = (w_tilde2 - 1.0) * w2_bc_sorted
+        else:
+            dc2_term = np.array([], dtype=np.float64)
+        dc2_chunk_means.append(float(dc2_term.sum()) / n_this_chunk)
+
+        # F9: GATE B2-R2 model side, twin arrangement only, r2 = R2_REGISTERED.
+        w2_bt = w2_by_arm["twin"]
+        br2_term = w2_bt / (1.0 + (R2_REGISTERED - 1.0) * w2_bt)
+        br2_chunk_means.append(float(br2_term.sum()) / n_this_chunk)
+
+        per_chunk.append(
+            {
+                "chunk": chunk_idx,
+                "seed": seed,
+                "n_drawn": n_this_chunk,
+                "n_accepted_twin": int(w2_by_arm["twin"].size),
+                "n_accepted_coded": int(w2_by_arm["coded"].size),
+                "arrangement_consistent": arrangement_consistent,
+                "mean_w2_twin_chunk_dc": chunk_means["twin"][-1],
+                "mean_w2_coded_chunk_dc": chunk_means["coded"][-1],
+                "dc2_term_chunk": dc2_chunk_means[-1],
+                "br2_term_chunk": br2_chunk_means[-1],
+                "tci_twin": tci_this_chunk["twin"],
+                "tci_coded": tci_this_chunk["coded"],
+            }
+        )
+        chunk_idx += 1
+
+        # cluster gotcha 9: write the accumulator EVERY chunk, never only at the end -- a
+        # walltime-killed task still leaves a usable partial JSON on disk.
+        partial = _aggregate_rhs2(
+            chunk_means,
+            tci_chunk_means,
+            dc2_chunk_means,
+            br2_chunk_means,
+            running,
+            per_chunk,
+            n_drawn_total,
+            n_draws_target,
+            base_seed,
+            chunk,
+            chunk_idx,
+            wbh_center,
+            stamp,
+            env_provenance,
+            complete=False,
+            t0=t0,
+        )
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(partial, indent=2))
+
+    accepted_z_arr = (
+        np.concatenate(accepted_z_pool) if accepted_z_pool else np.array([], dtype=np.float64)
+    )
+    ref_pool = _f10c_reference_pool(
+        F10C_REFERENCE_BASE_SEED,
+        f10c_reference_n,
+        pool,
+        completeness_obj,
+        phi_survival_table,
+        chunk,
+    )
+    from scipy.stats import ks_2samp
+
+    if accepted_z_arr.size and ref_pool.size:
+        ks_stat, ks_p = ks_2samp(accepted_z_arr, ref_pool)
+        f10c_pass: bool | None = bool(ks_p > 0.01)
+    else:
+        ks_stat, ks_p, f10c_pass = float("nan"), float("nan"), None
+    f10c_result: dict[str, Any] = {
+        "gate": "F10(c)",
+        "reference": f"{REGISTRATION_SECTION}, PA-2D-1 F10(c) (registered FREE prediction)",
+        "n_accepted_this_run": int(accepted_z_arr.size),
+        "n_reference_pool": int(ref_pool.size),
+        "reference_base_seed": F10C_REFERENCE_BASE_SEED,
+        "reference_target_n_drawn": f10c_reference_n,
+        "ks_statistic": float(ks_stat),
+        "ks_pvalue": float(ks_p),
+        "pass": f10c_pass,
+        "scope": (
+            "REAL (this scorer's own completion-class accepted-z replay vs a zero-evaluate "
+            "reference pool from the SAME law) -- supersedes p3_2d_fleet.py's "
+            "_gate_f10c_zmarginal_proxy (which compared against a DIFFERENT venue's, the b0i "
+            "1D fleet's, z_true CSV, disclosed there as PROXY ONLY -- this is the registered "
+            "'real verdict' F10(c) itself calls for)."
+        ),
+    }
+
+    result = _aggregate_rhs2(
+        chunk_means,
+        tci_chunk_means,
+        dc2_chunk_means,
+        br2_chunk_means,
+        running,
+        per_chunk,
+        n_drawn_total,
+        n_draws_target,
+        base_seed,
+        chunk,
+        chunk_idx,
+        wbh_center,
+        stamp,
+        env_provenance,
+        complete=True,
+        t0=t0,
+        f10c_result=f10c_result,
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(result, indent=2))
+
+    print("=== [P3-2D] ca_rhs_scorer -- RHS2 (--stage rhs2, PA-2D-1 F7-F16) ===")
+    print(f"n_drawn_total={n_drawn_total} (target={n_draws_target}), n_chunks={chunk_idx}")
+    for arm_name, r in result["arms"].items():
+        print(
+            f"  RHS2_w({arm_name}) = {r['RHS2_w']!r}  SE={r['SE']!r}  "
+            f"n_accepted_total={r['n_accepted_total']}  n_chunks={r['n_chunks']}"
+        )
+    print(f"D_C2 = {result['D_C2_accumulator']['mean']!r}  SE={result['D_C2_accumulator']['se']!r}")
+    print(f"kappa_hat2 = {result['kappa_hat2']!r}")
+    print(
+        f"RHS_BR2 (r2={R2_REGISTERED}) = {result['RHS_BR2']['mean']!r}  "
+        f"SE={result['RHS_BR2']['se']!r}"
+    )
+    print(
+        f"F10(c) z-marginal gate: n_accepted={f10c_result['n_accepted_this_run']} "
+        f"n_ref={f10c_result['n_reference_pool']} ks_p={f10c_result['ks_pvalue']!r} "
+        f"pass={f10c_result['pass']}"
+    )
+    print(f"elapsed = {result['elapsed_s']:.1f} s")
+    print(f"wrote {out_path}")
+    return result
+
+
+def stage_rhs2_combine(task_paths: list[Path], out_path: Path) -> dict[str, Any]:
+    """[P3-2D] ``--stage rhs2-combine``: pool per-array-task ``--stage rhs2`` JSONs
+    (independent-seed chunks, ``cluster/p3_2d_rhs2.sbatch``) into the fleet-level ``RHS2 +/-
+    SE``. Pools at the CHUNK level (every task's ``per_chunk`` rows concatenated into one array
+    per quantity, then mean/SE over the pooled chunks) -- exact, no weighted-mean-of-means
+    approximation, since every chunk (any task) is an i.i.d. sample of
+    :data:`REGISTERED_CHUNK_SIZE` synthetic draws under the SAME law.
+    """
+    pooled_twin: list[float] = []
+    pooled_coded: list[float] = []
+    pooled_dc2: list[float] = []
+    pooled_br2: list[float] = []
+    pooled_tci: dict[str, dict[str, list[float]]] = {
+        "twin": {f"tau_{int(tau)}": [] for tau in C_TCI_TAUS},
+        "coded": {f"tau_{int(tau)}": [] for tau in C_TCI_TAUS},
+    }
+    n_drawn_total = 0
+    n_accepted_total = {"twin": 0, "coded": 0}
+    task_summaries: list[dict[str, Any]] = []
+    f10c_per_task: list[dict[str, Any]] = []
+    f10c_accepted_n = 0
+
+    seen_seeds: set[int] = set()
+    for p in task_paths:
+        d = json.loads(p.read_text())
+        if not d.get("complete", False):
+            print(
+                f"WARNING: {p} not marked complete -- pooling its written (checkpointed) "
+                "chunks anyway, disclosed (cluster gotcha 9 partial-progress convention).",
+                file=sys.stderr,
+            )
+        for row in d["per_chunk"]:
+            # Verifier F8 guard (2026-08-26): a duplicate chunk seed across
+            # pooled tasks means double-counted draws and an invalid SE.
+            row_seed = int(row["seed"])
+            if row_seed in seen_seeds:
+                raise SystemExit(
+                    f"A21 STOP: duplicate chunk seed {row_seed} across pooled task JSONs "
+                    f"(at {p}) -- the independent-chunk premise is violated."
+                )
+            seen_seeds.add(row_seed)
+            pooled_twin.append(row["mean_w2_twin_chunk_dc"])
+            pooled_coded.append(row["mean_w2_coded_chunk_dc"])
+            pooled_dc2.append(row["dc2_term_chunk"])
+            pooled_br2.append(row["br2_term_chunk"])
+            for tau in C_TCI_TAUS:
+                key = f"tau_{int(tau)}"
+                if "tci_twin" in row:
+                    pooled_tci["twin"][key].append(row["tci_twin"][key])
+                    pooled_tci["coded"][key].append(row["tci_coded"][key])
+        n_drawn_total += int(d["n_drawn_total"])
+        for arm in ("twin", "coded"):
+            n_accepted_total[arm] += int(d["arms"][arm]["n_accepted_total"])
+        f10c = d.get("F10c_zmarginal_gate")
+        if f10c:
+            f10c_accepted_n += int(f10c.get("n_accepted_this_run", 0))
+            f10c_per_task.append(
+                {
+                    "task_path": str(p),
+                    "ks_pvalue": f10c.get("ks_pvalue"),
+                    "pass": f10c.get("pass"),
+                }
+            )
+        task_summaries.append(
+            {
+                "path": str(p),
+                "complete": d.get("complete", False),
+                "n_chunks": d["n_chunks"],
+                "n_drawn_total": d["n_drawn_total"],
+            }
+        )
+
+    def _agg(vals: list[float]) -> dict[str, Any]:
+        arr = np.array(vals, dtype=np.float64)
+        mean = float(arr.mean()) if arr.size else float("nan")
+        se = float(arr.std(ddof=1) / np.sqrt(arr.size)) if arr.size > 1 else float("nan")
+        return {"mean": mean, "se": se, "n_chunks_pooled": int(arr.size)}
+
+    rhs2_twin = _agg(pooled_twin)
+    rhs2_coded = _agg(pooled_coded)
+    dc2 = _agg(pooled_dc2)
+    br2 = _agg(pooled_br2)
+    twin_mean = rhs2_twin["mean"]
+    # F8 REGISTERED form (verifier F3 fix): (D_C2 + RHS2_coded)/RHS2_twin.
+    kappa_hat2 = (
+        (dc2["mean"] + rhs2_coded["mean"]) / twin_mean
+        if twin_mean and not np.isnan(twin_mean) and twin_mean != 0.0
+        else float("nan")
+    )
+    tci_out: dict[str, dict[str, Any]] = {
+        arm: {key: _agg(vals) for key, vals in taus.items()} for arm, taus in pooled_tci.items()
+    }
+
+    result: dict[str, Any] = {
+        "reference": f"{REGISTRATION_SECTION}, [P3-2D] RHS2 combine (--stage rhs2-combine)",
+        "n_tasks": len(task_paths),
+        "task_summaries": task_summaries,
+        "n_drawn_total": n_drawn_total,
+        "arms": {
+            "twin": {**rhs2_twin, "n_accepted_total": n_accepted_total["twin"]},
+            "coded": {**rhs2_coded, "n_accepted_total": n_accepted_total["coded"]},
+        },
+        "D_C2_accumulator": dc2,
+        "kappa_hat2": kappa_hat2,
+        "RHS_BR2": br2,
+        "r2_registered": R2_REGISTERED,
+        "C_TCI2_indicator_profile_pooled": tci_out,
+        "F10c_zmarginal_gate_per_task": f10c_per_task,
+        "F10c_n_accepted_pooled": f10c_accepted_n,
+        "F10c_all_pass": (
+            all(bool(r["pass"]) for r in f10c_per_task if r["pass"] is not None)
+            if f10c_per_task
+            else None
+        ),
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(result, indent=2))
+    print("=== [P3-2D] ca_rhs_scorer -- RHS2 combine (--stage rhs2-combine) ===")
+    print(f"n_tasks={len(task_paths)}  n_drawn_total={n_drawn_total}")
+    print(
+        f"RHS2(twin) = {rhs2_twin['mean']!r} +/- {rhs2_twin['se']!r}  "
+        f"n_chunks_pooled={rhs2_twin['n_chunks_pooled']}"
+    )
+    print(f"RHS2(coded) = {rhs2_coded['mean']!r} +/- {rhs2_coded['se']!r}")
+    print(f"D_C2 = {dc2['mean']!r} +/- {dc2['se']!r}")
+    print(f"kappa_hat2 = {kappa_hat2!r}")
+    print(f"RHS_BR2 (r2={R2_REGISTERED}) = {br2['mean']!r} +/- {br2['se']!r}")
+    print(f"F10c_all_pass = {result['F10c_all_pass']}")
+    print(f"wrote {out_path}")
+    return result
+
+
 def _cli() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -1748,8 +2389,36 @@ def _cli() -> int:
             "determinism",
             "score2d",
             "lhs2d",
+            "rhs2",
+            "rhs2-combine",
         ),
         default="score",
+    )
+    parser.add_argument(
+        "--n-draws",
+        type=int,
+        default=800,
+        help="--stage rhs2: TOTAL drawn synthetic events target (chunked; accepted subset is "
+        "smaller, F-0-filtered). Default matches the cluster/p3_2d_rhs2.sbatch per-task sizing "
+        "(16 tasks x 800 draws, the ~40 CPU-h cap at the b0i2d fleet's own measured "
+        "~64s/200-events/arm anchor -- see the sbatch's own costing comment; PA-2D-1 F15's "
+        "N~=24k fallback target needs ~16 tasks x 1.5k, which does NOT fit the cap at that "
+        "anchor -- disclosed, not silently resolved by widening the cap).",
+    )
+    parser.add_argument(
+        "--f10c-reference-n",
+        type=int,
+        default=F10C_REFERENCE_N_DEFAULT,
+        help="--stage rhs2: target drawn events for the F10(c) zero-evaluate reference pool "
+        "(cheap -- no evaluate() calls). Reduce for array-task runs to avoid N x redundant "
+        "reference-pool draws across tasks (the sbatch uses a smaller per-task value).",
+    )
+    parser.add_argument(
+        "--rhs2-task-glob",
+        type=str,
+        default=None,
+        help="--stage rhs2-combine: glob pattern (relative to --out-root unless absolute) for "
+        "the per-array-task rhs2 output JSONs to pool. Default: '<out-root>/rhs2_task*.json'.",
     )
     parser.add_argument(
         "--n-events",
@@ -1862,6 +2531,41 @@ def _cli() -> int:
             )
         out_path = Path(args.out) if args.out else out_root / "ca_rhs_score2d_output.json"
         stage_score2d(args.n_events, args.seed, out_root, out_path, args.wbh_center, chunk_size)
+        return 0
+
+    if args.stage == "rhs2":
+        if args.wbh_center is None:
+            raise SystemExit(
+                "--stage rhs2 requires --wbh-center {raw,eff} (F2 ruling resolved this to "
+                "'eff' -- no silent default, PREREGISTRATION_P3_2D_20260825.md PA-2D-1 F2)."
+            )
+        base_seed = args.seed if args.seed != DEFAULT_SCORE_BASE_SEED else RHS2_BASE_SEED_DEFAULT
+        out_path = Path(args.out) if args.out else out_root / "ca_rhs_rhs2_output.json"
+        stage_rhs2(
+            args.n_draws,
+            base_seed,
+            out_root,
+            out_path,
+            args.wbh_center,
+            chunk_size,
+            args.f10c_reference_n,
+        )
+        return 0
+
+    if args.stage == "rhs2-combine":
+        pattern = args.rhs2_task_glob or "rhs2_task*.json"
+        glob_path = Path(pattern)
+        task_paths = (
+            sorted(glob_path.parent.glob(glob_path.name))
+            if glob_path.is_absolute()
+            else sorted(out_root.glob(pattern))
+        )
+        if not task_paths:
+            raise SystemExit(
+                f"REFUSED: no rhs2 task JSONs matched (out_root={out_root}, pattern={pattern!r})"
+            )
+        out_path = Path(args.out) if args.out else out_root / "ca_rhs_rhs2_combined_output.json"
+        stage_rhs2_combine(task_paths, out_path)
         return 0
 
     out_path = Path(args.out) if args.out else out_root / "ca_rhs_score_output.json"

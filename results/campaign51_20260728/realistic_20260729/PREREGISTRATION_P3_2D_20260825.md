@@ -270,3 +270,35 @@ corrected six-stamp set.
 5. Driver fix: `stage_gates` now PERSISTS its full result dict (`gates_<arm>.json`) — the
    first run's ACC per-seed results were returned-but-unwritten and are re-run (bt arm; ACC
    is arm-independent, M2-LINK verified both arms above).
+
+**PA-2D-8 (2026-08-26; the RHS₂ instrument verified, four defects fixed pre-launch, and the
+F15 fresh costing line GRANTED).**
+
+1. **Adversarial verification (inherit/xhigh) of the built `--stage rhs2`/`rhs2-combine` +
+   sbatch:** RHS₂/D_C₂/B2-R/C-TCI₂ registered forms, the A13 draw-law dispatch, the F10(c)
+   rng-replay fidelity (live pull test: mean −0.11/−0.07, sd 0.97/0.92), reference-pool
+   disjointness, checkpoint safety, and the combine estimator all PASS by independent
+   recompute. Two DEFECTS caught and FIXED pre-launch: **(F3) κ̂₂** was implemented as
+   D_C₂/RHS₂(twin) instead of F8's registered (D_C₂ + RHS₂(coded))/RHS₂(twin) — fixed at both
+   aggregation sites (post-fix smoke: κ̂₂ = 0.9634, the coherence scale F8 expects);
+   **(F8) seed-stride collision** — adjacent array tasks shared chunk seeds (64 chunks/19
+   distinct; double-counted draws, invalid SE) — fixed by striding task seeds ×100 + a
+   >100-chunk STOP + a combine duplicate-seed STOP guard. Two AMENDs adopted: (F2) an
+   arrangement-inconsistent chunk is an A21 STOP, never a zero contribution (rhs2 stage only;
+   the pre-existing score2d warning untouched); (F9) the 1D twin pin "off"→"phi" matching the
+   fleet (PA-2D-6 precedent; verifier traced the flag numerically inert for every 2D object —
+   no-BH numerator only).
+2. **Fresh costing line (F15; author grant verbatim: "if 1 is sufficient to measure what we
+   intend to measure go ahead. Otherwise you can also go towards 2 or somewhere inbetween"):**
+   **32 tasks × 800 draws ≈ 72.8 CPU-h, N ≈ 25,600, verifier SE forecast 4.9e-4
+   [4.5, 5.3]e-4** — supersedes the ~40 CPU-h cap. Sufficiency derivation (binding the
+   author's condition): the verdict band = max(3σ_comb, ε₂) is ε₂-FLOORED at this precision
+   (3σ_comb ≈ 3·√(1.16e-4² + 4.9e-4²) ≈ 1.51e-3 < ε₂ = 1.914e-3), so further draws cannot
+   narrow the band — option 1 IS sufficient for the registered measurement; the 117 CPU-h
+   option buys nothing verdict-bearing. If the realized SE lands above 6.38e-4 the F15 STOP
+   still applies unchanged.
+3. **Launch disclosures (verifier):** (i) a single isolated F10(c) task-fail is the expected
+   ~15% false-positive mode of 32 correlated KS tests at α=0.01 — not an automatic STOP;
+   adjudicate on the pooled gate. (ii) F14 POWER heads-up: smoke |D_C₂| ≈ 5e-4…1.5e-3 vs
+   band ≈ 2.3–2.6e-3 — the B-C discrimination clause will likely be UNDERPOWERED, the
+   registered return-to-author outcome; no TWIN2 verdict is expected from that clause.
