@@ -574,6 +574,11 @@ def stage_gates(
         "F10c_zmarginal_proxy": f10c,
     }
     print(json.dumps({"M2_LINK_all_pass": m2_link_pass, "F10c_zmarginal_proxy": f10c}, indent=2))
+    # PA-2D-7: persist the FULL gate dict — the 2026-08-26 first gates run lost
+    # its ACC per-seed results because they were returned but never written.
+    gates_path = out_root / f"gates_{arm}.json"
+    gates_path.write_text(json.dumps(result, indent=2, default=str))
+    print(f"wrote {gates_path}")
     return result
 
 

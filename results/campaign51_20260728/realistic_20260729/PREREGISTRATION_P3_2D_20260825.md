@@ -245,3 +245,28 @@ stale "off" pin — structurally harmless for that gate (a positive scalar multi
 neither create nor destroy exact zeros, and both arms shared the pin), so its EXACT-MATCH
 verdict stands; no banked statistic consumed the run. The fleet launches only under the
 corrected six-stamp set.
+
+**PA-2D-7 (2026-08-26 early; GATE M2-LINK part (iii) re-scored under the PA-2D-4 item-2 split
+— per-event attribution EXACT; plus one driver-persistence fix).**
+
+1. First gates run over the completed 24-seed fleet: parts (i) bit-check and (ii) Mahalanobis
+   PASS on every seed/arm (the linkage the gate exists to verify HOLDS); part (iii) −50-nats
+   monster clause flags 18 arm-instances in 9 seeds, IDENTICAL sets in bc/bt.
+2. Zero-compute per-event attribution (`p3_2d_fleet_20260825/m2link_iii_reattribution_check.json`):
+   **17/18 monster events = the mass-filter residual-exclusion class** (the WZ-P-style
+   symmetric-window reconstruction predicts each set EXACTLY, incl. seed 900101 = {51, 84},
+   the M2-Z pair). Per PA-2D-4 item 2 these are NOT the clause's original (unlinked-mass)
+   class.
+3. **The 1 residual (seed 900121 event 20): the row-#196 kernel-zero class, now measured
+   in-fleet** — L_cat_with_bh = 1.39e-85 with n_sym = 2 window-passed candidates: the GW mass
+   is fractionally ~4e-9 precise, so candidates ~1.4σ_g away in the window sit at
+   ~19σ_kernel — the σ_window ≫ σ_kernel filter-vs-kernel inconsistency
+   (PROPOSAL_MASS_FILTER_SYMMETRIC §6 caveat 2's first fleet instance; flagged for the
+   author). Parts (i)/(ii) PASS and the value is quantitatively the narrow-kernel tail — not
+   an unlinked-mass artifact.
+4. **GATE M2-LINK: PASS in the amended form** (original-class monsters = 0 on every
+   seed/arm); the as-implemented part-(iii) FAIL stays on the record. F10(c) proxy KS-fail =
+   the registered row-#191 expected signature (PROXY ONLY; real verdict rides with RHS₂).
+5. Driver fix: `stage_gates` now PERSISTS its full result dict (`gates_<arm>.json`) — the
+   first run's ACC per-seed results were returned-but-unwritten and are re-run (bt arm; ACC
+   is arm-independent, M2-LINK verified both arms above).

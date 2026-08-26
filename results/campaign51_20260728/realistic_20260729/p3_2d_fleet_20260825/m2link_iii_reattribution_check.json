@@ -1,0 +1,98 @@
+{
+ "900101": {
+  "monsters": [
+   51,
+   84
+  ],
+  "predicted_sym_zero": [
+   51,
+   84
+  ],
+  "exact_match": true
+ },
+ "900102": {
+  "monsters": [
+   27,
+   65,
+   78,
+   103,
+   167
+  ],
+  "predicted_sym_zero": [
+   27,
+   65,
+   78,
+   103,
+   167
+  ],
+  "exact_match": true
+ },
+ "900103": {
+  "monsters": [
+   72
+  ],
+  "predicted_sym_zero": [
+   72
+  ],
+  "exact_match": true
+ },
+ "900111": {
+  "monsters": [
+   177,
+   181
+  ],
+  "predicted_sym_zero": [
+   177,
+   181
+  ],
+  "exact_match": true
+ },
+ "900120": {
+  "monsters": [
+   117
+  ],
+  "predicted_sym_zero": [
+   117
+  ],
+  "exact_match": true
+ },
+ "900121": {
+  "monsters": [
+   20,
+   115
+  ],
+  "predicted_sym_zero": [
+   115
+  ],
+  "exact_match": false
+ },
+ "900122": {
+  "monsters": [
+   1,
+   105
+  ],
+  "predicted_sym_zero": [
+   1,
+   105
+  ],
+  "exact_match": true
+ },
+ "900123": {
+  "monsters": [
+   148
+  ],
+  "predicted_sym_zero": [
+   148
+  ],
+  "exact_match": true
+ },
+ "900124": {
+  "monsters": [
+   61
+  ],
+  "predicted_sym_zero": [
+   61
+  ],
+  "exact_match": true
+ }
+}
