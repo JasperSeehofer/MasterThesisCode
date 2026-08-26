@@ -103,3 +103,68 @@ attempted here and would need fresh registration before being run.
 - `rhs_inflation_checkpoint.json` — per-chunk checkpoint (identical content)
 - `rhs_chunks/{task0_chunk0,task5_chunk1,task20_chunk2}_twin/{event_likelihoods,prepared_cramer_rao_bounds}.csv`
   — the retrieved per-draw artifacts
+
+---
+
+## Round 2 — PA-2D-10 (2026-08-26; alternative counterfactual construction) [AGENT]
+
+**Registration**: `PREREGISTRATION_P3_2D_20260825.md`, final amendment block, PA-2D-10
+(author-granted, resolving round 1's own disclosed caveat above). Round 1's linked-M
+counterfactual drew an INDEPENDENT catalogue host (class-G mass-law kernel) — a plausible
+scale-mismatch confound. PA-2D-10 replaces the independent draw with a construction that
+changes ONLY the redshifting and holds the donor's own mass scale fixed:
+
+    M_hat_z,linked = M_donor,source * (1 + z_true,replayed)
+
+**Construction detail (column identification):** `prepared_cramer_rao_bounds.csv` "M" is
+DETECTOR-frame `M_hat_z = M_source*(1+z)` (`darksiren_emri/datamodels/parameter_space.py:261-268`,
+confirmed, not source-frame). The CRB CSV carries no source-frame mass column, so
+`M_donor,source` was recovered as `M_donor,M_hat_z / (1 + z_donor)`
+(`physical_relations.redshifted_mass_inverse`), with `z_donor` recovered by inverting
+`dist(z, h=H_TRUE)` against the donor's own `luminosity_distance` column — the SAME `(z, h)`
+pair `parameter_space.py:268/273` used to set both `M` and `luminosity_distance` at generation
+time (`physical_relations.dist_to_redshift`). The donor row was then re-redshifted onto the
+completion draw's own recovered `z_true` (F10(c) byte-identical rng replay, IDENTICAL to
+round 1) via `physical_relations.redshifted_mass`. No independent host/mass draw at all.
+Same 3 chunks, same seeds, same production wholesale scoring call
+(`_score_events_2d`/`run_mirror_seed_inprocess`, `catalogue_numerator_survival_2d="mz_sel"`,
+`center="eff"`), only the `M` column differs — round 1's replay/scoring path reused exactly.
+
+**Instrument**: `rhs_inflation_alt_construction.py` (this directory). Run per-chunk in
+foreground (task0_chunk0_twin, task5_chunk1_twin, task20_chunk2_twin ≈ 160-235s each), then
+the summary pass. Output: `rhs_inflation_alt.json`.
+
+**Per-chunk results:**
+
+| chunk | seed | w2_donor | w2_linked | X_alt | median M̂_z donor | median M̂_z linked |
+|---|---|---|---|---|---|---|
+| task0_chunk0_twin | 980001 | 0.005899 | 0.005904 | 0.9992 | 5.812e5 | 5.816e5 |
+| task5_chunk1_twin | 980501 | 0.017430 | 0.017436 | 0.9996 | 5.616e5 | 5.587e5 |
+| task20_chunk2_twin | 982001 | 0.020191 | 0.020188 | 1.0001 | 5.891e5 | 5.879e5 |
+
+**Pooled**: X_alt = **0.9997 ± 0.0003** (mean ± 3-chunk SEM). z-score vs X_id (2.506):
+≈ −5644σ (SE-tight; the measured value sits essentially exactly at 1, nowhere near 2.5).
+
+**M̂_z sanity check**: pooled median M̂_z donor = 5.812e5 M_sun; pooled median M̂_z linked =
+5.816e5 M_sun (ratio 0.9993). The round-1 scale mismatch (host-pool BH mass, median ≈1.17e6
+M_sun, vs donor Fisher-row mass, median ≈5.8e5 M_sun) is GONE by construction — donor and
+linked masses now differ only by the small `(1+z_donor)` vs `(1+z_true,replayed)` ratio, as
+intended.
+
+## Verdict (round 2): **REFUTED**
+
+X_alt = 0.9997 ± 0.0003 is indistinguishable from 1 (essentially no inflation or deflation)
+and nowhere near the predicted X_id ≈ 2.506 / X_BR ≈ 2.297 residual class, in EITHER
+direction. With the donor-mass-scale confound removed, re-redshifting the donor's own mass
+onto the completion draw's replayed z_true changes w2 by <0.1% — the completion-side M̂_z
+redshift-unlinking is NOT the mechanism for the ×2.5 residual. Per PA-2D-10's pre-registered
+disposition, the residual attribution moves off the completion-mass axis entirely; candidate
+next steps (class-G side's own draw-law contraction vs Σ̃^4D, or the identity's
+acceptance-measure assumption) are registered in PA-2D-10 for the author to select from — the
+STUCK response activates.
+
+## Files (round 2)
+
+- `rhs_inflation_alt_construction.py` — the instrument (this directory)
+- `rhs_inflation_alt.json` — full numeric output
+- `rhs_inflation_alt_checkpoint.json` — per-chunk checkpoint (identical content)
