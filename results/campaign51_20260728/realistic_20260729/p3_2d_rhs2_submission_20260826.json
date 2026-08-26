@@ -1,0 +1,10 @@
+{
+  "job_id": 6709953,
+  "array": "0-31",
+  "sbatch": "cluster/p3_2d_rhs2.sbatch",
+  "commit": "7e4f1c64",
+  "submitted_utc": "2026-08-26T~10:40Z",
+  "costing": "PA-2D-8 fresh line: 32x800 draws ~72.8 CPU-h, SE forecast 4.9e-4 [4.5,5.3]e-4",
+  "seed_plan": "task base = 980001 + 100*TID, 4 chunks/task (F8 stride fix)",
+  "note": "row #185 queue-wait banking = sacct submit-vs-start at retrieval"
+}
