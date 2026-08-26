@@ -85,3 +85,29 @@ Launched at intake (lightweight): re-read of the already-cited mass-relation and
 host-weighting papers (R&V15 itself; Gray et al. 2020's host-weighting treatment; the
 fastemriwaveforms/EMRI mass-precision references) for stated validity conditions on
 catalogue-mass uncertainty treatment. Results append below this line when banked.
+
+---
+
+## R0 SWEEP RESULTS (2026-08-26, [AGENT] sonnet, symptom-card-only; quote-verification per Stage L; banked verbatim summary)
+
+- **[LIT-1, HIGH]** R&V15 §IV.1 (ar5iv full text, quote-verified): "The rms deviation of the
+  BH mass measurements from the relation is 0.55 dex, and incorporates both our adopted
+  measurement errors of 0.50 dex and a best-fit intrinsic scatter of 0.24 dex (added in
+  quadrature)." Sample validity: 262 broad-line AGN, z < 0.055, 10⁸ ≤ M_*/M☉ ≤ 10¹².
+  Cross-confirms `docs/MASS_RELATION_ASSESSMENT.md` §2. The single most decisive
+  already-cited fact for part (a).
+- **[LIT-2, MEDIUM]** Gray 2020 G20-d (already two-fetch-verified in
+  `docs/LITERATURE_WARNINGS.md`): host-weighting validated only at 25–75% completeness; our
+  venue at 4.79% in-catalogue share — out of the source's validated range.
+- **[LIT-3, REPORTABLE ABSENCE]** No cited dark-siren methodology paper (Gray 2020/2023,
+  MFG19) treats mass-covariate deconvolution / error-in-variables at all — Gray's
+  completeness formalism is magnitude/luminosity-threshold-only. The kernel design must be
+  argued from first principles or NEW literature (an R2/R3 ring sweep is the stage-2-time
+  follow-up), never assumed literature-compliant.
+- **[LIT-4, REPORTABLE ABSENCE]** No cited selection-cut/truncation-bias warning has ever
+  been checked against the k = 1.5 hard pre-filter (the symmetric proposal's §3 already
+  records the no-derivation fact; the cut-on-observed-vs-cut-on-true question is untouched).
+- **Bridge to the Refute-by:** Gray 2023 G23-b (§2.1.3) — truncation/renormalization is
+  harmless ONLY under numerator/normalization consistency — is status UNCHECKED against our
+  mass-kernel code: checking it IS the §5 Refute-by(a) path (if the current narrow kernel is
+  consistently exact-mass on both sides, part (a) demotes to a design choice).
