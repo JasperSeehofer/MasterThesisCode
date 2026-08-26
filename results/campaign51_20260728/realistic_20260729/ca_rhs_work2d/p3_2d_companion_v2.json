@@ -1,0 +1,320 @@
+{
+  "reference": "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_20260825.md sec1 (Sigma~^4D companion), PA-2D-1 F4 (C2* resolved), PA-2D-3 (segment-aware z-rule + arbiter-grounded target), PA-2D-4 item 4 (eligibility-independence finding)",
+  "h": 0.73,
+  "resolved_flags": {
+    "git_commit_at_start": "6df4fb23d718d6a087afdcb4103d9f0cf0dfc5fb",
+    "tree_dirty_incl_instrument": "clean",
+    "catalogue_global_selection": "phi",
+    "catalogue_numerator_survival": "off",
+    "selection_in_completion_numerator": "fused",
+    "catalogue_numerator_survival_2d": "mz_sel",
+    "catalogue_numerator_survival_2d_center": "eff",
+    "acceptance_model_version": "F12-extended-class-G-replay"
+  },
+  "Sigma_tilde_4D": 348078892.5018141,
+  "n_eligible": 20834132,
+  "sum_P_M_le_0": 2063742.9547570713,
+  "n_rows_M_le_0_nonnegligible": 20834132,
+  "beta_G_phi": 153322777.12146157,
+  "beta_Gbar_phi": 888403790.0,
+  "Sigma_phi": 980867125.6740596,
+  "reference_csv": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900101_work/seed900101/simulations/diagnostics/event_likelihoods.csv",
+  "C2_star": 0.06124403326364123,
+  "z_segmentation": {
+    "description": "Per-host +/-4sigma z-window subdivided at every z where d_L(z;h) crosses a dl_centers grid edge (60 global breakpoints, inverted once via brentq); each smooth sub-segment integrated with a fixed order-16 Gauss-Legendre rule (PA-2D-3 fix for the GL(50)-under-resolves-kinks defect).",
+    "gl_order_per_segment": 16,
+    "n_breakpoints": 60
+  },
+  "n_segments_stats": {
+    "mean": 11.238419771939624,
+    "median": 12.0,
+    "p99": 16.0,
+    "max": 30,
+    "min": 1
+  },
+  "arbiter": {
+    "n_rows": 20,
+    "seed": 20260825,
+    "rows": [
+      {
+        "catalogue_idx": 15674981,
+        "z_g": 0.2398829999999999,
+        "n_segments_gl16": 13,
+        "val_gl16": 0.1861679585581932,
+        "val_gl32": 0.18616795855819304,
+        "val_10x_refined": 0.18616795855819296,
+        "rel_dev_gl16_vs_refined": 1.34180007384341e-15,
+        "rel_dev_gl32_vs_refined": 4.472666912811367e-16,
+        "rel_dev_gl16_vs_gl32": 8.94533382562273e-16
+      },
+      {
+        "catalogue_idx": 762507,
+        "z_g": 0.0316418204553187,
+        "n_segments_gl16": 1,
+        "val_gl16": 0.6080347780921873,
+        "val_gl32": 0.6080347780987927,
+        "val_10x_refined": 0.6080347780987931,
+        "rel_dev_gl16_vs_refined": 1.0864225591132832e-11,
+        "rel_dev_gl32_vs_refined": 7.303681069669131e-16,
+        "rel_dev_gl16_vs_gl32": 1.0863495223025873e-11
+      },
+      {
+        "catalogue_idx": 8045717,
+        "z_g": 0.258823,
+        "n_segments_gl16": 13,
+        "val_gl16": 0.04954724155047815,
+        "val_gl32": 0.04954724155047805,
+        "val_10x_refined": 0.04954724155047806,
+        "rel_dev_gl16_vs_refined": 1.8205982397404245e-15,
+        "rel_dev_gl32_vs_refined": 1.4004601844157112e-16,
+        "rel_dev_gl16_vs_gl32": 1.9606442581819958e-15
+      },
+      {
+        "catalogue_idx": 8093836,
+        "z_g": 0.213983,
+        "n_segments_gl16": 12,
+        "val_gl16": 0.022370625600704533,
+        "val_gl32": 0.02237062560070442,
+        "val_10x_refined": 0.022370625600704432,
+        "rel_dev_gl16_vs_refined": 4.497592664707891e-15,
+        "rel_dev_gl32_vs_refined": 6.203576089252263e-16,
+        "rel_dev_gl16_vs_gl32": 5.1179502736331204e-15
+      },
+      {
+        "catalogue_idx": 10409329,
+        "z_g": 0.195209,
+        "n_segments_gl16": 12,
+        "val_gl16": 0.11941587415626015,
+        "val_gl32": 0.1194158741562582,
+        "val_10x_refined": 0.11941587415625844,
+        "rel_dev_gl16_vs_refined": 1.4294313150758928e-14,
+        "rel_dev_gl32_vs_refined": 1.9756367769341608e-15,
+        "rel_dev_gl16_vs_gl32": 1.626994992769312e-14
+      },
+      {
+        "catalogue_idx": 16078260,
+        "z_g": 0.353197,
+        "n_segments_gl16": 15,
+        "val_gl16": 0.016656582545166835,
+        "val_gl32": 0.016656582545166825,
+        "val_10x_refined": 0.01665658254516681,
+        "rel_dev_gl16_vs_refined": 1.4580499089666103e-15,
+        "rel_dev_gl32_vs_refined": 8.331713765523487e-16,
+        "rel_dev_gl16_vs_gl32": 6.248785324142611e-16
+      },
+      {
+        "catalogue_idx": 11297986,
+        "z_g": 0.161097,
+        "n_segments_gl16": 11,
+        "val_gl16": 0.5417424640201992,
+        "val_gl32": 0.5417424640202361,
+        "val_10x_refined": 0.5417424640201934,
+        "rel_dev_gl16_vs_refined": 1.0656649813287702e-14,
+        "rel_dev_gl32_vs_refined": 7.869526015966303e-14,
+        "rel_dev_gl16_vs_gl32": 6.803861034636997e-14
+      },
+      {
+        "catalogue_idx": 20417311,
+        "z_g": 0.283603,
+        "n_segments_gl16": 14,
+        "val_gl16": 0.037636856524994114,
+        "val_gl32": 0.03763685652499403,
+        "val_10x_refined": 0.037636856524994024,
+        "rel_dev_gl16_vs_refined": 2.3967363132702085e-15,
+        "rel_dev_gl32_vs_refined": 1.8436433179001605e-16,
+        "rel_dev_gl16_vs_gl32": 2.212371981480192e-15
+      },
+      {
+        "catalogue_idx": 20659733,
+        "z_g": 0.232227,
+        "n_segments_gl16": 13,
+        "val_gl16": 0.017204941917444132,
+        "val_gl32": 0.0172049419174441,
+        "val_10x_refined": 0.017204941917444115,
+        "rel_dev_gl16_vs_refined": 1.0082704633939907e-15,
+        "rel_dev_gl32_vs_refined": 8.066163707151925e-16,
+        "rel_dev_gl16_vs_gl32": 1.8148868341091847e-15
+      },
+      {
+        "catalogue_idx": 15738980,
+        "z_g": 0.089689,
+        "n_segments_gl16": 8,
+        "val_gl16": 0.11696376807478713,
+        "val_gl32": 0.11696376803318195,
+        "val_10x_refined": 0.11696376799907661,
+        "rel_dev_gl16_vs_refined": 6.472989241104991e-10,
+        "rel_dev_gl32_vs_refined": 2.915889606905949e-10,
+        "rel_dev_gl16_vs_gl32": 3.557099633161831e-10
+      },
+      {
+        "catalogue_idx": 16535779,
+        "z_g": 0.244523,
+        "n_segments_gl16": 13,
+        "val_gl16": 0.11085004199904955,
+        "val_gl32": 0.11085004199904935,
+        "val_10x_refined": 0.11085004199904938,
+        "rel_dev_gl16_vs_refined": 1.502330993209742e-15,
+        "rel_dev_gl32_vs_refined": 2.5038849886829037e-16,
+        "rel_dev_gl16_vs_gl32": 1.7527194920780329e-15
+      },
+      {
+        "catalogue_idx": 2359863,
+        "z_g": 0.2025,
+        "n_segments_gl16": 12,
+        "val_gl16": 0.08525004687472525,
+        "val_gl32": 0.08525004687472419,
+        "val_10x_refined": 0.08525004687472425,
+        "rel_dev_gl16_vs_refined": 1.1720823140789304e-14,
+        "rel_dev_gl32_vs_refined": 6.511568411549614e-16,
+        "rel_dev_gl16_vs_gl32": 1.2371979981944274e-14
+      },
+      {
+        "catalogue_idx": 8943960,
+        "z_g": 0.279479,
+        "n_segments_gl16": 14,
+        "val_gl16": 0.08702846091331619,
+        "val_gl32": 0.087028460913316,
+        "val_10x_refined": 0.08702846091331591,
+        "rel_dev_gl16_vs_refined": 3.189252725412973e-15,
+        "rel_dev_gl32_vs_refined": 9.567758176238919e-16,
+        "rel_dev_gl16_vs_gl32": 2.2324769077890786e-15
+      },
+      {
+        "catalogue_idx": 18974171,
+        "z_g": 0.11774,
+        "n_segments_gl16": 10,
+        "val_gl16": 0.6092520866663169,
+        "val_gl32": 0.6092520866787616,
+        "val_10x_refined": 0.6092520866832486,
+        "rel_dev_gl16_vs_refined": 2.779092374361237e-11,
+        "rel_dev_gl32_vs_refined": 7.364712328601925e-12,
+        "rel_dev_gl16_vs_gl32": 2.0426211415160878e-11
+      },
+      {
+        "catalogue_idx": 9363115,
+        "z_g": 0.2881599999999999,
+        "n_segments_gl16": 14,
+        "val_gl16": 0.03685551222338057,
+        "val_gl32": 0.0368555122233805,
+        "val_10x_refined": 0.03685551222338051,
+        "rel_dev_gl16_vs_refined": 1.6944560356848822e-15,
+        "rel_dev_gl32_vs_refined": 1.882728928538758e-16,
+        "rel_dev_gl16_vs_gl32": 1.8827289285387586e-15
+      },
+      {
+        "catalogue_idx": 3314195,
+        "z_g": 0.121688,
+        "n_segments_gl16": 10,
+        "val_gl16": 0.1792952578924108,
+        "val_gl32": 0.17929525790210626,
+        "val_10x_refined": 0.17929525789754153,
+        "rel_dev_gl16_vs_refined": 2.861608965577566e-11,
+        "rel_dev_gl32_vs_refined": 2.5459331888778045e-11,
+        "rel_dev_gl16_vs_gl32": 5.407542154317698e-11
+      },
+      {
+        "catalogue_idx": 18546246,
+        "z_g": 0.239826,
+        "n_segments_gl16": 13,
+        "val_gl16": 0.05327079480751111,
+        "val_gl32": 0.053270794807511006,
+        "val_10x_refined": 0.05327079480751105,
+        "rel_dev_gl16_vs_refined": 1.172312997409225e-15,
+        "rel_dev_gl32_vs_refined": 7.815419982728167e-16,
+        "rel_dev_gl16_vs_gl32": 1.953854995682043e-15
+      },
+      {
+        "catalogue_idx": 6386654,
+        "z_g": 0.168746,
+        "n_segments_gl16": 12,
+        "val_gl16": 0.07210087446284769,
+        "val_gl32": 0.07210087446284388,
+        "val_10x_refined": 0.07210087446284386,
+        "rel_dev_gl16_vs_refined": 5.312375839395213e-14,
+        "rel_dev_gl32_vs_refined": 3.849547709706676e-16,
+        "rel_dev_gl16_vs_gl32": 5.273880362298144e-14
+      },
+      {
+        "catalogue_idx": 14303768,
+        "z_g": 0.091535,
+        "n_segments_gl16": 8,
+        "val_gl16": 0.695280893674222,
+        "val_gl32": 0.6952808935520566,
+        "val_10x_refined": 0.6952808935628804,
+        "rel_dev_gl16_vs_refined": 1.6013902242278178e-10,
+        "rel_dev_gl32_vs_refined": 1.5567501439900688e-11,
+        "rel_dev_gl16_vs_gl32": 1.7570652386541778e-10
+      },
+      {
+        "catalogue_idx": 6672107,
+        "z_g": 0.100103,
+        "n_segments_gl16": 9,
+        "val_gl16": 0.7639764787234514,
+        "val_gl32": 0.7639764787435965,
+        "val_10x_refined": 0.7639764787419457,
+        "rel_dev_gl16_vs_refined": 2.420796674167995e-11,
+        "rel_dev_gl32_vs_refined": 2.160787224802435e-12,
+        "rel_dev_gl16_vs_gl32": 2.6368753966425408e-11
+      }
+    ],
+    "max_rel_dev_gl16_vs_refined": 6.472989241104991e-10,
+    "max_rel_dev_gl32_vs_refined": 2.915889606905949e-10,
+    "max_rel_dev_gl16_vs_gl32": 3.557099633161831e-10,
+    "median_rel_dev_gl16_vs_refined": 7.577121238997797e-15,
+    "median_rel_dev_gl32_vs_refined": 7.940791844940045e-16,
+    "plateau_L_conv": 2.915889606905949e-10,
+    "plateau_definition": "max over sampled rows of |GL32 - 10x_refined_GL16| / |10x_refined_GL16|",
+    "derived_spot_check_target": 2.9158896069059488e-09,
+    "target_definition": "10 * plateau_L_conv",
+    "gl_order_baseline": 16,
+    "gl_order_cross_check": 32,
+    "refine_factor": 10
+  },
+  "spot_check": {
+    "n_spot": 50,
+    "seed": 20260826,
+    "method": "per-segment GL-16 (production) vs GL-32 (cross-check), identical breakpoints",
+    "max_rel_dev": 8.045175150016302e-10,
+    "median_rel_dev": 8.286458073554731e-15,
+    "target_rel_dev": 2.9158896069059488e-09,
+    "target_met": true
+  },
+  "eligibility_independence": {
+    "question": "Does any input Sigma_tilde_4D consumes depend on mass_filter_sigma / get_possible_hosts_from_ball_tree candidate-host filtering?",
+    "verdict": "INDEPENDENT",
+    "inputs": [
+      {
+        "input": "reduced galaxy catalogue (c1d._load_galaxy_catalog_handler(REDUCED_CATALOGUE_PATH).reduced_galaxy_catalog)",
+        "producer": "darksiren_emri/galaxy_catalogue/handler.py:GalaxyCatalogueHandler (loads reduced_galaxy_catalogue.csv wholesale)",
+        "mass_filter_conditioned": false,
+        "evidence": "_load_eligible_catalogue applies its OWN eligibility mask directly (z<z_max & isfinite(M) & M>0) to the FULL, unfiltered catalogue frame. mass_filter_sigma only appears inside handler.py's get_possible_hosts_from_ball_tree (~line 570-675), a per-EVENT candidate lookup this companion never calls (grep for mass_filter_sigma / get_possible_hosts_from_ball_tree in this file and correspondence_1d.py's b0i-2D build path returns no hits outside that one handler.py function)."
+      },
+      {
+        "input": "completeness (c1d.from_cache_or_build(), pixel_completeness.py)",
+        "producer": "darksiren_emri/galaxy_catalogue/pixel_completeness.py:from_cache_or_build -> build_m_th_map(catalog_path=REDUCED_CATALOGUE_FILE_PATH) (the frozen per-HEALPix-pixel m_th threshold-magnitude cache)",
+        "mass_filter_conditioned": false,
+        "evidence": "grep for mass_filter/get_possible_hosts_from_ball_tree in pixel_completeness.py returns no hits; the m_th map is a sky-pixel detection-threshold map built from the full unfiltered catalogue, no BH-mass filtering step anywhere in build_m_th_map."
+      },
+      {
+        "input": "detection_probability (SimulationDetectionProbability, from build_b0i_2d_selection_objects)",
+        "producer": "darksiren_emri/bayesian_inference/simulation_detection_probability.py, built from the PINNED LISA injection pool (injection_dir=INJECTION_POOL_DIR), not the galaxy catalogue at all",
+        "mass_filter_conditioned": false,
+        "evidence": "grep for mass_filter in simulation_detection_probability.py returns no hits; the (dl_centers, M_centers) survival grid is built purely from injected/recovered synthetic sources -- no galaxy candidate list is involved anywhere in its construction."
+      },
+      {
+        "input": "phi_survival_table (bayesian_statistics.precompute_phi_marginal_survival, from build_b0i_2d_selection_objects)",
+        "producer": "bayesian_statistics.py:precompute_phi_marginal_survival(detection_probability_obj=...); derived purely from the detection_probability object above",
+        "mass_filter_conditioned": false,
+        "evidence": "Same injection-pool-only provenance as detection_probability; no galaxy catalogue or candidate-host step anywhere in its call chain."
+      }
+    ],
+    "note_out_of_scope": "beta_G_phi/beta_Gbar_phi/Sigma_phi (the C2* normalizer legs, read from o5.mass_companion/o5._beta_g_phi_and_gbar) are a SEPARATE multiplicative factor of C2*, not part of Sigma_tilde_4D itself; they are read from a banked event_likelihoods.csv produced under that run's own mass_filter_sigma setting, but are asserted AND runtime-checked (np.allclose across events) to be event-independent constants at fixed (h, flags) -- PA-2D-4 item 4 as registered scopes the check to Sigma_tilde_4D's own inputs, which this finding covers exhaustively.",
+    "conclusion": "Sigma_tilde_4D's contraction consumes the draw law only (galaxy-catalogue eligibility + injection-pool-derived completeness/survival objects); it is NOT conditioned on the candidate mass filter (mass_filter_sigma / get_possible_hosts_from_ball_tree), so the [P3-WBHZERO] symmetric-window ruling (row #202) does not change Sigma_tilde_4D and does not require re-deriving the frozen C2* under that axis."
+  },
+  "v1_superseded_path": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/ca_rhs_work2d/p3_2d_companion.json",
+  "wall_time_s": {
+    "companion_pass": 20790.071522951126,
+    "spot_check": 0.13318848609924316,
+    "total": 21164.547810316086
+  }
+}
