@@ -1,0 +1,52 @@
+{
+  "per_chunk": {
+    "task0_chunk0_twin": {
+      "task_id": 0,
+      "chunk_idx": 0,
+      "dirname": "task0_chunk0_twin",
+      "seed": 980001,
+      "n": 200,
+      "n_accepted_donor_replay": 177,
+      "n_accepted_linked": 176,
+      "n_accepted_bank": 177,
+      "r_ln_M_vs_ln1pz_completion": 0.011848417281922674,
+      "r_ln_Mzlinked_vs_ln1pz_construction": 0.06478961578158823,
+      "w2_donor_mean_replay": 0.005899449319970923,
+      "w2_linked_mean": 0.3083281684762953,
+      "w2_bank_mean_cluster": 0.005899449319970924,
+      "inflation_ratio": 0.019133669651803097
+    },
+    "task5_chunk1_twin": {
+      "task_id": 5,
+      "chunk_idx": 1,
+      "dirname": "task5_chunk1_twin",
+      "seed": 980502,
+      "n": 200,
+      "n_accepted_donor_replay": 183,
+      "n_accepted_linked": 181,
+      "n_accepted_bank": 183,
+      "r_ln_M_vs_ln1pz_completion": 0.017012946897643794,
+      "r_ln_Mzlinked_vs_ln1pz_construction": 0.1846599867388115,
+      "w2_donor_mean_replay": 0.01743003034260343,
+      "w2_linked_mean": 0.26458897652223495,
+      "w2_bank_mean_cluster": 0.01743003034260343,
+      "inflation_ratio": 0.06587587499564133
+    },
+    "task20_chunk2_twin": {
+      "task_id": 20,
+      "chunk_idx": 2,
+      "dirname": "task20_chunk2_twin",
+      "seed": 982003,
+      "n": 200,
+      "n_accepted_donor_replay": 188,
+      "n_accepted_linked": 187,
+      "n_accepted_bank": 188,
+      "r_ln_M_vs_ln1pz_completion": 0.09358665946851898,
+      "r_ln_Mzlinked_vs_ln1pz_construction": -0.03532705356177223,
+      "w2_donor_mean_replay": 0.02019088606156678,
+      "w2_linked_mean": 0.35313231494843683,
+      "w2_bank_mean_cluster": 0.02019088606156678,
+      "inflation_ratio": 0.05717654603350301
+    }
+  }
+}

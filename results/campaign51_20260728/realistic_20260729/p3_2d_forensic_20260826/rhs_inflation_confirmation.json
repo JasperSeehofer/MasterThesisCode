@@ -1,0 +1,66 @@
+{
+  "reference": "C2_star_review.md Task 3(b) registered confirmation instrument",
+  "method": "3 RHS2 chunks (task0/chunk0, task5/chunk1, task20/chunk2; twin arm), each re-scored TWICE through the identical production wholesale call (_score_events_2d / run_mirror_seed_inprocess, catalogue_numerator_survival_2d='mz_sel', center='eff' -- the twin arm's own registered flags): once with the banked donor-M (unlinked, unmodified replay), once with a LINKED-mass counterfactual built from the EXACT class-G mass-law kernel (correspondence_1d.py _draw_2d_accepted_latents host-conditional Eddington-shifted draw) evaluated at the completion draw's own recovered z_true (F10(c) byte-identical rng replay, ca_rhs_scorer._replay_completion_host_z). Only the M column differs between the two scored dataframes.",
+  "per_chunk": [
+    {
+      "task_id": 0,
+      "chunk_idx": 0,
+      "dirname": "task0_chunk0_twin",
+      "seed": 980001,
+      "n": 200,
+      "n_accepted_donor_replay": 177,
+      "n_accepted_linked": 176,
+      "n_accepted_bank": 177,
+      "r_ln_M_vs_ln1pz_completion": 0.011848417281922674,
+      "r_ln_Mzlinked_vs_ln1pz_construction": 0.06478961578158823,
+      "w2_donor_mean_replay": 0.005899449319970923,
+      "w2_linked_mean": 0.3083281684762953,
+      "w2_bank_mean_cluster": 0.005899449319970924,
+      "inflation_ratio": 0.019133669651803097
+    },
+    {
+      "task_id": 5,
+      "chunk_idx": 1,
+      "dirname": "task5_chunk1_twin",
+      "seed": 980502,
+      "n": 200,
+      "n_accepted_donor_replay": 183,
+      "n_accepted_linked": 181,
+      "n_accepted_bank": 183,
+      "r_ln_M_vs_ln1pz_completion": 0.017012946897643794,
+      "r_ln_Mzlinked_vs_ln1pz_construction": 0.1846599867388115,
+      "w2_donor_mean_replay": 0.01743003034260343,
+      "w2_linked_mean": 0.26458897652223495,
+      "w2_bank_mean_cluster": 0.01743003034260343,
+      "inflation_ratio": 0.06587587499564133
+    },
+    {
+      "task_id": 20,
+      "chunk_idx": 2,
+      "dirname": "task20_chunk2_twin",
+      "seed": 982003,
+      "n": 200,
+      "n_accepted_donor_replay": 188,
+      "n_accepted_linked": 187,
+      "n_accepted_bank": 188,
+      "r_ln_M_vs_ln1pz_completion": 0.09358665946851898,
+      "r_ln_Mzlinked_vs_ln1pz_construction": -0.03532705356177223,
+      "w2_donor_mean_replay": 0.02019088606156678,
+      "w2_linked_mean": 0.35313231494843683,
+      "w2_bank_mean_cluster": 0.02019088606156678,
+      "inflation_ratio": 0.05717654603350301
+    }
+  ],
+  "class_g_reference_linkage": {
+    "source": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_2d_fleet_20260825/bt_900101_work/seed900101/simulations/prepared_cramer_rao_bounds.csv",
+    "n": 200,
+    "r_ln_Mztrue_vs_ln1pz": 0.12432282642002901
+  },
+  "X_id_predicted": 2.506,
+  "X_br_predicted": 2.297,
+  "X_measured_mean": 0.04739536356031581,
+  "X_measured_se": 0.014352259845656402,
+  "z_score_vs_X_id": -171.3043564483513,
+  "verdict": "REFUTED",
+  "elapsed_s": 418.2719256877899
+}
