@@ -332,3 +332,14 @@ statement; the fail-at-predicted-value control did its job).**
    (the suspect step: which Σ the venue draw-law contraction actually cancels against),
    reviewed, then the verdict re-scored from the SAME frozen numbers (zero re-compute — only
    C₂\* changes). All frozen numbers above are pairing-independent measurements.
+
+**PA-2D-10 (2026-08-26; author-granted alternative counterfactual construction — resolving
+row #209's operationalization caveat).** Same 3 retrieved chunks, same replay/score machinery
+(machine-precision-validated in round 1); the linked-mass counterfactual now Z-RESCALES THE
+DONOR ROW'S OWN MASS: M̂_z,linked = M_donor,source · (1 + z_true,replayed) — preserving the
+donor mass scale, changing only the redshifting — instead of drawing an independent
+catalogue-host mass. Readout: X_alt = w₂(donor)/w₂(linked-rescaled), pooled ± chunk scatter,
+vs the ×2.5 residual. CONFIRMED ⇒ the completion-side M̂_z redshift-unlinking is the
+mechanism; REFUTED again ⇒ the residual attribution moves off the completion-mass axis
+entirely (candidate next: the class-G side's own draw-law contraction vs Σ̃^4D, or the
+identity's acceptance-measure assumption) and the thread's STUCK response activates.
