@@ -353,18 +353,37 @@ delimitation, verified at source this session:
   exactly that window-**geometry** measurement, including the negative-lower-edge symptom.
   **[WGEO] adds no new thread there and should not become one.**
 
-### 4.4 A record inconsistency, flagged not litigated
+### 4.4 Two different perturbations, not an inconsistency
 
-The window-removal counterfactual is quoted at two different magnitudes: "exact removal moves MAP
-0.81→0.82" (+0.010; `CLAIM_2D_BIAS_20260730.md:729-731`) and "removing the window moves the MAP up by
-~+0.0015" (`HANDOFF_20260730.md:87-88`). Both sign-inverted; the factor ≈ 7 between them is
-unexplained in the record and would need resolving **before either is used as a quantitative bound**.
+> **[OPUS-ORCH 2026-08-27, corrected]** The original text of this section described "exact removal
+> moves MAP 0.81→0.82" (+0.010) and "removing the window moves the MAP up by ~+0.0015" as both being
+> "the window-removal counterfactual" and asserted an unexplained "factor ≈ 7" between them. That was
+> a conflation introduced by this card, not a genuine record inconsistency — §4.3, two paragraphs
+> above, already describes them correctly as separate objects. It has also mis-cited the membership
+> figure's location; corrected below. Numbers and verdicts are unchanged; only this section's own
+> framing is amended.
+
+The two figures are **different perturbations of the same code object**, not two measurements of one
+counterfactual, so there is no discrepancy to resolve:
+- **+0.010** — "exact removal moves MAP 0.81→0.82" — is removal of *realization-added candidates*
+  (`CLAIM_2D_BIAS_20260730.md:726-727`; `HANDOFF_20260730.md:63-64`). This is the
+  [WINDOW-MEMBERSHIP] object: a coarse binary lever (window OFF vs ON).
+- **+0.0015** — "removing the window moves the MAP up by ~+0.0015" — is removal of *the window itself*
+  (`HANDOFF_20260730.md:87-88`). This is the HB object.
+
+Both are sign-inverted relative to the direction a bias-driver fix would need; neither needs
+reconciling against the other, since they are not the same measurement.
 
 ### 4.5 Citation drift, for the record
 
-`BIAS_HISTORY_LEDGER.md:130` cites the exoneration list as `CLAIM_2D_BIAS_20260730.md:191-204`. That
+`BIAS_HISTORY_LEDGER.md:129` cites the exoneration list as `CLAIM_2D_BIAS_20260730.md:191-204`. That
 citation has drifted: the list now begins at **line 721** of that file, with HB at **:732-734**
 ✓CHAIR. Content unchanged; only the pointer is stale.
+
+`[OPUS-ORCH 2026-08-27, corrected]` This section originally gave the pointer's own location as
+`:130`; it is at `:129`. The correction is itself an instance of the drift the section documents —
+an off-by-one repeated across several documents that all copied it from one another rather than
+from the source.
 
 ---
 
@@ -489,9 +508,15 @@ decision, and what outcome would not — stated for the author BEFORE any comput
 
 ### F-4 — RECOMMENDED NEXT ACTION (one)
 
-> **Resolve the §4.4 record inconsistency in the window-removal counterfactual (+0.010 vs +0.0015,
+> **[OPUS-ORCH 2026-08-27, corrected] RESOLVED.** §4.4 has been corrected: +0.010 and +0.0015 are
+> different perturbations (membership removal vs window removal), not two measurements of one
+> counterfactual, so there was no "factor ≈ 7" to resolve. HB's bound is quotable as a point value
+> per entry already; see `EXONERATION_REGISTER_20260827.md`'s HB entry, which now also names each
+> denominator inline.
+
+> Resolve the §4.4 record inconsistency in the window-removal counterfactual (+0.010 vs +0.0015,
 > factor ≈ 7, both sign-inverted) from banked 2026-07-30 artifacts — a zero-compute records read —
-> so that HB's bound becomes quotable as a point value.**
+> so that HB's bound becomes quotable as a point value.
 
 Rationale: it is the cheapest action in the forecast, it is pure re-reading of artifacts already on
 disk (rule [A1] — exhaust free re-reads before requesting compute), it repairs the **only** banked

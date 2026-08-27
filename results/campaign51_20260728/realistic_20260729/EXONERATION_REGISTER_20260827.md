@@ -81,8 +81,7 @@ prevent.**
 ### [JACOBIAN] — catalogue distance-redshift Jacobian omission
 
 - **MECHANISM (plain terms):** a missing `dd_L/dz` Jacobian factor in the galaxy-catalogue redshift
-  integral. Search also: "Jacobian", "distance-redshift derivative", "missing volume element in the
-  catalogue integral".
+  integral. Search also: "Jacobian", "distance-redshift derivative", "missing volume element in the catalogue integral".
 - **BOUND:** REFUTED as a cause — the factor is ∝1/h and *decreasing*, which biases h **low**, wrong
   direction for the observed high-h 2D tilt; separately, the GW term is a likelihood and carries no
   such Jacobian by construction.
@@ -95,8 +94,7 @@ prevent.**
 ### [FISHER-FRAME] — ecliptic vs equatorial frame mismatch in the Fisher matrix
 
 - **MECHANISM:** a coordinate-frame (ecliptic/equatorial) mismatch between the CRB/Fisher
-  construction and the GLADE host frame. Search also: "frame mismatch", "coordinate rotation",
-  "ecliptic", "equatorial".
+  construction and the GLADE host frame. Search also: "frame mismatch", "coordinate rotation", "ecliptic", "equatorial".
 - **BOUND:** EXONERATED / non-cause — rotating would double-rotate (the frames already agree at the
   point tested); confirmed by two adversarial refuters on the construction chain.
 - **DATE/SOURCE:** 2026-06-19 (seed400). Anchor: `"Fisher ecliptic/equatorial frame mismatch
@@ -169,8 +167,7 @@ prevent.**
 
 ### [LNM-DRAW] — the ln-mass draw itself
 
-- **MECHANISM:** the log-mass sampling/draw step for host masses. Search also: "ln-M draw", "mass
-  draw", "log-mass sampling bias".
+- **MECHANISM:** the log-mass sampling/draw step for host masses. Search also: "ln-M draw", "mass draw", "log-mass sampling bias".
 - **BOUND:** exonerated — mean |Δln M| ≤ 0.0009 dex, negligible.
 - **DATE/SOURCE:** `CLAIM_2D_BIAS_20260730.md:724-725`, `"the ln-M draw itself (mean |Δln M| ≤
   0.0009 dex)"`.
@@ -189,8 +186,7 @@ prevent.**
 ### [WINDOW-MEMBERSHIP] — candidate-window membership (coarse on/off)
 
 - **MECHANISM:** whether a candidate host is admitted to the search list at all (binary
-  membership), as distinct from the shape of any window. Search also: "candidate membership",
-  "eligibility list", "search-window inclusion".
+  membership), as distinct from the shape of any window. Search also: "candidate membership", "eligibility list", "search-window inclusion".
 - **BOUND:** exact removal of realization-added 2D candidates moves MAP 0.81→0.82 — **wrong sign**
   for a mechanism that should push toward 0.73.
 - **DATE/SOURCE:** `CLAIM_2D_BIAS_20260730.md:726-727`, `"candidate-window membership (exact removal
@@ -206,8 +202,7 @@ prevent.**
 
 - **MECHANISM:** which probability-density family (Gaussian vs truncated-lognormal, etc.) is used to
   marginalize over host mass uncertainty inside the likelihood, applied to candidates that already
-  passed eligibility. Search also: "mass kernel family", "mass PDF choice", "truncated lognormal
-  kernel", "`mass_trunc`", "Gaussian vs lognormal mass marginalization".
+  passed eligibility. Search also: "mass kernel family", "mass PDF choice", "truncated lognormal kernel", "`mass_trunc`", "Gaussian vs lognormal mass marginalization".
 - **BOUND:** bounded at **+0.002** — exonerated as the 2D *driver*, twice, independently:
   (i) pipeline A/B: Δ2D **+0.0029, wrong sign**, Δ1D exactly 0.0000 (`mass_trunc_ab_20260713`,
   seed600 494-event A/B) — reason: the same prior enters the selection denominator `D_g`, so
@@ -232,8 +227,7 @@ prevent.**
 ### [OPTIONA-DRIFT] — Option-A `β_G/Σ_glob` calibration drift
 
 - **MECHANISM:** an apparent drift between the model's completeness normalization `β_G` and the
-  discrete catalogue sum `Σ_glob`, read as a possible bias source. Search also: "Option-A drift",
-  "β_G/Σ_glob", "global normalization drift", "h-cubed volume factor".
+  discrete catalogue sum `Σ_glob`, read as a possible bias source. Search also: "Option-A drift", "β_G/Σ_glob", "beta_G", "Sigma_glob", "beta_G/Sigma_glob", "global normalization drift", "h-cubed volume factor".
 - **BOUND:** NOT a defect — it is exactly the expected `h⁻³` volume Jacobian: (0.73/0.81)³−1 =
   **−26.80%**, matching the measured −25.6%/−26.8%. After removing the expected Jacobian, a
   residual survives but is **1D-only, +1.667% (= +0.017 in h)**; the 2D leg passes at |δ| < 0.4%
@@ -249,8 +243,7 @@ prevent.**
 
 - **MECHANISM:** the completion-leg denominator/normalization (`D`, `β_G`, `β_Ḡ`) is missing a
   mass-marginalization dimension that the catalogue leg has (a "4D numerator leg added to a 3D
-  numerator leg" dimensional mismatch). Search also: "completion term dimensionality", "D(h) not
-  mass-marginalised", "dimensional mismatch", "mass-marginalization asymmetry between legs".
+  numerator leg" dimensional mismatch). Search also: "completion term dimensionality", "D(h) not mass-marginalised", "dimensional mismatch", "mass-marginalization asymmetry between legs".
 - **BOUND:** **Real defect, CONFIRMED, but WRONG SIGN.** The full code-consistent correction moves
   the MAP from r1 0.8133→0.8492 and r2 0.7820→0.8527 — mean **+0.053 where −0.077 was required**.
   Decomposed (2026-07-30 adjudication): **−0.058 measure + +0.093 population tilt**, net +0.036
@@ -270,8 +263,7 @@ prevent.**
 
 - **MECHANISM:** the idea that a numerical floor/zero-handling strategy for combining per-event
   likelihoods (to avoid a single zero collapsing the joint posterior) introduces or masks a bias.
-  Search also: "mixture floor", "zero-handling", "physics-floor", "log-space combination floor",
-  "underflow guard".
+  Search also: "mixture floor", "zero-handling", "physics-floor", "log-space combination floor", "underflow guard".
 - **BOUND:** REFUTED structurally — exactly **0.000 in h**. The `physics-floor` guard never fires:
   65,108/65,108 cells nonzero, 0 excluded events in all 16 combined posteriors. The apparent
   `n_events_empty = 2` asymmetry was a miscount of two non-integer JSON keys, not real exclusions.
@@ -293,15 +285,20 @@ prevent.**
   catalogue-side mass error is huge (median σ_lnM ≈ 1.28 ≈ 0.56 dex), the window's *upper* leg is
   almost always vacuous (mass minus its error is negative), so only a **hard lower floor** does any
   work — an asymmetric, one-sided truncation. Because the window's bounds are built from z_min/z_max,
-  which depend on h, the truncation is **h-dependent by construction**. Search also (use ANY of
-  these; the filing session's exact words will not match a future proposer's): "mass window",
-  "hard cut", "support truncation", "eligibility filter", "one-sided cut", "negative lower edge",
-  "truncation bias", "hard clamp on mass", "mass floor", "candidate-search mass filter", "sigma
-  clipping on host mass", "h-dependent selection cut".
-- **BOUND:** **REFUTED. Tilt = −0.317 nats over h 0.73→0.81 = 0.063% of the 504.8-nat target,
-  ~40–50× too small at its ceiling, and SIGN-INVERTED** (removing the window moves the MAP *up* by
+  which depend on h, the truncation is **h-dependent by construction**. Search also (use ANY of these; the filing session's exact words will not match a future proposer's): "mass window", "hard cut", "support truncation", "eligibility filter", "one-sided cut", "negative lower edge", "truncation bias", "hard clamp on mass", "mass floor", "candidate-search mass filter", "sigma clipping on host mass", "h-dependent selection cut", "mass cut", "z-dependent selection", "log-normal error model", "error model".
+- **BOUND:** **REFUTED. Tilt = −0.317 nats over h 0.73→0.81 = 0.063% of the 504.8-nat
+  catalogue-leg-only target (`Σ ln(L_cat,2D/L_cat,1D)`, dark class, 534 events;
+  `HANDOFF_20260730.md:55, :86`), and SIGN-INVERTED** (removing the window moves the MAP *up* by
   ~+0.0015, i.e. the opposite direction from what a bias-driver correction would need). Strengthened
-  in adjudication: "its hard-zeros are worth 1.5% of the target" — still far too small.
+  in adjudication: "its hard-zeros are worth 1.5% of the target" — a DIFFERENT denominator, the
+  15.83-nat dark-class share of the observed full-mixture channel difference (+0.24 nats / 15.83
+  nats; `ADJUDICATION_20260730.md:9, :11, :61`) — still far too small on either accounting. **The
+  bare figure "~40–50× too small at its ceiling" is `[UNSOURCED — no derivation located in the
+  record; do not quote as banked]`: it is copied into four documents (this entry, `HANDOFF_20260730.md:87`,
+  `CLAIM_2D_BIAS_20260730.md:734`, `CLAIM_D1_P0WINDOW_20260805.md:79`, `CLAIM_WGEO_20260827.md`) but
+  derived in none, and it matches neither the 0.063% nor the 1.5% denominator above (see §D of the
+  ADVERSARIAL CHECK below for the orchestrator's unbanked reconstruction attempt). The verdict itself
+  (too small by 1.5–3 orders of magnitude, sign-inverted) is robust regardless.**
   Independently corroborated in TWO NEW venues by [WGEO] (2026-08-27, chair-re-derived, whole
   pruned catalogue, N=20,834,171): the same 193-low-side-vs-1-high-side asymmetry reproduces as
   29:1 (cone-exact fleet) and 12.93:1 (single GW interval, whole catalogue) — both far too small to
@@ -347,8 +344,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 ### 2. [GRAY-MIX-AMPLIFY] — full Gray mixture as the compensation channel
 
 - **MECHANISM:** using the FULL Gray et al. mixture `(β_G·L_cat + B_num)/D` (rather than the
-  project's two-branch construction) as a fix for the deep-venue rail. Search also: "full Gray
-  mixture", "Gray-formula compensation", "canonical mixture restoration".
+  project's two-branch construction) as a fix for the deep-venue rail. Search also: "full Gray mixture", "Gray-formula compensation", "canonical mixture restoration".
 - **BOUND:** **AMPLIFIES** the bias — worst case **+0.123** vs the two-branch construction's +0.032;
   12/12 configurations fail; the host branch flips from a counterweight (−26…−182) to a co-tilting
   term (+47…+166).
@@ -374,8 +370,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 ### 4. [HARD-CLAMP-OBSERVED-Z] — hard support truncation on observed z as the production fix
 
 - **MECHANISM:** proposing a hard membership cut evaluated on the *observed* (noisy) redshift as
-  the production selection mechanism. Search also: "hard clamp", "observed-z membership",
-  "truncation on observed redshift".
+  the production selection mechanism. Search also: "hard clamp", "observed-z membership", "truncation on observed redshift".
 - **BOUND:** REFUTED for production — sign-flipping bias −0.021…+0.015, coverage 0.18–0.46; needs a
   **soft, photo-z-marginalized** membership instead.
 - **DATE/SOURCE:** 2026-07-11 (N-2d). Anchor: `"A hard support truncation is the production fix …
@@ -386,8 +381,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 
 ### 5. [WPOP-TUNING] — tuning the population-prior weight `w_pop`
 
-- **MECHANISM:** adjusting the population-rate prior weighting to absorb the residual. Search also:
-  "population prior tuning", "w_pop misspecification", "rate-prior tilt".
+- **MECHANISM:** adjusting the population-rate prior weighting to absorb the residual. Search also: "population prior tuning", "w_pop misspecification", "rate-prior tilt".
 - **BOUND:** NEGLIGIBLE — ≤ +0.0004 at a 10% deliberate misspecification. "Escape hatch closed."
 - **DATE/SOURCE:** 2026-07-11 (N-3). Anchor: `"Tuning w_pop … NEGLIGIBLE / escape hatch CLOSED: ≤
   +0.0004"` — `BIAS_HISTORY_LEDGER.md` row 64.
@@ -396,8 +390,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 ### 6. [PDET-NUM-ALONE] — adding `p_det` inside the numerator ALONE
 
 - **MECHANISM:** adding a detection-probability factor inside the per-event numerator without a
-  matched denominator change. Search also: "p_det inside numerator alone", "unpaired p_det factor",
-  "single-sided p_det correction".
+  matched denominator change. Search also: "p_det inside numerator alone", "unpaired p_det factor", "single-sided p_det correction".
 - **BOUND:** REFUTED — deep cells unchanged (Δ≤+0.0006) and it actively **breaks** the calibrated
   controls (−0.003 → +0.003…+0.006). Ledger's own words: **"Do not cargo-cult it."** Only the
   JOINT model-σ + p_det-inside pair works (a separate, matched construction, #67).
@@ -413,8 +406,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 
 ### 7. [DEPTH-TRUNC] — depth truncation (`--max_redshift` cut) as the deep-rail fix
 
-- **MECHANISM:** cutting the catalogue/event depth at some `z_max` to cure a rail. Search also:
-  "depth truncation", "max_redshift cut", "redshift depth cap".
+- **MECHANISM:** cutting the catalogue/event depth at some `z_max` to cure a rail. Search also: "depth truncation", "max_redshift cut", "redshift depth cap".
 - **BOUND:** empirically dead — rails at every depth tested (0.2 / 0.3 / 0.5).
 - **DATE/SOURCE:** 2026-07-25. Anchor: `"Depth truncation cures the deep rail … empirically dead —
   rails at all three depths"` — `BIAS_HISTORY_LEDGER.md` row 56.
@@ -424,8 +416,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 ### 8. [ZERO-HOST-FALLBACK] — the #29 zero-host fallback as the rail cause
 
 - **MECHANISM:** events with no catalogue host silently dropped (or falling back to a
-  completion-only estimator) as the source of a deep rail. Search also: "zero-host fallback",
-  "dropped events", "no-host bookkeeping bug", "fallback estimator rail".
+  completion-only estimator) as the source of a deep rail. Search also: "zero-host fallback", "dropped events", "no-host bookkeeping bug", "fallback estimator rail".
 - **BOUND:** the underlying bug is REAL (58% of events dropped on the deep venue) but fallback
   events are **h-inert** — the rail PERSISTS after the fix (0.6000 both channels); host events move
   −4265 over the grid, fallback events move only −59.
@@ -455,8 +446,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 ### 10. [LCOMP-BNUM-DEFECT] — `L_comp`/`B_num` as a defective integral
 
 - **MECHANISM:** the claim that the completion-leg numerator integral (`L_comp`/`B_num`) is itself
-  mis-formulated or numerically wrong. Search also: "completion term defect", "B_num defective
-  integral", "completion numerator bug".
+  mis-formulated or numerically wrong. Search also: "completion term defect", "B_num defective integral", "completion numerator bug".
 - **BOUND:** exonerated TWICE, by different methods: (i) self-consistency Monte Carlo (#80,
   2026-07-26): the fallback-only apparent low bias (0.6118±0.0176) was a **subset-conditioning
   artifact** — `B/β_Ḡ = 0.7366±0.0155` closes at truth on a membership-clean subset. (ii) the
@@ -476,8 +466,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 ### 11. [VOLUME-DECONV-H-DEP] — `volume_deconv` kernel h-dependence
 
 - **MECHANISM:** the possibility that the volume-deconvolution kernel used for the broadened host-z
-  numerator carries an unaccounted h-dependence. Search also: "volume_deconv h-dependence", "kernel
-  h-sensitivity".
+  numerator carries an unaccounted h-dependence. Search also: "volume_deconv h-dependence", "kernel h-sensitivity".
 - **BOUND:** EXONERATED — exactly h-invariant to **1e-15** (`Z_g ∝ h⁻³` factors out cleanly).
 - **DATE/SOURCE:** 2026-07-25 (D2). Anchor: `"volume_deconv kernel carries h-dependence … EXONERATED
   — exactly h-invariant (Z_g ∝ h⁻³ to 1e-15)"` — `BIAS_HISTORY_LEDGER.md` row 75.
@@ -496,8 +485,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 ### 13. [INFO-STARVATION] — "information starvation" as the explanation for the H0 rail
 
 - **MECHANISM:** the claim that in-catalogue photo-z dark sirens are fundamentally information-poor,
-  hence the rail. Search also: "information starvation", "starved posterior", "information-poor
-  regime".
+  hence the rail. Search also: "information starvation", "starved posterior", "information-poor regime".
 - **BOUND:** **OVERTURNED.** Originally concluded 2026-06-30, then reversed 2026-07-02 (G6):
   starvation is "a property of prior-INCONSISTENT estimators, not of the data" — consistency
   ("counted exactly once") is the actual cure. **Ledger's own instruction: "Do NOT resurrect it as
@@ -513,8 +501,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 ### 14. [SPECZ-RESCUE] — spectroscopic-redshift subset as an information rescue
 
 - **MECHANISM:** the hope that a spec-z (rather than photo-z) subset of hosts carries the
-  informative posterior shape. Search also: "spec-z rescue", "spectroscopic subset", "spec-z money
-  figure".
+  informative posterior shape. Search also: "spec-z rescue", "spectroscopic subset", "spec-z money figure".
 - **BOUND:** REFUTED — spec-z hosts are 0.56% of GLADE+, contribute ≤8.7% (median ~0%) of the
   rate-weighted in-catalogue likelihood; the inference-side `flag==3` cut still rails at 0.870.
 - **DATE/SOURCE:** 2026-06-30. Anchor: `"Spec-z host subsets carry the informative posterior shape
@@ -525,8 +512,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 ### 15. [PV-FRAME] — heliocentric/CMB frame and peculiar-velocity corrections
 
 - **MECHANISM:** the choice of rest frame (heliocentric vs CMB-dipole) for host redshifts, and the
-  host peculiar-velocity correction. Search also: "heliocentric frame", "CMB dipole", "peculiar
-  velocity correction", "PV frame".
+  host peculiar-velocity correction. Search also: "heliocentric frame", "CMB dipole", "peculiar velocity correction", "PV frame".
 - **BOUND:** net effect **+0.15%** in h (frame), and 2D **PV-insensitive at +0.0012** (peculiar
   velocity); both far too small to matter, ~120× smaller than the rail and orthogonal to it.
 - **DATE/SOURCE:** 2026-07-04/07021f6f. Anchors: `"Heliocentric vs CMB-frame host z … fixed: net
@@ -539,8 +525,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 - **MECHANISM:** a bundle of five separately-checked, all-inert code items: `galaxy.py`'s (1+z)³
   σ_z scaling; `TRUE_HUBBLE_CONSTANT=0.7` dead-code inconsistency; the CRB row-424 apparent
   bimodality; `p_det` grid resolution (30 vs 60 bins); `allow_singular=True`; numerical posterior
-  underflow. Search also: "row-424 seam", "p_det grid resolution", "allow_singular", "underflow",
-  "TRUE_HUBBLE_CONSTANT dead code".
+  underflow. Search also: "row-424 seam", "p_det grid resolution", "allow_singular", "underflow", "TRUE_HUBBLE_CONSTANT dead code", "sigma_z", "σ_z scaling".
 - **BOUND:** all inert / non-causes. Row-424 is a seam (seed200⊕seed300, emcee under-mixing), impact
   on H0 NONE. `TRUE_HUBBLE_CONSTANT` is dead code, not on the production path. Grid resolution is
   "not a bias source" (re-confirmed twice, Audit A8 G8a). `allow_singular` — fixed-and-landed,
@@ -557,8 +542,7 @@ not re-derive it a third time"` (`BIAS_HISTORY_LEDGER.md:139`).
 
 - **MECHANISM:** "cleaning" only the numerator side of the mixture (leaving the denominator alone)
   as a de-rail strategy, in two variants (Angle A/C and Angle B), plus a third variant using a
-  locally-matched (same-kernel) denominator. Search also: "numerator-only fix", "local same-kernel
-  denominator", "de-rail via numerator cleaning".
+  locally-matched (same-kernel) denominator. Search also: "numerator-only fix", "local same-kernel denominator", "de-rail via numerator cleaning".
 - **BOUND:** REFUTED — both numerator-only variants rail the estimator UP to **0.870** at σ_z=0.035
   (#37, "DISQUALIFIED"). The local same-kernel denominator variant fails identically at BOTH σ_z
   values ("GATE FAIL — 0.870 at both", #38). A related global photo-z-smeared denominator `D_sm`
@@ -602,8 +586,7 @@ looked at" as "this area is cleared."
 
 - **MECHANISM:** the with-BH-mass candidate eligibility filter applies a DIFFERENT sigma-multiplier
   to the GW-side uncertainty (±1.5σ) than to the galaxy-side uncertainty (±1σ), an asymmetry
-  recorded nowhere as a deliberate design choice. Search also: "mass filter asymmetry", "sigma
-  multiplier mismatch", "GW-side vs galaxy-side window width".
+  recorded nowhere as a deliberate design choice. Search also: "mass filter asymmetry", "sigma multiplier mismatch", "GW-side vs galaxy-side window width".
 - **STATUS:** **CONFIRMED, candidate-confirmed defect — NOT exonerated.** Production iiib: 688/1588
   = 43.3% of h=0.73 rows attributed to this filter emptying an otherwise-nonzero candidate ball
   (688/688 exact); `Σ^4D`/`B_num_wbh` carry NO matching cut (unmodeled one-sided numerator
@@ -710,7 +693,8 @@ pass could still surface others.)
 
 ## 7. STALE CROSS-REFERENCES FOUND
 
-1. **`BIAS_HISTORY_LEDGER.md:130`** cites the layer-1 exoneration list as
+1. **`BIAS_HISTORY_LEDGER.md:129`** (off-by-one: several documents, including an earlier draft of
+   this register and the WGEO card, cite this as `:130`) cites the layer-1 exoneration list as
    `"CLAIM_2D_BIAS_20260730.md:191-204"`. **The list is no longer at that location.** It currently
    begins at **line 721** (`## Exonerated — do NOT re-open without new evidence`) and its core
    sentence runs `:722-734`, with HB specifically at `:732-734`. This drift was already caught and
@@ -735,6 +719,16 @@ pass could still surface others.)
    internal inconsistency, not a line-number drift, but recorded here because a future reader citing
    that runbook line would inherit a wrong verdict label. Anchor:
    `"[AMBIG] — RUNBOOK_NEXT_SESSION.md:113 calls it 'MAP PASS' without the word FAIL"` —
+   `BIAS_HISTORY_LEDGER.md` row 84.
+5. **Ledger row numbers 90, 91, 92, 93 and 94 are each used TWICE** for unrelated objects — an
+   08-04/05 block (`BIAS_HISTORY_LEDGER.md:110-114`) and an 07-27/29 block (`:116-120`). The table
+   holds **103 numbered rows but only reaches #98**, so a bare "row 90" (etc.) citation is
+   ambiguous between the two blocks. §8's own citation of "row 90" for `[A2-VOID]` means the
+   08-04/05 gate-(vii) row (`:110`), not the (d1) z×M_z NULL row (`:116`) — cite it as "row 90
+   (08-04/05 gate (vii))" going forward.
+6. **Off-by-one, on-theme:** item 1 above (the stale pointer to the exoneration list) is itself an
+   instance of this class of error — several documents cite `BIAS_HISTORY_LEDGER.md:130` for that
+   pointer when it is actually at **`:129`**.
    `BIAS_HISTORY_LEDGER.md` row 84.
 
 **Not checked for drift (out of this sweep's scope):** the hundreds of other `file:line` citations
