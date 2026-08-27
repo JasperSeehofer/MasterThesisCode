@@ -93,3 +93,6 @@ results/campaign51_20260728/realistic_20260729/d1_sand/pool_p0window/
 
 # Cluster-staging realization data (multi-GB, seed-reproducible; provenance in *.meta.json)
 results/campaign51_20260728/realistic_20260729/realizations_staged/*.csv
+
+# retrieved cluster data (multi-GB, cluster is the copy of record) — 2026-08-28
+results/campaign51_20260728/realistic_20260729/headreadout_20260827/

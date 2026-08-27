@@ -26,7 +26,7 @@ meta:
   commission_base: {tag: commission-base, commit: b593f02, branch: physics/photoz-joint-normalisation}
   expected_catalog_cols: 8            # reduced_galaxy_catalogue.csv (redshift-flag retained, 479afdd+)
   retirement_banner: "DATA_INVENTORY.md — all pre-2026-06-20 (pre mass-convention + L_cat fixes) CRBs/injections/posteriors are RETIRED"
-  updated: 2026-08-27
+  updated: 2026-08-28
 
 # --- STAGE 1: injection pools (feed the P_det detection-probability estimator) ---
 # p_det is h-invariant (detection-horizon survival), so a single-h pool suffices;
@@ -165,6 +165,24 @@ campaigns_20260728_plus:
     git_commit: "7e4f1c64"
     slurm_jobs: "6709953 (array 0-31, submit 2026-08-26T~10:40Z / T11:07:01 local; 32/32 COMPLETED) — confirmed live in sacct 2026-08-27"
     note: "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_submission_20260826.json records commit/job_id/seed_plan directly. Local sync in progress at results/campaign51_20260728/realistic_20260729/ca_rhs_work/*_{twin,coded}_work/ (was untracked at 2026-08-27 session start)."
+  - id: p3_2d_fleet_repair_20260827
+    path: "$WS/p3_2d_fleet_repair_20260827"
+    status: "FULLY RECOVERABLE — first fleet with write_provenance.sh wired; per-task provenance_*.json present"
+    git_commit: "d04d9dc9 (branch fix/p32d-classg-venue-repair, tag p32d-repair-4af1baec)"
+    slurm_jobs: "6723958 (array 0-23, partition cpu_il, 24/24 tasks COMPLETED 2026-08-27)"
+    note: "[P3-2D] class-G venue repair fleet, seeds 900101-900124, arms bc+bt (48 arm-seed pairs). Produced under PREREGISTRATION_P3_2D_REPAIR_20260827.md REGISTERED DESIGN v2 (results/campaign51_20260728/realistic_20260729/PREREGISTRATION_P3_2D_REPAIR_20260827.md); job submission record filled in commit bbfdd2e0. Read out 2026-08-28 via stage_lhs2d — results/campaign51_20260728/realistic_20260729/P3_2D_REPAIR_READOUT_20260828.md (same results dir as the prereg)."
+  - id: run_20260827_headreadout_iiib
+    path: "$WS/run_20260827_headreadout_iiib"
+    status: "FULLY RECOVERABLE — submission + run_metadata provenance"
+    git_commit: d04d9dc9
+    slurm_jobs: "6724169 (smoke, array 21, COMPLETED 2026-08-27) + 6725283 (full, array 0-40, COMPLETED 2026-08-27)"
+    note: "Production H0 readout at HEAD, iiib venue (true reduced GLADE+ catalogue). EVAL_SEED 777000; config absolute_marginal/volume_deconv/fused/phi. CRB set run_20260729_seed61000 (md5 9a1f2a14384a9281c97ca3be312ddaab). 41 posteriors both channels + diagnostics/event_likelihoods.csv (65108 data rows). Registration: results/campaign51_20260728/realistic_20260729/MEASUREMENT_HEAD_READOUT_20260827.md."
+  - id: run_20260827_headreadout_joint_r1
+    path: "$WS/run_20260827_headreadout_joint_r1"
+    status: "FULLY RECOVERABLE — submission + run_metadata provenance"
+    git_commit: d04d9dc9
+    slurm_jobs: "6724170 (smoke) + 6725284 (full array), both COMPLETED 2026-08-27"
+    note: "Same as run_20260827_headreadout_iiib but joint_r1 venue: observed_catalogue_seed900001.csv, sha256 e8f7ab310ea70ddfdd3b81970dc99ad943808e6b6c128777bb085db01b4f6751. EVAL_SEED 777000; same config/CRB set. Registration: results/campaign51_20260728/realistic_20260729/MEASUREMENT_HEAD_READOUT_20260827.md."
   - id: d1_sand
     path: "$WS/d1_sand"
     status: "UNVERIFIED PROVENANCE — no run_metadata*.json found; pool_p0window, pool_p0kept subdirs"

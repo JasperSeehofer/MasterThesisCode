@@ -1157,3 +1157,24 @@ into its out-root — the first fleet in this campaign to do so.
 **Status: FIXED.** §v2.10 carries no remaining placeholders. No result may be read from this run
 until the four registered gates (G2 draw-count, G3 truncated-normal KS, G5 mass-window count,
 G6 exact identity) have been evaluated, per §v2.6.
+
+---
+
+**PA-2DR-14 (2026-08-28; POST-DATA readout pointer + candidate σ-chain correction; `[FABLE-ORCH]`)**
+
+The run registered by this document has been read out:
+**`P3_2D_REPAIR_READOUT_20260828.md`** (same directory). Headlines: all gates G1–G6 PASS
+(no INSTRUMENT-DEFECT; G4 = 0.865491 in-interval, G5 fraction exactly 0.0, G6 exact on 48/48
+arm-seed pairs); P1 inside at +0.247 σ, P4 inside at +0.351 σ; P2 and P3 bank **UNDERPOWERED**
+under §v2.3/§v2.4's freeze rules (realized SEMs 16.7% / 4.4% above planning) with central values
+at +0.100 σ / +0.977 σ; P3 excludes R = 1 at 5.77 σ realized (REPORTED-ONLY); per §v2.5,
+**CONFIRMED cannot bank; not REFUTED**. Chair verdict, not author-ratified — author items
+R-2DR-1..3 + D-2DR-1 in the readout doc.
+
+**Candidate correction (pending author [RULE] R-2DR-1):** an independent verifier found v2.2's
+relative-SEM chain (2.3370/2.5606/2.6681%) was back-derived through rounded intermediates; the
+direct σ/value chain from the cited source is 2.3194/2.5449/2.6560%, giving
+σ_pred(P2) = 0.00014599 (vs 0.00014679) and σ_pred(P4) = 0.00018232 (vs 0.00018166).
+**Every disposition above was evaluated under both chains and none differs.** Nothing above this
+line is edited; the registered (uncorrected) bands remain the bands of record unless the author
+ratifies the correction.
