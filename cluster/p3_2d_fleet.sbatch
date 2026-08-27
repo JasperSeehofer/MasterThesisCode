@@ -68,7 +68,12 @@ BASE_SEED=900101
 SEED=$((BASE_SEED + TID))
 
 : "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) — run cluster/setup.sh first}"
-OUT_ROOT="$WORKSPACE/p3_2d_fleet_20260825"
+# Out-root is overridable via `sbatch --export=ALL,OUT_ROOT=...` (PA-2DR, 2026-08-27).
+# The default is the ORIGINAL banked 2026-08-25 fleet. A re-run MUST pass its own
+# OUT_ROOT: PA-CA-11's idempotency guard skips any (arm, seed) whose meta already
+# exists, so re-submitting against the banked default is a silent no-op that also
+# risks contaminating the frozen comparand.
+OUT_ROOT="${OUT_ROOT:-$WORKSPACE/p3_2d_fleet_20260825}"
 LOG_DIR="$OUT_ROOT/logs"
 mkdir -p "$OUT_ROOT" "$LOG_DIR"
 
