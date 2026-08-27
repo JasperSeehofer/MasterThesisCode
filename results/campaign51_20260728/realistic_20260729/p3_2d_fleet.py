@@ -589,6 +589,20 @@ def _identity_inputs_2d(at: pd.DataFrame) -> dict[str, Any]:
     (alpha_G_phi*L_cat_with_bh + B_num_wbh)`` (prereg S1; A20 review F3, ``combined_with_bh``'s
     own numerator form, ``bayesian_statistics.py`` :5481-5483) and the LIVE/dead accounting
     (LIVE(a)-style: ``L_cat_with_bh > 0``, mirroring PA-7's no-BH convention).
+
+    [DEFECT 2 repair, PA-2D-1 F16 / p32d_residual_accounting_20260827.md] ``w2`` is computed for
+    EVERY F-0-accepted row with the SAME zero-default masked divide the RHS instrument uses
+    (``ca_rhs_scorer.py``'s ``_w2_from_csv_columns``: ``np.divide(a2, denom, out=zeros, where=denom
+    > 0)``), NOT restricted to the ``live`` subset. Previously the 40 F-0-accepted rows with
+    ``A2 == 0`` because ``L_cat_with_bh <= 0`` (dead per this function's own ``live`` mask) were
+    left ``NaN`` here and then indexed OUT of the LHS sum entirely in
+    :func:`stage_lhs2d` -- silently contributing summand 0 instead of the registered F16 summand 1
+    (``A2 = 0 => w2 = 0 => summand (1-w2) = 1``), while the RHS side (which has no such exclusion)
+    already honoured F16. ``live``/``dead`` are still returned as a DIAGNOSTIC split only; they no
+    longer gate which rows enter the accumulated sum -- see :func:`stage_lhs2d`. This is the
+    STANDARD registered variant (PA-2D-10): the 3 pathological ``A2 = B2 = 0`` rows fall into
+    ``where=False`` and default to ``w2 = 0`` (summand 1) exactly like the RHS's own convention,
+    rather than the STRICT variant that would additionally zero them out.
     """
     alpha_g_phi = at["alpha_G_phi"].to_numpy(dtype=np.float64)
     l_cat_wbh = at["L_cat_with_bh"].to_numpy(dtype=np.float64)
@@ -596,13 +610,29 @@ def _identity_inputs_2d(at: pd.DataFrame) -> dict[str, Any]:
 
     live = l_cat_wbh > 0.0
     dead = ~live
-    w2 = np.full(at.shape[0], np.nan, dtype=np.float64)
-    a2 = alpha_g_phi[live] * l_cat_wbh[live]
-    denom = a2 + b_num_wbh[live]
-    # F16 dead-row convention (A2=0 => w2=0 => summand 1) applies to A2, not to the live mask
-    # itself (LIVE is defined on L_cat_with_bh, per PA-7's mirror); guard denom==0 defensively.
-    w2[live] = np.where(denom != 0.0, a2 / denom, 0.0)
+    a2 = alpha_g_phi * l_cat_wbh
+    denom = a2 + b_num_wbh
+    w2 = np.divide(a2, denom, out=np.zeros_like(a2), where=denom > 0.0)
     return {"w2": w2, "live": live, "dead": dead}
+
+
+def _pa2dr7_mass_window_count(meta: dict[str, Any]) -> dict[str, int]:
+    """PA-2DR-7 acceptance check: count accepted latents with ``0 < M_true < 1.0 M_sun``.
+
+    The defect-1 factor ``x1.1944`` was measured on the OLD floor population ``{M_drawn < 1.0
+    M_sun}`` (``_M2D_MASS_FLOOR = 1.0``); the repair instead rejects ``{M_drawn <= 0}``. Those
+    are different sets, and the factor transfers to the repaired venue only if the half-open
+    interval ``(0, 1.0) M_sun`` is empty to within rounding. Read from the per-seed CRB CSV's
+    ``M_true`` provenance column (:data:`PROVENANCE_COLUMNS`) -- no re-draw, no cluster time.
+    """
+    crb_csv = Path(meta["crb_csv"])
+    if not crb_csv.is_file():
+        return {"n_accepted_0_lt_M_lt_1": 0, "n_accepted_rows_checked": 0}
+    m_true = pd.read_csv(crb_csv, usecols=["M_true"])["M_true"].to_numpy(dtype=np.float64)
+    return {
+        "n_accepted_0_lt_M_lt_1": int(np.sum((m_true > 0.0) & (m_true < 1.0))),
+        "n_accepted_rows_checked": int(m_true.size),
+    }
 
 
 def stage_lhs2d(
@@ -611,6 +641,28 @@ def stage_lhs2d(
     """LHS2 (PA-CA-1 drawn-count form): per-seed ``LHS2_s = (C2*/200) * sum_acc(1-w2_e)`` over the
     B2-T arm's fleet, fleet mean +/- SEM. Requires the companion's banked ``C2_star``
     (PA-2D-1 F4) and the arm's already-run fleet metas.
+
+    [PA-2DR-3 POWER GATE, ``PREREGISTRATION_P3_2D_REPAIR_20260827.md`` REGISTERED DESIGN v2]
+    Emits BOTH accumulations from the SAME realization, at zero additional cluster time and zero
+    additional draws (this whole stage is post-processing of an already-written diagnostics CSV):
+
+    - ``LHS2_D1only`` -- the PRE-repair ``live``-filtered sum, i.e. defect 1 (mass floor) repaired
+      but defect 2 (dead rows) NOT. On live rows the repaired masked divide and the pre-repair
+      ``np.where(denom != 0, a2/denom, 0.0)`` agree identically (``live`` implies
+      ``L_cat_with_bh > 0`` so ``a2, b_num_wbh >= 0`` and ``denom > 0`` iff ``denom != 0``), so
+      this reproduces the pre-repair accumulator exactly rather than approximating it.
+    - ``LHS2_D1D2`` -- the repaired, unfiltered sum (the registered primary read).
+
+    Because the two are PAIRED on one realization, their difference carries only the dead-row
+    recount and not the seed scatter. Registered step-3 readouts, in ascending strength:
+    the paired ratio ``LHS2_D1D2 / LHS2_D1only`` (predicted 1.0680), and the EXACT identity
+    ``LHS2_D1D2 - LHS2_D1only == (C2*/n_drawn) * n_dead`` (zero free parameters -- on a dead row
+    ``A2 = 0 => w2 = 0 => summand exactly 1``), checked to float round-off per seed.
+
+    Also emits the PA-2DR-7 acceptance count: the ``x1.1944`` defect-1 factor was measured on the
+    set ``{M < 1.0 M_sun}`` (the old clip floor) but the repair rejects ``{M <= 0}``. Those are
+    different sets and the factor transfers only if ``{0 < M < 1.0 M_sun}`` is empty to within
+    rounding; this reports the realized count instead of assuming it.
     """
     if not COMPANION_JSON_DEFAULT.is_file():
         raise SystemExit(
@@ -624,37 +676,97 @@ def stage_lhs2d(
     metas = _load_fleet_metas(out_root, arm, seeds)
 
     per_seed_lhs2: dict[int, float] = {}
+    per_seed_lhs2_d1only: dict[int, float] = {}
+    per_seed_ratio: dict[int, float] = {}
     per_seed_diag: dict[int, dict[str, Any]] = {}
     for seed, meta in metas.items():
         at = o5._rows_at_h(Path(meta["diagnostics_csv"]), H_GEN)
         inputs = _identity_inputs_2d(at)
         n_drawn = int(meta["n_events"])  # the "200" drawn-count normalization (PA-CA-1)
-        sum_acc = float(np.sum(1.0 - inputs["w2"][inputs["live"]]))
+        # [DEFECT 2 repair] sum over ALL F-0-accepted rows (no `live` filter) -- honours F16's
+        # dead-row convention identically to the RHS instrument (ca_rhs_scorer.py:1315-1324).
+        sum_acc = float(np.sum(1.0 - inputs["w2"]))
+        # [PA-2DR-3] the PAIRED defect-1-only counterfactual on the SAME realization.
+        sum_acc_d1only = float(np.sum(1.0 - inputs["w2"][inputs["live"]]))
         lhs2_s = (c2_star / n_drawn) * sum_acc
+        lhs2_d1only_s = (c2_star / n_drawn) * sum_acc_d1only
+        n_dead_s = int(inputs["dead"].sum())
+        # Exact dead-row identity (zero free parameters): each dead row contributes exactly 1.
+        exact_delta = (c2_star / n_drawn) * n_dead_s
+        delta_dev = abs((lhs2_s - lhs2_d1only_s) - exact_delta)
         per_seed_lhs2[seed] = lhs2_s
+        per_seed_lhs2_d1only[seed] = lhs2_d1only_s
+        per_seed_ratio[seed] = lhs2_s / lhs2_d1only_s if lhs2_d1only_s > 0.0 else float("nan")
         per_seed_diag[seed] = {
             "n_rows": int(at.shape[0]),
             "n_live": int(inputs["live"].sum()),
-            "n_dead": int(inputs["dead"].sum()),
+            "n_dead": n_dead_s,
             "sum_acc_1_minus_w2": sum_acc,
+            "sum_acc_1_minus_w2_D1only": sum_acc_d1only,
+            "dead_row_identity_abs_dev": delta_dev,
+            "dead_row_identity_ok": bool(delta_dev <= 1.0e-12 * max(abs(lhs2_s), 1.0e-300)),
+            **_pa2dr7_mass_window_count(meta),
         }
 
     vals = np.array(list(per_seed_lhs2.values()), dtype=np.float64)
+    vals_d1 = np.array(list(per_seed_lhs2_d1only.values()), dtype=np.float64)
+    ratios = np.array(list(per_seed_ratio.values()), dtype=np.float64)
     n = vals.size
-    mean = float(vals.mean()) if n else None
-    sem = float(vals.std(ddof=1) / np.sqrt(n)) if n > 1 else None
+
+    def _mean_sem(a: npt.NDArray[np.float64]) -> tuple[float | None, float | None]:
+        if a.size == 0:
+            return None, None
+        return float(a.mean()), (float(a.std(ddof=1) / np.sqrt(a.size)) if a.size > 1 else None)
+
+    mean, sem = _mean_sem(vals)
+    mean_d1, sem_d1 = _mean_sem(vals_d1)
+    ratio_mean, ratio_sem = _mean_sem(ratios)
+    n_window = sum(int(d["n_accepted_0_lt_M_lt_1"]) for d in per_seed_diag.values())
+    n_accepted_total = sum(int(d["n_accepted_rows_checked"]) for d in per_seed_diag.values())
     result = {
         "arm": arm,
-        "reference": f"{REGISTRATION_SECTION}, S1 (LHS2 statistic)",
+        "reference": f"{REGISTRATION_SECTION}, S1 (LHS2 statistic); "
+        "PREREGISTRATION_P3_2D_REPAIR_20260827.md REGISTERED DESIGN v2 (PA-2DR-3/-7)",
         "C2_star": c2_star,
         "n_seeds": n,
         "LHS2_per_seed": per_seed_lhs2,
+        "LHS2_D1only_per_seed": per_seed_lhs2_d1only,
+        "LHS2_paired_ratio_per_seed": per_seed_ratio,
         "per_seed_diagnostics": per_seed_diag,
         "LHS2_mean": mean,
         "LHS2_sem": sem,
+        "LHS2_D1only_mean": mean_d1,
+        "LHS2_D1only_sem": sem_d1,
+        # PA-2DR-3 step-3 discriminator: paired, so the seed scatter cancels.
+        "LHS2_paired_ratio_mean": ratio_mean,
+        "LHS2_paired_ratio_sem": ratio_sem,
+        "dead_row_identity_all_ok": all(
+            bool(d["dead_row_identity_ok"]) for d in per_seed_diag.values()
+        ),
+        # PA-2DR-7 acceptance check: the x1.1944 factor was measured on {M < 1 M_sun}, the repair
+        # rejects {M <= 0}; the factor transfers only if this fraction is negligible (<= 1e-3).
+        "pa2dr7_n_accepted_0_lt_M_lt_1": n_window,
+        "pa2dr7_n_accepted_rows_checked": n_accepted_total,
+        "pa2dr7_fraction": (n_window / n_accepted_total) if n_accepted_total else None,
+        "pa2dr7_ok": ((n_window / n_accepted_total) <= 1.0e-3 if n_accepted_total else None),
     }
     print(
-        json.dumps({"C2_star": c2_star, "n_seeds": n, "LHS2_mean": mean, "LHS2_sem": sem}, indent=2)
+        json.dumps(
+            {
+                "C2_star": c2_star,
+                "n_seeds": n,
+                "LHS2_mean": mean,
+                "LHS2_sem": sem,
+                "LHS2_D1only_mean": mean_d1,
+                "LHS2_D1only_sem": sem_d1,
+                "LHS2_paired_ratio_mean": ratio_mean,
+                "LHS2_paired_ratio_sem": ratio_sem,
+                "dead_row_identity_all_ok": result["dead_row_identity_all_ok"],
+                "pa2dr7_fraction": result["pa2dr7_fraction"],
+                "pa2dr7_ok": result["pa2dr7_ok"],
+            },
+            indent=2,
+        )
     )
     return result
 

@@ -1546,9 +1546,26 @@ def draw_isotropic_sky(
 # Numerical safety floors ONLY (never a physical claim) -- a several-sigma-low
 # tail draw of a Gaussian mass/observation must not become non-positive and
 # propagate a NaN/inf through 1/M_z,det-type production ratios downstream.
-_M2D_MASS_FLOOR = 1.0  # M_sun, source-frame latent mass
 _M2D_OBS_M_FLOOR = 1.0  # M_sun, observed (detector-frame) mass
 _M2D_OBS_DL_FLOOR = 1.0e-6  # Gpc, same floor draw_realization already uses for d_L
+
+# [DEFECT 1 / R-2D-1 repair, PA-2D-10 residual accounting
+# (p32d_residual_accounting_20260827.md)]: the LATENT source-frame mass
+# M ~ N(m_eff, sigma) in :func:`_draw_2d_accepted_latents` no longer gets a
+# floor-CLIP to a positive value.  Clipping put a spurious point mass of
+# events at M_true == 1.0 M_sun INSIDE the venue's accepted class-G
+# population (measured: 793/4800 drawn latents exactly at the old floor,
+# 372 of which cleared F-0 and then w2 == 1.0 -- contributing a hard ZERO to
+# the LHS numerator while still counting in the /200 denominator), while the
+# companion that DEFINES Sigma~^4D applies S_4D(M <= 0) := 0
+# (p3_2d_companion.py:281, guard F2 MINOR-6) -- i.e. the target law assigns
+# these events measure ZERO. Clip-then-accept therefore drew from the WRONG
+# support. The repair instead REJECTS any M <= 0 draw outright (the round's
+# ``valid_mass_batch`` mask below is ANDed into ``accept_mask``) so it is
+# never accepted and the batch loop redraws a fresh host/z/mass triple for
+# that slot on the next round -- the accepted sample's support now matches
+# the target law's (M > 0) exactly, with no post-hoc filtering of an
+# already-drawn sample (which would itself bias the draw).
 
 # Rejection-sampling batch/round bounds for the class-G 2D latent draw
 # (:func:`_draw_2d_accepted_2d_latents`) -- "chunk-safe": each round draws a
@@ -1627,12 +1644,21 @@ def _draw_2d_accepted_latents(
     F-0 machinery" per the task spec, i.e. an ADDITIONAL selection layer, not a replacement of the
     quality-based F-0 filter :func:`run_mirror_seed_inprocess`'s ``evaluate()`` call applies later.
 
+    [DEFECT 1 repair, PA-2D-10] The latent mass draw's support is ``M > 0``: any candidate with
+    ``M_true <= 0`` is REJECTED unconditionally (never floor-clipped into the accepted sample) so
+    the venue's accepted-event support matches the companion's ``S_4D(M <= 0) := 0`` convention
+    that defines :math:`\tilde{\Sigma}^{4D}`. Rejection happens INSIDE the batch loop (an invalid
+    draw simply fails to contribute to ``n_accepted`` and the next round redraws a fresh triple for
+    that slot) -- never as a post-hoc filter of an already-materialized sample, which would bias
+    the draw by depleting only the low tail without replacing it.
+
     Draws in BOUNDED batches (chunk-safe, :data:`_M2D_MIN_BATCH`/:data:`_M2D_MAX_BATCH`), hosts
     drawn WITH replacement within/across batches (the pool is the full reduced catalogue, ~2.3e7
     rows -- a documented, negligible-probability simplification relative to the 1D mode's
     without-replacement host draw, flagged for review). Deterministic given ``rng``'s state (every
     draw -- host index, per-host inverse-CDF uniform, mass normal, Bernoulli uniform -- consumes
-    from the SAME stream in a fixed order per round).
+    from the SAME stream in a fixed order per round, UNCHANGED by the defect-1 repair: the M <= 0
+    rejection is an extra AND-condition on ``accept_mask``, not an extra RNG draw).
 
     Args:
         rng: Seeded generator.
@@ -1659,7 +1685,13 @@ def _draw_2d_accepted_latents(
         ValueError: If ``pool.M``/``pool.M_error`` is ``None``.
         RuntimeError: If :data:`_M2D_MAX_ROUNDS` batches do not accumulate ``n`` accepted events
             (a GATE-ACC-style closed-loop STOP -- a pathologically low-S_4D venue/host-weighting
-            combination, not silently under-filled).
+            combination, not silently under-filled). The defect-1 M <= 0 rejection lowers the
+            per-round accept rate (measured pre-repair: ~16.5% of drawn latents at the old floor,
+            i.e. would now be rejected) but does not change the loop's termination structure --
+            :data:`_M2D_BATCH_MULTIPLIER`'s 4x-remaining batch sizing (capped at
+            :data:`_M2D_MAX_BATCH`) already has slack for accept rates well below 1, and this guard
+            still fires loudly rather than silently under-filling if a venue/weighting combination
+            ever drives the valid-mass rate low enough to starve it.
     """
     if pool.M is None or pool.M_error is None:
         raise ValueError(
@@ -1705,18 +1737,31 @@ def _draw_2d_accepted_latents(
         valid_sigma = (host_m_error > 0.0) & np.isfinite(host_m_error)
         sigma = np.where(valid_sigma, host_m_error, 0.0)
         m_true_batch = m_eff + sigma * rng.normal(size=batch)
-        m_true_batch = np.clip(m_true_batch, _M2D_MASS_FLOOR, None)
+
+        # [DEFECT 1 repair] M <= 0 is REJECTED, not floor-clipped (see the
+        # comment block above this function). ``valid_mass_batch`` is ANDed
+        # into ``accept_mask`` below so an invalid draw can never be
+        # accepted; the round loop naturally redraws a fresh triple for that
+        # slot next round -- no RNG stream reordering (host/z/mass/uniform
+        # are still drawn in the same fixed order every round).
+        valid_mass_batch = m_true_batch > 0.0
         m_z_true_batch = m_true_batch * (1.0 + z_true_batch)
 
         d_l_true_batch = np.asarray(dist_vectorized(z_true_batch, h=h), dtype=np.float64)
+        # Feed the interpolator a numerically-safe floored mass for the
+        # invalid (M <= 0) rows ONLY, purely to avoid NaN/inf propagating
+        # out of `detection_probability_with_bh_mass_interpolated` (e.g. its
+        # log10(M_z) branch) for rows that are rejected unconditionally
+        # below regardless of the S_4D value computed for them.
+        m_z_for_s4d = np.where(valid_mass_batch, m_z_true_batch, _M2D_OBS_M_FLOOR)
         s4d_batch = np.asarray(
             detection_probability.detection_probability_with_bh_mass_interpolated(
-                d_l_true_batch, m_z_true_batch, host_phiS_batch, host_qS_batch, h=h
+                d_l_true_batch, m_z_for_s4d, host_phiS_batch, host_qS_batch, h=h
             ),
             dtype=np.float64,
         )
         u_batch = rng.uniform(size=batch)
-        accept_mask = u_batch < s4d_batch
+        accept_mask = valid_mass_batch & (u_batch < s4d_batch)
 
         take = min(int(accept_mask.sum()), remaining)
         if take > 0:

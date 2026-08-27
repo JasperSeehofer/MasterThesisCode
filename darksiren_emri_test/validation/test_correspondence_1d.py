@@ -14,12 +14,13 @@ import dataclasses
 import inspect
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import pytest
 from scipy.integrate import quad
-from scipy.stats import norm
+from scipy.stats import kstest, norm
 
 from darksiren_emri.emri_rate import R_eff_per_mbh
 from darksiren_emri.validation import correspondence_1d as c1d
@@ -1753,6 +1754,423 @@ def test_catalogue_selected_2d_rejection_loop_stops_on_zero_survival(
             phi_survival_table=table,
             detection_probability=_FakeS4D(value=0.0),  # type: ignore[arg-type]
         )
+
+
+def _draw_2d_accepted_latents_pre_repair(
+    rng: np.random.Generator,
+    pool: c1d.HostPool,
+    host_w: np.ndarray,
+    s_tilde_phi: np.ndarray,
+    phi_survival_table: dict[float, tuple[np.ndarray, np.ndarray]],
+    completeness: c1d.CompletenessModel,
+    detection_probability: object,
+    n: int,
+    h: float = c1d.H_TRUE,
+) -> dict[str, np.ndarray]:
+    """Verbatim reference copy of the PRE-repair ``_draw_2d_accepted_latents`` (floor-CLIP the
+    latent mass to 1.0 M_sun, no ``M <= 0`` rejection) -- used ONLY by
+    ``test_catalogue_selected_2d_byte_identical_to_pre_repair_when_no_floor_rows`` below to pin
+    byte-identity with the repaired code on a synthetic case where no floor row is ever
+    triggered. Do NOT "clean up" to match the current implementation -- that would defeat the
+    point of the pin. Mirrors the pre-``R-2D-1`` code exactly (batch sizing, RNG consumption
+    order, floor value); the only intentional difference from the real function is returning a
+    plain dict instead of :class:`c1d._B0i2DLatents` (this reference does not need the extra
+    recorded fields the real dataclass carries).
+    """
+    assert pool.M is not None and pool.M_error is not None
+    old_floor = 1.0
+    host_idx_acc: list[np.ndarray] = []
+    z_true_acc: list[np.ndarray] = []
+    m_true_acc: list[np.ndarray] = []
+    m_z_true_acc: list[np.ndarray] = []
+    s4d_acc: list[np.ndarray] = []
+    n_accepted = 0
+    round_idx = 0
+    while n_accepted < n and round_idx < c1d._M2D_MAX_ROUNDS:
+        remaining = n - n_accepted
+        batch = int(
+            np.clip(c1d._M2D_BATCH_MULTIPLIER * remaining, c1d._M2D_MIN_BATCH, c1d._M2D_MAX_BATCH)
+        )
+        host_idx_batch = rng.choice(pool.n, size=batch, replace=True, p=host_w)
+        host_z_listed = pool.z[host_idx_batch]
+        host_z_error_listed = pool.z_error[host_idx_batch]
+        host_phiS_batch = pool.phiS[host_idx_batch]
+        host_qS_batch = pool.qS[host_idx_batch]
+        z_true_batch = c1d._draw_kernel_survival_redshifts(
+            rng,
+            host_z_listed,
+            host_z_error_listed,
+            phi_survival_table,
+            completeness,
+            host_phiS_batch,
+            host_qS_batch,
+            h=h,
+        )
+        host_m = pool.M[host_idx_batch]
+        host_m_error = pool.M_error[host_idx_batch]
+        m_eff = c1d._eddington_shifted_host_mass_batch(host_m, host_m_error)
+        valid_sigma = (host_m_error > 0.0) & np.isfinite(host_m_error)
+        sigma = np.where(valid_sigma, host_m_error, 0.0)
+        m_true_batch = m_eff + sigma * rng.normal(size=batch)
+        m_true_batch = np.clip(m_true_batch, old_floor, None)
+        m_z_true_batch = m_true_batch * (1.0 + z_true_batch)
+
+        d_l_true_batch = np.asarray(c1d.dist_vectorized(z_true_batch, h=h), dtype=np.float64)
+        s4d_batch = np.asarray(
+            detection_probability.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                d_l_true_batch, m_z_true_batch, host_phiS_batch, host_qS_batch, h=h
+            ),
+            dtype=np.float64,
+        )
+        u_batch = rng.uniform(size=batch)
+        accept_mask = u_batch < s4d_batch
+
+        take = min(int(accept_mask.sum()), remaining)
+        if take > 0:
+            keep_idx = np.flatnonzero(accept_mask)[:take]
+            host_idx_acc.append(host_idx_batch[keep_idx].astype(np.int64))
+            z_true_acc.append(z_true_batch[keep_idx])
+            m_true_acc.append(m_true_batch[keep_idx])
+            m_z_true_acc.append(m_z_true_batch[keep_idx])
+            s4d_acc.append(s4d_batch[keep_idx])
+            n_accepted += take
+        round_idx += 1
+
+    if n_accepted < n:
+        raise RuntimeError(
+            f"pre-repair reference did not converge: accepted {n_accepted}/{n} after "
+            f"{round_idx} rounds"
+        )
+    return {
+        "host_idx": np.concatenate(host_idx_acc),
+        "z_true": np.concatenate(z_true_acc),
+        "M_true": np.concatenate(m_true_acc),
+        "M_z_true": np.concatenate(m_z_true_acc),
+        "s4d_at_truth": np.concatenate(s4d_acc),
+    }
+
+
+def test_catalogue_selected_2d_rejects_nonpositive_mass_not_floor_clips() -> None:
+    """DEFECT 1 (R-2D-1) regression, PA-2D-10 residual accounting
+    (p32d_residual_accounting_20260827.md): a host pool engineered so a large fraction of its
+    Gaussian mass draws land at/below zero (tiny mean mass, huge sigma) must produce NO accepted
+    latent with ``M_true <= 0``, and -- the sharper check -- NO accepted latent sitting exactly at
+    the OLD floor value (1.0 M_sun). The pre-repair code floor-clipped every negative draw to
+    exactly 1.0 and then still ran it through Bernoulli(S_4D) acceptance, manufacturing a spurious
+    point mass in the accepted class-G population (measured pre-repair: 793/4800 drawn latents
+    exactly at the floor, 372 of which cleared F-0 with w2 == 1.0 exactly). This test FAILS
+    against the pre-repair code (some accepted M_true == 1.0 exactly, a near-certainty with ~50%
+    of raw draws landing <= 0 and a 0.9 constant acceptance probability) and PASSES against the
+    repair, where M_true is drawn from a continuous distribution and is therefore never exactly
+    1.0 and never <= 0 by construction.
+    """
+    n_pool = 30
+    rng_pool = np.random.default_rng(9001)
+    pool = c1d.HostPool(
+        phiS=rng_pool.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng_pool.uniform(0.1, np.pi - 0.1, n_pool),
+        z=rng_pool.uniform(0.01, 0.3, n_pool),
+        z_error=rng_pool.uniform(0.001, 0.04, n_pool),
+        n=n_pool,
+        M=np.full(n_pool, 1.0),  # tiny mean -- the Eddington shift is a no-op at this scale
+        M_error=np.full(n_pool, 1.0e6),  # huge sigma -- ~50% of raw draws land <= 0
+    )
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    host_w, _w_g, s_tilde = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+
+    result = c1d._draw_2d_accepted_latents(
+        np.random.default_rng(2026),
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        _FakeS4D(value=0.9),  # type: ignore[arg-type]
+        n=100,
+    )
+
+    assert np.all(result.M_true > 0.0)
+    assert not np.any(np.isclose(result.M_true, 1.0))
+    assert np.all(result.M_z_true > 0.0)
+
+
+def test_catalogue_selected_2d_byte_identical_to_pre_repair_when_no_floor_rows() -> None:
+    """Byte-identity pin (task item 5): with ``M_error == 0`` for every host, the latent mass
+    draw is fully deterministic (``m_eff == host_M`` exactly, zero-multiplied noise) and
+    therefore ``M_true`` can never be <= 0 -- the pre-repair floor-clip and the repaired
+    reject-and-redraw are BOTH structural no-ops in this regime. Given the identical seed, the
+    repaired ``_draw_2d_accepted_latents`` must reproduce
+    :func:`_draw_2d_accepted_latents_pre_repair` EXACTLY (``assert_array_equal``, not
+    ``allclose``): no RNG stream reordering, no numerical drift.
+    """
+    n_pool = 20
+    rng_pool = np.random.default_rng(4242)
+    pool = c1d.HostPool(
+        phiS=rng_pool.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng_pool.uniform(0.1, np.pi - 0.1, n_pool),
+        z=rng_pool.uniform(0.01, 0.3, n_pool),
+        z_error=rng_pool.uniform(0.001, 0.04, n_pool),
+        n=n_pool,
+        M=rng_pool.uniform(1.0e5, 1.0e6, n_pool),
+        M_error=np.zeros(n_pool),  # deterministic mass -- guarantees zero floor rows
+    )
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    host_w, _w_g, s_tilde = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+    detection_probability = _FakeS4D(value=0.9)
+
+    new_result = c1d._draw_2d_accepted_latents(
+        np.random.default_rng(777),
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        detection_probability,  # type: ignore[arg-type]
+        n=15,
+    )
+    old_result = _draw_2d_accepted_latents_pre_repair(
+        np.random.default_rng(777),
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        detection_probability,
+        n=15,
+    )
+
+    np.testing.assert_array_equal(new_result.host_idx, old_result["host_idx"])
+    np.testing.assert_array_equal(new_result.z_true, old_result["z_true"])
+    np.testing.assert_array_equal(new_result.M_true, old_result["M_true"])
+    np.testing.assert_array_equal(new_result.M_z_true, old_result["M_z_true"])
+    np.testing.assert_array_equal(new_result.s4d_at_truth, old_result["s4d_at_truth"])
+
+
+class _CountingRng:
+    """RNG proxy recording every ``choice``/``normal``/``uniform`` call and the number of
+    variates it consumed, delegating everything else to a real ``np.random.Generator``.
+
+    Used by the RNG-STREAM gate (``PREREGISTRATION_P3_2D_REPAIR_20260827.md`` REGISTERED DESIGN
+    v2 gate G2, replacing the unrunnable "zero-floor-row seed" form per PA-2DR-5): the defect-1
+    repair's load-bearing claim is that rejecting ``M <= 0`` is an extra AND-condition on
+    ``accept_mask``, **not** an extra RNG draw. Instrumenting the generator observes exactly that,
+    on the CHANGED code path (a pool engineered to produce ``M <= 0`` draws), which the prereg's
+    §5 structural-blindness item 3 wrongly claimed was impossible by construction.
+    """
+
+    def __init__(self, rng: np.random.Generator) -> None:
+        self._rng = rng
+        self.log: list[tuple[str, int]] = []
+
+    def choice(self, *args: Any, **kwargs: Any) -> Any:
+        out = self._rng.choice(*args, **kwargs)
+        self.log.append(("choice", int(np.size(out))))
+        return out
+
+    def normal(self, *args: Any, **kwargs: Any) -> Any:
+        out = self._rng.normal(*args, **kwargs)
+        self.log.append(("normal", int(np.size(out))))
+        return out
+
+    def uniform(self, *args: Any, **kwargs: Any) -> Any:
+        out = self._rng.uniform(*args, **kwargs)
+        self.log.append(("uniform", int(np.size(out))))
+        return out
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._rng, name)
+
+
+def _split_rounds(log: list[tuple[str, int]]) -> list[list[tuple[str, int]]]:
+    """Segment a :class:`_CountingRng` log into per-round blocks. Each round of
+    ``_draw_2d_accepted_latents`` opens with the host ``choice`` draw, so ``choice`` is the
+    round delimiter.
+    """
+    rounds: list[list[tuple[str, int]]] = []
+    for entry in log:
+        if entry[0] == "choice":
+            rounds.append([])
+        if rounds:
+            rounds[-1].append(entry)
+    return rounds
+
+
+def _invalid_mass_pool(n_pool: int = 30, seed: int = 9001) -> c1d.HostPool:
+    """Host pool engineered so ~50% of the latent mass draws land at or below zero
+    (``M = 1 M_sun`` mean -- the Eddington shift is a no-op below its ``M > 0`` quadrature
+    guard's useful range -- with ``M_error = 1e6 M_sun``). This is the floor-row-CONTAINING
+    case, i.e. the repair's changed code path.
+    """
+    rng_pool = np.random.default_rng(seed)
+    return c1d.HostPool(
+        phiS=rng_pool.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng_pool.uniform(0.1, np.pi - 0.1, n_pool),
+        z=rng_pool.uniform(0.01, 0.3, n_pool),
+        z_error=rng_pool.uniform(0.001, 0.04, n_pool),
+        n=n_pool,
+        M=np.full(n_pool, 1.0),
+        M_error=np.full(n_pool, 1.0e6),
+    )
+
+
+def test_catalogue_selected_2d_rng_consumption_is_4x_batch_on_the_changed_path() -> None:
+    """RNG-STREAM gate (G2, PA-2DR-5(b)1) -- draw-count instrumentation on the CHANGED path.
+
+    On a pool where ~50% of latent mass draws are invalid (``M <= 0``), the repaired
+    ``_draw_2d_accepted_latents`` must consume **exactly 4 x batch** variates per round --
+    ``choice(batch)`` hosts, ``batch`` single-uniform inverse-CDF z draws
+    (``_draw_kernel_survival_redshifts`` consumes exactly ``len(host_z)`` uniforms, one per host,
+    documented at its own docstring), ``normal(batch)`` masses, ``uniform(batch)`` Bernoulli --
+    with the SAME per-round call signature in every round regardless of how many draws were
+    rejected. If rejection instead of clipping had introduced any extra draw or any
+    invalid-count-dependent consumption, the per-round signature would vary with the realized
+    invalid fraction and this assertion would fail.
+
+    The test also pins the FIRST round's call log against the pre-repair reference
+    implementation: round 1 has identical ``remaining`` (hence identical ``batch``) in both, so
+    the repair must consume byte-identically there even though its ACCEPTANCE differs.
+    """
+    pool = _invalid_mass_pool()
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    host_w, _w_g, s_tilde = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+
+    counting_new = _CountingRng(np.random.default_rng(2026))
+    result = c1d._draw_2d_accepted_latents(
+        counting_new,  # type: ignore[arg-type]
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        _FakeS4D(value=0.2),  # type: ignore[arg-type]  # low survival -> several rounds needed
+        n=100,
+    )
+    assert np.all(result.M_true > 0.0)  # the changed path really did reject
+
+    rounds = _split_rounds(counting_new.log)
+    assert len(rounds) >= 2, (
+        "the engineered ~50%-invalid pool must force at least one redraw round -- otherwise "
+        "this gate did not exercise the changed path at all"
+    )
+    signatures: set[tuple[str, ...]] = set()
+    for round_idx, block in enumerate(rounds):
+        batch = block[0][1]
+        assert block[0] == ("choice", batch)
+        # exactly 4 x batch variates consumed in the round
+        total = sum(size for _method, size in block)
+        assert total == 4 * batch, (
+            f"round {round_idx}: consumed {total} variates, expected 4 x batch = {4 * batch} "
+            "-- the M<=0 rejection must not consume extra draws"
+        )
+        # the z-kernel draw is `batch` separate single-uniform calls, then normal, then uniform
+        assert block[1 : 1 + batch] == [("uniform", 1)] * batch
+        assert block[1 + batch :] == [("normal", batch), ("uniform", batch)]
+        assert len(block) == batch + 3
+        # Signature NORMALIZED by the round's own batch: consecutive same-method calls collapse
+        # to one entry (the run of `batch` single-uniform z draws becomes one "uniform"), so the
+        # shape must be identical in every round even though `batch` itself legitimately shrinks
+        # as `remaining` falls. Derived from the observed log, never asserted as a constant.
+        collapsed: list[str] = []
+        for method, _size in block:
+            if not collapsed or collapsed[-1] != method:
+                collapsed.append(method)
+        signatures.add(tuple(collapsed))
+    assert signatures == {("choice", "uniform", "normal", "uniform")}, (
+        f"unexpected per-round RNG call shape: {signatures}"
+    )
+
+    counting_old = _CountingRng(np.random.default_rng(2026))
+    _draw_2d_accepted_latents_pre_repair(
+        counting_old,  # type: ignore[arg-type]
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        _FakeS4D(value=0.2),
+        n=100,
+    )
+    old_rounds = _split_rounds(counting_old.log)
+    assert rounds[0] == old_rounds[0], (
+        "round-1 RNG consumption differs from the pre-repair reference on identical inputs "
+        "and seed -- the repair reordered or added draws"
+    )
+
+
+def test_catalogue_selected_2d_accepted_mass_follows_truncated_normal() -> None:
+    """SUPPORT gate (G3, PA-2DR-5(b)3) -- the only EXTERNAL anchor in this design.
+
+    Give every host the SAME ``(M, M_error)``, so the venue's latent mass proposal is a single
+    normal ``N(mu, sigma)`` with ``mu = _eddington_shifted_host_mass_batch(M, M_error)`` and
+    ``sigma = M_error`` (the venue uses the RAW ``M_error`` as the draw sigma,
+    ``correspondence_1d.py`` :1735-1739), and give ``S_4D`` a CONSTANT value so acceptance is
+    independent of the drawn mass. Under those conditions rejection sampling on ``M > 0`` has a
+    closed-form target that owes nothing to this codebase: the accepted masses must follow the
+    TRUNCATED NORMAL ``N(mu, sigma) | M > 0``. With ``M = M_error = 1e6 M_sun`` about 16% of raw
+    proposals fall at or below zero, so the truncation is a large, easily-resolved effect.
+
+    Note on what is and is not externally anchored: ``(mu, sigma)`` are taken from the venue's own
+    (unchanged, defect-1-independent) proposal-mean helper -- the EXTERNAL content of the check is
+    the *truncation law* of rejection sampling, which is what defect 1 got wrong. The pre-repair
+    floor-CLIP piles those ~16% at exactly 1.0 M_sun instead of removing them, giving KS
+    ``D ~ 0.16`` against this target and ``p`` far below any threshold.
+
+    KS at a deliberately loose alpha = 1e-3: this is a correctness gate, not a power study.
+    """
+    n_pool = 40
+    rng_pool = np.random.default_rng(5150)
+    host_mass = 1.0e6
+    host_mass_error = 1.0e6
+    pool = c1d.HostPool(
+        phiS=rng_pool.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng_pool.uniform(0.1, np.pi - 0.1, n_pool),
+        z=rng_pool.uniform(0.01, 0.3, n_pool),
+        z_error=rng_pool.uniform(0.001, 0.04, n_pool),
+        n=n_pool,
+        M=np.full(n_pool, host_mass),
+        M_error=np.full(n_pool, host_mass_error),
+    )
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    host_w, _w_g, s_tilde = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+
+    result = c1d._draw_2d_accepted_latents(
+        np.random.default_rng(31337),
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        _FakeS4D(value=0.9),  # type: ignore[arg-type]
+        n=2000,
+    )
+
+    mu = float(
+        c1d._eddington_shifted_host_mass_batch(np.array([host_mass]), np.array([host_mass_error]))[
+            0
+        ]
+    )
+    sigma = host_mass_error
+    lost = float(norm.cdf(-mu / sigma))
+    assert lost > 0.05, (
+        f"the engineered pool truncates only {lost:.4f} of its proposals -- too little to make "
+        "this gate decisive; re-tune (M, M_error)"
+    )
+
+    def _truncated_cdf(x: np.ndarray) -> np.ndarray:
+        cdf: np.ndarray = np.asarray(norm.cdf((np.asarray(x) - mu) / sigma), dtype=np.float64)
+        return (cdf - lost) / (1.0 - lost)
+
+    assert np.all(result.M_true > 0.0)
+    ks = kstest(result.M_true, _truncated_cdf)
+    assert ks.pvalue > 1.0e-3, (
+        f"accepted latent masses reject the analytic truncated-normal N({mu:.4g},{sigma:.4g})"
+        f"|M>0 target (KS D={ks.statistic:.4f}, p={ks.pvalue:.3e}) -- the venue's accepted-mass "
+        "support does not match rejection sampling's own closed form"
+    )
 
 
 def test_catalogue_selected_mode_does_not_enter_catalogue_selected_2d_code_path(
