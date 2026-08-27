@@ -1120,3 +1120,40 @@ given explicitly and must NOT be `stage_lhs2d`'s `p3_2d_work` default, which wou
 banked fleet's frozen comparison set.
 
 **Status: FIXED** (SHA frozen; §v2.10's placeholder resolved).
+
+---
+
+**PA-2DR-13 (2026-08-27; submission record — fills §v2.10's remaining placeholders; `[OPUS-ORCH]`)**
+
+The run registered by this document has been submitted. Both remaining §v2.10 placeholders are now
+resolved, and this amendment is the record that they were resolved *at submission*, not afterwards.
+
+- **SLURM job id:** `6723958` (array `0-23`, partition `cpu_il`, submitted 2026-08-27, state
+  PENDING at submission).
+- **Out-root:** `$WORKSPACE/p3_2d_fleet_repair_20260827` — a FRESH directory, explicitly **not**
+  the banked `p3_2d_fleet_20260825/`.
+- **Frozen commit:** `d04d9dc9` on branch `fix/p32d-classg-venue-repair`, tagged
+  `p32d-repair-4af1baec` on the cluster. This is one commit later than PA-2DR-12's `4af1baec`; the
+  delta is the out-root fix below and touches no instrument code (`git diff 4af1baec d04d9dc9`
+  is `cluster/p3_2d_fleet.sbatch` only, +6/−1).
+- **Cluster state at submission:** preflight `VERDICT: READY ✓ (WARN: 1 issue(s))`; catalogue
+  `cols=8 [OK]`; repo `ahead=0 behind=0`, tracked-dirty `0` (257 untracked outputs, verified
+  untracked before checkout); queue empty of prior jobs.
+
+**A pre-submission defect was caught and fixed, and it is worth recording because it would have
+been silent.** `cluster/p3_2d_fleet.sbatch:71` hardcoded `OUT_ROOT="$WORKSPACE/p3_2d_fleet_20260825"`
+— the banked fleet's own directory. Submitted unmodified, PA-CA-11's idempotency guard (which
+skips any `(arm, seed)` whose `<arm>_<seed>_meta.json` already exists) would have skipped all 48
+arm-seed pairs: the array would have completed successfully, produced no new data, and any
+subsequent `stage_lhs2d` would have re-scored the OLD floor-contaminated CSVs while appearing to
+be a repaired-venue result. The failure mode is a green job with a wrong answer. Fixed in
+`d04d9dc9` by making `OUT_ROOT` overridable (`${OUT_ROOT:-...}`) with the banked path retained as
+the default, and submitted with `--export=ALL,OUT_ROOT=...`.
+
+`write_provenance.sh` is wired into this script (added earlier the same day, commit `67b18592`),
+so this run stamps its own commit, branch, dirty-count, job/array ids, seed, host and timestamp
+into its out-root — the first fleet in this campaign to do so.
+
+**Status: FIXED.** §v2.10 carries no remaining placeholders. No result may be read from this run
+until the four registered gates (G2 draw-count, G3 truncated-normal KS, G5 mass-window count,
+G6 exact identity) have been evaluated, per §v2.6.
