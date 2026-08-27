@@ -26,7 +26,7 @@ meta:
   commission_base: {tag: commission-base, commit: b593f02, branch: physics/photoz-joint-normalisation}
   expected_catalog_cols: 8            # reduced_galaxy_catalogue.csv (redshift-flag retained, 479afdd+)
   retirement_banner: "DATA_INVENTORY.md — all pre-2026-06-20 (pre mass-convention + L_cat fixes) CRBs/injections/posteriors are RETIRED"
-  updated: 2026-07-03
+  updated: 2026-08-27
 
 # --- STAGE 1: injection pools (feed the P_det detection-probability estimator) ---
 # p_det is h-invariant (detection-horizon survival), so a single-h pool suffices;
@@ -99,6 +99,115 @@ posteriors:
     grid_points: 38
     combined: yes
     note: "Evidence Locker 'seed-600 production run' referenced by the verification handoff (§B6)"
+
+# --- STAGE 4: post-2026-07-28 fleet backfill (2026-08-27) ------------------------
+# WORKSPACE_ARCHIVAL_TRIAGE_20260827.md found ~30 run dirs / ~250GB present on the
+# workspace since this file was last updated (2026-07-03) that were never entered
+# here or in DATA_INVENTORY.md. Backfilled from each dir's run_metadata*.json where
+# one exists (git_commit/timestamp/args are read off the file, not guessed); where
+# no metadata file was found, status says so explicitly rather than inventing a
+# description. preflight.sh's [DATASETS] registry cross-check now catches the next
+# gap mechanically — see cluster/preflight.sh.
+campaigns_20260728_plus:
+  - id: massab_20260727
+    path: "$WS/run_20260727_massab_{ablApp,ablAprime,cellApp,cellBpp,n200Aprime,zmzApp,zmzBpp,zmzGridOnly}"
+    dirs: [run_20260727_massab_ablApp, run_20260727_massab_ablAprime, run_20260727_massab_cellApp,
+           run_20260727_massab_cellBpp, run_20260727_massab_n200Aprime, run_20260727_massab_zmzApp,
+           run_20260727_massab_zmzBpp, run_20260727_massab_zmzGridOnly]
+    git_commit: "fe0ca3e / bb24b71 / 608426b (varies by sub-run — 3 distinct commits across the 8 dirs, see individual run_metadata_*.json)"
+    timestamp: "2026-07-27"
+    status: "UNVERIFIED PROVENANCE beyond run_metadata (evaluate-only runs, h_value varies per dir)"
+    note: "Mass-ablation cell study (8 small dirs, ~1.1G each). Referenced only as 'massab' in session memory; no claim card or ledger row identified. Author confirmation needed for scientific purpose."
+  - id: pp_fullpower_20260727
+    path: "$WS/pp_fullpower_20260727"
+    status: "UNVERIFIED PROVENANCE — no run_metadata*.json found; only a logs/ subdir"
+    note: "Name suggests a P-P/coverage full-power run (cf. validation/pp_coverage.py), but not confirmed. Needs author confirmation."
+  - id: realizations_20260729
+    path: "$WS/realizations_20260729"
+    git_commit: 7b30d1ff17c543d3464f533121f7b3e108347bb9
+    timestamp: "2026-07-29T18:45:41"
+    status: "UNVERIFIED PROVENANCE beyond run_metadata_realization.json (simulation_steps=0, h_value=0.73)"
+    note: "Realization sidecars for the seed6x000/campaign51 fleet below. cluster/SKILL.md gotcha #10 flags these as fragile/path-sensitive."
+  - id: campaign51_seed6x000
+    path: "$WS/run_20260729_seed{61000,62000,63000,64000_h0p67,65000_h0p77}"
+    dirs: [run_20260729_seed61000, run_20260729_seed62000, run_20260729_seed63000,
+           run_20260729_seed64000_h0p67, run_20260729_seed65000_h0p77]
+    git_commit: "03cfe80 (seed61000/62000/63000) / 7b30d1f (seed64000_h0p67); seed65000_h0p77 has no run_metadata"
+    timestamp: "2026-07-29"
+    status: "UNVERIFIED PROVENANCE beyond run_metadata (evaluate=False, simulation_steps=40, h_value 0.73/0.67/0.77 per dir)"
+    note: "'campaign51' (2026-07-28 local dir naming) closure-truth seeds; local mirror partially exists at results/campaign51_20260728/. seed64000/65000 are the 0.67/0.77 closure truths."
+  - id: csg_pilot_20260821
+    path: "$WS/csg_pilot_20260821"
+    status: "RECOVERED (no run_metadata*.json, but fully reconstructible from other sources) — see cluster/DATA_INVENTORY.md 2026-08-27 recovery note"
+    git_commit: "pilot job under e5bd5bf0 (submitted 03:16:03, commit landed 03:15:59 — 4s apart); fleet job under commits through dae957d6/3d385152; readout commit f59a6f48 lists the full per-stage commit chain in its §11 Provenance footer"
+    slurm_jobs: "6415588 (pilot, submit 2026-08-21T03:16:03, 4 tasks COMPLETED), 6420343 (fleet, submit 2026-08-21T05:24:58, 42 tasks COMPLETED) — confirmed live in `sacct` 2026-08-27"
+    note: "Matches the C-SG campaign (session memory rows #145-#157). Distilled result in results/prod2d_closure_20260818/csg_pilot_bands_output.json; the readout doc results/prod2d_closure_20260818/CAMPAIGN_READOUT_REPORT_CSG_20260821.md §11 IS the provenance record for this campaign (commit-by-stage + job IDs), just not in run_metadata.json form. Raw 33G workspace dir not independently re-verified as load-bearing beyond that distillation."
+  - id: o4_shards_20260821
+    path: "$WS/o4_shards_20260821"
+    status: "PARTIALLY RECOVERABLE — job ID + timestamps recovered via sacct; commit BOUNDED (not exactly pinned) since shard JSONs carry no a22_stamp/git_commit field"
+    git_commit: "scorer committed bfe4d09c (2026-08-21 13:08:08+0200), predates job submit by ~4.5h; shard-merge tool 7cc9c7ac — bounds the commit window but does not pin the exact tree state at run start (A22 stamping convention postdates this campaign, adopted commit 1e862398 same day)"
+    slurm_jobs: "6441957 (submit 2026-08-21T17:46:38, 11/11 array tasks COMPLETED 18:05-20:19) — confirmed live in sacct 2026-08-27"
+    note: "'O4' mechanism-study pre-check, same C-SG campaign day. Distilled result in results/prod2d_closure_20260818/o4_pairing_test_output.json / A20_REVIEW_O4_20260821.md."
+  - id: p3_b0_identity_fleet_20260823
+    path: "$WS/p3_b0_identity_fleet_20260823"
+    status: "FULLY RECOVERABLE — a per-seed retrieval manifest with commit/branch/tag/SLURM-job-IDs/timestamp already exists locally"
+    git_commit: "3bd6b564bc900751fcbed8df16fb5fad3b275edb (cluster_head_commit == local_head_commit at retrieval)"
+    note: "results/campaign51_20260728/realistic_20260729/p3_b0_work/retrieval_manifest_20260824.json records: branch p3/b0-identity-fleet, tag p3-b0-identity-fleet-3bd6b564, retrieved_at_utc 2026-08-24T05:26:57Z, and the full SLURM job history (6513247, 6531162, 6531789, 6541282, 6547137, 6556851, incl. the anomalous-cancellation forensics). Per-seed a22_stamp in each bc_/bt_*_meta.json (e.g. bc_900111: git_commit_at_start 3bd6b564..., tree_dirty_incl_instrument clean) independently confirms the same commit. This entry was previously mislabeled UNVERIFIED — the recovery data was already sitting in the repo, just not cross-referenced into this registry."
+  - id: p3_2d_fleet_20260825
+    path: "$WS/p3_2d_fleet_20260825"
+    status: "FULLY RECOVERABLE — per-seed a22_stamp + a submission-json with SLURM job ID and submit timestamp both exist locally"
+    git_commit: "fb4ac4eea8bb415e38d542f6f458b3dd259060f0 (cluster_head_at_submit == per-seed a22_stamp git_commit_at_start, cross-verified)"
+    slurm_jobs: "6708698 (array 0-23, submit 2026-08-25T21:12:43Z / T23:12:44 local; 23/24 COMPLETED, task 14 FAILED) — confirmed live in sacct 2026-08-27"
+    note: "results/campaign51_20260728/realistic_20260729/p3_2d_fleet_submission_20260825.json has job_id/array/seeds/submit_timestamp_utc; every per-seed bc_/bt_*_meta.json carries an a22_stamp with git_commit_at_start + tree_dirty_incl_instrument (all 'clean' for the sampled seeds). Part of the [P3-2D] thread, PARKED at row #211."
+  - id: p3_2d_rhs2_20260826
+    path: "$WS/p3_2d_rhs2_20260826"
+    status: "FULLY RECOVERABLE — a submission-json with commit/job-ID/timestamp exists locally"
+    git_commit: "7e4f1c64"
+    slurm_jobs: "6709953 (array 0-31, submit 2026-08-26T~10:40Z / T11:07:01 local; 32/32 COMPLETED) — confirmed live in sacct 2026-08-27"
+    note: "results/campaign51_20260728/realistic_20260729/p3_2d_rhs2_submission_20260826.json records commit/job_id/seed_plan directly. Local sync in progress at results/campaign51_20260728/realistic_20260729/ca_rhs_work/*_{twin,coded}_work/ (was untracked at 2026-08-27 session start)."
+  - id: d1_sand
+    path: "$WS/d1_sand"
+    status: "UNVERIFIED PROVENANCE — no run_metadata*.json found; pool_p0window, pool_p0kept subdirs"
+    note: "Likely related to the d1_a1/d1_a2 iiib/joint_r1 family below (D1 empirical decomposition thread) but not confirmed — 'sand' suggests a sandbox/scratch run. Author confirmation needed."
+  - id: iiib_joint_r1_family_20260804_20260820
+    path: "$WS/run_2026080{4,5}_{frozeng,postfix,d1_a1,d1_a2,n2sel1d}_{iiib,joint_r1}[_smoke] ; $WS/run_20260817_fusioncf_{fused,off}_{iiib,joint_r1} ; $WS/run_20260819_{cf_v0,cf_v1,cf_v2k05,cf_v2k2,postfix_baseline}_{iiib,joint_r1} ; $WS/run_20260820_bat_{eoff,jker,v0}_{iiib,joint_r1}"
+    dirs: [run_20260804_frozeng_iiib, run_20260804_frozeng_joint_r1,
+           run_20260804_postfix_iiib, run_20260804_postfix_iiib_smoke,
+           run_20260804_postfix_joint_r1, run_20260804_postfix_joint_r1_smoke,
+           run_20260805_d1_a1_iiib, run_20260805_d1_a1_joint_r1,
+           run_20260805_d1_a2_iiib, run_20260805_d1_a2_joint_r1,
+           run_20260805_n2sel1d_iiib, run_20260805_n2sel1d_joint_r1,
+           run_20260817_fusioncf_fused_iiib, run_20260817_fusioncf_fused_joint_r1,
+           run_20260817_fusioncf_off_iiib, run_20260817_fusioncf_off_joint_r1,
+           run_20260819_cf_v0_iiib, run_20260819_cf_v0_joint_r1,
+           run_20260819_cf_v1_iiib, run_20260819_cf_v1_joint_r1,
+           run_20260819_cf_v2k05_iiib, run_20260819_cf_v2k05_joint_r1,
+           run_20260819_cf_v2k2_iiib, run_20260819_cf_v2k2_joint_r1,
+           run_20260819_postfix_baseline_iiib, run_20260819_postfix_baseline_joint_r1,
+           run_20260820_bat_eoff_iiib, run_20260820_bat_eoff_joint_r1,
+           run_20260820_bat_jker_iiib, run_20260820_bat_jker_joint_r1,
+           run_20260820_bat_v0_iiib, run_20260820_bat_v0_joint_r1]
+    git_commit: "one distinct commit per named sub-campaign (frozeng c917ed8, postfix 658c428, d1_a1/d1_a2 128f318, n2sel1d 0167df5, fusioncf ac24b63, cf_v* a4dae5a, postfix_baseline e65d263, bat_* 103caa2 — read off each dir's own run_metadata_*.json)"
+    timestamp: "2026-08-04 through 2026-08-20"
+    status: "UNVERIFIED PROVENANCE beyond run_metadata (evaluate=True re-eval sweeps, h_value varies per dir — these are CPU evaluate-only reruns against an existing CRB, not fresh GPU sims)"
+    note: >
+      ~44 dirs, ~3.3G each. 'iiib'/'joint_r1' naming pattern suggests paired A/B
+      arm comparisons (a config variant vs a joint-readout arm) across a series
+      of named studies (frozen-g, postfix, d1_a1/a2, n2sel1d, fusion-counterfactual,
+      cf_v0/v1/v2k05/v2k2, bat_eoff/jker/v0) run across the 2026-08 sessions
+      documented in memory (O6/O7/O8 fused-cell, C-SYM, B_scale, sentinel-defect
+      threads). Author confirmation needed to map each named sub-campaign to its
+      specific claim/ledger row; local mirror status per WORKSPACE_ARCHIVAL_TRIAGE_20260827.md
+      §3: frozeng and fusioncf_{fused,off} are ALREADY-LOCAL, postfix/d1_a1/d1_a2/n2sel1d
+      are MUST-ARCHIVE (mostly missing locally), cf_v*/bat_* not spot-checked.
+  - id: run_20260820_corr_arms
+    path: "$WS/run_20260820_corr_arms"
+    status: "UNVERIFIED PROVENANCE — no run_metadata*.json found at top level"
+    note: "Likely a correlation-arms study adjacent to the bat_*/cf_v* family above. Author confirmation needed."
+  - id: run_prod2d_20260818
+    path: "$WS/run_prod2d_20260818"
+    status: "UNVERIFIED PROVENANCE — no run_metadata*.json found at top level"
+    note: "Name matches the local results/prod2d_closure_20260818/ tree (2D venue thread CLOSED, row #116/#119). Likely the raw run backing that closure; author confirmation needed on whether this raw dir is still load-bearing given the closure artifacts are already local."
 
 # --- Not-yet-run / expected outputs of the current commission --------------------
 # The independent-verification commission (physics/photoz-joint-normalisation) works

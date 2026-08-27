@@ -245,6 +245,65 @@ Aggregated by `scripts/bias_investigation/test_24_multi_truth_bias_sweep.py` →
 
 ---
 
+### Post-2026-07-28 fleet backfill (2026-08-27)
+
+`cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md` found ~30 workspace run directories
+(~250 GB) created since this file's last update (2026-07-26) that were never entered
+here or in `cluster/datasets.yaml` — essentially the entire post-2026-07-28 fleet
+(csg_pilot, o4_shards, the p3_2d / b0-identity / bat / cf / massab families,
+seed61000-65000, `realizations_20260729`). Backfilled below from each directory's
+`run_metadata*.json` where present; **where no metadata file was found, or where
+the metadata gives only mechanical fields (git_commit/timestamp/args) and not the
+scientific "why", this is marked UNVERIFIED PROVENANCE rather than guessed** — the
+author should confirm before these are cited as evidence. Full per-directory detail
+(sizes, local-mirror status, archival priority) is in the triage doc; this section
+is the durable registry entry, not a duplicate of the triage.
+
+Structured entries live in `cluster/datasets.yaml` under `campaigns_20260728_plus:`
+(the two files are a matched pair — see that file's header comment). Summary:
+
+| Directory / family | git_commit | Provenance | Notes |
+|---|---|---|---|
+| `run_20260727_massab_{ablApp,ablAprime,cellApp,cellBpp,n200Aprime,zmzApp,zmzBpp,zmzGridOnly}` | `fe0ca3e`/`bb24b71`/`608426b` (3 distinct, per-dir) | UNVERIFIED beyond run_metadata | Mass-ablation cell study, 8 small dirs. No claim/ledger row identified. |
+| `pp_fullpower_20260727` | — (no run_metadata found) | UNVERIFIED | Name suggests `validation/pp_coverage.py` full-power run; not confirmed. |
+| `realizations_20260729` | `7b30d1f` | UNVERIFIED beyond run_metadata_realization.json | Realization sidecars for the seed6x000 fleet below; cf. `cluster/SKILL.md` gotcha #10 (fragile/path-sensitive). |
+| `run_20260729_seed{61000,62000,63000,64000_h0p67,65000_h0p77}` | `03cfe80` (61000/62000/63000) / `7b30d1f` (64000) / none found (65000) | UNVERIFIED beyond run_metadata | "campaign51" closure-truth seeds (0.67/0.77); local partial mirror at `results/campaign51_20260728/`. |
+| `csg_pilot_20260821` | bounded by commit chain (readout §11: ...e5bd5bf0, dae957d6, 3d385152, f59a6f48) | RECOVERED (no run_metadata, but see note) | Matches the C-SG campaign (session memory rows #145-#157). `CAMPAIGN_READOUT_REPORT_CSG_20260821.md` §11 lists the exact per-stage commit chain; SLURM jobs 6415588 (pilot)/6420343 (fleet) confirmed still in `sacct` 2026-08-27. Distilled result in `results/prod2d_closure_20260818/csg_pilot_bands_output.json`. |
+| `o4_shards_20260821` | bounded to `bfe4d09c` (scorer, 4.5h before submit) — not exactly pinned | PARTIALLY RECOVERABLE | Same-day O4 pre-check. SLURM job 6441957 confirmed in `sacct` 2026-08-27 (submit 17:46, 11/11 COMPLETED). No a22_stamp in shard JSONs (campaign predates the A22 convention, adopted same day at commit `1e862398`), so the exact tree state at run start is not independently verified, only bounded by the scorer's commit time. |
+| `p3_b0_identity_fleet_20260823` | `3bd6b564bc900751fcbed8df16fb5fad3b275edb` | FULLY RECOVERABLE | `results/campaign51_20260728/realistic_20260729/p3_b0_work/retrieval_manifest_20260824.json` records branch/tag/commit/SLURM-job-history/timestamp; independently confirmed by per-seed `a22_stamp` in every `bc_/bt_*_meta.json`. Backs the ratified "b0 identity: UNDISCRIMINATING" verdict. Previously mislabeled UNVERIFIED — the recovery data was already in the repo, just not cross-referenced here. |
+| `p3_2d_fleet_20260825` | `fb4ac4eea8bb415e38d542f6f458b3dd259060f0` | FULLY RECOVERABLE | `p3_2d_fleet_submission_20260825.json` (job_id 6708698, array 0-23, submit timestamp) + per-seed `a22_stamp` in every `bc_/bt_*_meta.json`, cross-verified to the same commit. Part of the `[P3-2D]` thread (rows #198-#211, PARKED). At least one shard FAILED (`bc_900115_work_FAILED_6708698_14`). |
+| `p3_2d_rhs2_20260826` | `7e4f1c64` | FULLY RECOVERABLE | `p3_2d_rhs2_submission_20260826.json` records commit/job_id (6709953, array 0-31)/seed plan/submit timestamp directly. The RHS-suspect work (rows #209-#211, "RHS unlinked-mass suspect REFUTED"). Local sync of a subset appears in-flight under `results/campaign51_20260728/realistic_20260729/ca_rhs_work/`. |
+| `d1_sand` | — (no run_metadata found) | UNVERIFIED | Possibly related to `d1_a1`/`d1_a2` below; "sand" suggests a sandbox run. Not confirmed. |
+| `run_2026080{4,5}_{frozeng,postfix,d1_a1,d1_a2,n2sel1d}_{iiib,joint_r1}[_smoke]`, `run_20260817_fusioncf_{fused,off}_{iiib,joint_r1}`, `run_20260819_{cf_v0,cf_v1,cf_v2k05,cf_v2k2,postfix_baseline}_{iiib,joint_r1}`, `run_20260820_bat_{eoff,jker,v0}_{iiib,joint_r1}` | one commit per named sub-campaign (see `datasets.yaml`) | UNVERIFIED beyond run_metadata | ~32 dirs, ~3.3G each, CPU evaluate-only re-eval sweeps (not fresh GPU sims). `iiib`/`joint_r1` = paired A/B arms per named study. Local mirror per the triage: `frozeng`, `fusioncf_{fused,off}` ALREADY-LOCAL; `postfix`, `d1_a1`, `d1_a2`, `n2sel1d` MUST-ARCHIVE (mostly missing locally); `cf_v*`, `bat_*` not spot-checked. |
+| `run_20260820_corr_arms` | — (no run_metadata found) | UNVERIFIED | Likely adjacent to the `bat_*`/`cf_v*` family above. |
+| `run_prod2d_20260818` | — (no run_metadata found) | UNVERIFIED | Name matches the local `results/prod2d_closure_20260818/` tree (2D venue thread CLOSED, row #116/#119); likely the raw run backing that closure. |
+
+**Action item for the author:** every UNVERIFIED row above needs either (a) a pointer
+to the claim card / ledger row it fed, or (b) a ruling that it is disposable/superseded,
+before the 2026-09-23 workspace deadline.
+
+**2026-08-27 recovery pass (provenance-defect fix).** `run_metadata*.json` is written
+only by `main.py`'s entry point; every campaign in the C-SG/O4/P3-2D/b0-identity family
+above bypassed it by calling a bespoke driver script directly (root cause, and the
+forward fix `cluster/write_provenance.sh`, are in `cluster/SKILL.md` gotcha #12). Before
+concluding the record was lost, this pass checked for campaign-carried provenance in
+other forms — per-seed `a22_stamp` sidecars (an author-adopted convention, commit
+`1e862398`, 2026-08-21, predating this fix and independent of it), submission JSONs, a
+retrieval manifest, and campaign readout docs' own commit citations — and cross-checked
+against live `sacct` history on the cluster (job records for 2026-08-20 through
+2026-08-26 were all still present as of this pass). Result: **`p3_b0_identity_fleet_20260823`,
+`p3_2d_fleet_20260825`, `p3_2d_rhs2_20260826`, and `csg_pilot_20260821` are FULLY
+RECOVERABLE** (exact git commit + SLURM job IDs + timestamps, from sources already in
+the repo, just not previously cross-referenced into this registry); **`o4_shards_20260821`
+is PARTIALLY RECOVERABLE** (job ID and timing recovered from `sacct`, but the exact
+commit is bounded to a ~4.5h window rather than pinned, since it predates the a22_stamp
+convention adopted later that same day). The other UNVERIFIED rows in this table
+(`massab_*`, `pp_fullpower_20260727`, `d1_sand`, `run_20260820_corr_arms`,
+`run_prod2d_20260818`) were not part of this pass's scope and remain as before — they
+were not named in the provenance-defect task and were not checked for sidecar recovery.
+
+---
+
 ## Injection Data
 
 > **2026-06-21 — the table below describes the RETIRED (source-frame) pool; superseded.** The fresh

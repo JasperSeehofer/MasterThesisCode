@@ -20,9 +20,11 @@ each session** — read it, and keep it current when the cluster layout changes.
 ssh bwunicluster 'bash -s' < cluster/preflight.sh
 ```
 It is read-only and prints one block: repo branch/commit/tag, venv usability,
-catalog schema, workspace expiry, queue (+ zombie jobs), and a live dataset scan.
-Only proceed when it says `VERDICT: READY ✓`. Paths/expectations live in
-`cluster/cluster.env`.
+catalog schema, workspace expiry, queue (+ zombie jobs), and a live dataset scan
+(including an unregistered/dangling registry cross-check, gotcha 11). Only proceed
+when it says `VERDICT: READY ✓` — a trailing `(WARN: ...)` is not a blocker, but
+resolve it before the next campaign compounds the backlog. Paths/expectations live
+in `cluster/cluster.env`.
 
 ### Canonical facts (verify with preflight, don't assume)
 - **SSH alias:** `bwunicluster` (works non-interactively / `BatchMode`).
@@ -83,6 +85,28 @@ Only proceed when it says `VERDICT: READY ✓`. Paths/expectations live in
    `.bak` copy). The observed-CSV hash check is separate and unaffected. Prefer
    checking sidecar paths in any run that passes `OBSERVED_CATALOGUE` after a repo
    move.
+11. **Register the dataset when the run finishes, not later.** A month of campaigns
+    (~30 dirs, ~250 GB — csg_pilot, o4_shards, p3_2d/b0-identity/bat/cf/massab,
+    seed61000-65000, `realizations_20260729`) went uninventoried because "update the
+    inventory" was a remembered convention, not a check — see
+    `cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md`. `preflight.sh`'s `[DATASETS]`
+    block now cross-checks the live workspace listing against `cluster/datasets.yaml`
+    + `DATA_INVENTORY.md` and WARNs on anything unregistered — but the WARN only
+    fires on your *next* preflight run, i.e. after the gap already exists. Add the
+    registry entry as part of a run's completion, same commit/session as banking
+    the result.
+12. **`run_metadata*.json` (git_commit/seed/timestamp/args) is written by
+    `main.py`'s `_write_run_metadata`, ONLY when a job runs through
+    `python -m darksiren_emri`.** Every bespoke harness driver invoked directly
+    (`python <driver>.py` or `python -m darksiren_emri.validation.<module>`) —
+    which is what every post-2026-07-28 campaign in gotcha 11 actually did —
+    bypasses that entry point and gets no provenance file at all unless the
+    sbatch script calls it explicitly. Fix: `source cluster/write_provenance.sh`
+    then `write_provenance "$OUT_DIR" "<note>"` (one line, fail-soft, JSON out)
+    — already wired into `JOB_TEMPLATE.sbatch` and `p3_2d_fleet.sbatch`/
+    `p3_2d_rhs2.sbatch`/`venue_transfer.sbatch`. Copy the same line into any new
+    bespoke sbatch script; do not assume the template's sample
+    `python -m darksiren_emri` call at the bottom is what you're actually running.
 
 ### The pipeline & where artifacts land
 ```

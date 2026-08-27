@@ -27,6 +27,8 @@ CATALOG="$REPO/darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv"
 
 PROBLEMS=()
 note_problem() { PROBLEMS+=("$1"); }
+WARNINGS=()
+note_warning() { WARNINGS+=("$1"); }
 
 echo "======================================================================"
 echo " EMRI CLUSTER PREFLIGHT  —  $(hostname)  —  $(date '+%Y-%m-%d %H:%M %Z')"
@@ -184,14 +186,67 @@ if [ -n "$WS_PATH" ]; then
         fi
     fi
     echo "        (semantic map + provenance: cluster/datasets.yaml ; retirement status: DATA_INVENTORY.md)"
+
+    # --- unregistered-dataset check (mechanical — a documented "remember to
+    # update the inventory" convention already existed and failed: ~30 run
+    # dirs / ~250GB went uninventoried for a month, see
+    # cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md. This is the fix: every
+    # readiness check cross-references the live workspace listing against
+    # the two registry files. `ls`-level only — no `du`, stays fast.
+    echo "        --- registry cross-check (workspace dirs vs datasets.yaml + DATA_INVENTORY.md) ---"
+    REG_FILES="$REPO/cluster/datasets.yaml $REPO/DATA_INVENTORY.md"
+    UNREG=()
+    for d in "$WS_PATH"/*/; do
+        [ -d "$d" ] || continue
+        b=$(basename "$d")
+        case "$b" in work|scripts) continue;;  # scratch cache / repo checkout, not a dataset
+        esac
+        grep -qF -- "$b" $REG_FILES 2>/dev/null || UNREG+=("$b")
+    done
+    echo "        UNREGISTERED (present in workspace, absent from BOTH registries): ${#UNREG[@]}"
+    for u in "${UNREG[@]}"; do echo "          - $u"; done
+    if [ ${#UNREG[@]} -gt 0 ]; then
+        note_warning "${#UNREG[@]} unregistered dataset dir(s) in '$WS_NAME' — register in cluster/datasets.yaml + DATA_INVENTORY.md"
+    fi
+
+    # Inverse: registry entries naming a $WS/<dir> that no longer exists.
+    # Skip brace-expansion tokens (e.g. "seed{1000,2000}_x") — extracting a
+    # clean candidate from those needs a real parser; a truncated prefix
+    # match against real dirs is treated as "not actually dangling" below.
+    DANGLING=()
+    CANDIDATES=$(grep -ohE '\$WS/[A-Za-z0-9_./-]+' $REG_FILES 2>/dev/null \
+        | sed -E 's#^\$WS/##; s#/.*$##' | sort -u)
+    for c in $CANDIDATES; do
+        [ -n "$c" ] || continue
+        [ -d "$WS_PATH/$c" ] && continue
+        # a real dir starting with this candidate => c was a truncated
+        # brace-expansion artifact, not a genuine dangling reference.
+        find "$WS_PATH" -maxdepth 1 -type d -name "${c}*" 2>/dev/null | grep -q . && continue
+        DANGLING+=("$c")
+    done
+    echo "        DANGLING (registered but no longer present in '$WS_NAME'): ${#DANGLING[@]}"
+    for x in "${DANGLING[@]}"; do echo "          - $x"; done
 fi
 
 # --- [VERDICT] -----------------------------------------------------------------
 echo "----------------------------------------------------------------------"
 if [ ${#PROBLEMS[@]} -eq 0 ]; then
-    echo " VERDICT: READY ✓"
+    if [ ${#WARNINGS[@]} -eq 0 ]; then
+        echo " VERDICT: READY ✓"
+    else
+        # Unregistered datasets are a bookkeeping defect, not an operational
+        # blocker (nothing about submitting/monitoring/retrieving is broken) —
+        # so this does NOT flip to NOT READY, but it must not be silently
+        # ignorable either. See [DATASETS] above for the actual list.
+        echo " VERDICT: READY ✓ (WARN: ${#WARNINGS[@]} issue(s))"
+        for w in "${WARNINGS[@]}"; do echo "   • $w"; done
+    fi
 else
     echo " VERDICT: NOT READY — ${#PROBLEMS[@]} issue(s):"
     for p in "${PROBLEMS[@]}"; do echo "   • $p"; done
+    if [ ${#WARNINGS[@]} -gt 0 ]; then
+        echo " ALSO: ${#WARNINGS[@]} warning(s):"
+        for w in "${WARNINGS[@]}"; do echo "   • $w"; done
+    fi
 fi
 echo "======================================================================"

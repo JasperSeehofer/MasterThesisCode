@@ -79,5 +79,15 @@ case "$TID" in
 esac
 
 echo "venue-transfer task=$TID cell=$CELL truth=$TRUTH seed-range=$START:$COUNT workers=$WORKERS host=$(hostname) commit=$(git rev-parse HEAD)"
+
+# Provenance stamp (cluster/SKILL.md gotcha #12): `python -m
+# darksiren_emri.validation.venue_transfer` is a submodule invocation, not the
+# package entry point `python -m darksiren_emri` — main.py's run_metadata
+# writer never fires for it.
+PROV_DIR="$PROJECT_ROOT/results/venue_transfer_20260811/logs"
+mkdir -p "$PROV_DIR"
+source "$PROJECT_ROOT/cluster/write_provenance.sh"
+write_provenance "$PROV_DIR" "venue_transfer cell=$CELL truth=$TRUTH seed-range=$START:$COUNT"
+
 python -m darksiren_emri.validation.venue_transfer \
   --cell "$CELL" --truth "$TRUTH" --seed-range "$START:$COUNT" --workers "$WORKERS"

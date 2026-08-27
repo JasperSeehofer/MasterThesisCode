@@ -79,6 +79,13 @@ exec > "${LOG_BASE}.out" 2> "${LOG_BASE}.err"
 
 echo "=== p3-2d-fleet task=$TID seed=$SEED out_root=$OUT_ROOT host=$(hostname) commit=$(git rev-parse HEAD) ==="
 
+# Provenance stamp (cluster/SKILL.md gotcha #12): this driver is invoked as a
+# bare `python <driver>.py`, not `python -m darksiren_emri`, so main.py's
+# run_metadata writer never fires. write_provenance() is the one-line adopter.
+TASK_SEED="$SEED"
+source "$PROJECT_ROOT/cluster/write_provenance.sh"
+write_provenance "$OUT_ROOT" "p3_2d_fleet arm loop"
+
 DRIVER="results/campaign51_20260728/realistic_20260729/p3_2d_fleet.py"
 
 for ARM in bc bt; do

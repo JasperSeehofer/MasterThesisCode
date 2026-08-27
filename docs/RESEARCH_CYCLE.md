@@ -610,3 +610,17 @@ before registration (two unsatisfiable-gate instances in one night, [P3-IMP] AME
 statistic from the baseline artifact through the arm's own scoring path and gates it before any
 Δ is formed ([P3-IMP] A20 amendment 4: a banked summary field is a different object from a
 re-scored column).
+
+**A23 — PROPOSED, NOT ADOPTED (2026-08-27).** Dataset-registration is part of banking. A campaign's
+results may not be BANKed into a claim card or a ledger row until the cluster workspace
+directory(ies) that produced them are registered in `cluster/datasets.yaml` +
+`DATA_INVENTORY.md` — a banked number whose producing dataset is unregistered cannot be traced
+back to its raw evidence and is not reproducible in the sense the ledger claims. This is the
+banking-side half of the mechanical fix; `cluster/preflight.sh`'s `[DATASETS]` registry
+cross-check (added 2026-08-27, cluster SKILL.md gotcha 11) is the submission-side half — it WARNs
+on any workspace directory absent from both registries, but only on the *next* preflight run,
+i.e. after the gap already exists. Stage 6 (bank) is the natural author-facing checkpoint to close
+the loop. *Evidence:* `cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md` found ~30 run directories
+(~250 GB, essentially the entire post-2026-07-28 fleet) present on the workspace and cited in
+session-memory notes and ledger rows, but registered in neither canonical file — a documented
+"remember to update the inventory" convention had already failed for a month.
