@@ -136,3 +136,7 @@ higher-power R2c re-read (more seeds / both arms) would be a fresh registration.
 record; (2) whether the near-band R2c (p = 0.015, −16 % deficit direction) plus the 54×
 collapse-rate asymmetry warrants authorizing the higher-power follow-up registration, or the
 thread banks its bound and parks here.
+
+**RATIFIED 2026-08-28** — author verbatim "ratified" (ledger row #220): C-STRUCTURAL-ONLY is
+the verdict of record (REPORTED-ONLY cap). The higher-power R2c follow-up vs bank-and-park
+fork was NOT resolvable by this ratification and returns as a one-word ask.

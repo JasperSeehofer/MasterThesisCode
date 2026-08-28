@@ -332,3 +332,7 @@ disclosed, not verdict-bearing at 9.3e-6.
 finding as the record (both executed under the standing grant; veto window). §9 decision 2
 (the F-ii consequence — ε-derived window redesign vs documented design choice) now has its
 banked table and returns as registered.
+
+**RATIFIED 2026-08-28** — author verbatim "ratified" (ledger row #220): REFUTED-IN-PART is the
+verdict of record; the W-2 finding binds; veto windows closed. The §9 F-ii decision returns
+separately with this banked table, as registered.
