@@ -290,3 +290,45 @@ banked record, not this design — ESCALATED TO THE AUTHOR.** Items for ruling:
 No further run, no band evaluation, no F-ii consequence (decision 2 does not fire under
 INSTRUMENT-DEFECT). Instrument sha1 `17dbccbac7eb` (the JSON records git_commit + timestamp;
 the script file is committed alongside this record).
+
+---
+
+## RE-ANCHORED EVALUATION [2026-08-28; W-1 executed under author grant "please go ahead"; FABLE-ORCH]
+
+W-1 executed as recommended (orchestrator-interpreted; veto window open): correction note
+appended to `CLAIM_WGEO_20260827.md` §3.9; G1/P5 re-anchored to the §3.8-reproducible scope;
+verdict map re-fired at zero compute from `wgeom_work/wgeom_result.json`.
+
+**Re-anchored gates:** G1′ n_lin/n_all = 0.9577 vs §3.8's 0.9577 — 4dp exact ✓ (row counts
+exact; the n_log comparands of the original G1 have NO §3.8-scope banked counterpart and are
+reclassified below). G2 ✓ · G3 ✓ · G4 ✓ ⇒ **G holds.**
+
+**VERDICT OF RECORD (chair, per §5's letter): REFUTED-IN-PART.**
+- **Failing reads, named:** P3a's n_log legs (0.4061/0.4241 vs the impeached 0.4210/0.4437)
+  and P5's magnitude band (−0.0986 vs the impeached −0.145; sign ✓). Per §7 clause 2, both
+  misses trace to genuine properties of the frozen inputs ⇒ they **falsify the corresponding
+  banked anchors** (§3.9's census ratios; the −0.145 moment) and re-open the [WGEO] census
+  with the discrepancy as evidence — satisfied by the W-2 re-measurement below.
+- **Banking individually (passing reads):** P1 (closed forms, threshold CV = 2/3 ✓) ·
+  **P2 — the ε-semantics table, the deliverable** (all six rows exact vs the authored table;
+  catalogue-weighted mean ε_lin = 0.172176 REPORTED-ONLY; the registered qualitative content
+  verifies: one-sided, entirely heavy-side for 99.61 % of the catalogue, CV-dependent
+  0.142→0.203, nowhere the symmetric 0.133614) · P3b (0.5808 ≥ 0.5280 ✓, heavy-dominated) ·
+  P3c (REPORTED: 65 877 readmitted rows, CV median 1.2325, z̄ 0.0948; likelihood-weight share
+  NOT COMPUTED, ambiguity A4 disclosed) · P4 (exhibit exact, both geometries).
+- The composite CONFIRMED claim does NOT bank (map's letter). Epistemic cap `supported`
+  (§8 item 1) applies to everything banked here.
+
+**W-2 RE-MEASUREMENT (census re-open, `wgeom_w2_split.py` → `wgeom_work/wgeom_w2_split.json`):**
+at the reproducible fleet scope, linear failures split **93 145 too-LIGHT vs 2 041 too-HEAVY
+= 45.64 : 1** (side residual 0) and log failures split **1 308 478 too-HEAVY vs 27 268
+too-light = 47.99 : 1**. **Chair finding: §3.9's directional claim SURVIVES — sign,
+one-sidedness, and the heavy-cut-reintroduction mechanism all confirm at corrected, stronger
+magnitudes; the "29 : 1" figure is superseded.** The 21-row recompute residual is localized
+(95 186 recomputed vs 95 165 recorded linear failures — exactly the 21 G-check mismatches);
+disclosed, not verdict-bearing at 9.3e-6.
+
+**Returns to the author:** [RULE] ratify this re-anchored REFUTED-IN-PART + the W-2 chair
+finding as the record (both executed under the standing grant; veto window). §9 decision 2
+(the F-ii consequence — ε-derived window redesign vs documented design choice) now has its
+banked table and returns as registered.

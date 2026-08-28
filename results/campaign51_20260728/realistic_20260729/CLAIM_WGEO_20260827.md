@@ -621,3 +621,30 @@ is the primary key, line numbers are conveniences.
 **Consequence for D-MKER-2:** un-gated. The window-geometry prereg must engage HB's bound in
 this reconciled form (per R-WGEO-2): any claimed geometry effect larger than ~+0.0015 in MAP on
 the 2026-07-30 venue contradicts HB's measurement and needs to say why.
+
+---
+
+## CORRECTION NOTE — §3.8/§3.9 scope inconsistency [2026-08-28; W-1, author-granted; append-only]
+
+The WGEOM registered instrument (`PREREGISTRATION_MKER_WGEOM_20260828.md` ⟨SUBMIT⟩ record,
+ledger rows #217–#218) **bit-reproduced §3.8's fleet census** (2 154 066 passed + 95 165
+excluded = n_all 2 249 231; n_lin/n_all = 0.9577) and reproduced the §R2 exhibit chain
+all-seven-exact. **§3.9's "✓VER (cone-exact, whole fleet, 4 800 event rows)" row is
+IMPEACHED as scope-labelled:** its failure counts (112 416 623 too-light + 3 868 708
+too-heavy) are arithmetically incompatible with the ~2.25M-row cone-exact basis its label
+claims (they imply n_all ≈ 2.3e9); its ratios 0.9490/0.4210/0.4437 and §3.10-era's
+−0.145 median-shift moment do not reproduce on the frozen fleet at the stated scope
+(measured: 0.9577/0.4061/0.4241; median_shift_rel −0.0986, sign matching).
+
+**The directional mechanism SURVIVES, re-measured at the reproducible scope**
+(`wgeom_work/wgeom_w2_split.json`): linear failures split **93 145 too-LIGHT vs 2 041
+too-HEAVY = 45.6 : 1**, and log-symmetric failures split **1 308 478 too-HEAVY vs 27 268
+too-light = 48.0 : 1** — the sign, the one-sidedness, and the log-window
+heavy-end-cut-reintroduction mechanism all confirm; only §3.9's specific "29 : 1" magnitude
+and census ratios are replaced. §3.9's mechanism text stands; quote the corrected numbers
+from this note, never the impeached row.
+
+Residual, disclosed: 21 of 2 249 231 rows (9.3e-6) differ between production's recorded
+pass/fail and the instrument's independent linear-mask recomputation (n_lin_fail 95 186
+recomputed vs 95 165 recorded) — localized, unexplained, tracked in the prereg's result
+record; not verdict-bearing at this magnitude.

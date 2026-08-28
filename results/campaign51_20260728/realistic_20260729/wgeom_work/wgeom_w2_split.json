@@ -1,0 +1,14 @@
+{
+ "scope": "reproducible fleet basis (== wgeom_result.json P3 n_all)",
+ "n_all": 2249231,
+ "n_lin_fail": 95186,
+ "lin_too_light": 93145,
+ "lin_too_heavy": 2041,
+ "lin_side_residual": 0,
+ "lin_light_over_heavy": 45.63694267515923,
+ "n_log_fail": 1335746,
+ "log_too_light": 27268,
+ "log_too_heavy": 1308478,
+ "log_heavy_over_light": 47.985844212996916,
+ "banked_impeached_comparand": "CLAIM_WGEO \u00a73.9: 112,416,623 too-light vs 3,868,708 too-heavy (29:1) \u2014 scope-inconsistent"
+}
