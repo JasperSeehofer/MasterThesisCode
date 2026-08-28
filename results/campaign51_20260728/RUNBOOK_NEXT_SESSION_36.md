@@ -123,3 +123,26 @@ R-MKER-5 (reduce / close) · R-MKER-6 (open / don't) · HIER-3 (gate / no gate) 
 HIER-4 (gate / disclose) · HIER-5 (build / fallback) · HIER-9 (hard / affordable).
 Plus veto window on two orchestrator-interpreted assignments: HIER-7 read as RE-ANCHOR,
 R-MKER-3 read as ratified-in-R2-form.
+
+## 5. END-OF-DAY ADDENDUM [2026-08-28 evening — all threads landed]
+
+- **[P3-2D] repair: CONFIRMED at 33 seeds** (chair verdict, §7 of the readout doc; extension
+  cured both UNDERPOWERED dispositions; R=1 excluded 6.82σ; non-discrimination narrows to
+  2.41σ, stands). **Pending [RULE]: ratify CONFIRMED as verdict of record.**
+- **HEAD readout split (A-4) EXECUTED AND DECISIVE on both venues** (§G): the off→fused config
+  delta is H₀-immaterial (−0.0003/−0.0019); the three-code-change composition carries the
+  entire MATERIALLY-GROWN move (−0.0134/−0.0139). Further split needs new arms. **Pending
+  [RULE] A-6: ratify the split reading.**
+- **Six forks ruled ("exactly as recommended"), all executed same day:** MKER-5 closed ·
+  MKER-6 census done (16.8%, as-designed; stage-1 completion-term question available as a
+  future [DO]) · HIER-3/4 gates (certifications PASS, PA-HIER-30) · HIER-5 fallback ·
+  HIER-9 affordable · b re-anchor ±0.0661 (PA-HIER-29).
+- **Ops lessons earned:** off@HEAD ≠ off@#132 in cost (~9× on joint_r1 — the twin + symmetric
+  filter apply under off; size walltime from a HEAD anchor, never a pre-adoption one); SSH
+  ControlMaster expiry mid-watch (re-login is interactive OTP — author-only; watchers must use
+  per-poll connections, and the Monitor tool, not a single long-lived ssh).
+- **Open decisions for next session:** ratify CONFIRMED (repair) + A-6 (split) · the three
+  WGEOM prereg launch items · the MKER-6 stage-1 [DO] (completion-term modelling of the ~17%
+  designed-in cone loss — candidate mechanism for the ABSOLUTE bias, now that the config axis
+  is exonerated) · θ-hook /physics-change presentation ([HIER] C1/C2) · the wider ~400 GB
+  archival program before 2026-09-23.
