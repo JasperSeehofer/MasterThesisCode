@@ -785,3 +785,29 @@ itemization:
   `run_20260819_postfix_baseline_{iiib,joint_r1}`, and `p3_2d_fleet_repair_20260827`. The wider
   ~400 GB triage program (`cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md` §4) remains a separate
   open item — NOT covered by this approval.
+
+## F. OFF-ARM EXECUTION RECORD [2026-08-28, appended as events occurred]
+
+- **iiib**: smoke 6730223 COMPLETED 26:45, STEP-2 gate PASS (off/phi config exact; the
+  registered sel=off `COUNTERFACTUAL` line present; no fusion line). Full array 6730427 at
+  `--time=01:30:00`: **35/41 COMPLETED, 6 TIMEOUT** (tasks 32-34, 38-40 — walltime kill under
+  cross-task contention; slowest completed task 1:25:52). Combine 6730428 went
+  DependencyNeverSatisfied (gotcha 3) — cancelled. **Resubmitted** tasks 32,33,34,38,39,40 as
+  job **6732458** at `--time=03:00:00` (idempotency protects the 35 banked nodes) + combine
+  6732459.
+- **joint_r1**: smoke 6730224 progressed normally (1272/1588 events at 2:44) but could not
+  finish inside its 3:00:00 limit — **cancelled pre-kill; config gate executed on the on-disk
+  evidence instead** (run_metadata_21: off/phi/seed900001 catalogue/`d04d9dc9` ✓; sel=off
+  COUNTERFACTUAL line ✓; no fusion line ✓). Full array submitted as job **6732460** at
+  **`--time=06:00:00`** + combine 6732461.
+- **REGISTERED DEVIATION from §STEP 2's 4h cap, with cause:** the off cell at HEAD is NOT the
+  row #132 off cell. The twin (`catalogue_numerator_survival=phi`) and the symmetric mass
+  filter are baked-in defaults that apply under `off` too, and on the scattered observed
+  catalogue they multiply per-host work: measured slowest-node cost is ≥3.2h (joint_r1,
+  h = 0.730) vs the 1306 s row #132 anchor — a ~9× slowdown the §9 costing did not anticipate
+  for the off arm. `--time=06:00:00` = 1.8× the measured floor. **Consequence for §8.5's
+  interpretation, registered now: the off@HEAD cell is off-with-twin-and-symmetric-filter, so
+  the 2-way split isolates ONLY the fused-vs-off completion-cell axis — NOT "all three code
+  changes vs config". The split legs are: [off@HEAD − off@#132] = twin ⊕ symmetric-filter ⊕
+  Σ^φ divisor (still 3 changes, on the off completion basis), and [fused@HEAD − off@HEAD] =
+  the completion-cell configuration delta alone. The second leg is the clean one.**
