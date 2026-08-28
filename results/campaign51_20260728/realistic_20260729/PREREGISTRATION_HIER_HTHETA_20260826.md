@@ -1868,3 +1868,29 @@ itemization — **the fork assignments below are flagged for author veto**:
 C1–C3 remain unbuilt. What is now unblocked: S0-A (venue fixed), the item-7 pandas re-anchor
 read, and drafting the θ-hook design against option B + H_GRID_41 (no trigger-file edit until
 item 3).
+
+---
+
+**PA-HIER-28 (2026-08-28; the four fork items RESOLVED — author verbatim: "exactly as
+recommended by you", against the Six Forks brief; `[FABLE-ORCH]`)**
+
+- **Item 3 = GATE.** The θ-hook edit to `bayesian_statistics.py` takes the FULL
+  `/physics-change` protocol (presentation gate before code, byte-identity regression test at
+  θ = (0,1), ledger row). §1.5's instrumentation guard is superseded for this edit. Item 2's
+  approval is hereby UN-HELD: implementation may proceed *through* the gate.
+- **Item 4 = GATE.** The two uncertified legs — the `phi_survival_table` value-identity
+  assertion and the 401-node inverse-CDF grid convergence spot-check — are PRE-LAUNCH GATE
+  items. Certification execution ordered 2026-08-28.
+- **Item 5 = FALLBACK.** D7's early exit is DISARMED; Stage 0 re-scopes to **S0-A + S0-C
+  only**. This is sequencing, not waiver: any stage-F launch still requires a positive control
+  under the standing LAUNCH GATE, and a "build" proposal returns as its own registration if
+  Stage 0 keeps the thread alive.
+- **Item 9 = AFFORDABLE.** Option B's support is a merely-affordable window: **all [HIER]
+  verdicts are capped REPORTED-ONLY.** Upgrade to hard-truncation/CALIBRATED requires a
+  registered justification AND a positive control (coherence rule from the brief:
+  fallback + hard is forbidden).
+- Veto window closed without veto: item 7 stands as RE-ANCHOR; R-MKER-3 stands in R2 form.
+
+**Launch state:** still LAUNCH-BLOCKED pending C1–C3 (θ hook now via /physics-change; control
+deferred per item 5) and the item-4 certifications. Unblocked and ordered now: the item-7
+b-grid re-anchor read, the item-4 certifications, S0-A.

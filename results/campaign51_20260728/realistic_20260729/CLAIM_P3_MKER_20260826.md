@@ -902,3 +902,23 @@ width). If R-MKER-4 is ratified, R-MKER-3 should be re-stated before it is ruled
   (linear-symmetric vs log-space). Sequenced after D-WGEO-1's records read per runbook 35 §4.5.
 - **D-MKER-3 APPROVED** — the `get_redshift_outer_bounds` dead-parameter GitHub issue; filed
   2026-08-28 (issue link in the runbook 36 addendum).
+
+---
+
+## FORK RULINGS [2026-08-28, author verbatim: "exactly as recommended by you"]
+
+- **R-MKER-5 = CLOSE.** Part (a) — the 0.50-dex measurement-scatter component of the kernel
+  budget — is **CLOSED as a documented design choice**. The documenting record is this entry:
+  the component is a known, bounded modelling choice; R1 refuted the claim's factual assertions
+  (catalogue width convolved and dominant; 0.24-dex R&V15 scatter present at `handler.py`
+  anchor "R&V15"); R2 showed the full 0.55-dex budget does not readmit the exhibit (×2.3150943
+  margin); the fleet census bounds the mass-axis pull at 6.482 with k ~ O(10) nowhere.
+  Re-opens only on new evidence, per the standard exoneration rule. The correctness successor
+  lives in `PREREGISTRATION_MKER_WGEOM_20260828.md` (D-MKER-2).
+- **R-MKER-6 = OPEN, stage-0 census only.** A zero-compute census over banked fleet artifacts:
+  what fraction of events carry their true injected host OUTSIDE the 1.5σ sky cone (the R2
+  finding: 6791134 at chord ×1.1196 of radius). Rule-1 delimitation recorded: the exonerated
+  candidate-window MEMBERSHIP counterfactual (+0.010, wrong sign) removed realization-added
+  candidates and was tilt-scope; it never measured true-host recovery and does not govern this
+  absolute-bias-scope question. Mechanism is channel-common — this thread may NOT be cited as
+  a 2D−1D tilt candidate. Any follow-up beyond the census returns as its own [DO].

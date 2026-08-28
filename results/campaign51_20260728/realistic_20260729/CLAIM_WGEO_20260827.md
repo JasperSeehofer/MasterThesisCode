@@ -590,3 +590,34 @@ forward unresolved. (iv) This card was produced without author supervision.
 - **R-WGEO-3 — MOOT** as a priority question: D-MKER-2 (the window-geometry pre-registration)
   is itself approved, so the −14.5% mean-redshift moment no longer gates anything; it remains
   ✓VER-only input to the D-MKER-2 prereg.
+
+---
+
+## D-WGEO-1 RESULT [2026-08-28] — RECONCILED; HB's bound IS quotable
+
+Records read executed (agent) + decisive passages independently re-verified by the orchestrator
+(`CLAIM_2D_BIAS_20260730.md:724-734`, `HANDOFF_20260730.md:60-66,83-91,758-762`).
+
+**The factor-7 discrepancy is not a discrepancy: the two numbers are two different exonerated
+mechanisms that both involve "removing a window".**
+
+| number | mechanism | space |
+|---|---|---|
+| **+0.010** (MAP 0.81→0.82) | candidate-window **membership** — removal of realization-added 2D candidates from the search list | search-space (candidate list) |
+| **+0.0015** | **HB** — hard mass window as likelihood support truncation | likelihood-space (mass filter) |
+
+HB's two recorded forms agree internally: −0.317 nats × the file's own corrected conversion
+4.9e-3 h/nat = **+0.00155 ≈ +0.0015** (the directly quoted ΔMAP). **HB's quotable bound:
+ΔMAP ≈ +0.0015 (−0.317 nats = 0.063% of the −504.8-nat dark-class target), WRONG-SIGNED
+(removal moves MAP up), 40–50× too small at ceiling.** The +0.010 belongs to
+candidate-window membership and must never be substituted for HB's bound.
+
+**Citation drift corrected:** the exoneration list cited as `CLAIM_2D_BIAS_20260730.md:191-204`
+(ledger row area, `BIAS_HISTORY_LEDGER.md:129`) now lives at **:721-734** (adjudication addendum
+:736-744, venue-scoping caveat :745-751); the ledger's bullet CONTENTS match — only the line
+numbers reflowed. Correction noted in the ledger append; per runbook 35 §4.4, anchor text ("HB")
+is the primary key, line numbers are conveniences.
+
+**Consequence for D-MKER-2:** un-gated. The window-geometry prereg must engage HB's bound in
+this reconciled form (per R-WGEO-2): any claimed geometry effect larger than ~+0.0015 in MAP on
+the 2026-07-30 venue contradicts HB's measurement and needs to say why.
