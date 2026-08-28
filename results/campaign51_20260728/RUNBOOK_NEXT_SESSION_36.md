@@ -146,3 +146,18 @@ R-MKER-3 read as ratified-in-R2-form.
   designed-in cone loss — candidate mechanism for the ABSOLUTE bias, now that the config axis
   is exonerated) · θ-hook /physics-change presentation ([HIER] C1/C2) · the wider ~400 GB
   archival program before 2026-09-23.
+
+## 6. CONTINUATION [2026-08-28, follow-on session; FABLE-ORCH]
+
+- **θ-hook /physics-change presentation AUTHORED** (the one non-author-gated §5 item):
+  `realistic_20260729/PHYSICS_CHANGE_THETA_HOOK_20260828.md` — full 5-item gate (old/new
+  formulas at sites 2.1/2.2/2.3 per PA-HIER-21, Ma-Hu-Huterer 2006 reference, dimensions,
+  θ=(0,1)/s→0 limits), the b-after-PV-fold order-of-operations pinned (moot today,
+  SIGMA_V_PEC=0, registered decide-once), 4 before-code regression tests specified, bundle =
+  C1+C2 ⊕ :1173 docstring fix ⊕ 401→4001 hardening ⊕ twin-parity test. **NO CODE WRITTEN;
+  [HIER] stays LAUNCH-BLOCKED** pending its §7 item 1. Tiering: 1× sonnet recon + chair.
+- **Runbook 37 Docket published** (artifact `6bfcbba2`) carrying the §5 pending items as
+  one-word asks: repair-CONFIRMED ratification · A-6 · WGEOM launch [DO] · MKER-6 stage-1
+  [DO] · θ-hook gate (decided in its own doc) · archival-program plan choice (A: MUST-ARCHIVE
+  rsync per triage doc / B: + helpdesk ticket). Nothing was launched, edited in source, or
+  submitted to the cluster this session.
