@@ -173,3 +173,7 @@ decided post-data; both readouts are reported above; no further extension may ru
 
 **Returns to the author as a fresh [RULE]: ratify CONFIRMED-at-33-seeds as the verdict of
 record (superseding the 24-seed UNDERPOWERED disposition of §6, which stays on the record).**
+
+**RATIFIED 2026-08-28** — author blanket "all approved" against the Runbook 37 Docket
+(ledger row #216, itemization orchestrator-derived). CONFIRMED-at-33-seeds is the verdict of
+record; §6's 24-seed disposition stays on the record as superseded.

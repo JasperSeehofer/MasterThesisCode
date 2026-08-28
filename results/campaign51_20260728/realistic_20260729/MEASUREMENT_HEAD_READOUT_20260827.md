@@ -852,3 +852,7 @@ the rail is basis-independent. Config leg (1D): +0.0034 / +0.0080.
 
 **Fresh author item [RULE] A-6: ratify the G.1 split reading** (config delta immaterial; the
 grown bias attributes to the three-code-change composition, further split requiring new arms).
+
+**A-6 RATIFIED 2026-08-28** — author blanket "all approved" against the Runbook 37 Docket
+(ledger row #216, itemization orchestrator-derived). The G.1 reading binds the record; §G.2's
+non-licensing clauses stand in full.

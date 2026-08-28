@@ -1161,7 +1161,11 @@ _KERNEL_SMEAR_CHUNK: int = 100_000
 _B0I_KERNEL_SIGMA_MULTIPLIER = 4.0
 # mirrors the non-volume_trunc z_min floor (bayesian_statistics.py:5921-5926).
 _B0I_KERNEL_Z_FLOOR = 1.0e-6
-_B0I_ZTRUE_GRID_N = 401  # per-host inverse-CDF draw grid resolution (fine; n=200 events only)
+# Per-host inverse-CDF draw grid resolution. 401 → 4001 (PA-HIER-30 free
+# hardening, same gated commit as the θ-hook): at 401 nodes, hosts whose ±4σ
+# window straddles the S̄_φ table's z_max = 1.5 edge showed ~13-15% relative
+# std inflation; 4001 nodes converge (rejection-sampling cross-check).
+_B0I_ZTRUE_GRID_N = 4001
 
 
 def host_z_error_eff(
@@ -1170,7 +1174,9 @@ def host_z_error_eff(
     r"""Effective photo-z kernel width: catalogue error (+) residual PV dispersion.
 
     Byte-identical functional form to production's per-host sigma
-    (``bayesian_statistics.py:5908-5909``):
+    (``bayesian_statistics.py`` — ``single_host_likelihood``'s and
+    ``single_host_likelihood_batch``'s ``host_z_error_eff`` lines; the
+    ``:5908-5909`` citation was stale, PA-HIER-21):
     ``sqrt(z_error^2 + sigma_z_pv^2)``, ``sigma_z_pv = (1+z) *
     SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S`` -- currently a no-op since
     :data:`~darksiren_emri.constants.SIGMA_V_PEC_KM_S` is ``0.0``, kept for

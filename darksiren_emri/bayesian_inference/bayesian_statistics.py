@@ -1616,6 +1616,25 @@ def precompute_completeness_population_volume(
     return V_f_table
 
 
+# [HIER] θ-hook inventory counters (PA-HIER-16 corroborant): each in-scope
+# site increments its counter when its θ branch actually runs, so a driver can
+# assert the θ-aware path was entered. NOTE: sites 2.1/2.2 execute inside
+# multiprocessing workers under production dispatch — increments land in the
+# worker process, not the parent; the decisive engagement evidence is the
+# per-term ln L diagnostics (PA-HIER-23), never this counter alone.
+_THETA_HOOK_COUNTERS: dict[str, int] = {"site_2_1": 0, "site_2_2": 0, "site_2_3": 0}
+
+
+def _theta_hook_count(site: str) -> None:
+    _THETA_HOOK_COUNTERS[site] += 1
+
+
+def _validate_theta(theta_b: float, theta_s: float) -> None:
+    """Guard pattern, not a silent no-op: θ = (b, s) needs s > 0 and finite b."""
+    if not (theta_s > 0.0) or not np.isfinite(theta_s) or not np.isfinite(theta_b):
+        raise ValueError(f"theta requires finite b and s > 0, got (b, s) = ({theta_b}, {theta_s})")
+
+
 def _smeared_global_pdet_expectation(
     z_g: npt.NDArray[np.float64],
     M_g: npt.NDArray[np.float64],
@@ -1628,6 +1647,10 @@ def _smeared_global_pdet_expectation(
     sky_aware: bool,
     n_quad: int = 50,
     chunk_size: int = 200_000,
+    # [HIER] θ-hook site 2.3 (PHYSICS_CHANGE_THETA_HOOK_20260828.md, row #216).
+    # (0.0, 1.0) is the literal-skip identity (GATE T-ID).
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
 ) -> npt.NDArray[np.float64]:
     r"""Per-galaxy sigma_z-smeared selection weight ``E_{z~kernel_g}[P_det(d_L(z;h))]``.
 
@@ -1670,6 +1693,15 @@ def _smeared_global_pdet_expectation(
     # Tiny floor keeps the affine window non-degenerate; at 1e-10 the kernel is
     # numerically a delta and the expectation equals the point evaluation.
     sigma_eff = np.maximum(np.sqrt(z_err_g**2 + sigma_z_pv**2), 1e-10)
+    if theta_b != 0.0 or theta_s != 1.0:
+        # Sec. 2 in Ma, Hu & Huterer (2006), arXiv:astro-ph/0506614 — affine
+        # photo-z systematic (b, s). Registered pin: b shifts the kernel centre
+        # AFTER the PV width fold; s scales the folded width; the 1e-10 floor
+        # re-applies after scaling so the delta limit stays exact.
+        _validate_theta(theta_b, theta_s)
+        _theta_hook_count("site_2_3")
+        z_g = z_g + theta_b * (1.0 + z_g)
+        sigma_eff = np.maximum(theta_s * sigma_eff, 1e-10)
     for start in range(0, z_g.size, chunk_size):
         sl = slice(start, min(start + chunk_size, z_g.size))
         zc = z_g[sl]
@@ -2674,6 +2706,13 @@ def precompute_global_catalog_selection(
     # (the SAME shift production's per-event D_g uses). No effect under
     # sigma4d_mass_kernel="point" (unchanged point evaluation at raw M_g).
     eddington_m: str = "on",
+    # [HIER] θ-hook site 2.3 (PHYSICS_CHANGE_THETA_HOOK_20260828.md, row #216):
+    # forwarded to _smeared_global_pdet_expectation. The registered site is the
+    # smeared kernel's width/window lines ONLY, so a non-identity θ REQUIRES
+    # smear_sigma_z=True (guard below) — the point-evaluation branches carry no
+    # kernel for θ to reparametrize.
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
 ) -> dict[float, float]:
     r"""Precompute the GLOBAL in-catalogue selection denominator (Option A).
 
@@ -2754,6 +2793,15 @@ def precompute_global_catalog_selection(
         Babak et al. (2017), arXiv:1703.09722 — per-MBH rate ``R_eff``
             (:func:`darksiren_emri.emri_rate.R_eff_per_mbh`).
     """
+    if (theta_b != 0.0 or theta_s != 1.0) and not smear_sigma_z:
+        # [HIER] θ-hook site 2.3: guard pattern, not a silent no-op — the
+        # registered site is the smeared kernel; the point branches would
+        # silently ignore θ (PHYSICS_CHANGE_THETA_HOOK_20260828.md §2).
+        raise ValueError(
+            "theta (site 2.3) requires smear_sigma_z=True — the registered "
+            "site is the smeared host-z kernel; got "
+            f"(theta_b, theta_s) = ({theta_b}, {theta_s}) with smear_sigma_z=False"
+        )
     if phi_survival_table is not None and (with_bh_mass or smear_sigma_z):
         raise ValueError(
             "phi_survival_table is the mass-blind phi-marginal leg Sigma^phi: it "
@@ -2878,6 +2926,8 @@ def precompute_global_catalog_selection(
                 detection_probability_obj,
                 with_bh_mass=with_bh_mass,
                 sky_aware=_sky_aware,
+                theta_b=theta_b,
+                theta_s=theta_s,
             )
         elif with_bh_mass:
             # FLAG (user-approved, statistics-starved): the with-BH-mass 4D
@@ -3458,6 +3508,19 @@ class BayesianStatistics:
         # mass_filter_mask branch in
         # galaxy_catalogue/handler.py:get_possible_hosts_from_ball_tree.
         mass_filter_sigma: str = "symmetric",
+        # [HIER] θ-hook (C1, PHYSICS_CHANGE_THETA_HOOK_20260828.md, ledger row
+        # #216): affine photo-z systematic θ = (b, s) — z̃ = z + b(1+z),
+        # σ̃_eff = s·σ_eff at estimator sites 2.1/2.2/2.3 (Ma, Hu & Huterer
+        # 2006, arXiv:astro-ph/0506614, Sec. 2). (0.0, 1.0) is the literal-skip
+        # identity: the production path is byte-identical by construction (GATE
+        # T-ID). NEVER applied generator-side (GATE GEN-FROZEN, PA-HIER-2).
+        theta_b: float = 0.0,
+        theta_s: float = 1.0,
+        # [HIER] C2 (PA-HIER-23) OAT toggle: which in-scope site(s) receive θ;
+        # the others are forced to their (0, 1) evaluation. Site 2.3 requires
+        # smear_global_selection=True (the registered site is the smeared
+        # kernel).
+        theta_sites: str = "all",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3473,6 +3536,34 @@ class BayesianStatistics:
         if not _h_list:
             raise ValueError("h_values must contain at least one value")
         self.catalog_only = catalog_only
+        # [HIER] θ-hook (C1/C2): validate, then store for p_Di's site-2.2
+        # dispatch and the site-2.3 precompute below. The identity default
+        # stores (0.0, 1.0, "all") and engages nothing.
+        _theta_engaged = theta_b != 0.0 or theta_s != 1.0
+        if _theta_engaged:
+            _validate_theta(theta_b, theta_s)
+        if theta_sites not in ("all", "2.1", "2.2", "2.3"):
+            raise ValueError(
+                f"theta_sites must be 'all', '2.1', '2.2' or '2.3', got {theta_sites!r}"
+            )
+        if _theta_engaged and theta_sites in ("all", "2.3") and not smear_global_selection:
+            raise ValueError(
+                "theta with site 2.3 enabled requires smear_global_selection=True "
+                "(the registered site is the smeared global-selection kernel); "
+                "pass theta_sites='2.1'/'2.2' or enable smearing"
+            )
+        self._theta_b = float(theta_b)
+        self._theta_s = float(theta_s)
+        self._theta_sites = str(theta_sites)
+        if _theta_engaged:
+            _LOGGER.warning(
+                "INSTRUMENTATION ACTIVE: theta=(b=%.6g, s=%.6g), sites=%s — the "
+                "host-z kernel is reparametrized ([HIER] θ-hook). This run is a "
+                "COUNTERFACTUAL/profile point, not a production posterior.",
+                theta_b,
+                theta_s,
+                theta_sites,
+            )
         self._freeze_g_frac_ref_h = (
             float(freeze_g_frac_ref_h) if freeze_g_frac_ref_h is not None else None
         )
@@ -4007,6 +4098,11 @@ class BayesianStatistics:
             z_max_cap=REDSHIFT_UPPER_LIMIT,
         )
         _beta_G_table = {h: _D_h_table[h] - _beta_Gbar_table[h] for h in _D_h_table}
+        # [HIER] θ-hook site 2.3 dispatch (OAT toggle, PA-HIER-23): θ reaches
+        # the global-selection denominator only when site 2.3 is enabled.
+        _theta_b_23, _theta_s_23 = (
+            (self._theta_b, self._theta_s) if self._theta_sites in ("all", "2.3") else (0.0, 1.0)
+        )
         _global_cat_denom_no_bh = precompute_global_catalog_selection(
             h_values=_h_list,
             galaxy_catalog=galaxy_catalog,
@@ -4014,6 +4110,8 @@ class BayesianStatistics:
             with_bh_mass=False,
             z_max_cap=REDSHIFT_UPPER_LIMIT,
             smear_sigma_z=smear_global_selection,
+            theta_b=_theta_b_23,
+            theta_s=_theta_s_23,
         )
         _global_cat_denom_with_bh = precompute_global_catalog_selection(
             h_values=_h_list,
@@ -4024,6 +4122,8 @@ class BayesianStatistics:
             smear_sigma_z=smear_global_selection,
             sigma4d_mass_kernel=self._sigma4d_mass_kernel,
             eddington_m=self._eddington_m,
+            theta_b=_theta_b_23,
+            theta_s=_theta_s_23,
         )
         # [PHYSICS] Path (A): ONE detection model (FIXB_PATHA_PACKAGE.md §3.2,
         # 2026-08-04). Only the production mixture mode consumes the
@@ -4598,6 +4698,12 @@ class BayesianStatistics:
             "L_comp",
             "combined_no_bh",
             "combined_with_bh",
+            # [HIER] C2 (PA-HIER-23): separable ln L terms — num_log − den_log
+            # is the event's ln L; the OAT toggle matrix reads these, never the
+            # aggregate.
+            "den_log_term",
+            "num_log_term_no_bh",
+            "num_log_term_with_bh",
         ]
         # 7 significant figures on the path-(A) diagnostics.
         _seven_sf = ("w_G_legacy", "w_tilde_G", "alpha_G_phi", "r_Malm", "D_tilde_phi", "g_frac")
@@ -4853,6 +4959,12 @@ class BayesianStatistics:
         detection_probability_obj: SimulationDetectionProbability,
         redshift_upper_limit: float = HOST_DRAW_Z_MAX,
     ) -> tuple[float, float]:
+        # [HIER] C2 (PA-HIER-23): the denominator actually dividing this
+        # event's combined likelihood — NaN until an assembly branch sets it
+        # (the catalog_only bypass never does), so ln L decomposes into a
+        # separable numerator-log-term and denominator-log-term at the
+        # diagnostic append.
+        _den_used = float("nan")
         # start parallel computation
         _LOGGER.info(f"start parallel computation with: {pool}")
         start = time.time()
@@ -4887,6 +4999,14 @@ class BayesianStatistics:
             _cat_surv = "phi"  # workers see the same engaged cell semantics
         else:
             _cat_surv_table = None
+        # [HIER] θ-hook site 2.2 dispatch: the batch kernel receives θ only
+        # when site 2.2 is enabled by the OAT toggle (PA-HIER-23); otherwise it
+        # is forced to the (0, 1) identity evaluation.
+        _theta_b_22, _theta_s_22 = (
+            (getattr(self, "_theta_b", 0.0), getattr(self, "_theta_s", 1.0))
+            if getattr(self, "_theta_sites", "all") in ("all", "2.2")
+            else (0.0, 1.0)
+        )
         results_with_bh_mass = _starmap_host_batches(
             pool,
             possible_host_galaxies_with_bh_mass,
@@ -4903,6 +5023,8 @@ class BayesianStatistics:
             _cat_surv_table,
             self._catalogue_numerator_survival_2d,
             self._catalogue_numerator_survival_2d_center,
+            theta_b=_theta_b_22,
+            theta_s=_theta_s_22,
         )
 
         results_without_blackhole_mass = _starmap_host_batches(
@@ -4921,6 +5043,8 @@ class BayesianStatistics:
             _cat_surv_table,
             self._catalogue_numerator_survival_2d,
             self._catalogue_numerator_survival_2d_center,
+            theta_b=_theta_b_22,
+            theta_s=_theta_s_22,
         )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
@@ -5536,6 +5660,7 @@ class BayesianStatistics:
                 )
                 _a_cat: float = _sigma_glob_sel / n_hat_w if n_hat_w > 0.0 else 0.0
                 D_gen: float = _a_cat + beta_Gbar
+                _den_used = D_gen if D_gen > 0 else 1.0
                 if D_gen > 0:
                     # Diagnostic: P_hat(cat|det,h) = (Sigma_glob_sel/n_hat_w)/D_gen —
                     # the generator-consistent detected-catalogue share (replaces
@@ -5592,6 +5717,7 @@ class BayesianStatistics:
                     beta_Gbar,
                     mode=getattr(self, "_completion_b_scale", "derived"),
                 )
+                _den_used = D_tilde_phi if D_tilde_phi > 0.0 else 1.0
                 if D_tilde_phi > 0.0:
                     w_G = path_a["w_tilde_G"]
                     combined_without_bh_mass = float(
@@ -5609,11 +5735,13 @@ class BayesianStatistics:
                     combined_with_bh_mass = float(L_cat_with_bh_mass)
             elif D_h > 0:
                 w_G = beta_G / D_h
+                _den_used = D_h
                 combined_without_bh_mass = float((beta_G * L_cat_without_bh_mass + B_num) / D_h)
                 combined_with_bh_mass = float((beta_G * L_cat_with_bh_mass + B_num) / D_h)
             else:
                 _LOGGER.warning(f"Detection {detection_index}: D(h) is zero, using L_cat only")
                 w_G = 1.0
+                _den_used = 1.0
                 combined_without_bh_mass = float(L_cat_without_bh_mass)
                 combined_with_bh_mass = float(L_cat_with_bh_mass)
             # Diagnostic-only completion likelihood L_comp = B_num/beta_Gbar (the
@@ -5650,6 +5778,19 @@ class BayesianStatistics:
                 "L_comp": L_comp,
                 "combined_no_bh": combined_without_bh_mass,
                 "combined_with_bh": combined_with_bh_mass,
+                # [HIER] C2 (PA-HIER-23): separable per-event ln L decomposition
+                # ln L = num_log_term − den_log_term. The numerator is recovered
+                # as combined × den_used (exactly what the assembly divided);
+                # NaN where the term is non-positive or no denominator applied.
+                "den_log_term": math.log(_den_used)
+                if np.isfinite(_den_used) and _den_used > 0.0
+                else float("nan"),
+                "num_log_term_no_bh": math.log(combined_without_bh_mass * _den_used)
+                if np.isfinite(_den_used) and combined_without_bh_mass * _den_used > 0.0
+                else float("nan"),
+                "num_log_term_with_bh": math.log(combined_with_bh_mass * _den_used)
+                if np.isfinite(_den_used) and combined_with_bh_mass * _den_used > 0.0
+                else float("nan"),
             }
         )
 
@@ -6091,6 +6232,12 @@ def single_host_likelihood(
     # choice is PENDING the pre-execution review (prereg §2(i)); no silent
     # default.
     catalogue_numerator_survival_2d_center: str = "unset",
+    # [HIER] θ-hook site 2.1 (PHYSICS_CHANGE_THETA_HOOK_20260828.md, ledger row
+    # #216): affine photo-z systematic reparametrization z̃ = z + b(1+z),
+    # σ̃_eff = s·σ_eff. (0.0, 1.0) is the literal-skip identity (GATE T-ID) —
+    # the default path never executes the θ branch.
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
 ) -> list[float]:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -6222,6 +6369,16 @@ def single_host_likelihood(
     # catalogue z_error — a ±1σ, second-order candidate-list effect.
     sigma_z_pv = (1.0 + host_z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
     host_z_error_eff = float(np.sqrt(host_z_error**2 + sigma_z_pv**2))
+    if theta_b != 0.0 or theta_s != 1.0:
+        # [HIER] θ-hook site 2.1 — Sec. 2 in Ma, Hu & Huterer (2006),
+        # arXiv:astro-ph/0506614. Registered pin: b shifts the kernel centre
+        # AFTER the PV width fold; s scales the folded width. Every downstream
+        # consumer (windows, kernel loc/scale, point numerator, S̄_φ interp)
+        # reads the substituted (z̃, σ̃_eff) through these two locals.
+        _validate_theta(theta_b, theta_s)
+        _theta_hook_count("site_2_1")
+        host_z = host_z + theta_b * (1.0 + host_z)
+        host_z_error_eff = float(theta_s * host_z_error_eff)
 
     numerator_integration_upper_redshift_limit = dist_to_redshift(
         _det_d_L + integration_limit_sigma_multiplier * _det_d_L_unc, h=h
@@ -6798,6 +6955,12 @@ def single_host_likelihood_batch(
     # the choice is PENDING the pre-execution review (prereg §2(i)); no
     # silent default.
     catalogue_numerator_survival_2d_center: str = "unset",
+    # [HIER] θ-hook site 2.2 — production's actual dispatch path
+    # (PHYSICS_CHANGE_THETA_HOOK_20260828.md, ledger row #216). (0.0, 1.0) is
+    # the literal-skip identity (GATE T-ID); semantics identical to the scalar
+    # twin's site 2.1.
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
 ) -> npt.NDArray[np.float64]:
     """Host-batched twin of :func:`single_host_likelihood`.
 
@@ -6877,6 +7040,14 @@ def single_host_likelihood_batch(
     # identical formula and references as the scalar kernel (issue #16).
     sigma_z_pv = (1.0 + host_z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
     host_z_error_eff = np.sqrt(host_z_error**2 + sigma_z_pv**2)
+    if theta_b != 0.0 or theta_s != 1.0:
+        # [HIER] θ-hook site 2.2 — Sec. 2 in Ma, Hu & Huterer (2006),
+        # arXiv:astro-ph/0506614; same registered pin as the scalar twin
+        # (b AFTER the PV fold, s on the folded width).
+        _validate_theta(theta_b, theta_s)
+        _theta_hook_count("site_2_2")
+        host_z = host_z + theta_b * (1.0 + host_z)
+        host_z_error_eff = theta_s * host_z_error_eff
 
     # Numerator window depends only on the event (and h): computed once per batch.
     numerator_integration_upper_redshift_limit = dist_to_redshift(
@@ -7418,6 +7589,8 @@ def _starmap_host_batches(
     catalogue_survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
     catalogue_numerator_survival_2d: str = "off",
     catalogue_numerator_survival_2d_center: str = "unset",
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
 ) -> list[list[float]]:
     """Dispatch the batched host kernel over worker processes.
 
@@ -7485,6 +7658,8 @@ def _starmap_host_batches(
             catalogue_survival_table,
             catalogue_numerator_survival_2d,
             catalogue_numerator_survival_2d_center,
+            theta_b,
+            theta_s,
         )
         for idx in chunk_indices
     ]
