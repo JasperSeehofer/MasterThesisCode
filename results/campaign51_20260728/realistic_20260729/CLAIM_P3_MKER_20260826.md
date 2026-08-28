@@ -922,3 +922,27 @@ width). If R-MKER-4 is ratified, R-MKER-3 should be re-stated before it is ruled
   candidates and was tilt-scope; it never measured true-host recovery and does not govern this
   absolute-bias-scope question. Mechanism is channel-common — this thread may NOT be cited as
   a 2D−1D tilt candidate. Any follow-up beyond the census returns as its own [DO].
+
+---
+
+## R-MKER-6 STAGE-0 CENSUS RESULT [2026-08-28] — 16.8% of events: true host OUTSIDE the cone
+
+Zero-compute census over the banked 24-seed fleet (agent-run; anchor reproduced BEFORE any
+census number counted: seed 900121 event 20 chord 1.6746585172e-03 / radius 1.4956979546e-03
+= ×1.119651, full-float match to §R2.6; prune-survivor count reproduced R2.0's 20,834,171
+exactly).
+
+- **n = 2261 events (bc arm, sky geometry arm-independent) · 380 outside · fraction 0.1681.**
+- chord/radius distribution: median 0.542, p90 1.155, p99 1.723, max 2.267; per-seed range
+  10.1%–24.5%, no outlier seed.
+- **CHAIR CONSISTENCY CHECK (orchestrator): the rate is consistent with the cone working AS
+  DESIGNED.** A hard 1.5·√λ_max circle necessarily excludes between 13.4% (extreme-anisotropy
+  1D limit, 2Φ(−1.5)) and 32.5% (isotropic Rayleigh tail) of true hosts; 16.8% sits inside
+  that envelope. This census is therefore NOT evidence of a construction defect.
+- **The live stage-1 question it upgrades to** (returns as its own [DO], per the ruling): does
+  the estimator's out-of-catalogue/completion machinery correctly account for the DESIGNED-IN
+  ~17% probability that an in-catalogue true host is absent from the candidate list? If the
+  catalogue leg implicitly assumes "in-catalogue ⟹ in the candidate list", ~17% of in-catalogue
+  events are structurally mis-weighted toward the completion term — a channel-common,
+  absolute-bias-scope mechanism (NOT a tilt candidate, per the rule-1 delimitation in the FORK
+  RULINGS entry). Any measurement of that requires its own registration.

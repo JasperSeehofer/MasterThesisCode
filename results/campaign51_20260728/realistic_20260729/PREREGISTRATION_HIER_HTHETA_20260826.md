@@ -1894,3 +1894,54 @@ recommended by you", against the Six Forks brief; `[FABLE-ORCH]`)**
 **Launch state:** still LAUNCH-BLOCKED pending C1–C3 (θ hook now via /physics-change; control
 deferred per item 5) and the item-4 certifications. Unblocked and ordered now: the item-7
 b-grid re-anchor read, the item-4 certifications, S0-A.
+
+---
+
+**PA-HIER-29 (2026-08-28; item-7 RE-ANCHOR EXECUTED — the measured b half-width;
+`[FABLE-ORCH]`)**
+
+PA-HIER-9 option (a) executed against the pinned catalogue (md5 `c52c13b5…` verified before
+reading; 22,641,048 rows, chunked pandas; agent-run, decisive statistic independently
+spot-checked by the orchestrator on a 4M-row slice: median 0.033054 vs full 0.033038 ✓).
+
+- **Measured statistic:** median `REDSHIFT_MEASUREMENT_ERROR/(1+REDSHIFT)` = **0.033038**
+  (mean 0.032018; 6,284 NaN rows excluded).
+- **Re-anchored half-width: b_max ≈ 0.0661** (2×median, PA-HIER-9's stated convention) —
+  ~1.65× the superseded ±0.04.
+- **Spec ambiguity DISCLOSED, resolved by the spec's own words:** PA-HIER-9 names both "the
+  mirror host pool" and "free, zero-compute, one pandas read" — the pruned-pool reading is NOT
+  zero-compute (the on-disk `STELLAR_MASS` is raw stellar mass in 10¹⁰ M_sun units; reaching
+  BH-mass thresholds requires `_empiric_stellar_mass_to_BH_mass_relation`). Executed readings:
+  (A) all valid rows and (B) z-only prune (z−z_err ≤ 1.5) — identical to 4 decimal places
+  (median 0.033038 both), so the ambiguity is low-consequence. The full-pool reading (C) is
+  registered as NOT-EXECUTABLE-AS-SPECIFIED.
+- Robustness: driven by REDSHIFT_FLAG=1 photometric rows (98.8%, median 0.03304); the flag-3
+  minority (1.2%, median 0.00239) cannot move the median — consistent with F4.
+- **NOT the 0.163–0.392 figure** from PA-HIER-9's internal-contradiction paragraph (that band
+  used the campaign's injected σ_z/z, not the catalogue's on-disk column). The b grid for
+  option B (item 6) re-derives from **±0.0661** when the θ instrument is built.
+
+---
+
+**PA-HIER-30 (2026-08-28; item-4 CERTIFICATIONS EXECUTED — both legs CERTIFIED; `[FABLE-ORCH]`)**
+
+- **Leg (a) `phi_survival_table` value-identity: PASS.** Generator-path
+  (`build_bsel_selection_objects` → `precompute_phi_marginal_survival`,
+  `correspondence_1d.py:983/:1049`) and estimator-path (as `evaluate()` builds it,
+  `bayesian_statistics.py:3931-3949/:4050-4054`) tables built independently at h = 0.73 on the
+  REAL injection pool + completeness cache with all production kwargs matched: `z_grid` and
+  `s_phi` (shape (1500,)) **bit-identical** (max abs diff 0.0). Scope: certifies the
+  construction identity; the C5 runtime guard remains unbuilt (disclosed).
+- **Leg (b) 401-node inverse-CDF convergence: PASS with a disclosed residual.** 401 vs 4001 vs
+  40001 nodes + independent rejection-sampling cross-check on real catalogue hosts:
+  non-straddling hosts converge ≤0.1%; worst-case mean bias ≈ 2e-4 in z (~0.2% of σ_eff)
+  everywhere. **Residual: hosts whose ±4σ window straddles the S̄_φ table's z_max = 1.5 edge
+  show ~13–15% relative std inflation at 401 nodes** (rejection sampling confirms the finer
+  grids, not the 401 grid, are correct). Affected class: a handful of the 386/20.8M rows with
+  z > 1.0 — order 1e-5 of the catalogue.
+- **CHAIR GATE (the prereg named no tolerance): CERTIFIED.** Rationale: the mean bias is three
+  orders below any registered read's resolution; the width residual is confined to an ~1e-5
+  host fraction, and every [HIER] verdict is capped REPORTED-ONLY (item 9 = AFFORDABLE). The
+  residual is REGISTERED, not waived: if the θ instrument build touches
+  `correspondence_1d.py` anyway (it will, via /physics-change per item 3), raising
+  `_B0I_ZTRUE_GRID_N` 401 → 4001 is a free hardening to include in that same gated change.
