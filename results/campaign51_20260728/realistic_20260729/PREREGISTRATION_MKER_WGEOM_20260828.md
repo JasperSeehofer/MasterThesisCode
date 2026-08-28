@@ -248,3 +248,45 @@ threshold not reached).
 *Registered 2026-08-28, pre-launch. Every number cited above was re-verified at its source file
 or re-derived in closed form during authoring; the P2 table is the authoring-time derivation the
 instrument must independently reproduce (G4).*
+
+---
+
+## ⟨SUBMIT⟩ + RESULT RECORD [2026-08-28; FABLE-ORCH]
+
+**Launched under author grant of 2026-08-28** (ledger row #216 item 3, "all approved" against
+the Runbook 37 Docket — authorization stamp per runbook 36 §2). Instrument:
+`wgeom_instrument.py` (sonnet-built against this registration; measurement RUN BY THE
+ORCHESTRATOR, not the building agent, per the verifier-independence rule). Local CPU,
+single run, `--mode full`; outputs `wgeom_work/wgeom_result.{json,md}`.
+
+**VERDICT (per §6, evaluated first): INSTRUMENT-DEFECT — ¬G via G1 (P3a) and P5.**
+G2 (catalogue pin md5 PASS), G3 (P4 exhibit: ALL SEVEN comparands exact — GW floor/ceiling,
+cone set, linear pass/fail sets, log-readmission, true-host-outside-cone), G4 (P2 authoring
+table reproduction) all PASS. P3b's bound passes (0.5808 ≥ 0.5280). No non-gate read is
+banked under this verdict; the P2 ε-table and P3c stand as instrument output only.
+
+**CHAIR FORENSIC (appended before escalation, zero-compute):** the instrument's census totals
+are **bit-identical to the banked §3.8 fleet read** of `CLAIM_WGEO_20260827.md`
+(2 154 066 passed + 95 165 excluded = n_all 2 249 231; ratio 0.9577) — the instrument did
+reproduce A banked census exactly. The G1 comparands registered here (0.9490/0.4210/0.4437)
+came from §3.9's "cone-exact, whole fleet, 4 800 event rows" row, whose own failure counts
+(112 416 623 too-light + 3 868 708 too-heavy = 116 285 331) are arithmetically incompatible
+with a ~2.25M-row cone-exact basis (they imply n_all ≈ 2.3e9): **the §3.9 ✓VER row is
+internally inconsistent with its stated scope.** P5's banked −0.145 anchor is suspect for the
+same scope reason (measured −0.0986, sign matches).
+
+**Per §7 clause 3 (registered, binding): G1 failing on inputs whose pins pass impeaches the
+banked record, not this design — ESCALATED TO THE AUTHOR.** Items for ruling:
+- **[RULE] W-1**: accept the chair forensic reading — §3.9's census row (and P5's −0.145) are
+  scope-mislabelled/internally inconsistent banked numbers; the §3.8 fleet census (0.9577) is
+  the reproducible comparand. On acceptance: correct CLAIM_WGEO §3.9 by appended note (never
+  edit), re-anchor G1/P5 to the §3.8-scope values, and re-run this instrument's verdict map
+  against the corrected anchors (zero marginal compute — the JSON already holds every read).
+- **[RULE] W-2**: whether §3.9's directional claim (the 29:1 too-light:too-heavy split and
+  the log-window heavy-end-cut mechanism) survives — its SIGN is corroborated by the chair's
+  independent single-interval read and by HB's 2026-07-30 census, but its magnitudes carry
+  the same scope inconsistency.
+
+No further run, no band evaluation, no F-ii consequence (decision 2 does not fire under
+INSTRUMENT-DEFECT). Instrument sha1 `17dbccbac7eb` (the JSON records git_commit + timestamp;
+the script file is committed alongside this record).

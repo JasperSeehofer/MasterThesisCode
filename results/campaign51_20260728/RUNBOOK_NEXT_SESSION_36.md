@@ -161,3 +161,27 @@ R-MKER-3 read as ratified-in-R2-form.
   [DO] · θ-hook gate (decided in its own doc) · archival-program plan choice (A: MUST-ARCHIVE
   rsync per triage doc / B: + helpdesk ticket). Nothing was launched, edited in source, or
   submitted to the cluster this session.
+
+## 7. RULING + EXECUTION [2026-08-28, same session — author: "all approved" = row #216]
+
+All docket items granted (itemization orchestrator-derived; ratification stamps in both
+readout docs). Executed same session:
+
+- **θ-hook (C1+C2) IMPLEMENTED through the full gate** — `[PHYSICS]` commit `d40fe5c8`
+  (+ verified ledger row): sites 2.1/2.2/2.3 hooked with literal (0,1) skip; PA-HIER-23 ln L
+  decomposition columns + OAT `theta_sites` toggle; 401→4001 hardening; :1173 docstring fix;
+  15 new regression tests incl. 3 pre-change bit-exact pins; suite 1846 green. **[HIER] C1+C2
+  now BUILT** — remaining launch blockers are C3 only (per PA-HIER-28's sequencing).
+- **WGEOM registered run EXECUTED → INSTRUMENT-DEFECT + banked-record impeachment
+  ESCALATED** (row #217): the instrument bit-reproduces CLAIM_WGEO §3.8's fleet census
+  (0.9577), while the registered G1 anchors from §3.9 are internally inconsistent with their
+  stated scope. **Fresh [RULE] W-1/W-2 for the author** (accept forensic + append-correct
+  §3.9 + re-anchor and re-evaluate at zero compute; whether the 29:1 directional claim
+  survives). G3 exhibit exact; P3b bound passes.
+- **[CMEM] thread opened at stage 0** — `CLAIM_COMPLETION_MEMBERSHIP_20260828.md` (both
+  exoneration layers checked, distinctions recorded; Refute-by = 2 zero-compute reads
+  needing their own registration — the stage-2 prereg is the next [DO] on this thread).
+- **Archival Option A RUNNING** — `results/_archive/archive_run_20260828.sh` (priority-ordered
+  MUST-ARCHIVE rsync, seed600 first; log in `results/_archive/archive_run_20260828.log`).
+- **Open for next session:** W-1/W-2 · [CMEM] stage-2 prereg [DO] · [HIER] C3 + S0-A launch
+  path · archival completion check before 2026-09-23.

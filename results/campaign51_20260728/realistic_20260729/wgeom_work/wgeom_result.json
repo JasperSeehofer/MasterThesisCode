@@ -1,0 +1,317 @@
+{
+  "mode": "full",
+  "git_commit": "c819e28230eb06fe8a040050c606ba00dfdb90ac",
+  "timestamp_unix": 1787940671.8338537,
+  "elapsed_s": 28.28156018257141,
+  "catalogue": {
+    "path": "/home/jasper/Repositories/darksiren-emri/darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv",
+    "n_raw": 22641048,
+    "n_after_nan_drop": 21753847,
+    "n_pruned": 20834171,
+    "pin_target_validation_passed": "True"
+  },
+  "p1": {
+    "spot_x": [
+      0.1,
+      0.3,
+      0.5,
+      0.7,
+      0.9,
+      0.95
+    ],
+    "banked_A": [
+      -0.050084,
+      -0.15235,
+      -0.26186,
+      -0.388184,
+      -0.564023,
+      -0.635421
+    ],
+    "computed_A": [
+      -0.05008372463331128,
+      -0.1523500905767395,
+      -0.26185950714291484,
+      -0.3881841021439416,
+      -0.5640229661990814,
+      -0.6354206987175004
+    ],
+    "abs_diff": [
+      2.753666887150841e-07,
+      9.057673949763867e-08,
+      4.928570851436831e-07,
+      1.0214394163821083e-07,
+      3.380091861959755e-08,
+      3.0128249961514086e-07
+    ],
+    "tolerance_abs": 5e-07,
+    "negative_edge_threshold_cv": 0.6666666666666666,
+    "banked_negative_edge_threshold_cv": 0.6666666666666666,
+    "threshold_match": true,
+    "passed": true
+  },
+  "p2": {
+    "table": [
+      {
+        "label": "min",
+        "cv": 0.5930186813914989,
+        "eps_lin_light": 0.00010164997619394335,
+        "eps_lin_heavy": 0.14162873785044128,
+        "eps_lin_total": 0.14173038782663522,
+        "eps_log_total": 0.13361440253771614
+      },
+      {
+        "label": "p10",
+        "cv": 0.7845692926115476,
+        "eps_lin_light": 0.0,
+        "eps_lin_heavy": 0.1607268942837965,
+        "eps_lin_total": 0.1607268942837965,
+        "eps_log_total": 0.13361440253771614
+      },
+      {
+        "label": "median",
+        "cv": 0.8614145114513848,
+        "eps_lin_light": 0.0,
+        "eps_lin_heavy": 0.16779247755937376,
+        "eps_lin_total": 0.16779247755937376,
+        "eps_log_total": 0.13361440253771614
+      },
+      {
+        "label": "p75",
+        "cv": 0.9400623598316168,
+        "eps_lin_light": 0.0,
+        "eps_lin_heavy": 0.17470035578536058,
+        "eps_lin_total": 0.17470035578536058,
+        "eps_log_total": 0.13361440253771614
+      },
+      {
+        "label": "p90",
+        "cv": 1.2137396725977851,
+        "eps_lin_light": 0.0,
+        "eps_lin_heavy": 0.19645679817441697,
+        "eps_lin_total": 0.19645679817441697,
+        "eps_log_total": 0.13361440253771614
+      },
+      {
+        "label": "exhibit",
+        "cv": 1.3032395587986776,
+        "eps_lin_light": 0.0,
+        "eps_lin_heavy": 0.20288735250641277,
+        "eps_lin_total": 0.20288735250641277,
+        "eps_log_total": 0.13361440253771614
+      }
+    ],
+    "catalogue_weighted_mean_eps_lin": 0.17217570046113773,
+    "negative_lower_edge_fraction": 0.996111868333998,
+    "banked_negative_lower_edge_fraction": 0.996112,
+    "n_pruned": 20834171
+  },
+  "g4": {
+    "rows": [
+      {
+        "label": "min",
+        "cv": 0.593,
+        "computed_light": 0.00010177493117264682,
+        "banked_light": 0.000102,
+        "computed_heavy": 0.14162676489293435,
+        "banked_heavy": 0.141627,
+        "computed_total": 0.141728539824107,
+        "banked_total": 0.141729,
+        "computed_log": 0.13361440253771614,
+        "banked_log": 0.133614,
+        "passed": true
+      },
+      {
+        "label": "p10",
+        "cv": 0.7846,
+        "computed_light": 0.0,
+        "banked_light": 0.0,
+        "computed_heavy": 0.16072978262770643,
+        "banked_heavy": 0.16073,
+        "computed_total": 0.16072978262770643,
+        "banked_total": 0.16073,
+        "computed_log": 0.13361440253771614,
+        "banked_log": 0.133614,
+        "passed": true
+      },
+      {
+        "label": "median",
+        "cv": 0.8614,
+        "computed_light": 0.0,
+        "banked_light": 0.0,
+        "computed_heavy": 0.16779117338610883,
+        "banked_heavy": 0.167791,
+        "computed_total": 0.16779117338610883,
+        "banked_total": 0.167791,
+        "computed_log": 0.13361440253771614,
+        "banked_log": 0.133614,
+        "passed": true
+      },
+      {
+        "label": "p75",
+        "cv": 0.9401,
+        "computed_light": 0.0,
+        "banked_light": 0.0,
+        "computed_heavy": 0.17470358663154184,
+        "banked_heavy": 0.174704,
+        "computed_total": 0.17470358663154184,
+        "banked_total": 0.174704,
+        "computed_log": 0.13361440253771614,
+        "banked_log": 0.133614,
+        "passed": true
+      },
+      {
+        "label": "p90",
+        "cv": 1.2137,
+        "computed_light": 0.0,
+        "banked_light": 0.0,
+        "computed_heavy": 0.19645387823561822,
+        "banked_heavy": 0.196454,
+        "computed_total": 0.19645387823561822,
+        "banked_total": 0.196454,
+        "computed_log": 0.13361440253771614,
+        "banked_log": 0.133614,
+        "passed": true
+      },
+      {
+        "label": "exhibit",
+        "cv": 1.3032395587986776,
+        "computed_light": 0.0,
+        "banked_light": 0.0,
+        "computed_heavy": 0.20288735250641277,
+        "banked_heavy": 0.202887,
+        "computed_total": 0.20288735250641277,
+        "banked_total": 0.202887,
+        "computed_log": 0.13361440253771614,
+        "banked_log": 0.133614,
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "p3": {
+    "n_events": 2261,
+    "ratios": {
+      "n_all": 2249231,
+      "n_lin": 2154066,
+      "n_log": 913485,
+      "n_lin_over_n_all": 0.9576899838211371,
+      "n_log_over_n_all": 0.40613214027372024,
+      "n_log_over_n_lin": 0.4240747497987527
+    },
+    "g1_checks": {
+      "n_lin_over_n_all": {
+        "computed": 0.9576899838211371,
+        "banked": 0.949,
+        "match_4dp": false
+      },
+      "n_log_over_n_all": {
+        "computed": 0.40613214027372024,
+        "banked": 0.421,
+        "match_4dp": false
+      },
+      "n_log_over_n_lin": {
+        "computed": 0.4240747497987527,
+        "banked": 0.4437,
+        "match_4dp": false
+      }
+    },
+    "g1_passed": false,
+    "lin_recompute_mismatches": 21,
+    "lin_recompute_consistency_passed": false,
+    "p3a": {
+      "n_all": 2249231,
+      "n_lin": 2154066,
+      "n_log": 913485,
+      "n_lin_over_n_all": 0.9576899838211371,
+      "n_log_over_n_all": 0.40613214027372024,
+      "n_log_over_n_lin": 0.4240747497987527
+    },
+    "p3b_fraction": 0.5808465204329836,
+    "p3b_bound": 0.528,
+    "p3b_passed": true,
+    "p3c": {
+      "n_readmitted": 65877,
+      "cv_min": 0.6233081479769583,
+      "cv_median": 1.2324816719956675,
+      "cv_max": 9.521988707893914,
+      "redshift_mean": 0.09478286585051099,
+      "redshift_median": 0.0907419999999999,
+      "no_bh_likelihood_weight_share": null,
+      "no_bh_likelihood_weight_share_note": "NOT COMPUTED (ambiguity A4): the per-galaxy result-vector schema in additional_galaxies_without_bh_mass is not decoded by this script, which imports nothing from bayesian_statistics.py. P3c is REPORTED-ONLY per prereg \u00a73/\u00a78 item 6; this omission does not affect any gate or verdict."
+    },
+    "n_lin_and_log": 847608,
+    "n_lin_and_not_log": 1306458,
+    "n_log_and_not_lin": 65877
+  },
+  "p4": {
+    "arm": "bt_900121",
+    "event_idx": 20,
+    "M_z": 1333246.127516857,
+    "M_z_sigma": 0.005188122836068134,
+    "z_min": 0.05356499027434118,
+    "z_max": 0.07776556271743075,
+    "cone": [
+      6791138,
+      6791151,
+      6791153,
+      6791158
+    ],
+    "lin_pass_set": [
+      6791138,
+      6791158
+    ],
+    "lin_fail_set": [
+      6791151,
+      6791153
+    ],
+    "log_readmitted": [
+      6791151,
+      6791153
+    ],
+    "checks": {
+      "gw_floor_matches": true,
+      "gw_ceiling_matches": true,
+      "cone_matches": true,
+      "lin_pass_set_matches": true,
+      "lin_fail_set_matches": true,
+      "log_readmitted_matches": true,
+      "true_host_outside_cone": true
+    },
+    "g3_passed": true,
+    "p4_passed": true
+  },
+  "p5": {
+    "n_events_used": 1795,
+    "median_shift_abs": -0.013331565953401209,
+    "mean_shift_abs": -0.020939293895290655,
+    "p5_shift_abs": -0.06552972135786088,
+    "max_abs_shift": 0.1308379549808429,
+    "median_shift_rel": -0.09855083868797498,
+    "banked_median_shift_rel": -0.145,
+    "sign_match": true,
+    "within_tolerance_abs_0p01": false,
+    "passed": false
+  },
+  "verdict": {
+    "gates": {
+      "G1": false,
+      "G2": true,
+      "G3": true,
+      "G4": true,
+      "G_all": false
+    },
+    "reads_passed": {
+      "P1": true,
+      "P2": true,
+      "P3a": false,
+      "P3b": true,
+      "P4": true,
+      "P5": false
+    },
+    "verdict": "INSTRUMENT-DEFECT",
+    "failing_reads": [
+      "P3a",
+      "P5"
+    ]
+  }
+}
