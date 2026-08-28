@@ -185,3 +185,20 @@ readout docs). Executed same session:
   MUST-ARCHIVE rsync, seed600 first; log in `results/_archive/archive_run_20260828.log`).
 - **Open for next session:** W-1/W-2 · [CMEM] stage-2 prereg [DO] · [HIER] C3 + S0-A launch
   path · archival completion check before 2026-09-23.
+
+## 8. SECOND GRANT EXECUTED [2026-08-28, same session — author: "please go ahead"]
+
+- **W-1 done** (row #218): CLAIM_WGEO §3.9 impeached by appended correction note; WGEOM
+  re-anchored → **verdict of record REFUTED-IN-PART** — P1/P2(the ε-table)/P3b/P3c/P4 bank
+  individually; misses falsify §3.9's anchors per the prereg's own clause.
+- **W-2 done**: split re-measured at the reproducible scope — linear **45.64:1 too-light**,
+  log **47.99:1 too-heavy**; direction survives, "29:1" superseded; 21-row residual localized.
+- **[CMEM] registered AND both reads executed** (row #219): Read 1 **S-SHARP** (the ~17%
+  class's in-catalogue weight is in no numerator); Read 2 R2a/R2b strongly displaced
+  (collapse rate 54×), **R2c NOT-DISTINGUISHED at the frozen band (p=0.0152, −16%
+  deficit-direction)** → **C-STRUCTURAL-ONLY** (REPORTED-ONLY cap; freeze rule held).
+- **Pending [RULE]s for the author:** ratify REFUTED-IN-PART + the W-2 finding (veto window)
+  · ratify C-STRUCTURAL-ONLY · decide the higher-power R2c follow-up vs bank-and-park ·
+  the WGEOM §9 F-ii decision (now has its banked ε-table).
+- Archival rsync was stopped mid-seed600 and RESUMED (--partial); check
+  `results/_archive/archive_run_20260828.log` next session.
