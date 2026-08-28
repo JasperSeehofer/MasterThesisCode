@@ -811,3 +811,44 @@ itemization:
   changes vs config". The split legs are: [off@HEAD − off@#132] = twin ⊕ symmetric-filter ⊕
   Σ^φ divisor (still 3 changes, on the off completion basis), and [fused@HEAD − off@HEAD] =
   the completion-cell configuration delta alone. The second leg is the clean one.**
+
+## G. OFF-ARM RESULT — THE 2-WAY SPLIT [2026-08-28; chair verdict, returns as fresh [RULE]]
+
+Both off cells complete (iiib 41/41 after the 6-task walltime recovery; joint_r1 41/41 at 6h
+sizing). §8.7 gates 1–7 PASS on both (65 108 rows exact, 0 duplicates, 0 non-positive cells,
+event sets = row #132's, scorer↔combine `discrete_map` agreement exact). Split semantics per
+§F's registered correction.
+
+### G.1 2D channel (channel of record)
+
+| leg | iiib | joint_r1 |
+|---|---:|---:|
+| off @ row #132 (`e65d263c`) | −0.052933 | −0.051213 |
+| off @ HEAD | **−0.066331** | **−0.065129** |
+| fused @ HEAD (§C.1) | −0.066653 | −0.066987 |
+| **LEG 1: three code changes, off basis** (off@HEAD − off@#132) | **−0.013398** | **−0.013916** |
+| **LEG 2: completion-cell config delta** (fused@HEAD − off@HEAD) | **−0.000322** | **−0.001858** |
+
+**Reading (identical on both venues):** the off→fused completion-cell configuration change is
+**H₀-immaterial** (LEG 2 = −0.0003 / −0.0019, both far below T_mat = 0.008; ΔMAP 0 on iiib,
+−0.005 — exactly one grid node, at the band-bearing boundary — on joint_r1). **The three
+estimator-code changes carry essentially the entire MATERIALLY-GROWN move on both venues**
+(LEG 1 = −0.0134 / −0.0139 of the total −0.0137 / −0.0158). This retroactively re-validates
+row #119 M-3's "no MAP motion" for off-vs-fused on the post-B_scale-fix estimator.
+
+### G.2 What stays not licensed
+
+§4.2 item 1 stands in full: LEG 1 does **not** separate Σ^φ-divisor ⊕ twin ⊕ symmetric-filter
+from each other; any per-change attribution needs its own arm. Per the standing
+correctness-over-bias-removal ruling, LEG 1's sign grades none of the three adoptions — the
+two changes adopted on correctness grounds (twin, symmetric filter) remain correct-by-their-
+own-evidence; a bias that grows under correct changes is a statement about the remaining
+model error.
+
+### G.3 1D channel (REPORTED-ONLY)
+
+off@HEAD: −0.128125 (iiib) / −0.126264 (joint_r1); MAP 0.600 everywhere in all six cells —
+the rail is basis-independent. Config leg (1D): +0.0034 / +0.0080.
+
+**Fresh author item [RULE] A-6: ratify the G.1 split reading** (config delta immaterial; the
+grown bias attributes to the three-code-change composition, further split requiring new arms).
