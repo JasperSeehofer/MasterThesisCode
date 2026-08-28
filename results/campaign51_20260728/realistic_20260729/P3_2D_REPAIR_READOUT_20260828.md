@@ -140,3 +140,36 @@ orchestrator-derived from that blanket, per the attribution-precise recording co
 - **D-2DR-1 APPROVED** — the seed-extension arm. Registered as PA-2DR-15 (prereg appendix)
   before submission.
 - **R-2DR-3 RATIFIED** — row #211 stays PARKED; the exoneration record stays closed.
+
+---
+
+## 7. 33-SEED RE-READOUT [2026-08-28, PA-2DR-15 extension] — CHAIR VERDICT: **CONFIRMED**
+
+Extension job **6730213** (seeds 900125–900133, 9/9 COMPLETED, ~32.5 min/task, same frozen
+instrument `d04d9dc9`, same out-root). Registered instrument re-run by the orchestrator over
+all 33 seeds. Side-by-side per PA-2DR-15:
+
+| read | 24-seed | 33-seed | dev (33) | SEM vs planning | disposition (33) |
+|---|---|---|---|---|---|
+| P1 (bt) | 0.00644860 ± 0.00013657 | **0.00644266 ± 0.00012212** | +0.230 σ | below ✓ | **INSIDE** |
+| P2 (bt D1only) | 0.00600203 ± 0.00017134 | **0.00601580 ± 0.00013437** | +0.174 σ | **below ✓** (was +16.7%) | **INSIDE** |
+| P3 (ratio) | 1.08118 ± 0.014080 | **1.07529 ± 0.011037** | +0.661 σ | **below ✓** (was +4.4%) | **INSIDE** (band tightens to ±0.033110 per the freeze rule) |
+| P4 (bc) | 0.00558121 ± 0.00013325 | **0.00558246 ± 0.00012014** | +0.368 σ | below ✓ | **INSIDE** |
+
+Gates at 33 seeds: G4 = 0.866484 ∈ [0.8613, 0.8675] ✓ · G5 `pa2dr7_fraction` = 0.0 ✓ ·
+G6/P5 exact on **66/66** arm-seed pairs ✓. All dispositions identical under the ratified
+corrected σ-chain (PA-2DR-14).
+
+**Per the registered verdict map §v2.5, all four CONFIRMED legs are now satisfied**
+(P1 ∧ P2 ∧ P3 inside, P5 exact, every gate passing): **CONFIRMED — "the two-rung reweighting
+model's predictions landed inside their own bands." Capped at epistemic status `supported`,
+never `verified` (§v2.7), and it licenses NO claim about rung 1 (untested).**
+
+Companions (REPORTED-ONLY): R = 1 ("Defect 2 spurious") excluded at **6.82 σ**; the
+pre-registered 1.0680-vs-1.1019 non-discrimination **narrows to 2.41 σ but formally stands**
+(< 3 σ — no verdict claims to have resolved which sample the 1.0680 was measured on).
+Sequential-analysis disclosure per PA-2DR-15: this is the single pre-committed extension,
+decided post-data; both readouts are reported above; no further extension may run.
+
+**Returns to the author as a fresh [RULE]: ratify CONFIRMED-at-33-seeds as the verdict of
+record (superseding the 24-seed UNDERPOWERED disposition of §6, which stays on the record).**
