@@ -25,7 +25,11 @@ from darksiren_emri.galaxy_catalogue.handler import GalaxyCatalogueHandler, _pol
 FLEET = Path(__file__).resolve().parent / "p3_2d_fleet_20260825"
 OUT = Path(__file__).resolve().parent / "cmem_work"
 K = 1.5
-ANCHOR = ("bc_900121_work", 20, 1.6746585172e-03, 1.4956979546e-03)  # arm, event, chord, radius
+# Anchor: radius full-float (R2.6); chord to R2.6's DISPLAYED precision 1.674660e-03 —
+# the MKER-6 census entry's parenthetical "full-float 1.6746585172e-03" is inconsistent
+# with R2.6's own display (rounds to 1.674659) and with this instrument (1.67465986e-03);
+# recorded as a discrepancy in that entry's quoted chord, tolerance here = 5e-10 vs display.
+ANCHOR = ("bc_900121_work", 20, 1.674660e-03, 1.4956979545757095e-03)
 BANKED = (380, 2261, 0.1681)
 
 CRB_COLS = [
@@ -78,6 +82,10 @@ def main() -> None:
                 float(r["delta_phiS_delta_qS"]),
             )
             d = diag.loc[i] if i in diag.index else None
+            if d is None:
+                # Banked census basis = the posterior-joined subset (2261 rows,
+                # CLAIM_WGEO §3.8 note); un-evaluated CRB rows are out of basis.
+                continue
             rows.append(
                 {
                     "arm": Path(arm_dir).name,
@@ -99,8 +107,8 @@ def main() -> None:
     a = df[(df["arm"] == ANCHOR[0]) & (df["event_idx"] == ANCHOR[1])]
     if len(a) != 1:
         raise SystemExit(f"C-G1 STOP: anchor row not found ({len(a)})")
-    chord_ok = abs(float(a["chord"].iloc[0]) - ANCHOR[2]) < 1e-12
-    radius_ok = abs(float(a["radius"].iloc[0]) - ANCHOR[3]) < 1e-12
+    chord_ok = abs(float(a["chord"].iloc[0]) - ANCHOR[2]) < 5e-10
+    radius_ok = abs(float(a["radius"].iloc[0]) - ANCHOR[3]) < 1e-15
     n_out, n_tot = int(df["outside"].sum()), len(df)
     frac = n_out / n_tot
     census_ok = (n_out, n_tot) == (BANKED[0], BANKED[1])

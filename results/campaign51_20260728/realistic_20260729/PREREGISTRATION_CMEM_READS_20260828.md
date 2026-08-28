@@ -86,3 +86,53 @@ measured here. Registered now; unrun ⇒ any attribution stays provisional.
 
 *Registered 2026-08-28 pre-execution; no split-dependent number appears above this line.
 Instrument: `cmem_reads.py` (`⟨SUBMIT⟩` sha at launch). Both reads local, zero cluster.*
+
+---
+
+## ⟨SUBMIT⟩ + RESULT RECORD [2026-08-28; FABLE-ORCH]
+
+**Launched under author grant of 2026-08-28** ("please go ahead"). Instrument `cmem_reads.py`
+(orchestrator-authored and -run; sha1 stamped in the commit). Two instrument-side corrections
+before the gate passed, both DISCLOSED and made prior to reading any comparison: (i) row basis
+corrected to the census's posterior-joined subset (first run counted all 4 800 in-catalogue CRB
+rows → C-G1 STOP fired as designed); (ii) anchor semantics: the radius reproduces FULL-FLOAT
+(1.4956979545757095e-3) and the chord reproduces §R2.6's displayed 1.674660e-03 to 1.4e-10 —
+the MKER-6 census entry's parenthetical "full-float 1.6746585172e-03" is inconsistent with
+§R2.6's own display (rounds to 1.674659) and is recorded as a display-precision discrepancy in
+that entry; it changes no count.
+
+**C-G1 PASS (exact):** 380 / 2261, fraction 0.168067; anchor chord+radius reproduce.
+**C-G2: 99.9 % bar formally missed (98.89 %) — all 25 violations quoted and traced:** every
+one is a catalogue-collapsed event (24 with `L_cat_no_bh == 0`, 1 at ~1e-47) with
+c_i ≈ −4.2e-9, i.e. exactly 0 up to the diagnostics CSV's **7-s.f. `D_tilde_phi` rounding**
+(identity precision ~1e-7); the gate's 1e-9 bar was mis-sized against known column precision.
+Magnitude ceiling 5e-9 — five orders below R2a's signal; not verdict-bearing, disclosed.
+
+**Read 1 (structural): S-SHARP.** (a) candidate list = the hard cone ball
+(`p_Di → get_possible_hosts_from_ball_tree`, `bayesian_statistics.py:4787`); (b) `B_num`
+integrates `(1 − f_k) · p_gw · dVc/(1+z)` at the EVENT pixel — the UN-catalogued population
+only (`:5350-5364` region, Gray-Messenger-Veitch 2022 Eq. 5 comment); (c) NO term anywhere
+carries the "in-catalogue but outside the candidate ball" hypothesis. The ~17 % class's
+in-catalogue weight appears in no numerator while the denominator's catalogue selection
+covers it.
+
+**Read 2 (paired, N_out = 380 vs N_in = 1881, per-seed permutation, 10 000, seed 20260828):**
+- **R2a DISPLACED** (p < 1e-4): median catalogue share 0.798 outside vs 0.856 inside
+  (Δmedian −0.0575; means 0.699 vs 0.790).
+- **R2b**: catalogue-collapse rate **5.79 % outside vs 0.106 % inside (54×)** — the strongest
+  composition signature.
+- **R2c NOT-DISTINGUISHED at the registered band** (p = 0.0152 vs the frozen p < 0.01):
+  deficit-direction, median `combined_no_bh` ratio outside/inside **0.838** (−16 %),
+  Δmedian −0.00145. The freeze rule holds: no post-hoc band motion; p = 0.0152 is REPORTED.
+- Covariate: z_true medians 0.1296 vs 0.1271 — no gross confound.
+
+**VERDICT (chair, per §4's partition; REPORTED-ONLY cap): C-STRUCTURAL-ONLY** —
+the mechanism is structurally real (S-SHARP) and composition-expressed (R2a/R2b), but the
+truth-likelihood deficit does not clear the registered significance at this venue and N.
+The §4 falsifier stays registered and unrun; any attribution stays provisional. A
+higher-power R2c re-read (more seeds / both arms) would be a fresh registration.
+
+**Returns to the author as fresh [RULE]s:** (1) ratify C-STRUCTURAL-ONLY as the verdict of
+record; (2) whether the near-band R2c (p = 0.015, −16 % deficit direction) plus the 54×
+collapse-rate asymmetry warrants authorizing the higher-power follow-up registration, or the
+thread banks its bound and parks here.

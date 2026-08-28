@@ -1,0 +1,44 @@
+{
+ "c_g1": {
+  "anchor_chord": 0.001674659860716462,
+  "anchor_radius": 0.0014956979545757095,
+  "chord_ok": true,
+  "radius_ok": true,
+  "n_outside": 380,
+  "n_total": 2261,
+  "fraction": 0.16806722689075632,
+  "census_ok": true,
+  "passed": true
+ },
+ "c_g2": {
+  "c_share_in_[0,1]_fraction": 0.9889429455992923,
+  "passed": false
+ },
+ "n_outside": 380,
+ "n_inside": 1881,
+ "R2a": {
+  "median_c_share_outside": 0.7980860345167371,
+  "median_c_share_inside": 0.8555540157517654,
+  "mean_c_share_outside": 0.6989734671749985,
+  "mean_c_share_inside": 0.7897891597022959,
+  "median_diff": -0.057467981235028276,
+  "perm_p": 0.0,
+  "displaced": true
+ },
+ "R2b": {
+  "collapse_rate_outside": 0.05789473684210526,
+  "collapse_rate_inside": 0.001063264221158958
+ },
+ "R2c": {
+  "median_combined_outside": 0.0074707298992875,
+  "median_combined_inside": 0.0089189116851619,
+  "ratio_outside_over_inside": 0.8376279711028318,
+  "median_diff": -0.0014481817858743992,
+  "perm_p": 0.0152,
+  "displaced": false
+ },
+ "covariate_z_true": {
+  "median_outside": 0.12960415212407064,
+  "median_inside": 0.1270595361143419
+ }
+}
