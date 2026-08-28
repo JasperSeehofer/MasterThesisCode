@@ -759,3 +759,29 @@ to a 2-way split; it stays available at ~105–265 CPU-h.
 *Post-data section computed and appended 2026-08-28. Scorer, gate outputs, and retrieved data:
 `headreadout_20260827/{iiib,joint_r1}/` (local copy of the cluster out-roots' diagnostics +
 posteriors).*
+
+## E. AUTHOR RATIFICATION [appended 2026-08-28]
+
+Author reply (verbatim, to the Runbook 36 Docket artifact presenting §D with chair
+recommendations inline): **"all ratified also the thirteen earlier ones"**. Orchestrator-derived
+itemization:
+
+- **A-1 RATIFIED** in the chair-recommended form: the 2026-08-27 submission is **retroactively
+  ratified together with §10 items 1–5** against the completed, gate-clean data. The §A record
+  gap stays on the record as disclosed. Standing rule adopted (runbook 36 §2): every future
+  submission stamps its authorization into the registration at submit time.
+- **A-2 RATIFIED** — **MATERIALLY GROWN on both venues** is the banked band call
+  (iiib −0.06665, joint_r1 −0.06699 vs row #132's −0.05293/−0.05121).
+- **A-3 RATIFIED** — RAIL LOOSENED on both venues (more-specific-row reading); the §5.3
+  partition wording gap is acknowledged; conditions-must-partition adopted as a pre-launch
+  checklist rule.
+- **A-4 APPROVED** — the §8.5 `off` companion arm. Executed same day: STEP 0 pins re-verified
+  (all four match); out-roots `run_20260827_headreadout_off_{iiib,joint_r1}` created fresh;
+  smoke jobs **6730223 (iiib) / 6730224 (joint_r1)** submitted (array 21, h = 0.730,
+  `--time=03:00:00`); full arrays follow only after the STEP 2 gate passes. Submitted under
+  author grant A-4, 2026-08-28.
+- **A-5 APPROVED** — archival executed 2026-08-28 to local `results/_archive/` (gitignored):
+  `observed_catalogue_seed900001.csv` + sidecar (sha256 verified against the pin on arrival),
+  `run_20260819_postfix_baseline_{iiib,joint_r1}`, and `p3_2d_fleet_repair_20260827`. The wider
+  ~400 GB triage program (`cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md` §4) remains a separate
+  open item — NOT covered by this approval.

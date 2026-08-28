@@ -124,3 +124,19 @@ the production 2D offset (see the HEAD readout, a separate measurement).
 (`stage_lhs2d`, run 2026-08-28 by the orchestrator at the frozen checkout) or an arithmetic
 evaluation of the registered bands reproduced in this session. Raw JSON archived in the out-root
 and reproduced in this document's tables.*
+
+---
+
+## 6. AUTHOR RATIFICATION [appended 2026-08-28, post-presentation]
+
+Author reply (verbatim, to the Runbook 36 Docket artifact presenting §4's items with chair
+recommendations inline): **"all ratified also the thirteen earlier ones"**. Itemization below is
+orchestrator-derived from that blanket, per the attribution-precise recording convention:
+
+- **R-2DR-1 RATIFIED** — the corrected σ-chain (PA-2DR-14) is the record. No disposition changes.
+- **R-2DR-2 RATIFIED** in the chair-recommended form (option (a)): **UNDERPOWERED is the verdict
+  of record**; the central values (P1 +0.247σ, P2 +0.100σ, P3 +0.977σ, P4 +0.351σ) are reported
+  companions. Not REFUTED; CONFIRMED did not bank.
+- **D-2DR-1 APPROVED** — the seed-extension arm. Registered as PA-2DR-15 (prereg appendix)
+  before submission.
+- **R-2DR-3 RATIFIED** — row #211 stays PARKED; the exoneration record stays closed.

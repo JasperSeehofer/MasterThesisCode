@@ -1832,3 +1832,39 @@ C1 + C2 as one commit under whatever scope item 3 rules → GATE T-ID, GATE ENG 
 GATE PARITY, GATE MASS-KERNEL → S0-A. C3 gates only the S0-R / D7 / LEVER-DEAD-AT-N branch and can
 proceed in parallel or be dropped per item 5. **No Stage-P grant is re-opened by this pass**;
 §7.2's ceilings stand unchanged.
+
+---
+
+**PA-HIER-27 (2026-08-28; AUTHOR RULING RECORD on §(ii)'s nine one-liners; append-only;
+`[FABLE-ORCH]`)**
+
+Author reply (verbatim, to the Runbook 36 Docket artifact which carried the nine one-liners as
+a summarized card): **"all ratified also the thirteen earlier ones"**. Per the approval-scope
+convention, a blanket ratification grants yes/no items and items with a clearly proposed
+option, but cannot pick a side of a two-option fork that stated no proposal. Orchestrator-derived
+itemization — **the fork assignments below are flagged for author veto**:
+
+- **Item 1 (venue) RATIFIED** — `host_mode="catalogue"` → `"catalogue_selected"` (arm b0i) is
+  the [HIER] venue. S0-A unblocks.
+- **Item 2 (θ hook) APPROVED** — θ = (b, s) threaded into `BayesianStatistics.evaluate()` at
+  sites 2.1/2.2/2.3. **Implementation HELD until item 3 resolves** (the hook edits a
+  physics-trigger file; absent the scope ruling the conservative default is that the
+  `/physics-change` hard gate applies).
+- **Item 3 (physics-change scope) — NOT RESOLVED** (gate / no gate; the prereg itself declined
+  to propose). One word required.
+- **Item 4 (certification bar) — NOT RESOLVED** (gate / disclose; no proposed side). One word
+  required.
+- **Item 5 (control) — NOT RESOLVED** (build / fallback; no proposed side, and the two options
+  differ by an entire instrument registration). One word required.
+- **Item 6 (θ prior) RATIFIED as option B** (the stated proposal: uniform b, uniform ln s,
+  quadrature-weighted, support pinned to registered half-widths).
+- **Item 7 (b-grid anchor) RATIFIED as RE-ANCHOR** (the proposed measured-statistic option,
+  "free, one pandas read") — orchestrator-interpreted; veto if "keep" was intended.
+- **Item 8 (h support) RATIFIED as H_GRID_41** (the option stated "per §5.1 invariant 2").
+- **Item 9 (support semantics) — NOT RESOLVED** (hard / affordable; no proposed side). One word
+  required.
+
+**Launch state after this record: still LAUNCH-BLOCKED** — items 3/4/5/9 remain open, and
+C1–C3 remain unbuilt. What is now unblocked: S0-A (venue fixed), the item-7 pandas re-anchor
+read, and drafting the θ-hook design against option B + H_GRID_41 (no trigger-file edit until
+item 3).

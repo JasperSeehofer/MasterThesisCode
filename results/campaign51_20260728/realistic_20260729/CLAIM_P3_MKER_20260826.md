@@ -882,3 +882,23 @@ de-fused and consequence-free here) and **replaces the window ε-question's cont
 width). If R-MKER-4 is ratified, R-MKER-3 should be re-stated before it is ruled on.
 
 *— end R2 [OPUS-ORCH 2026-08-26]*
+
+---
+
+## AUTHOR RULINGS [appended 2026-08-28; blanket "all ratified also the thirteen earlier ones", itemization orchestrator-derived]
+
+- **R-MKER-1 RATIFIED** — AMENDMENT A-MKER-1: §1(a) is refuted as written and stands only in
+  amended form.
+- **R-MKER-2 RATIFIED** — the SPLIT and the closure of the Refute-by(a) demotion route.
+- **R-MKER-3 RATIFIED** in the R2-restated form — the corrected sequencing (window-geometry
+  question first; R2 removed the sigma-decision from the critical path).
+- **R-MKER-4 RATIFIED** — the R2 NO verdict; the headline exhibit (seed 900121 event 20) is
+  RETIRED as evidence.
+- **R-MKER-5 — NOT RESOLVED by the blanket** (two-option fork with no proposed side: part (a)
+  reduced-priority vs closed-as-documented-design-choice). Returns as a one-word ask.
+- **R-MKER-6 — NOT RESOLVED by the blanket** (open/don't-open the host-recovery thread; no
+  proposed side). Returns as a one-word ask.
+- **D-MKER-2 APPROVED** — PRE-REGISTRATION ONLY of the window-GEOMETRY measurement
+  (linear-symmetric vs log-space). Sequenced after D-WGEO-1's records read per runbook 35 §4.5.
+- **D-MKER-3 APPROVED** — the `get_redshift_outer_bounds` dead-parameter GitHub issue; filed
+  2026-08-28 (issue link in the runbook 36 addendum).

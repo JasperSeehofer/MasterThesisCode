@@ -1178,3 +1178,27 @@ direct σ/value chain from the cited source is 2.3194/2.5449/2.6560%, giving
 **Every disposition above was evaluated under both chains and none differs.** Nothing above this
 line is edited; the registered (uncorrected) bands remain the bands of record unless the author
 ratifies the correction.
+
+---
+
+**PA-2DR-15 (2026-08-28; SEED-EXTENSION ARM — registered BEFORE submission; author grant
+D-2DR-1, blanket ratification "all ratified also the thirteen earlier ones"; `[FABLE-ORCH]`)**
+
+- **What:** ONE extension of the repair fleet, 24 → 33 seeds: seeds **900125–900133**
+  (`--array=24-32`, the sbatch's `900101 + TASK_ID` convention), both arms, SAME frozen
+  instrument (cluster checkout `d04d9dc9`, tag `p32d-repair-4af1baec`), SAME out-root
+  `$WS/p3_2d_fleet_repair_20260827` (PA-CA-11 idempotency protects the existing 24 seeds).
+- **Why:** power recovery only. P2/P3 banked UNDERPOWERED because realized SEMs exceeded frozen
+  planning values by 16.7% / 4.4%; at fixed scatter, √(24/33) ≈ 0.853 shrinks both below
+  planning with margin.
+- **SEQUENTIAL-ANALYSIS DISCLOSURE (registered so it cannot be dropped):** this extension is
+  decided POST-DATA, after the 24-seed readout was seen. It is a single, pre-committed
+  extension of fixed size 9; **no further extension may be run without a fresh registration
+  and author grant.** The re-readout evaluates the SAME frozen bands (v2.2/v2.3, σ-chain per
+  ratified PA-2DR-14 correction) over all 33 seeds and must report BOTH the 24-seed and
+  33-seed values side by side. If the 33-seed realized SEM still exceeds planning, the read
+  banks UNDERPOWERED terminally — the freeze rule is not re-litigated.
+- **Cost:** 18 tasks × ~33 min × 16 cpus ≈ 80 CPU-h upper bound (2 arms run per task; observed
+  ~32.5 min/task on the first 24).
+- Run identifiers to be appended at submission (PA-2DR-13 pattern), and the submission stamps
+  its authorization: **submitted under author grant D-2DR-1, 2026-08-28.**

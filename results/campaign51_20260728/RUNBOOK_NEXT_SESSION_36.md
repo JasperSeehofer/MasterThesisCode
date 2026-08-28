@@ -96,3 +96,30 @@ arm (STEP 1–4 pattern of the registration, out-roots `run_20260827_headreadout
 D-2DR-1 approval, extend the repair fleet seeds → archive-or-migrate before 2026-09-23 (A-5,
 MUST-ARCHIVE items in `cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md`) → then the parked
 threads per runbook 35 §4.5 ([HIER] venue one-liner, D-WGEO-1 records read, [P3-2D] S̄_φ fix).
+
+## 4. RULING ADDENDUM [2026-08-28, same day]
+
+Author reply to the docket (verbatim): **"all ratified also the thirteen earlier ones"** —
+recorded as ledger rows #212–#214 with orchestrator-derived itemization. Executed same day:
+
+- **D-2DR-1**: extension job **6730213** (seeds 900125–900133, PA-2DR-15) — on completion,
+  re-run `stage_lhs2d --seeds <all 33>` both arms, evaluate the SAME frozen bands, report
+  24-seed and 33-seed values side by side. No further extension without fresh registration.
+- **A-4**: off-arm smokes **6730223/6730224**; on STEP-2 gate pass (run_metadata_21 shows
+  `selection_in_completion_numerator=off`, `catalogue_global_selection=phi`, correct venue
+  catalogue; the log must show the phi line and NO fused line), submit the full
+  `--array=0-40` pair + combine, then score with the §1.3 scorer and compute the 2-way split.
+- **A-5**: archival rsync to `results/_archive/` running (observed catalogue sha256-verified on
+  arrival); the wider ~400 GB triage program is still open and NOT covered.
+- **D-MKER-3**: GitHub issue **#57** filed.
+- **D-WGEO-1**: records read launched (agent); result appends to CLAIM_WGEO_20260827.md.
+- **D-MKER-2**: window-geometry prereg authoring queued AFTER D-WGEO-1 returns (runbook 35
+  §4.5 sequencing), at top-tier/xhigh per the tiering table.
+- **[HIER]**: S0-A unblocked (venue b0i); θ-hook design may be drafted against option B +
+  H_GRID_41 but NO trigger-file edit until item 3 resolves.
+
+**STILL OPEN — six one-word asks the blanket could not resolve** (no-default forks):
+R-MKER-5 (reduce / close) · R-MKER-6 (open / don't) · HIER-3 (gate / no gate) ·
+HIER-4 (gate / disclose) · HIER-5 (build / fallback) · HIER-9 (hard / affordable).
+Plus veto window on two orchestrator-interpreted assignments: HIER-7 read as RE-ANCHOR,
+R-MKER-3 read as ratified-in-R2-form.

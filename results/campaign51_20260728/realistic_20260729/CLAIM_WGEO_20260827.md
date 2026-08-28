@@ -575,3 +575,18 @@ and are reported separately, with only the sign and mechanism claimed as jointly
 forward unresolved. (iv) This card was produced without author supervision.
 
 *— end [WGEO] stage 0, CLOSED NULL [OPUS-ORCH 2026-08-27]*
+
+---
+
+## AUTHOR RULINGS [appended 2026-08-28; blanket "all ratified also the thirteen earlier ones", itemization orchestrator-derived]
+
+- **R-WGEO-1 RATIFIED** — the [WGEO] KILL and closed-null banking stand.
+- **R-WGEO-2 RATIFIED** — exoneration HB governs this object; no window-as-bias claim may be
+  banked without new evidence engaging HB's −0.317-nat / 0.063% / sign-inverted measurement
+  directly.
+- **D-WGEO-1 APPROVED** — the ≤1h zero-compute records read reconciling the two-magnitude
+  window-removal counterfactual (+0.010 vs +0.0015) launched 2026-08-28; result to be appended
+  here when it returns.
+- **R-WGEO-3 — MOOT** as a priority question: D-MKER-2 (the window-geometry pre-registration)
+  is itself approved, so the −14.5% mean-redshift moment no longer gates anything; it remains
+  ✓VER-only input to the D-MKER-2 prereg.
