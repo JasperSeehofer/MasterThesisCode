@@ -1,0 +1,45 @@
+{
+ "per_arm_and_pooled": {
+  "bc": {
+   "n_strata": 10,
+   "equal_weight_statistic": -0.13148134972146686,
+   "perm_p": 0.1117,
+   "displaced": false,
+   "direction_deficit_outside": true
+  },
+  "bt": {
+   "n_strata": 10,
+   "equal_weight_statistic": -0.11474707335442842,
+   "perm_p": 0.1533,
+   "displaced": false,
+   "direction_deficit_outside": true
+  },
+  "pooled_bc_plus_bt_REGISTERED": {
+   "n_strata": 20,
+   "equal_weight_statistic": -0.12311421153794763,
+   "perm_p": 0.0358,
+   "displaced": false,
+   "direction_deficit_outside": true
+  }
+ },
+ "covariate_check_z_true": {
+  "bc": {
+   "median_z_true_outside": 0.18959113213702064,
+   "median_z_true_inside": 0.1828732663738775,
+   "n_outside": 190,
+   "n_inside": 978
+  },
+  "bt": {
+   "median_z_true_outside": 0.18959113213702064,
+   "median_z_true_inside": 0.1828732663738775,
+   "n_outside": 190,
+   "n_inside": 978
+  },
+  "pooled": {
+   "median_z_true_outside": 0.18959113213702064,
+   "median_z_true_inside": 0.1828732663738775,
+   "n_outside": 380,
+   "n_inside": 1956
+  }
+ }
+}

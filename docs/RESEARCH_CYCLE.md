@@ -624,3 +624,30 @@ the loop. *Evidence:* `cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md` found ~30 
 (~250 GB, essentially the entire post-2026-07-28 fleet) present on the workspace and cited in
 session-memory notes and ledger rows, but registered in neither canonical file — a documented
 "remember to update the inventory" convention had already failed for a month.
+
+**F1 — ADOPTED, 2026-08-29 (author ruling, ledger row #222 verbatim: 'I ratify the entire tree').**
+One root, many cycles — a fan-out has one root goal statement of record and one charter; each
+branch is its own research cycle with its own claim card, exoneration check and registration; a
+branch may not inherit another branch's verdict as evidence without a registered cross-branch
+dependency line (who, what number, which row).
+
+**F2 — ADOPTED, 2026-08-29 (author ruling, ledger row #222 verbatim: 'I ratify the entire tree').**
+Serialized adoption — at most one production-adoption wave between HEAD readouts; adoptions are
+batched, read out blind together, and any per-change attribution comes only from registered arms,
+never from the readout's delta.
+
+**F3 — ADOPTED, 2026-08-29 (author ruling, ledger row #222 verbatim: 'I ratify the entire tree').**
+Shared instruments register all predictions before running — when two branches need the same
+read, both hypotheses' predicted profiles are registered on that one instrument before it runs.
+
+**F4 — ADOPTED, 2026-08-29 (author ruling, ledger row #222 verbatim: 'I ratify the entire tree').**
+A compute ledger with a deadline gate — every cluster arm carries its CPU-h estimate and the
+running total; every wave states its total in the launch summary; no arm launches inside a
+workspace-expiry window unless its outputs are archive-scheduled.
+
+**F5 — ADOPTED, 2026-08-29 (author ruling, ledger row #222 verbatim: 'I ratify the entire tree').**
+Depth gates and synthesis dockets — ADOPTED WITH THE ROW #222 SUBSTITUTION for this fan-out:
+per-wave depth gates are replaced by (i) append-only records at every node, (ii) one synthesis
+docket per wave for information (not approval), (iii) a registered end-of-fan-out independent
+verifier pass (verdicts "refuted"/"undetermined" explicitly valued); branch agents never present
+decisions to the author. Cites the charter artifact `500fef3e` and runbook 37.

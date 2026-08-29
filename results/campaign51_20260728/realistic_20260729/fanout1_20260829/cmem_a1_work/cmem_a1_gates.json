@@ -1,0 +1,164 @@
+{
+ "c_g1a_catalogue_pin": {
+  "path": "/home/jasper/Repositories/darksiren-emri/darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv",
+  "md5": "c52c13b5cab61f6b3f04bbe202550969",
+  "expected": "c52c13b5cab61f6b3f04bbe202550969",
+  "passed": true
+ },
+ "c_g1b_anchor": {
+  "anchor": [
+   "bc",
+   900101,
+   0,
+   0.0116656941007181,
+   0.0359121946154451
+  ],
+  "found_chord": 0.01166569410071811,
+  "found_radius": 0.035912194615445196,
+  "chord_ok": true,
+  "radius_ok": true,
+  "passed": true
+ },
+ "c_g1c_bc_bt_cross_consistency": {
+  "rows": [
+   {
+    "seed": 900101,
+    "bc_out": 12,
+    "bc_in": 94,
+    "bt_out": 12,
+    "bt_in": 94,
+    "match": true
+   },
+   {
+    "seed": 900102,
+    "bc_out": 14,
+    "bc_in": 106,
+    "bt_out": 14,
+    "bt_in": 106,
+    "match": true
+   },
+   {
+    "seed": 900103,
+    "bc_out": 16,
+    "bc_in": 89,
+    "bt_out": 16,
+    "bt_in": 89,
+    "match": true
+   },
+   {
+    "seed": 900104,
+    "bc_out": 25,
+    "bc_in": 105,
+    "bt_out": 25,
+    "bt_in": 105,
+    "match": true
+   },
+   {
+    "seed": 900105,
+    "bc_out": 22,
+    "bc_in": 89,
+    "bt_out": 22,
+    "bt_in": 89,
+    "match": true
+   },
+   {
+    "seed": 900106,
+    "bc_out": 22,
+    "bc_in": 102,
+    "bt_out": 22,
+    "bt_in": 102,
+    "match": true
+   },
+   {
+    "seed": 900107,
+    "bc_out": 19,
+    "bc_in": 93,
+    "bt_out": 19,
+    "bt_in": 93,
+    "match": true
+   },
+   {
+    "seed": 900108,
+    "bc_out": 29,
+    "bc_in": 92,
+    "bt_out": 29,
+    "bt_in": 92,
+    "match": true
+   },
+   {
+    "seed": 900109,
+    "bc_out": 17,
+    "bc_in": 91,
+    "bt_out": 17,
+    "bt_in": 91,
+    "match": true
+   },
+   {
+    "seed": 900110,
+    "bc_out": 14,
+    "bc_in": 117,
+    "bt_out": 14,
+    "bt_in": 117,
+    "match": true
+   }
+  ],
+  "passed": true
+ },
+ "c_g1d_seed_span": {
+  "nominal_seeds": [
+   900101,
+   900102,
+   900103,
+   900104,
+   900105,
+   900106,
+   900107,
+   900108,
+   900109,
+   900110,
+   900111,
+   900112
+  ],
+  "usable_seeds": [
+   900101,
+   900102,
+   900103,
+   900104,
+   900105,
+   900106,
+   900107,
+   900108,
+   900109,
+   900110
+  ],
+  "missing_crb_seeds": [
+   900111,
+   900112
+  ],
+  "note": "seeds with missing prepared_cramer_rao_bounds.csv are excluded from the census and the statistic; confirmed independently against PREREGISTRATION_P3_WBHZERO_MEASURE_20260825.md line ~160."
+ },
+ "census": {
+  "bc": {
+   "n_outside": 190,
+   "n_total": 1168,
+   "fraction": 0.16267123287671234
+  },
+  "bt": {
+   "n_outside": 190,
+   "n_total": 1168,
+   "fraction": 0.16267123287671234
+  },
+  "combined": {
+   "n_outside": 380,
+   "n_total": 2336,
+   "fraction": 0.16267123287671234
+  }
+ },
+ "census_disclosure": "This instrument's bc census does NOT reproduce the original CMEM read's 380/2261 (0.1681) \u2014 that number was computed on p3_2d_fleet_20260825 (venue b0i2d, 24 bc arms), a DIFFERENT fleet from p3_b0_work (venue b0i, 10 usable seeds) used here. This is expected and is not a gate failure; see prereg \u00a71.",
+ "c_g2_positivity": {
+  "n_nonpositive_combined_no_bh": 0,
+  "n_total": 2336,
+  "passed": true
+ },
+ "passed": true
+}
