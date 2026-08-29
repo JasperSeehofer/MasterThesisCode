@@ -1,7 +1,7 @@
 # Wave-3 cluster submission note (2026-08-30)
 
 **Launched under rows #222/#223 — charter wave 3 / node B7.3 readout.** BUILDER deliverable: the
-two sbatch scripts + submission wrapper + this note. No `git commit`/`add` was run by this node;
+three sbatch scripts + submission wrapper + this note. No `git commit`/`add` was run by this node;
 no `ssh`/`sbatch` was run by this node (cluster access is down for this pass; `submit_wave3.sh`
 defaults to `DRY_RUN=1` and only prints commands regardless). Nothing here is an approval request
 — it is the mechanical artifact the orchestrator reviews before flipping `DRY_RUN=0`.
@@ -19,6 +19,11 @@ falsifier (§8 below). Registrations:
   (CoR-P CLI source).
 
 Scripts delivered (all under `cluster/`):
+- `wave3_c0prime_off_gate.sbatch` — 2-task array (task 0 = iiib, task 1 = joint_r1), h = 0.730
+  only. Same CoR-P CLI + post-wave-2 defaults as the two readout scripts below, **plus the
+  explicit pre-adoption pair** `--catalogue_numerator_survival_2d off
+  --catalogue_numerator_survival_2d_center unset`. This is the A14 falsifier **baseline gate**
+  ("C0′") — see §1a below.
 - `wave3_headreadout_iiib.sbatch` — 41-task array over the full `H_GRID_41`, one h per task
   (task index = canonical H41 index; task 21 = h 0.730). CoR-P CLI verbatim from
   `headreadout_20260827/iiib/run_metadata_21.json` PLUS the explicit post-wave-2 defaults
@@ -28,11 +33,12 @@ Scripts delivered (all under `cluster/`):
 - `wave3_headreadout_joint_r1.sbatch` — identical, joint_r1 venue: adds
   `--observed_catalogue $WS/realizations_20260729/observed_catalogue_seed900001.csv` and its own
   sha256 STOP-gate.
-- `submit_wave3.sh` — prints (does not execute unless `DRY_RUN=0`) the two sbatch lines below,
-  plus an 8-item pre-launch checklist.
+- `submit_wave3.sh` — prints (does not execute unless `DRY_RUN=0`) all three sbatch lines below
+  (c0prime_off_gate first), plus a 9-item pre-launch checklist.
 
-Both out-roots use the exact names `results/_archive/archive_run_wave2.sh`'s newly-appended
-"wave 3" `ITEMS` block expects (`run_20260830_wave3_headreadout_{iiib,joint_r1}`).
+All four out-roots use the exact names `results/_archive/archive_run_wave2.sh`'s newly-appended
+"wave 3" `ITEMS` block expects (`run_20260830_wave3_headreadout_{iiib,joint_r1}`,
+`run_20260830_wave3_c0prime_off_{iiib,joint_r1}`).
 
 ---
 
@@ -73,9 +79,59 @@ planning number.
 
 ---
 
+## 1a. C0′ off-gate
+
+**Purpose.** The A14 falsifier's delta read (§ intro above; `T_mat` = 0.008 on |Δmean_h|,
+2D channel, both venues) needs a **pre-adoption baseline**. The obvious way to get one — a second
+82-task array (both venues × full `H_GRID_41`) with an explicit
+`--catalogue_numerator_survival_2d off --catalogue_numerator_survival_2d_center unset` — costs
+another ≈160–290 CPU-h (the same order as §1's own estimate) and is not needed if the
+**already-banked** 2026-08-27 readouts (`headreadout_20260827/{iiib,joint_r1}`) still reproduce
+bit-for-bit under that same explicit-off CLI at the wave-3 commit: the code paths touched by the
+four post-`d04d9dc9` commits are, by construction, supposed to be byte-identical to pre-flag
+behaviour at their default/literal-skip values (gate-ledger rows 2026-08-28/29), so an explicit
+`off` at the wave-3 commit is predicted to reproduce the banked rows exactly. `wave3_c0prime_off_gate.sbatch`
+certifies that prediction cheaply — one h-value (0.730, the same canonical task-21 point already
+used as the C0 baseline gate's own anchor), both venues, 2 tasks total — instead of assuming it.
+This mirrors `REGISTRATION_C0_BASELINE_GATE_20260829.md`'s own C0 gate (same single-h economy,
+same gate mechanics), applied here to the row-#223 flag's **pre-adoption** value rather than to
+the four intervening estimator commits (F4: size the falsifier-baseline check against what is
+actually needed, not the full grid).
+
+**Cost.** ≈2 CPU-h (iiib, task 0: ~7 min × 16 cpus, same per-h anchor as §1's iiib row) + ≈4 CPU-h
+(joint_r1, task 1: 2.2–3× that anchor) ≈ **6 CPU-h total** for both tasks — negligible next to
+§1's 160–290 CPU-h estimate for the two 41-node blind arrays.
+
+**Gate band** (per `REGISTRATION_C0_BASELINE_GATE_20260829.md` §3/§13, the same form used for the
+prior C0 gate): max |relative difference| **≤ 1e-12** on the 14 diagnostic
+`event_likelihoods.csv` columns (`w_G, w_G_legacy, w_tilde_G, alpha_G_phi, r_Malm, D_tilde_phi,
+L_cat_no_bh, L_cat_with_bh, B_num, B_num_wbh, g_frac, L_comp, combined_no_bh, combined_with_bh`)
+at h = 0.730, per venue, against the corresponding banked
+`headreadout_20260827/{iiib,joint_r1}/event_likelihoods.csv` task-21 rows; **plus** md5-identical
+`posteriors/h_0_73.json` and `posteriors_with_bh_mass/h_0_73.json` (md5 is a strictly stronger
+identity claim than a parsed max-abs-diff, per §13's own precedent).
+
+**PASS** (both venues, band satisfied) ⇒ the banked 2026-08-27 readouts **are** the pre-adoption
+baseline for the A14 delta read — no separate off-array is needed, and the full readout (§0
+above) can be reported against them directly.
+
+**FAIL** (either venue) ⇒ the explicit-off CLI at the wave-3 commit does not reproduce the banked
+bytes: something in the four post-`d04d9dc9` commits (or the wave-3 commit itself) moved
+behaviour even at the flag's own pre-adoption value. In that case the full 82-task
+`--catalogue_numerator_survival_2d off` array (both venues, full `H_GRID_41`) becomes necessary,
+and the h = 0.730 per-column diff produced by this gate is diagnosed FIRST (which commit owns it)
+before that larger array is launched — do not launch the 82-task array blind to which commit
+broke reproduction.
+
+---
+
 ## 2. Exact submission lines (from `submit_wave3.sh`, `DRY_RUN=1` output)
 
 ```bash
+# 0. c0prime_off_gate — A14 falsifier baseline gate, both venues, h=0.730 only (array 0-1)
+sbatch --parsable --array=0-1 \
+    cluster/wave3_c0prime_off_gate.sbatch
+
 # 1. iiib — blind HEAD readout, full H_GRID_41 array
 sbatch --parsable --array=0-40 \
     --export=ALL,RUN_DIR=$WS/run_20260830_wave3_headreadout_iiib \
@@ -87,12 +143,15 @@ sbatch --parsable --array=0-40 \
     cluster/wave3_headreadout_joint_r1.sbatch
 ```
 
-No inter-dependency: both arrays can submit together, and there is no STEP-2-smoke-then-array
-split here (unlike wave-2's C4) because both scripts' per-h CLI is already measured at production
-scale via the wave-2 C0/C3/C4 anchors — there is no new, unmeasured code path being probed at
-h=0.730 first.
+No inter-dependency at the SLURM level: all three arrays can submit together (the c0prime gate
+does not block the blind readout's own compute). There is no STEP-2-smoke-then-array split here
+(unlike wave-2's C4) because all three scripts' per-h CLI is already measured at production scale
+via the wave-2 C0/C3/C4 anchors — there is no new, unmeasured code path being probed at h=0.730
+first. The dependency that DOES matter is at the **reporting** stage, not submission: do not read
+the blind readout's delta against the banked 2026-08-27 baseline until the c0prime gate's own
+PASS/FAIL (§1a, checklist item 9 below) is known.
 
-**Pre-launch checklist** (also printed by `submit_wave3.sh` itself, 8 items):
+**Pre-launch checklist** (also printed by `submit_wave3.sh` itself, 9 items):
 1. The row-#223 `[PHYSICS]` adoption commit is HEAD on this branch and pushed (`git log -1`
    subject starts `[PHYSICS] adopt the with-BH catalogue-leg twin`); `git status --porcelain`
    empty (A22 dirty-state stamp).
@@ -102,8 +161,8 @@ h=0.730 first.
    point of this readout (F2 reads the *adopted* default).
 3. `ssh bwunicluster 'bash -s' < cluster/preflight.sh` → `VERDICT: READY ✓`.
 4. Archive-scheduled: confirm `results/_archive/archive_run_wave2.sh`'s "wave 3" `ITEMS` block
-   (appended this pass, §5 below) will actually run post-retrieval — workspace expires
-   2026-09-23, 0 extensions remaining.
+   (appended this pass, §5 below) lists all four out-roots and will actually run
+   post-retrieval — workspace expires 2026-09-23, 0 extensions remaining.
 5. Dataset pins (also re-checked by each sbatch's own STOP-gate at run start): CRB
    `prepared_cramer_rao_bounds.csv` md5 `9a1f2a14384a9281c97ca3be312ddaab`; reduced galaxy
    catalogue md5 `c52c13b5cab61f6b3f04bbe202550969`; joint_r1 observed-catalogue
@@ -116,11 +175,18 @@ h=0.730 first.
    sidecar fails every joint_r1 task at run start, not just one.
 7. Falsifier band of record for this readout's eventual use, stated so a downstream reader
    cannot infer a different threshold: **A14, `T_mat` = 0.008 on |Δmean_h| (2D channel), on BOTH
-   venues**, evaluated against a **separate** `--catalogue_numerator_survival_2d off`
-   counterfactual arm at the same wave-3 commit (not part of this delivery) —
+   venues**, evaluated against the pre-adoption baseline — the banked 2026-08-27 readouts if item
+   9 PASSES, else a **separate** `--catalogue_numerator_survival_2d off` counterfactual array at
+   the same wave-3 commit (not part of this delivery) —
    `PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md` §8.
 8. Fresh out-roots verified absent on the cluster immediately before submitting (no idempotency
    collision) — this checklist was authored without cluster access, so re-verify live.
+9. `c0prime_off_gate`'s own PASS/FAIL (§1a), checked **after** it completes and **before** the
+   blind-readout delta is reported: max |relative difference| ≤ 1e-12 on the 14 diagnostic
+   `event_likelihoods.csv` columns + md5-identical posterior JSONs, at h=0.730, both venues, vs.
+   `headreadout_20260827/{iiib,joint_r1}` task 21 — `REGISTRATION_C0_BASELINE_GATE_20260829.md`
+   §3/§13. FAIL on either venue means the full 82-task off-array becomes necessary (§1a); diagnose
+   the diff before launching it.
 
 ---
 
@@ -128,9 +194,11 @@ h=0.730 first.
 
 ```bash
 WS=$(ssh bwunicluster 'ws_find emri')
-mkdir -p results/campaign51_20260728/realistic_20260729/wave3_20260830/{iiib,joint_r1}
+mkdir -p results/campaign51_20260728/realistic_20260729/wave3_20260830/{iiib,joint_r1,c0prime_off_iiib,c0prime_off_joint_r1}
 rsync -avz bwunicluster:$WS/run_20260830_wave3_headreadout_iiib/     results/campaign51_20260728/realistic_20260729/wave3_20260830/iiib/
 rsync -avz bwunicluster:$WS/run_20260830_wave3_headreadout_joint_r1/ results/campaign51_20260728/realistic_20260729/wave3_20260830/joint_r1/
+rsync -avz bwunicluster:$WS/run_20260830_wave3_c0prime_off_iiib/     results/campaign51_20260728/realistic_20260729/wave3_20260830/c0prime_off_iiib/
+rsync -avz bwunicluster:$WS/run_20260830_wave3_c0prime_off_joint_r1/ results/campaign51_20260728/realistic_20260729/wave3_20260830/c0prime_off_joint_r1/
 ```
 
 **Then archive** (Option A, MUST-ARCHIVE tier, workspace expires 2026-09-23, 0 extensions):
@@ -207,14 +275,30 @@ entries' form):
 
 - This node did not run `ssh`, `sbatch`, `git commit`, or `git add` (cluster access is down for
   this pass; `submit_wave3.sh` also defaults to `DRY_RUN=1` regardless).
-- Neither script passes `--catalogue_numerator_survival_2d` or `--catalogue_numerator_survival_2d_center`
-  — this is intentional (F2 blindness), not an omission. Do not "complete" it by adding the flag;
-  that would defeat the readout's purpose.
-- The falsifier check (A14, `T_mat` = 0.008) needs a **second** pair of arrays run with an
-  explicit `--catalogue_numerator_survival_2d off` at the same wave-3 commit — that pair is not
-  part of this delivery and is presumably a separate charter node/build.
+- Neither blind-readout script passes `--catalogue_numerator_survival_2d` or
+  `--catalogue_numerator_survival_2d_center` — this is intentional (F2 blindness), not an
+  omission. Do not "complete" it by adding the flag; that would defeat the readout's purpose.
+  `wave3_c0prime_off_gate.sbatch` is the one script that DOES pass the pair explicitly (at the
+  pre-adoption value `off`/`unset`) — that is also intentional (§1a), not an inconsistency.
+- The A14 falsifier delta read (`T_mat` = 0.008) needs a pre-adoption baseline. This delivery's
+  `wave3_c0prime_off_gate.sbatch` (§1a) is the cheap (≈6 CPU-h) attempt to certify the banked
+  2026-08-27 readouts as that baseline without a full second 82-task off-array; **if it FAILS**,
+  the full off-array (both venues, full `H_GRID_41`, explicit
+  `--catalogue_numerator_survival_2d off`) becomes necessary and is presumably a separate charter
+  node/build at that point — diagnose the gate's own h=0.730 diff first (§1a) before launching it.
 - Each script's dataset-pin STOP-gates run on the compute node at job start, not at submission
   time — a mismatch fails the SLURM task with a clear message instead of silently scoring
   against a stale input.
+- `wave3_c0prime_off_gate.sbatch` computes its own per-task `RUN_DIR` from `$WORKSPACE` + a
+  case-on-`SLURM_ARRAY_TASK_ID` venue name (task 0 = iiib, task 1 = joint_r1) rather than reading
+  an exported `RUN_DIR` — a plain 2-task array shares one `--export=ALL` environment across both
+  tasks, so the two venues' distinct out-roots (and CoR-P CLIs — joint_r1 adds
+  `--observed_catalogue`) are selected inside the script, not from `submit_wave3.sh`'s export.
+- `wave3_c0prime_off_gate.sbatch` uses a single uniform `--time=01:30:00` for both tasks (the
+  larger of the two venues' own per-script times) — plain `sbatch --array` has no per-task-index
+  walltime, so the ceiling is sized to the slower venue (joint_r1); iiib finishes at a small
+  fraction of it. This is a deliberate builder-level deviation from "00:45:00 / 01:30:00 per
+  venue" read literally — see the script's own header for the full reasoning.
 - `results/_archive/archive_run_wave2.sh` is gitignored; the "wave 3" `ITEMS` block was appended
-  locally this pass (§5's out-root names) and is not itself part of any commit.
+  locally this pass (§5's out-root names, now including the two `c0prime_off` out-roots) and is
+  not itself part of any commit.
