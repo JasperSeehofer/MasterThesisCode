@@ -566,3 +566,110 @@ candidate, inside the mass quadrature; catalogue-leg selection twin; S_4D in the
 ran no registered measurement; the smoke run of the existing test file is the only execution.
 Nothing here addresses the author; all items return to the orchestrator and, per row #222, to the
 end-of-fan-out verifier.*
+
+---
+
+## 13. APPENDED NOTE (2026-08-29) — falsifier (i) executed; wave-2 arm registered form
+
+**Launched under rows #222/#223 — charter node B7.2-pre (P4).** `[FABLE-B7.2-pre 2026-08-29]`
+Node scope: implement and run SS6.1 falsifier (i) as a new unit test, then register the wave-2
+arm's final form. Builder/runner independence (standing rule 2) unaffected: no registered
+measurement was run, only unit tests.
+
+### 13.1 Falsifier (i) result — HOMOGENEITY HOLDS (PASS, not refuted)
+
+New file: `darksiren_emri_test/bayesian_inference/test_survival_2d_homogeneity_falsifier.py` (4
+functions). Ruff/mypy clean; run alongside the existing 48-case
+`test_catalogue_numerator_survival_2d.py` (all 52 pass, 2026-08-29). Method: a wrapped
+with-BH-survival accessor scaling `S_4D -> c*S_4D`; `T_cat` measured via `single_host_likelihood`
+(the real kernel, three synthetic hosts, uniform weight); `T_comp` via `completion_mass_factor_g_sel`
+(the real fused completion kernel) on a small synthetic z-grid; the `Σ^4D`-style denominator `D̃`
+via the literal per-row point-query formula (SS1.1) against the same three hosts — assembled per
+SS1.5's boxed form `combined_wbh = (T_cat + T_comp)/D̃` (β_G_φ/Σ^φ elided as 1.0, established
+S_4D-invariant in ratio). `T_comp`/`D̃`'s exact linear-in-c scaling verified directly (not assumed).
+
+| check | result | source (file:line) | date |
+|---|---|---|---|
+| twin `combined_wbh`, rel. dev. at c=0.4 / c=0.15 vs c=1 | 2.60e-16 / 1.30e-16 (≤ 1e-10 gate) | `test_survival_2d_homogeneity_falsifier.py::test_falsifier_i_twin_combined_wbh_invariant_under_s4d_rescaling` | 2026-08-29 |
+| coded `combined_wbh`, rel. dev. at c=0.4 / c=0.15 vs c=1 | 1.500 / 5.667 (≫ 1e-3 asymmetry floor) | `::test_falsifier_i_coded_combined_wbh_not_invariant_under_s4d_rescaling` | 2026-08-29 |
+| double-applied-survival defect (A15 capable-of-failing probe), rel. dev. at c=0.4 | 0.600 (probe correctly flags it) | `::test_falsifier_i_detects_double_applied_survival_bookkeeping_defect` | 2026-08-29 |
+| `T_comp`/`D̃` exact linear-in-c scaling | confirmed to rtol 1e-10 / 1e-12 | `::test_falsifier_i_completion_and_sigma4d_proxies_scale_exactly_with_c` | 2026-08-29 |
+
+**Verdict on SS6.1(i):** PASS — the twin's `combined_wbh` is homogeneous of degree 0 in a uniform
+`S_4D` rescaling to 15–16 orders of magnitude better than the 1e-10 gate; the coded arrangement is
+NOT invariant (50–470% relative movement over the same c-range), reproducing exactly the SS1.5
+degree asymmetry the adoption argument rests on. The A15 discriminating-power probe (a synthetic
+double-applied-survival defect, modelled after the real S̄_φ double-weight pattern, SS5) is
+correctly flagged as non-homogeneous (60% relative deviation), so the test is not vacuously
+passing. Per SS6.1(i)'s own disposition rule, this result does NOT return the proposal — it is a
+confirming falsifier outcome, not the refuting one. This closes regression item R3 (SS8) at the
+unit-test level; the full-suite promotion (R1/R2/R6 re-pointing) remains a `/physics-change` gate
+task, not this prep node's scope.
+
+### 13.2 STEP-2 smoke item (restated for the record, not executed here)
+
+Per SS6.2 ("Cost"): the `h = 0.730` production task in the wave-2 arm doubles as the STEP-2 smoke
+that PINS the `mz_sel` overhead factor, currently only ASSUMED at 1.0–1.3× (mirror-venue evidence:
+62.944 s (bt) vs 64.996 s (bc) at 200 events, `cluster/p3_2d_rhs2.sbatch:15-16`, 2026-08-25/26 —
+NOT slower at that scale). The overhead is expected to scale as `n_cand × 50 × 24` (per-candidate ×
+the 50-node host-z quadrature × the 24-node Gauss-Hermite mass quadrature, SS1.3), since production
+candidate counts are ~10³× the mirror venue's. No wave-2 task has run yet at this node; the pin
+remains an open measurement for whichever node executes the arm.
+
+### 13.3 Wave-2 arm PROD-CF-2D — final registered form (restating SS6.2, confirmed unchanged)
+
+- **Venue:** iiib only (true reduced catalogue, md5 `c52c13b5…`; `EVAL_SEED = 777000`).
+- **Arm T:** `--catalogue_numerator_survival_2d mz_sel --catalogue_numerator_survival_2d_center eff`,
+  all else at production defaults; baseline = the banked HEAD readout (`d04d9dc9`), reused only if
+  the row-#201 PROD-A0 ingredient gate (≤ 1e-12 relative) passes at h = 0.730.
+- **h-grid:** **H4 = {0.660, 0.665, 0.670, 0.730}** (the row-#201 production read node + the
+  {0.660, 0.665, 0.670} MAP/mean_h bracket, SS6.2).
+- **Gates (zero free parameters):** **R1** (`ln L_cat,wbh^T ≤ ln L_cat,wbh^B` every event/h,
+  INSTRUMENT-DEFECT on violation); **R2** (A13 engagement, ≥ 0.95 fraction with
+  `|Δ ln L_cat,wbh| > 1e-6` at h = 0.730, STOP below); **R6** (1D channel bit-identical between
+  arms, INSTRUMENT-DEFECT on violation). R3–R5 (ΔT, Δw̄₂, Δmean_h,pred) are REPORTED with bands.
+- **Materiality band (A8, two-sided):** **T_mat = 0.008** (provenance: `max(node spacing, σ_h/3)`
+  at the row-#132 σ_h, ratified row #213 §10 item 4); MATERIAL-UP/DOWN-PREDICTED at `|Δmean_h,pred|
+  ≥ T_mat`; IMMATERIAL-PREDICTED at `≤ T_mat/2 = 0.004`; AMBIGUOUS in between or on validity-condition
+  violation ⇒ conditional escalation to G27.
+- **Cost (A11, instructed band):** **59.7–81.1 CPU-h** (arm only) / **74.7–101.4 CPU-h** (+ baseline
+  gate task) at the instructed 14.93–20.27 CPU-h/node anchor; **ceiling 105 CPU-h (arm) / 132 CPU-h
+  (total)** at the ×1.3 assumed-overhead upper bound (SS6.2 table). This is the form any execution
+  node for charter node B7.2 proper must run against; this prep node authorizes no launch.
+
+**Stamp:** launched under rows #222/#223 — charter node B7.2-pre (P4).
+
+---
+
+## 14. Appended note (2026-08-29 — wave-2 GAP-CLOSURE archive/notes worker, launched under rows
+#222/#223 — charter node: NODE archive+minor-notes, GAP 8)
+
+Closes `WAVE2_REGISTRATION_CHECK_20260829.md` §1.5 / §5 item 8 (two minor gaps). Standing rule 1
+(append-only) applies — nothing above this section is altered.
+
+1. **Attribution provisional on falsifier (ii).** Falsifier (i) has PASSED (§13.1: twin rel. dev.
+   2.6e-16/1.3e-16; coded 1.50/5.67; A15 probe 0.60; 52/52 tests passed). Falsifier (ii)
+   (208–286 CPU-h) has not run this wave and returns separately (row #220). **This document's
+   attribution of the observed 2D-channel effect to the twin's `S_4D`-homogeneity property is
+   therefore PROVISIONAL until falsifier (ii) returns** — a PASS on (i) alone is necessary but not
+   sufficient for the full attribution claim. {source: `WAVE2_REGISTRATION_CHECK_20260829.md:174`,
+   ledger row #220; 2026-08-29}
+2. **Walltime resubmit rule for the STEP-2 overhead pin (§13.2).** The `h = 0.730` production
+   task pins the currently-ASSUMED 1.0–1.3× `mz_sel` overhead factor. **Rule (registered here):
+   if the h = 0.730 task's measured wall time exceeds `--time=03:00:00` (i.e. the realized
+   overhead exceeds the 2.1× implied by the 1.3× assumption against the registered SLURM
+   `--time`), the H4 arm is resubmitted with `--time` scaled by the measured overhead factor**
+   (measured wall / the un-overheaded anchor wall), applied uniformly across the remaining H4
+   nodes. This is a walltime/scheduling adjustment only — it is **not** a band change (§13.3's
+   `T_mat = 0.008` and the R1/R2/R6 gates are unaffected) and does not require re-registration.
+   {source: `WAVE2_REGISTRATION_CHECK_20260829.md:181`, §13.2 above (this document); 2026-08-29}
+
+**Launch-stamp placeholder (A22).** Wave-2 commit: `<hash at launch>` (does not exist yet — the
+working tree was dirty at registration-check time, `WAVE2_REGISTRATION_CHECK_20260829.md` §0/§3
+item 1; to be filled by whichever node performs the wave-2 commit; note the untracked falsifier
+test file `darksiren_emri_test/bayesian_inference/test_survival_2d_homogeneity_falsifier.py` must
+be included in that commit for a clean A22 stamp, per `WAVE2_REGISTRATION_CHECK_20260829.md:178`).
+Baseline commit: `d04d9dc9bfe39e6c5a72e768a26f2dcc38355bf5` (the banked HEAD readout,
+`run_metadata_21.json`, 2026-08-27T19:40:20).
+
+Stamped: launched under rows #222/#223 — charter node NODE archive+minor-notes (GAP 8), 2026-08-29.

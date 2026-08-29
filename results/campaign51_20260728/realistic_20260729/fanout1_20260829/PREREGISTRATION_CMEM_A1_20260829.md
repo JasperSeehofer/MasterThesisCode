@@ -487,3 +487,18 @@ fresh registration, not a re-litigation of a closed item.
 8. The exploratory R2b-style collapse-rate peek disclosed in the pre-registration's §8 was
    not used to tune anything in this run; flagged again here for completeness per the
    "list every caveat" mandate, not because it affects this result.
+
+---
+
+## Refuter must-fix correction (appended, 2026-08-29)
+
+Launched under rows #222/#223 — charter node: wave-2 PREP Notes worker. Append-only correction of
+the one item flagged by the wave-1 synthesis chair (`SYNTHESIS_DOCKET_1_20260829.md` §1, row
+B2.1, "minor" refuter state — "one inherited citation looseness"). Nothing above this section is
+altered.
+
+1. **REPORTED-ONLY cap attribution**: this pre-registration's citation of the REPORTED-ONLY /
+   structural cap as row #216 item 4 is incorrect. The correct attribution is **row #219**
+   (the CMEM ratification of C-STRUCTURAL-ONLY), not row #216 item 4. {source: session memory
+   `session-20260828-all-approved-executed.md` — "[CMEM] → C-STRUCTURAL-ONLY ... rows #216-#219";
+   `gate_b_20260730/BIAS_HISTORY_LEDGER.md` row #219; verified 2026-08-29}

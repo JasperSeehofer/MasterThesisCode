@@ -93,3 +93,47 @@ dominant, calibration-affecting systematic.
 comoving population and analyses them with the same estimator: it must be UNBIASED
 (|bias| ≤ max(0.005, 2·SE)) if §1–§3 are right. A biased B-OUT would instead indicate a
 residual internal misnormalization and would falsify this memo's attribution.
+
+---
+
+## Appended note, 2026-08-29 (orchestrator decision, charter node B3; append-only)
+
+**Launched under rows #222/#223 — charter node B3.** Nothing above this note is altered.
+
+**§F of `results/campaign51_20260728/realistic_20260729/fanout1_20260829/PHYSICS_CHANGE_POPULATION_PRIOR_M1_20260829.md`
+refutes this memo's §1 premise at zero compute, at the generating commit.** §1 above states "the
+events … are injected from the Barausse (2012) M1 EMRI rate" and takes `w_true(z)` from
+`Model1CrossCheck.emri_distribution`. §F shows this is the wrong generator object: the production
+event set (generating commit `03cfe80`, `dark_siren_injection.py:328`) draws dark hosts from
+`density = (1.0 - f_z) * _redshift_population_weight(z_grid, h)`, i.e. `(1−f)·dVc/dz/(1+z)` —
+**byte-identical to the estimator's own completion-leg prior** (`bayesian_statistics.py:1192`,
+this memo's `w_model`). `Model1CrossCheck.emri_distribution` (the z-dependent M1 curve this memo
+calls `w_true`) is, in this codebase, **the p_det survival pool's sampling law** (stratum 'a',
+`main.py:injection_campaign`) — never the production CRB event set's law. The two objects share
+the name "M1" but are not the same generator; §3's post-hoc 87% coverage confirms only that the
+estimator's algebraic response to swapping in the pool's M1 curve has the right size and shape,
+not that such a mismatch exists between the production data and the estimator's prior.
+
+**Consequence for row #138 (`BIAS_HISTORY_LEDGER.md:1367-1392`):** row #138 **stays on the record**
+as measured (the score-at-truth numbers in §3 above and its ledger entry are unchanged); its
+**production-venue causal premise is refuted** — the dark-class score bias measured on the
+production venue is not attributable to a data-vs-estimator population-shape mismatch, because no
+such mismatch exists there. The re-measurement on fused HEAD diagnostics
+(`B3_1_POP_RECORD.md`, charter node B3.1) that reported 98.5–129.9% coverage of this memo's
+predicted term carries the same superseding note for the same reason. Fork (a) of §6 above
+(give the estimator the injected M1 dN/dz) is now understood to already describe the as-built
+system for the production z-shape — there is no comoving-vs-M1 gap to close by adopting it; fork
+(b) (hierarchical marginalisation over rate-evolution parameters) and fork (c) (document the
+model-scope systematic) remain live, and are re-scoped: the open lever is the astrophysical
+*uncertainty* in the true EMRI rate's redshift shape (unknown for real data), not a mismatch
+between this codebase's generator and its own estimator.
+
+**M1-(i)/M1-(ii) labelling recommendation (§12 of the physics-change presentation):** the repository
+carries two functions both called "M1" — `emri_rate.R_EMRI` (M1-(i), the `p0 = 1` constant-comoving
+surrogate that drives the production generator's dark-host draw and the estimator's completion
+prior) and `Model1CrossCheck.emri_distribution` (M1-(ii), the extracted z-dependent Barausse curve
+that drives only the p_det pool's stratum-'a' sampling). §12 recommends a docstring cross-reference
+in both files naming which pipeline each feeds, so a future reader does not repeat this memo's
+substitution. Docs-only; no gate required.
+
+**Branch verdict of record: B3 CLOSED — PREMISE-REFUTED (provenance, zero compute).**

@@ -1945,3 +1945,553 @@ spot-checked by the orchestrator on a 4M-row slice: median 0.033054 vs full 0.03
   residual is REGISTERED, not waived: if the θ instrument build touches
   `correspondence_1d.py` anyway (it will, via /physics-change per item 3), raising
   `_B0I_ZTRUE_GRID_N` 401 → 4001 is a free hardening to include in that same gated change.
+
+---
+
+### PA-HIER-31 (2026-08-29; S0-B registration addendum after Stage-0 wave-1; orchestrator decisions of record; `[FABLE-ORCH]`)
+
+**Launched under rows #222/#223 — charter node B1.2.** Source: `WAVE2_REGISTRATION_CHECK_20260829.md`
+§2 skeleton (chair, wave-2 PREP) + `SYNTHESIS_DOCKET_1_20260829.md` §2 B1 P2 items (a)–(e) +
+orchestrator path decisions of record, 2026-08-29 ("B1 → S0-B (C1) proceeds AFTER PA-HIER-31 +
+θ CLI plumbing (P6) + S0-A completion (P0), in the CoR-P-faithful form `theta_sites="2.2"` +
+`smear_global_selection=False`"). Nothing above this divider is edited.
+
+**(a) b-node re-derivation and the two-arm pairing rule.**
+S0-B's four θ-nodes use the re-derived half-width **±0.033** from `b_max = 0.0661` (PA-HIER-29:
+*"Re-anchored half-width: b_max ≈ 0.0661 (2×median, PA-HIER-9's stated convention) — ~1.65× the
+superseded ±0.04,"* itself from *"Measured statistic: median `REDSHIFT_MEASUREMENT_ERROR/(1+REDSHIFT)`
+= 0.033038"* — a 5-node grid over ±0.0661 gives a half-step of 0.033). The S0-A remainder (the
+b_minus, s_minus, s_plus nodes not yet run at check time) keeps the **as-built ±0.02** with a
+disclosed "as-built" label — docket P2(a): *"the chair recommends the re-derived node for S0-B
+and a disclosed 'as-built' label for the S0-A remainder (paired within arm, so mixing is not
+allowed)."* The two arms (±0.02 as-built vs ±0.033 re-derived) are never combined into one
+secant, one Z, or one materiality read; each is reported against its own registered grid.
+
+**(b) CoR-P-faithful θ form for every no-BH read.**
+`theta_sites = "2.2"` (the batched per-host host-z kernel, the production dispatch path) and
+`smear_global_selection = False` for S0-B and for the S0-A remainder (P0) alike. **Site 2.3 is
+OUT OF SCOPE**, reason F-A (`WAVE2_REGISTRATION_CHECK_20260829.md` §0): *"the ternary at
+`bayesian_statistics.py:5187-5191` does pick the θ-inert `_global_cat_selection_phi` for
+`global_denom_no_bh`, **but** the path-(A) assembly `path_a_mixture_objects` (`:2440-2500`)
+takes `sigma_4d = _global_cat_denom_with_bh[h]` (`:4160-4171` under `smear_sigma_z=smear_global_selection`),
+and the no-BH per-event likelihood is `(β_G^φ·L_cat + B_num^φ)/D̃^φ` (`:5770`). So under
+`"all"`+smeared, site 2.3 reaches the no-BH channel through Σ^4D → r_Malm → α_G^φ → D̃^φ ... it is
+absent from CoR-P (`smear_global_selection=False`, `headreadout_20260827/iiib/run_metadata_21.json:cli_args`)."*
+Measured consequence (F-A, seed 900101, 9 shared events, b = +0.02, h = 0.73): `L_cat_no_bh`
+bit-identical between the two forms (max_rel 0.0) but `combined_no_bh` diverges (max_rel
+**7.45e-3**), driven by `alpha_G_phi` (5.8688310e7 → 5.1635200e7, −12.0%), `D_tilde_phi`
+(9.470921e8 → 9.40039e8, −0.745%), `w_G` (0.06196684 → 0.05492879). Therefore: **the already-run
+S0-A `"all"`+smeared b_plus node is DIAGNOSTIC / REPORTED-ONLY / non-CoR-P**, and P0 re-runs the
+truth node's remaining grid points (and re-scores the truth/b_plus comparison) in the
+2.2/unsmeared form for comparability. Registered instrument identity check: for every C-C event
+(`L_cat_no_bh == 0` at h = 0.73), `combined_no_bh` must be bit-identical across all five θ-nodes
+regardless of form (θ has no referent there); any deviation is INSTRUMENT-DEFECT.
+Optional, non-blocking: **P1′** (one (0,1)-smeared node, ≈0.33 CPU-h) to attribute the −12.0%
+α_G^φ shift to θ itself vs. the smear switch — informational only.
+
+**(c) `score_s` → `score_lns` relabel.**
+The driver's linear secant (`hier_s0_driver.py:242-245`) computes what this thread calls
+`score_s`; the object registered by this prereg (§4.1) as `score_s` is the **ln-s form**, now
+relabelled **`score_lns`** to remove the ambiguity (docket P2(c): *"relabel `score_s` (linear
+secant) vs the registered `score_lns` (Z identical; magnitudes not comparable to ln-s bands)"*).
+For S0-B: `score_lns,i = [lnL_i(0,√2) − lnL_i(0,1/√2)]/ln 2`. `Z_lns` is numerically identical
+under either labelling (Z is scale-invariant); **magnitudes are not** — any point number quoted
+in ln-s units is not directly comparable to a linear-secant magnitude quoted elsewhere in the
+thread (e.g. the mirror KW-Q1 card's `s_imp` figures, §3 item 9 of the wave-2 check, are on a
+different statistic entirely and are not affected by this relabel).
+
+**(d) S0-B design — nodes, statistics, reads.**
+Four θ-nodes at h = 0.730 on venue **iiib** (production, CoR-P per §1 below), plus the truth
+node (θ = (0,1)) which doubles as **C0**, the shared baseline gate task:
+
+```
+truth        (0, 1)              = C0
+b_plus_re    (+0.033, 1)
+b_minus_re   (−0.033, 1)
+s_plus       (0, √2)
+s_minus      (0, 1/√2)
+```
+
+Per-event statistic (both channels computed, primary = no-BH; `ln` of `combined_*` per
+`hier_s0_driver.py:242-245`):
+
+```
+score_b,i   = [ lnL_i(+0.033,1) − lnL_i(−0.033,1) ] / 0.066
+score_lns,i = [ lnL_i(0,√2)   − lnL_i(0,1/√2) ] / ln 2
+Z_x = mean(score_x) / SEM(score_x)
+```
+
+Read **pooled** (N = 1588); **by class** — C-A: `in_catalog = True` & `L_cat_no_bh > 0` (n ≤ 76,
+`b3_pop_prediction.json:venues.iiib.n_matched`, B3.2 §F item 3); C-B: `in_catalog = False` &
+`L_cat_no_bh > 0`; C-C: `L_cat_no_bh == 0` (n = 606) — class definitions per
+`B3_1_POP_RECORD.md` ("Class split" paragraph, its Method section, quoted verbatim: *"'dark' =
+`L_cat_no_bh == 0` at every one of the 41 h nodes (class C-C, `PREREG_COMPLETION_CLASS_DECOMPOSITION.md`);
+'matched' = the complement (≥1 node with `L_cat_no_bh > 0`, i.e. C-A ∪ C-B combined — this
+conflates true in-catalogue hosts with impostor-only catalogue support; row #141 found C-A alone
+pulls the *opposite* sign, so the 'matched' number here is a coarser read than that finding and
+is reported only for context, not compared against a per-class prediction)"*); C-A ∪ C-B = 982
+(0.6184 × 1588, same source) — class is defined **at h = 0.73, this arm's single node**,
+disclosed as differing from B3.1's all-41-node definition (wave-2 check §1.4 "class-definition
+note"). By **z-bin**, B3.1's registered edges {0.075, 0.392, 0.559, 0.659, 0.753, 1.018}
+(`b3_pop_prediction.json:registered_bin_edges`), using CRB `z_true = dist_to_redshift(d_L, 0.73)`.
+
+**Predictions registered before the run (F3):**
+- **B1's own** [HIER]: no point prediction — the hypothesis is the LIVE/DEAD fork itself. Sign
+  expectation, REPORTED-ONLY: `score_lns > 0` pooled — the likelihood is expected to prefer a
+  wider kernel if the quoted photo-z errors understate realised scatter, landing in exactly the
+  blindness class this design's own §5.2 item 2 names: *"Any misspecification outside that
+  2-dimensional span — an outlier fraction, a heavy tail, a z-**dependent** scatter, a skew, a
+  catastrophic-failure mode — is invisible **by construction**... and it lands exactly where the
+  Stage-L sweep found the literature lives (the minority-outlier regime, row #193)."* `score_b`:
+  **no sign registered.** Both computed from the §4.1 `Z_x = mean(score_x)/SEM(score_x)`
+  machinery, applied here to the production venue as the deferred **B0-B** read named in §4.1's
+  anchor note (*"Anchor derivation for B0-B (the deferred production read): identical bands,
+  applied to S0-B"*).
+- **B4's (L2, `CLAIM_IMPOSTOR_DRAG_20260829.md` §1.3/§1.4):** the KW-Q1 read's own falsifier
+  (§1.3) is the localisation test this arm's z-bin 1 must reproduce: *"the KW-Q1 diagnostics CSVs
+  also give S over q2–q4; if q1's share of Σ s_imp at s = 1 on the HEAD basis falls below 50%,
+  C2's localisation is withdrawn regardless of R."* Transposed to S0-B: on C-A ∪ C-B, the share
+  of `Σ|score_lns,i|` carried by z-bin 1 (0.075–0.392, ≈ the mirror q1 edge z_true < 0.358) is
+  predicted **≥ 0.50** (mirror analogue: q1 carries 91.7% (ft) / 86.2% (fc) of the impostor-leg
+  h-score, §1.3; q1 mean `s_imp` = −0.798 ± 0.041 (ft), `b4_imp_stage1_forecast.json:covariates.ft.z_true`).
+  **< 0.50 ⇒ C2's localisation does not transfer to production and is WITHDRAWN there**
+  regardless of Z. If a mechanism read is wanted: KW-Q1 **OWNS** (`§1.3`: *"|R| ≥ 0.5 ... ⇒ the
+  remainder is a kernel-width-class object ⇒ B4 MERGES INTO B1 (charter 4.3)"*) predicts
+  `|Z_lns| > 3` on C-A ∪ C-B concentrated in bin 1; KW-Q1 **INERT** (*"|R| ≤ 0.2 ⇒ not a width
+  object"*) predicts `|Z_lns| ≤ 3` in bin 1 — REPORTED alongside, not a band (KW-Q1's `R` is an
+  h-score response to `s`, not `∂lnL/∂s`, §1.4).
+- **B3's (L1, reduced by §F):** (i) C-C class θ-score ≡ 0 by identity (the population prior has
+  no θ referent); (ii) the C0 truth node reproduces B3.1's dark-class h-score profile
+  (+0.081/−0.332/−0.562/−0.701/−0.855; bins 2–5 −0.612, n = 484,
+  `b3_pop_prediction.json:venues.iiib.bins`) to ≤ 1e-6 — the baseline pin, doubling as C0's F3
+  secondary prediction (wave-2 check §1.1); (iii) no population-term prediction on the θ-score
+  exists — the data carry no such term after C2 was struck (§F of
+  `PHYSICS_CHANGE_POPULATION_PRIOR_M1_20260829.md`).
+
+**(e) Bands (A8, two-sided, referents = the four θ-nodes vs C0).**
+**B0-B** ≡ `|Z_b| ≤ 3` **and** `|Z_lns| ≤ 3` pooled (two-sided) ⇒ **LEVER-DEAD-AT-N
+(production)**; either `> 3` ⇒ **LEVER-LIVE** — then B0-M (materiality): MIXED if `|b̂| < 0.0165`
+(half the 0.033 step) or `|ln ŝ| < 0.5·ln√2 = 0.173`; B0-P (power): `σ_b < 0.0661` and
+`σ_ln s < ln 2`, else UNPOWERED (no DEAD claim). Curvature leg: quadratic fit through the three
+b-nodes (truth, b_plus_re, b_minus_re) → `b̂ = −S′/S″`, `σ_b = 1/√(−S″)`; likewise in ln s. Per-
+class and per-z-bin: same `|Z| ≤ 3` bands, REPORTED (not gating); the C-C identity check (item d
+above) is a pass/fail instrument check, not a band. **All verdicts carry the REPORTED-ONLY cap**
+(PA-HIER-28 item 9: *"Option B's support is a merely-affordable window: all [HIER] verdicts are
+capped REPORTED-ONLY. Upgrade to hard-truncation/CALIBRATED requires a registered justification
+AND a positive control (coherence rule from the brief: fallback + hard is forbidden)."*). Fork
+mapping (docket §2 B1): DEAD ⇒ 1.3b (park, redirect); LIVE ⇒ 1.3a (Stage P re-costed under L6).
+
+**A15 at N = 1588.** Null: `Z ~ N(0,1)` ⇒ `|Z| ≤ 3` false-fail **0.27%** two-sided; 80% power at
+`mean = 3.84·SEM`. Per-event score_b SD proxy, independently re-derived this node from the banked
+seed-900101 node CSVs (`hier_s0_registered_run/s0a_seed900101/{node_truth,node_b_plus}/simulations/diagnostics/event_likelihoods.csv`,
+merged on `event_idx`, restricted to active rows `L_cat_no_bh>0` at truth or b_plus):
+half-secant `score_b,i = [lnL_i(combined_no_bh, b=+0.02) − lnL_i(combined_no_bh, b=0)]/0.02` —
+**one-sided** here (`node_b_minus` at this pin has `cramer_rao_bounds.csv` only, no
+`event_likelihoods.csv` — S0-A remainder not yet run at check time) — gives, "all"/smeared form,
+n = 105 active of 106: **mean −5.591, SD 16.879, SEM 1.647**; and (P1 smoke,
+`hier_s0_work/b1_2_smoke/p1_2p2_off/s0a_seed900101/{node_truth_sites2.2_nosmear,node_b_plus_sites2.2_nosmear}/…`,
+merged on `event_idx`) "2.2"/unsmeared form, n = 9 (all active): **mean −5.147, SD 13.972** — both
+figures match the wave-2 chair's independently-quoted values (mean −5.59/−5.15, SD 16.88/13.97)
+to reported precision. This is a **mirror→production transfer, disclosed** (production balls
+carry ~10³× more candidates than the mirror). Scaling the two SDs to N_active = 982 (C-A ∪ C-B):
+`SEM ≈ SD/√982` = 0.446–0.539 per unit b ⇒ **detectable |mean score| at 3σ (80% power, 3.84·SEM)
+≈ 1.71–2.07 per unit b** (≈ 0.11–0.14 nats per event across the full ±0.033 secant). C-A alone
+(n ≈ 76): `SEM ≈ SD/√76` = 1.602–1.936 ⇒ **≈ 6.15–7.44 per unit b** (weak, REPORTED only).
+**s-component SD: UNMEASURED** — S0-A's s_plus/s_minus nodes were not run at check time; P0 must
+fill it before any S0-B sbatch, else the s-bands are registered using the b-proxy SD with an
+explicit flag that the transfer is doubly indirect. Controls capable of failing: C0 (T-ID); the
+C-C identity check; GATE ENG on `L_cat_no_bh`.
+
+**(f) GATE PARITY residual 5.718e-4 — disposition.**
+Docket P2(e): *"accept as below-band with the batch-order hypothesis recorded, or diagnose (one
+re-run of the banked bc CSV at the current commit decides it)."* **The batch-order hypothesis is
+REFUTED** — chair finding F-B (`WAVE2_REGISTRATION_CHECK_20260829.md` §0): *"The 9-event P1 smoke
+truth node and the 106-event registered truth node are **bit-identical on all 17 numeric
+columns** over the 9 shared events ... Summation order does not depend on N here, so the
+5.718e-4 residual of the driver vs the **banked** bc CSV ... is not a batch-size effect; the live
+hypotheses are a code/config delta between that CSV's commit and HEAD, or a process/thread-count
+effect in the banked run ... the docket P2(e)'s 'one re-run of the banked bc CSV at the current
+commit' remains the deciding read."* **Disposition (this amendment): diagnose, not accept.** P0
+includes one re-run of the banked `bc_900101_work` CSV at the wave-2 commit; if the residual
+persists at the same magnitude the live hypothesis narrows to a process/thread-count effect
+(both smoke and registered nodes ran at a 14-core pin); if it changes, a code/config delta
+between commits is confirmed. Bearing on C0: this is exactly the kind of same-N, same-commit
+reproduction gate C0 is built to catch (A15 control-capable-of-failing, satisfied by this
+evidence, per F-B).
+
+**(g) A10 invariants + blindness.**
+Carries forward prereg §5.1 items 1–5, 7, 9–13 verbatim (items 6 and 8 are mirror-venue-specific
+and do not bind a production arm) with the CoR-P list of §5.1 item 1 stamped concretely for this
+arm: commit = **the wave-2 commit hash, placeholder pending §0 GAP 1's commit of the dirty tree**
+(`WAVE2_REGISTRATION_CHECK_20260829.md` §5 item 1); CLI flags verbatim from
+`headreadout_20260827/iiib/run_metadata_21.json:cli_args` (`absolute_marginal` / `volume_deconv`
+/ `fused` / `phi` / `smear_global_selection=False` / `pdet_wbh_z_resolved=False` /
+`eddington_m=on` / `sigma4d_mass_kernel=point` / `catalogue_numerator_survival_2d=off`) plus
+explicit `--mass_filter_geometry linear --mass_filter_k 1.5`; reduced-catalogue md5
+`c52c13b5…` pinned before reading (A11 dataset pin, CLAUDE.md 2026-08-20 rule); **H_GRID node
+0.730 only** (`evaluate.sbatch --array=21`); driver identity **pinned at the wave-2 commit's
+blob** for `hier_s0_driver.py` (superseding the stale `5313c319…` cite in L2 — current sha1
+`9f831b9f7d6b8fed820d547bbe8cd64ff00873e3`, 567+/42− vs `dd63fe0c`, per
+`WAVE2_REGISTRATION_CHECK_20260829.md` §5 item 10). New invariant this amendment adds:
+`smear_global_selection = False` (2026-08-29, item (b) above); item 8's mirror↔production parity
+becomes moot for S0-B itself (it *is* production) but the 5.718e-4 undiagnosed residual (item f)
+stays a live open item, named by number, not waived.
+**Blindness**, carried and extended: (a) anything acting only through a smeared global selection
+(site 2.3, out of scope, item (b)); (b) the production venue has no truth-θ — a non-zero score
+cannot by itself separate a photo-z kernel misspecification from any other misnormalisation
+sharing the catalogue leg (the B4 impostor object; hence the registered L2 profile prediction,
+item (d)); (c) θ's 2-D span, prereg §5.2 item 2 (quoted in item (d) above: *"θ = (b, s) spans
+exactly linear-in-(1+z) bias and uniform multiplicative scale. Any misspecification outside that
+2-dimensional span ... is invisible by construction"*); (d) single h (0.730 only); (e) the
+with-BH channel is secondary and inherits invariant 12 (the open `[P3-MKER]` state).
+
+**(h) A14 falsifiers.**
+Carried from prereg §6, **LEVER-DEAD-AT-N** row, quoted verbatim: *"S0-B (production venue,
+CoR-P) returns `|Z_b| > 3.0` or `|Z_s| > 3.0`. A live production score with a dead mirror score
+refutes 'dead' and re-attributes it to the mirror venue's own self-consistency (§5.2 item 3), not
+to the lever."* — §5.2 item 3 itself, quoted: *"On the mirror the generator kernel **is** the
+estimator kernel at truth-θ, so any misspecification **shared** by generator and estimator
+cancels and is undetectable — precisely the class the research-cycle's stop/continue rule
+records that SBC/coverage cannot catch."* Additional falsifiers specific to this amendment: LIVE
+attributed to "the host-z kernel" is FALSIFIED if the C-C identity check (item d) fails
+(instrument defect) or if the `score_lns` z-profile is flat within 3σ **and** the L2 q1-share
+prediction (item d, B4's) fails (then it is a normalisation object, the B4.3 class, not a kernel
+object). DEAD is provisional until B0-P passes **and** the S0-A remainder (P0) certifies the
+instrument in the same 2.2/unsmeared form.
+
+**(i) Cost (F4) and archive.**
+**4 θ-nodes × 14.93–22.9 CPU-h = 60–92 CPU-h**, unsmeared form (`COMPUTE_LEDGER.md` row C1); **the
+81–113 CPU-h smeared band is STRUCK** — it was priced on the now-refuted P1 equivalence and
+described a non-CoR-P form (item (b) above; wave-2 check §3 item 6). P0 (S0-A remainder, same
+2.2/unsmeared form) ≈ **5 CPU-h / 40 min wall** at 5 parallel nodes (docket §2 P0, re-scoped).
+S0-C ceiling **≤ 15 CPU-h** (registered, marginal cost still unmeasured). Archive: **MUST-ARCHIVE
+(Option A)**; out-root field `run_20260829_wave2_c1_iiib`; `COMPUTE_LEDGER.md` row C1 "archive-
+scheduled: yes" required before sbatch (F4 gate). Deadline 2026-09-23 (workspace expiry, 0
+extensions).
+
+**(j) P6 precondition — θ on the production CLI.**
+Blocking, non-physics: expose `--theta_b`, `--theta_s`, `--theta_sites` in `arguments.py` +
+`main.py` → `BayesianStatistics.evaluate()` (defaults `0.0`, `1.0`, `"all"` byte-identical to
+today; `run_metadata_*.json` records the passed values, which **is** this arm's A22 stamp) — a
+plumbing commit only, the B5.1 pattern, non-physics files, ledger note — **or** a production
+in-process driver, in which case the driver's own emitted JSON is the A22 stamp instead. GATE
+T-ID at production scale **is C0** (θ = (0,1) reproduces the banked `d04d9dc9` columns ≤ 1e-12
+relative, all 17 numeric columns). GATE ENG, scored on `L_cat_no_bh`: ≥ 99% of C-A ∪ C-B events
+must move ≥ 1e-6 relative at each off-truth node (mirror precedent: 105/105 moved, §0 of the
+wave-2 check). GATE TABLE-FRESH: one `BayesianStatistics` construction per node — the four
+separate sbatch tasks structurally guarantee this (invariant 13).
+
+**REPORTED-ONLY cap, carried.** Per PA-HIER-28 item 9 (quoted above, item (e)): every verdict
+produced by this amendment — B0-B, B0-M, B0-P, per-class, per-bin, and the KW-Q1 coupling read —
+is REPORTED-ONLY. No CALIBRATED or hard-truncation claim may be made from this arm without its
+own registered justification and a positive control.
+
+**Ordering (A22).** Wave-2 commit hash + dirty-state clean at run START (gap-list item 1);
+`1f003da6` (B6.1, s-placement) precedes ✓ (L8, already landed); **P0** (S0-A remainder, 2.2/
+unsmeared form) and the **GATE PARITY disposition** (item (f), with F-B's corrected hypothesis)
+must both be recorded **before** S0-B banks; execution-completeness (A8(d)): no class/bin branch
+is adjudicated until all four θ-nodes exist.
+
+**Verifier scope.** This amendment; finding F-A (site-2.3 non-inertness through α_G^φ/D̃^φ);
+finding F-B (batch-order REFUTED, code-delta hypothesis remains open); finding F-C (θ not on the
+production CLI, P6 required); the b-node re-derivation (item a); the S0-A smeared-node
+reclassification to REPORTED-ONLY/non-CoR-P (item b).
+
+*Authorization: launched under rows #222/#223 — charter node B1.2. Append-only; nothing above
+the PA-HIER-31 divider is edited. No git operations; no source edits; `hier_s0_driver.py` and
+`kwq1_score.py` untouched (owned by another agent). Chair: inherit-tier subagent, scoped
+package, 2026-08-29.*
+
+---
+
+### PA-HIER-31 REVISION NOTE 1 (2026-08-29; refuter-panel `must_fix` response; append-only; `[FABLE-ORCH]`)
+
+**Launched under rows #222/#223 — charter node B1.2.** A refuter panel REFUTED the
+`PA-HIER-31` block above with five `must_fix` items. Nothing above this divider (including
+`PA-HIER-31` itself) is edited — corrections below are append-only supersession notices,
+the same pattern `PA-HIER-10` already used against earlier §-text. Each item is checked
+against the shipped code / cited sources before disposition; two are confirmed-and-fixed
+outright, one is confirmed-and-partially-fixed with an open item returned for a fresh
+author `[RULE]`, two are confirmed-and-fixed citation corrections. All five `must_fix`
+findings are independently re-verified true (evidence below); none is disputed.
+
+**R1 (must_fix 1). Supersedes: `PA-HIER-10`'s unconditional `smear_sigma_z=True` pin, CoR-P
+clause only; `§2.4`'s CoR-P bullet ("...with `smear_global_selection` forced True per GATE
+D3(a)").**
+CONFIRMED, material, not cosmetic — re-verified: `PA-HIER-10`'s correction (line ~1047-1048
+above) reads *"`smear_sigma_z` is pinned True for the entire arm, at every θ node including
+truth-θ, at both CoR-M and CoR-P"* — an unconditional, HIGH-severity FIXED status covering
+CoR-P by name. `PA-HIER-31(b)`/(g) sets `smear_global_selection=False` for the whole S0-B
+arm and P0, calling it "the CoR-P-faithful form," with **zero** occurrences of "Supersedes,"
+"PA-HIER-10," or "GATE D3" anywhere in the `PA-HIER-31` block (grepped, confirmed). The flag
+is non-inert on the exact quantity S0-B's scores are built from: F-A (quoted in `PA-HIER-31(b)`
+itself, `WAVE2_REGISTRATION_CHECK_20260829.md` §0) measures `alpha_G_phi` −12.0% and
+`combined_no_bh` max_rel 7.45e-3 from this one flag flip, same seed/node.
+
+Reconciliation: `PA-HIER-31(b)` is a genuine, *targeted* narrowing of `PA-HIER-10` restricted
+to **CoR-P (the production venue) only** — `PA-HIER-10`'s pin is otherwise unchanged and still
+binds **CoR-M (the mirror)**, where every prior/future mirror-venue read keeps
+`smear_sigma_z=True` at every node including truth-θ. Authority for the CoR-P-only carve-out
+is the 2026-08-29 orchestrator path decision of record, quoted verbatim in `PA-HIER-31`'s own
+header ("in the CoR-P-faithful form `theta_sites=\"2.2\"` + `smear_global_selection=False` ...
+reason: the chair's F-A finding"). That decision is real and on the record, but it is an
+orchestration-level path call made in response to a newly-measured confound, not a re-derivation
+that adjudicates `PA-HIER-10` vs. the new F-A evidence — and CLAUDE.md's approval-scope
+convention is explicit that *"a branch call, verdict or band comparison that has not been
+computed yet is never covered by a blanket 'all approved' ... it returns to the author as a
+fresh [RULE]."* F-A's measurement did not exist when `PA-HIER-10` was ratified FIXED, so this
+qualifies.
+
+**Disposition, both must_fix options addressed, not just one:**
+- **Option (i), adopted for the wave-2 execution window:** the F-A-measured −12.0%/7.45e-3
+  shift is treated as an accepted, quantified confound — folded into item (g)'s blindness list
+  as its own named sub-item (not merely "site 2.3, out of scope"): *"(a′) the CoR-P
+  `smear_global_selection=False` choice itself is a narrowing of `PA-HIER-10`'s unconditional
+  pin, carrying a measured −12.0% `alpha_G_phi` / 7.45e-3 `combined_no_bh` confound relative to
+  the `PA-HIER-10`-pinned alternative (F-A) — disclosed, not resolved."* Item (e)'s REPORTED-ONLY
+  cap already covers every verdict unconditionally, so no band escapes this without a positive
+  control regardless.
+- **Option (ii)'s resolving instrument already exists in the registered design:** `P1′`
+  (item (b), "one (0,1)-smeared node, ≈0.33 CPU-h, informational only, non-blocking") is
+  **upgraded here from purely informational to the designated resolving measurement** for this
+  specific contradiction. Recommended (non-blocking per its original registration; does not gate
+  S0-B execution) before any S0-B verdict is cited as more than
+  REPORTED-ONLY-pending-adjudication.
+- **What remains genuinely open, returned to the author:** *which value is authoritative for
+  CoR-P going forward* is a scientific ruling narrowing a previously-FIXED HIGH-severity
+  finding, not a mechanical documentation fix — this worker has no standing to make it (CLAUDE.md:
+  "the author owns every scientific decision"; the row #222/#223 grant is a STANDING grant
+  for wave-2 *execution*, not a `[RULE]` on this specific `PA-HIER-10`-vs-`PA-HIER-31(b)`
+  contradiction, which did not exist as a named contradiction until this refuter pass).
+  **Registered here as an OPEN CONTRADICTION pending a fresh author `[RULE]`** adjudicating
+  `PA-HIER-10` vs. `PA-HIER-31(b)` for CoR-P. Until that `[RULE]` lands: P0/S0-B execution
+  proceeds under the existing row #222/#223 STANDING grant (this note does not block running
+  them — REPORTED-ONLY already caps every claim they can produce), but no `|Z_b|`/`|Z_lns|`
+  verdict from this arm may be banked or cited as more than
+  REPORTED-ONLY-pending-`[RULE]` until adjudicated.
+
+**R2 (must_fix 2). Citation fix, item (c) — "the driver's linear secant."**
+CONFIRMED. Verified against the pinned commit: `git show dd63fe0c:.../hier_s0_driver.py` shows
+`:242-245` is inside `read_event_ln_l()`, computing
+`sub[out] = np.where(vals > 0.0, np.log(vals), np.nan)` for `combined_no_bh`/`combined_with_bh`
+— the `ln(combined_*)` transform, correctly cited (only) by item (d) for that purpose. The
+actual secant arithmetic — `score_b = (b_join["b_plus"] - b_join["b_minus"]) / 0.04`,
+`score_s = (s_join["s_plus"] - s_join["s_minus"]) / (sqrt2 - 1/sqrt2)`, matching this prereg's
+own §4.1 formula verbatim — lives in `compute_scores()`, **`hier_s0_driver.py:394-449`**, same
+commit. **Item (c)'s file:line pointer is corrected**: "the driver's linear secant"
+→ `compute_scores()`, `hier_s0_driver.py:394-449`, commit `dd63fe0c`. Item (c)'s substantive
+argument (Z is scale-invariant under the `score_s`/`score_lns` relabel; magnitudes are not) is
+unaffected — only the pointer was wrong. Per the must_fix's instruction (the `PA-HIER-29`
+catalogue-md5 pinning pattern), this citation is **commit-pinned to `dd63fe0c`** rather than
+"current" — the working file is under known concurrent edit
+(`WAVE2_REGISTRATION_CHECK_20260829.md` §5 item 10: +567/−42 lines, sha1
+`9f831b9f7d6b8fed820d547bbe8cd64ff00873e3` vs `dd63fe0c`) and this node does not touch
+`hier_s0_driver.py` (owned by another agent), so re-verifying the line numbers against the
+eventual wave-2 commit is deferred to whoever banks that commit, not done here.
+
+**R3 (must_fix 3). GATE D3(a) prose vs. shipped code — reconciled in favour of the code;
+no source edit (physics-trigger file, out of this node's scope regardless).**
+CONFIRMED. Verified: `precompute_global_catalog_selection`
+(`bayesian_statistics.py:2799-2805`) —
+```
+if (theta_b != 0.0 or theta_s != 1.0) and not smear_sigma_z:
+    raise ValueError(
+        "theta (site 2.3) requires smear_sigma_z=True — the registered "
+        "site is the smeared host-z kernel; got "
+        f"(theta_b, theta_s) = ({theta_b}, {theta_s}) with smear_sigma_z=False"
+    )
+```
+— a guard that **requires** the caller to pass `smear_global_selection=True` (raises
+`ValueError` otherwise), not a **force**/auto-engage. `bayesian_statistics.py` is a
+physics-trigger file (CLAUDE.md) and editing it is outside this node's authorized scope in any
+case, so — following the same append-only supersession pattern `PA-HIER-10` used on earlier
+§-text — **this note supersedes `§3.2` GATE D3(a)'s wording** ("`s ≠ 1` forces the
+`smear_sigma_z=True` branch itself") **and `§2.4`'s CoR-P bullet's parallel wording**
+("with `smear_global_selection` forced True per GATE D3(a)") with:
+
+> `s ≠ 1` (equivalently, any non-identity θ reaching site 2.3) **REQUIRES**
+> `smear_global_selection=True` — the call **raises `ValueError` if unmet**
+> (`bayesian_statistics.py:2799-2805`), rather than auto-forcing the flag. The gate's
+> underlying safety intent (no silent θ-on-numerator/θ-inert-on-denominator mixed arm) is
+> satisfied by the raise exactly as it would be by a force; only the literal mechanism differs.
+
+Confirmed moot for the registered S0-B/P0 runs: `theta_sites="2.2"` zeroes `(theta_b, theta_s)`
+before they reach site 2.3's precompute call (`bayesian_statistics.py:4147-4148`), so this
+guard's branch is never exercised in the registered configuration (matches the panel's own
+finding 3, independently re-confirmed here). It binds only a future `theta_sites="all"` run,
+where the caller must now explicitly pass `smear_global_selection=True` or receive the raise.
+
+**R4 (must_fix 4). Item (e) — undisclosed step-width extrapolation on the b-band power
+projection.**
+CONFIRMED; no basis exists in the record to assert curvature is negligible over
+`[-0.033, +0.033]` — the curvature leg (item (e)'s own quadratic fit through the three b-nodes)
+is explicitly registered as *unmeasured until all θ-nodes exist*, so the disclosure is added
+rather than a negligibility claim asserted without evidence. Appended, symmetric with the
+already-disclosed s-band flag:
+
+> **Disclosure (b-band power projection, symmetric with the s-band flag above).** The b-band
+> SD proxy (A15) is a ONE-SIDED half-secant over a 0.02 step (`node_truth` vs `node_b_plus`
+> only). It is carried, via population-size scaling alone (mirror n≈106 → production
+> N_active=982), into a power projection for S0-B's TWO-SIDED, wider (±0.033, span 0.066)
+> secant. If `lnL(b)` has curvature over this range, a wider two-point secant's variance need
+> not scale from the narrower one-sided proxy's variance by population size alone — this
+> transfer is doubly indirect (step-width extrapolation stacked on population-size
+> extrapolation), on top of the already-flagged mirror→production transfer itself. No claim of
+> negligible curvature is made; the registered curvature leg (item (e)) is the instrument that
+> settles this once C0/b_plus_re/b_minus_re all exist.
+
+**R5 (must_fix 5). Citation fix, item (j) — "105/105 moved."**
+CONFIRMED. Re-read `WAVE2_REGISTRATION_CHECK_20260829.md`: §0 (the three chair findings F-A/F-B/
+F-C) states the mean per-event Δln`combined_no_bh` decomposition (−0.1118 = −0.1193 kernel +
+0.0075 global) and the bit-identity checks, but **not** the 105/105 count. That count appears in
+**§6** ("Numbers with provenance (A11)"), row: *"registered b_plus vs truth (106 events): active
+105/105 moved on `L_cat_no_bh`; mean Δln`combined_no_bh` −0.1118 = ..."*. (The same mis-citation
+— "mirror 105/105 moved, §0" — is independently present in the wave-2 check's own §4 row 4, so
+this is an inherited citation error, not one newly introduced by `PA-HIER-31`.) Item (j)'s
+sentence is corrected: "mirror precedent: 105/105 moved, §0 of the wave-2 check" **→ "mirror
+precedent: 105/105 moved, §6 of the wave-2 check."**
+
+**Findings not requiring action (independently re-checked, no dispute).** The panel's
+remaining findings all PASS on re-verification and require no further note here: `PA-HIER-31`
+is genuinely append-only (`git diff HEAD` on this file is a pure addition after the prior
+divider); the authorization stamp and orchestrator-quote wording match the row #222/#223 grant
+and the 2026-08-29 path decision verbatim; the A22 commit-hash placeholder in item (g) is
+explicitly named as a placeholder, not silently omitted; the arithmetic underlying items (a)
+and (e) (b_max, node half-steps, materiality thresholds, SEM scaling, the 3.84·SEM detectable-
+effect band) independently reproduces to the panel's own re-derivation; gap item 3 (this node)
+is genuinely closed by items (a)/(b)/(i) even with R1's open contradiction noted, and gap item 4
+(P6, θ CLI plumbing) is correctly left open, consistent with the uncommitted
+`arguments.py`/`main.py` plumbing already present on this working tree.
+
+*Authorization: launched under rows #222/#223 — charter node B1.2. Append-only; nothing above
+this divider (including `PA-HIER-31` itself) is edited. No git operations; no source edits;
+`hier_s0_driver.py` and `kwq1_score.py` untouched (owned by another agent);
+`bayesian_statistics.py` untouched (physics-trigger file, out of scope; R3's correction is a
+prose-only supersession of the registered gate text, not a code change). One item (R1) returned
+to the author as a fresh `[RULE]` per CLAUDE.md's approval-scope convention; execution is not
+blocked by it. Worker: sonnet-tier subagent, wave-2 GAP-CLOSURE workflow, 2026-08-29.*
+
+---
+
+### PA-HIER-31 REVISION NOTE 2 (2026-08-29; second refuter-panel `must_fix` response; append-only; `[FABLE-ORCH]`)
+
+**Launched under rows #222/#223 — charter node B1.2.** A second refuter panel reviewed
+`PA-HIER-31` together with `REVISION NOTE 1` and found `REVISION NOTE 1`'s own **R1** disposition
+materially wrong on *scope* (not on its governance handling, which the panel separately confirmed
+sound — see the "findings not requiring action" note below). Four `must_fix` items; three are
+CONFIRMED and fixed as sub-notes below; the fourth (explicitly labelled "optional" by the panel)
+is registered as a recommended, non-blocking follow-up **not executed by this node**, with the
+reason stated. Nothing above this divider (including `PA-HIER-31` and `REVISION NOTE 1`) is
+edited — corrections below are append-only supersession notices, the same pattern `PA-HIER-10`
+and `REVISION NOTE 1` already used.
+
+**R1′ (must_fix 1). Sub-note to `REVISION NOTE 1`'s R1 reconciliation — CoR-M is NOT untouched.**
+CONFIRMED, material. `REVISION NOTE 1`'s R1 reconciliation paragraph (`:2231-2234`) states
+verbatim: *"`PA-HIER-31(b)` is a genuine, targeted narrowing of `PA-HIER-10` restricted to CoR-P
+(the production venue) only — `PA-HIER-10`'s pin is otherwise unchanged and still binds CoR-M
+(the mirror), where every prior/future mirror-venue read keeps `smear_sigma_z=True` at every node
+including truth-θ."* This is contradicted by the very item it reconciles. `PA-HIER-31(b)` itself
+(`:1972`) reads: *"`smear_global_selection = False` for S0-B and for the S0-A remainder (P0)
+alike."* **S0-A is not CoR-P.** By its own §2.1 definition (`:145`): *"**S0-A** (control) | mirror
+venue, generator kernel = estimator kernel, truth-θ = (0,1) by construction."* — i.e. CoR-M. The
+P0/S0-A-remainder scope is restated three further times in `PA-HIER-31(b)`/(e)/(i)/(A22) —
+`:2090` ("S0-A remainder not yet run at check time"), `:2159` ("the S0-A remainder (P0)
+certifies the instrument"), `:2165` ("P0 (S0-A remainder, same 2.2/unsmeared form)"), `:2190`
+("**P0** (S0-A remainder, 2.2/unsmeared form) ... must both be recorded before S0-B banks") — not
+a single slip.
+**Correction, superseding `REVISION NOTE 1`'s R1 reconciliation paragraph (`:2231-2234`):**
+`PA-HIER-31(b)`/(i) narrows `PA-HIER-10`'s unconditional `smear_sigma_z=True`-at-every-node pin
+for **two** arms, not one — CoR-P (S0-B) **and** the S0-A remainder run under P0, which is a
+CoR-M/mirror-venue arm by its own registered construction. `PA-HIER-10`'s pin is therefore
+narrowed at **both** venues by this amendment, not "otherwise unchanged" at CoR-M. Every
+downstream statement in `REVISION NOTE 1` that assumed a CoR-P-only narrowing (the "Option (i)"
+blindness sub-item text (a′), and the "for CoR-P" framing of the open contradiction) was scoped
+too narrowly; R2′ below broadens it.
+
+**R2′ (must_fix 2). The CoR-M instance is registered as its own OPEN CONTRADICTION.**
+CONFIRMED. `REVISION NOTE 1` registered exactly one open contradiction — *"`PA-HIER-10` vs
+`PA-HIER-31(b)` for CoR-P"* — and returned it to the author as a fresh `[RULE]`. R1′ above shows
+the same document pair also conflicts at CoR-M, and this is not free of consequence: `PA-HIER-20`
+(line 1427, quote-verified against `correspondence_1d.py:328-337`: *"the mirror venue runs
+`absolute_marginal`"*) independently found the mirror venue also runs
+`normalization_mode="absolute_marginal"` — the same `normalization_mode` that gates the
+path-(A) `phi` assembly (`catalogue_numerator_survival` resolving `"phi"` under
+`absolute_marginal`, `bayesian_statistics.py:3535-3541`, PA-HIER-20 leg 3) which F-A found
+non-inert for site 2.3 at CoR-P (`alpha_G_phi` −12.0%, `combined_no_bh` max_rel 7.45e-3, same
+seed/node, `WAVE2_REGISTRATION_CHECK_20260829.md` §0). So the mechanism F-A measured only at
+CoR-P is **mechanistically live at CoR-M too**, and its magnitude there is currently UNMEASURED —
+a CoR-P-only F-A measurement cannot by itself license loosening the CoR-M pin, exactly the
+situation GATE D3 clause (c) requires be *"explicitly documented ... as a design choice with its
+stated consequence, never as an inherited oversight"* (`:305-307`), which has not happened for
+CoR-M. **Registered here as a second, separate OPEN CONTRADICTION** (`PA-HIER-10` vs
+`PA-HIER-31(b)`/(i) for CoR-M / S0-A), pending its own fresh author `[RULE]` — kept distinct from
+the CoR-P item rather than folded into it, since the evidence bases differ (CoR-P has a direct
+F-A measurement of the shift; CoR-M has only the PA-HIER-20 mechanism match, not a direct
+measurement of its magnitude there — that gap is what R4′ below would close). This does not block
+P0/S0-A-remainder execution under the row #222/#223 STANDING grant: every verdict is already
+REPORTED-ONLY-pending-`[RULE]` per `REVISION NOTE 1`'s disposition, now extended to cover the
+CoR-M arm as well.
+
+**R3′ (must_fix 3). Item (h)'s falsifier text downgraded pending the CoR-M `[RULE]`.**
+CONFIRMED; no basis exists to let the certification clause stand unqualified. Item (h) (`:2159`)
+reads: *"DEAD is provisional until B0-P passes **and** the S0-A remainder (P0) certifies the
+instrument in the same 2.2/unsmeared form."* As written this presents the P0 certification as
+settled instrumentation without qualification. Given R1′/R2′, P0 now runs in a form that departs
+from `PA-HIER-10`'s still-nominally-binding CoR-M pin, with no CoR-M-specific measurement of the
+departure's consequence (only the PA-HIER-20 mechanism match, not a magnitude). **Appended
+qualifier, superseding item (h)'s cited sentence:**
+
+> The S0-A remainder (P0) "certifies the instrument" only with respect to wiring/arithmetic at
+> `theta_sites="2.2"` (site 2.3 excluded, C-C identity check, GATE T-ID/ENG). It does **not**
+> certify site 2.3's behaviour under `PA-HIER-10`'s originally-pinned, unconditional
+> `smear_sigma_z=True`-at-every-node CoR-M form, because P0 does not run that form. Any DEAD
+> verdict resting on "the instrument is certified" is REPORTED-ONLY-pending-`[RULE]` with respect
+> to site 2.3 at CoR-M, exactly as `REVISION NOTE 1` already caps the CoR-P arm, until the R2′
+> open contradiction is adjudicated.
+
+**R4′ (must_fix 4, optional). Symmetric P1′ at CoR-M — registered as a recommended, non-blocking
+follow-up; NOT executed by this node.**
+The panel is right that a mirror-venue P1′ (one (0,1)-smeared node at CoR-M, mirroring the
+already-registered CoR-P P1′ in `PA-HIER-31(b)`, ≈0.33 CPU-h / ≈20 min wall) would convert R2′
+from a documentation gap into a measured, disclosed quantity for both venues symmetrically —
+exactly how F-A was already handled for CoR-P. **Registered as the designated resolving
+measurement for R2′**, promoted from purely-hypothetical to recommended-before-any-CoR-M-verdict,
+mirroring the upgrade `REVISION NOTE 1` already applied to the CoR-P P1′ ("Option (ii)").
+**Not executed by this node**, for two stated reasons: (i) this node's charter scope is the
+`PA-HIER-31` **registration text** (gap-list item 3), not execution of new measurements —
+`hier_s0_driver.py` is explicitly owned by another agent and this node is barred from editing it,
+and driving a new run through its existing CLI is an execution action, not a text-registration
+one; (ii) the panel's own ≈20-minute wall-clock estimate exceeds this workflow's per-command
+foreground timeout (≤ 600 s) and this workflow may not run anything in the background or park
+waiting on it, so it cannot be executed as a single compliant foreground command from this node.
+**Recommended action, handed to whichever node executes P0/S0-B next:** run the mirror-venue P1′
+before banking any CoR-M verdict that leans on "the instrument is certified" language, and record
+its `alpha_G_phi`/`combined_no_bh` shift alongside F-A's CoR-P figures in the same table (item
+(b)'s F-A table), so R2′ converts from an open contradiction into a disclosed, measured quantity
+for both venues.
+
+**Findings not requiring action (independently re-checked, no dispute).** The remaining items in
+the panel's finding list — R2/R5's citation fixes (`compute_scores()` at `hier_s0_driver.py:394-449`;
+the "105/105 moved" cite belonging to §6, not §0, of the wave-2 check), GATE D3(a)'s code-vs-prose
+reconciliation (the raise-guard at `bayesian_statistics.py:2799-2806`, moot for the registered
+`theta_sites="2.2"` configuration), the A15 SEM/detectable-effect arithmetic, the F4 cost/archive
+figures (`COMPUTE_LEDGER.md` GAP-6 closure table, archive-scheduled=yes), the A22 placeholder
+handling, the authorization-stamp format, the append-only-diff check, and the code citations
+against `bayesian_statistics.py`/`correspondence_1d.py` at `dd63fe0c` — all independently
+re-verify accurate on this pass and require no further correction here. In particular, the
+panel's own assessment that R1's *governance* handling was sound (disclosing the confound
+quantitatively, distinguishing an orchestrator execution-path call from a fresh scientific
+`[RULE]`, returning the unsettled question to the author rather than resolving it unilaterally)
+is unaffected by R1′/R2′ above: what was wrong was the **scope** of what got returned to the
+author (CoR-P only, when CoR-M needed its own return too), not the returning-to-the-author
+mechanism itself — R2′ now applies that same mechanism symmetrically to CoR-M.
+
+*Authorization: launched under rows #222/#223 — charter node B1.2. Append-only; nothing above
+this divider (including `PA-HIER-31` and `REVISION NOTE 1`) is edited. No git operations; no
+source edits; `hier_s0_driver.py` and `kwq1_score.py` untouched (owned by another agent, and not
+run by this node either, per R4′); `bayesian_statistics.py` untouched (physics-trigger file, out
+of scope). Two items returned to the author: R2′ (a second, CoR-M-scoped fresh `[RULE]`,
+additional to `REVISION NOTE 1`'s CoR-P-scoped item) and, by extension, R4′'s recommended-but-
+unexecuted measurement (handed to the next executing node, not gated on author action);
+execution of P0/S0-B is not blocked by either. Worker: sonnet-tier subagent, wave-2 GAP-CLOSURE
+workflow, 2026-08-29.*

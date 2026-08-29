@@ -263,3 +263,87 @@ total shrank, not because the predicted term grew. The historical −0.635/−0.
 are STALE (item 4, 6–7σ) and should be superseded by −0.4668/−0.3938 in any future citation of
 "the dark-class score." This does not adjudicate the separate internal-misnormalization/
 completion-leg-defect thread (rows #140–#159), which remains open on its own evidence.
+
+---
+
+## Refuter must-fix corrections (appended, 2026-08-29)
+
+Launched under rows #222/#223 — charter node: wave-2 PREP Notes worker. Append-only correction of
+three items flagged by the wave-1 synthesis chair (`SYNTHESIS_DOCKET_1_20260829.md` §1, row B3.1,
+"minor" refuter state). Nothing above this section is altered.
+
+1. **"All 5 bins" row mislabelled**: the figure previously quoted as "all 5 bins" (114.3%/129.9%)
+   is in fact the **all-dark-event** coverage figure (n = 606/493), which silently includes 1/2
+   events falling below the bottom bin edge (`n_underflow_below_bottom_edge`). The genuine
+   five-bin, n-weighted coverage (summed over bins 1–5 only, excluding the underflow events) is
+   **113.1% (iiib) / 125.9% (joint_r1)**, n = 605/491. {source:
+   `b3_pop_prediction.json:venues.{iiib,joint_r1}.{dark_ensemble, bins, n_underflow_below_bottom_edge}`;
+   recomputed 2026-08-29}
+2. **Cross-check magnitude**: the record's cross-check between the bins-2-5-only figure and the
+   all-event figure was previously described as "within 4%". The correct deltas are **3.9%
+   (iiib: 98.5% → 114.3% all-event, less the underflow effect) / 7.8% (joint_r1)** — joint_r1's
+   gap is roughly double iiib's, not "within 4%" uniformly across venues. {source: same JSON;
+   recomputed 2026-08-29}
+3. **CRB md5 source**: the CRB event-set md5 (`9a1f2a14384a9281c97ca3be312ddaab`) was previously
+   attributed to `run_metadata_21.json`, which carries no md5 field. The correct source is
+   `MEASUREMENT_HEAD_READOUT_20260827.md:42-43`. {source:
+   `results/campaign51_20260728/realistic_20260729/MEASUREMENT_HEAD_READOUT_20260827.md:42-43`;
+   verified 2026-08-29}
+
+---
+
+## SUPERSEDING NOTE — interpretation withdrawn (orchestrator decision 2026-08-29, charter node B3)
+
+**Launched under rows #222/#223 — charter node B3.** Append-only; nothing above this note is
+altered. This note withdraws the *interpretation* of §3 below — every measured number in §§1–6
+above (the per-bin ratios, the coverage percentages, the refuter's corrected 113.1%/125.9%
+five-bin figures) stands as measured and is not touched.
+
+**Sentence being superseded (§3, verbatim):**
+
+> The population-mismatch mechanism is not merely a contributing term at the current HEAD — on
+> the informative (z ≥ 0.39) bins it accounts for essentially the *entire* measured dark-class
+> tilt on both venues, independently re-derived from first principles rather than copied from
+> the memo.
+
+(Also §3's rule-fired line, verbatim: "**Rule fired: "3.2 warranted."**")
+
+**Provenance finding that supersedes it** (§F of
+`results/campaign51_20260728/realistic_20260729/fanout1_20260829/PHYSICS_CHANGE_POPULATION_PRIOR_M1_20260829.md`,
+charter node B3.2, 2026-08-29): production's dark hosts are drawn, at the generating commit, from
+`(1−f(z))·dVc/dz/(1+z)` — the estimator's own completion-leg prior — **byte-identical**, not from
+the Barausse M1 emcee z-marginal (`Model1CrossCheck.emri_distribution`) this record's §1 and row
+#138's memo both took as `w_true`. The quantity this record calls "the M1-vs-comoving mismatch"
+is, on the actual generator, **zero by construction**: the "predicted term" measured above is the
+estimator's algebraic response to a prior swap the data never needed, not evidence of a mismatch
+present in the data. Concretely, the M1-(ii) density this record's §1 built `w_true` from
+(`cosmological_model.py:249-290`, the emcee `(log10 M, z)` sampler) is **the p_det survival pool's
+sampling law** (stratum 'a', `main.py:injection_campaign`), not the production event set's law —
+those are two different objects in this codebase, both historically called "M1".
+
+**Three reproducible reads (§F items 1–3 of the physics-change presentation, each reproducible in
+under a minute, cited verbatim there):**
+
+1. `git show 03cfe80:master_thesis_code/main.py` — `draw_mixture_hosts` (`:439`, `:517`),
+   `in_catalog = host_galaxy.catalog_index != -1` (`:772`), `sample_emri_events` called **only**
+   from `injection_campaign` (`:1071`) — never from the `data_simulation`/`--simulation_steps`
+   path that generated the CRB set of record.
+2. `git show 03cfe80:master_thesis_code/dark_siren_injection.py:328` —
+   `density = (1.0 - f_z) * _redshift_population_weight(z_grid, h)`, the exact dark-host draw law,
+   with `_redshift_population_weight` = `dVc/dz/(1+z)` (`:177-194`).
+3. `results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv`,
+   md5 `9a1f2a14384a9281c97ca3be312ddaab` (the CRB set this record's §6 z-bins and §1 measured
+   scores are built from): **1514 dark rows** (`in_catalog = False`, `host_galaxy_index = −1`)
+   and **76 in-catalogue rows**, out of 1590.
+
+**This record's 98.5%/103.9% coverage (§3 table) is re-read as the estimator's algebraic
+response** to the prior swap (physics-change §6.0: `Δscore_i = ΔN(z_i) + Δ_D` holds "whatever
+law the data were drawn from" — it is not a statement that a mismatch exists, only that the
+first-order formula correctly predicts the estimator's own sensitivity to swapping its prior).
+Every measured number in this record (§§2–6) is kept exactly as measured; only the causal
+reading in §3 and §7 ("accounts for essentially the entire measured dark-class tilt", "re-confirmed
+as … the dominant explanation") is withdrawn.
+
+**Branch verdict of record: B3 CLOSED — PREMISE-REFUTED (provenance, zero compute).**
+
+REPORTED.

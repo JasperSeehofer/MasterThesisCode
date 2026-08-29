@@ -35,6 +35,43 @@ the Phase-2 production campaign.
 - Row #9 is the only open estimator-side item: fix analogously to #2 or carry as a stated 2-D
   channel caveat. Decision before the campaign.
 
+## Appended note, 2026-08-29 (orchestrator decision, charter node B3; append-only, row 16 not edited)
+
+**Launched under rows #222/#223 — charter node B3.** Docs-only; row 16 above is left unedited
+(append-only). This note sharpens row 16's content per
+`results/campaign51_20260728/realistic_20260729/fanout1_20260829/PHYSICS_CHANGE_POPULATION_PRIOR_M1_20260829.md`
+§12 ("Paper-facing caveat (G7 row 16)"), which is itself downstream of §F's finding that the
+mock's production generator and its estimator already share one population law — row 16's
+"MEASURED, calibration-affecting" grade (re-graded 2026-08-22, ledger row #159 D4, citing row
+#138) described a mismatch that §F shows does not exist **in the mock**; the quantified
+sensitivity below is a **real-data-facing systematic**, not a mock-calibration defect.
+
+**Quantified population-shape sensitivity (§12, lines 622–624, quoted verbatim):**
+
+> a shape change of the size between the two M1 implementations in this repository (r(z) from
+> 0.53 to 1.39 over z ∈ [0.17, 1.5]; ×0.65 across the band z = 0.39 → 0.9) moves the dark-class
+> per-event score at truth by **−0.60** (bins 2–5), a summed slope of ≈ **−290 nats per unit h**
+> over 484 events — comparable to the whole measured production tilt and sufficient to rail a
+> completion-dominated posterior (row #137: the pure completion class rails at 0.60 from a −0.635
+> score).
+
+Source: `PHYSICS_CHANGE_POPULATION_PRIOR_M1_20260829.md:622-624` (§12), 2026-08-29. The r(z)
+values themselves (crossover z ≈ 0.17, r(0.392)/r(0.9) = 0.653) are §14-provenanced to
+`scratchpad/b32_T_table.json` via `b3_1_pop_measure.{w_true_of_z,w_model_of_z}`, 2026-08-29
+(`PHYSICS_CHANGE_POPULATION_PRIOR_M1_20260829.md:666-684`, §14 table).
+
+**Reading for the paper (§12, continued):** for the **mock**, the population prior is exactly the
+generator's law — the mock carries **no** population-shape systematic of the row-#138 kind
+(self-consistent closure on this axis). For **real data** the EMRI population redshift shape is
+unknown; the sensitivity above quantifies how large an unresolved model-scope uncertainty this is
+— O(1) relative to the whole production tilt in the completion-dominated regime — and the paper's
+honest treatment is fork (b) of `docs/derivations/population_mismatch_dark_score.md` §6
+(hierarchical marginalisation over rate-evolution parameters), not a bias-removal fix.
+
+**Branch verdict of record: B3 CLOSED — PREMISE-REFUTED (provenance, zero compute)** — row 16's
+re-grade to MEASURED stands for the real-data systematic quantified above, but no longer for a
+mock-calibration defect (none exists, §F).
+
 ## Numbers behind row #6 (fixed-Ω_m mis-specification, h_true = 0.73)
 
 | z | assume 0.2726, true 0.3153 | assume 0.25, true 0.3153 (pre-G11) |

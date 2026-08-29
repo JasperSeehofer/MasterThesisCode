@@ -221,6 +221,24 @@ be built or read as a starvation claim (register §13, OVERTURNED).
 | **L8** | B6.1 → B1.2, B4.2 | the s-placement commit precedes any s ≠ 1 node that banks (A22 stamp); numerically inert today. | charter B6 row |
 | **L9** | B5.1 ↔ B8.1 | **inconsistent descriptions of `BH_MASS_ERROR`'s content** (B5 §7: the 0.55-dex R&V15 σ_int is "the DOMINANT term in BH_MASS_ERROR"; B8 §0: σ_M = 0.19 is "the code's current fit-only estimate, a known 3–7× under-estimate") — one of these is stale (commit `555f018` added the scatter). Does not change either verdict (B8's headline holds at every σ_M); must be reconciled in B5.2's registration and by the verifier. | rule 3 |
 
+**L2 re-pin (appended note, 2026-08-29 — wave-2 GAP-CLOSURE archive/notes worker, launched under
+rows #222/#223 — charter node: NODE archive+minor-notes, GAP 10).** L2's driver sha1
+`5313c3198f84e3b7e90840d63356851a46677adb` above is STALE (append-only: the table row is left as
+written). The driver's blob will be re-pinned to whatever it is inside the wave-2 commit once that
+commit exists: **sha1sum at launch: `<fill>`**. As read now, before any wave-2 commit — today's
+`sha1sum` of `hier_s0_driver.py`:
+
+```
+9f831b9f7d6b8fed820d547bbe8cd64ff00873e3  results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py
+```
+
+{command run: `sha1sum results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py`, 2026-08-29}
+
+This value may change before the wave-2 commit lands (this file is owned by another agent per the
+task's standing rules and this node made no edits to it) — the "sha1sum at launch" line above is
+the one that must actually gate any A22 stamp citing L2; today's read is informational only.
+{source: `WAVE2_REGISTRATION_CHECK_20260829.md` §1.2 line 127, §5 item 10; 2026-08-29}
+
 ---
 
 ## 4. Wave-2 batch proposal (F4: CPU-h per arm, argued size, total, archive, deadline, registrations first)
@@ -410,3 +428,67 @@ Every gate presentation, verdict and path choice, in this order:
 
 *Chair: inherit-tier subagent, scoped package, 2026-08-29 evening. Nothing in this docket is an approval
 request; all path choices are the orchestrator's; all gates and choices go to the end-of-fan-out verifier.*
+
+---
+
+## L-lines re-cut (orchestrator decision 2026-08-29)
+
+**Launched under rows #222/#223 — charter node B3.** Append-only; nothing above this note is
+altered (standing rule 1). B3 is CLOSED as PREMISE-REFUTED (provenance, zero compute;
+`B3_1_POP_RECORD.md` superseding note, `PHYSICS_CHANGE_POPULATION_PRIOR_M1_20260829.md` §F/§13).
+This closes `WAVE2_REGISTRATION_CHECK_20260829.md` GAP 5 ("§1.3 C2 … L-lines … GAP … the docket
+lines must be re-cut by an appended note"). This note re-cuts §3's dependency table (L1, L4) and
+§4.3's cluster batch (C2) accordingly; §3's table rows above are left as-is.
+
+- **L1 = B1.2 only** (`from → to`: was "B1.2 ↔ B3.2"). B3.2 is struck — no `completion_population_prior`
+  instrument exists and none will be built (§F refutes the premise at zero compute; the C2 arm is
+  struck below). The shared instrument's *second registrant* on the S0-B truth node is no longer
+  B3's population-term prediction; it becomes **B4's impostor-class prediction via L2**
+  (`CLAIM_IMPOSTOR_DRAG_20260827.md` §1.3 / this docket §4.2 item 1's L2 profile prediction,
+  `PA-HIER-31` item 10, second bullet "B4 [IMP] (L2)"). B1.2's own F3 registration (θ-score
+  null/non-null by class) is unaffected.
+- **L4 struck as a dependency** (`from → to`: was "B4.1 → B3.2"). B4.1's C5 finding — the pure
+  completion leg alone is **+0.11 high** (`pure-all mean_h = 0.8396` vs 0.73, MAP at the 0.86
+  edge; `b4_imp_stage1_production_o2.json:iiib`) while the dark-class catalogue leg is necessary
+  for the 1D rail (0.6077 → 0.7134 dark-only) — stays **open** under B4/B1 alone; it no longer has
+  a B3.2 arm to register a competing prediction against. **Explicitly noted:** this +0.11-high
+  pure-completion finding is now **WITHOUT a competing population explanation** — §F shows the
+  production dark-class prior is already the generator's own law, so a population-shape swap
+  cannot be invoked to move the pure-completion posterior toward 0.73 (and the physics-change
+  presentation's own §6.2 sign argument shows a generator-consistent M1 swap would in any case
+  move that posterior further UP, away from 0.73, not toward it — contradicting the docket's own
+  §2 B3 condition (c) as originally written). The +0.11 residual is carried forward as an open
+  object of the B4/B1 completion-leg thread (rows #140–#144's internal-misnormalization /
+  completion-leg-defect line), not attributed to population mismatch.
+- **C2 struck from §4.3**, per `WAVE2_REGISTRATION_CHECK_20260829.md` §0 item 3 / §4 row 3
+  ("DEVIATE: strike C2; accept the STOP") and `COMPUTE_LEDGER.md`'s wave-2 cost-refinement row
+  (C2 → STRUCK, 0 CPU-h). **New wave-2 cluster total per the chair's own re-derivation**
+  (`WAVE2_REGISTRATION_CHECK_20260829.md` §3 item 7): **C0 + C1 + C3 + C4 = 13 tasks,
+  179–357 CPU-h** (C0 15–23 + C1 60–92 unsmeared-form + C3 44–137 + C4 60–105), superseding this
+  docket's own §4.3 table total of 16 tasks / 224–447 CPU-h at the cell level only (that table's
+  rows are left unedited, append-only); **+120–173 CPU-h conditional** on the shared baseline gate
+  task C0 FAILing (C3 and C4 would each then re-run their own 4-node baseline).
+
+- **§0(c) / §6 item 2(a) corrected by appended note** (`WAVE2_REGISTRATION_CHECK_20260829.md` §5
+  item 9, `B1_1_HIER_RECORD.md`'s own appended-note section). This docket's chair re-derivation
+  §0(c) ("direct source reads of `bayesian_statistics.py:3587`... `:5187-5191` (no-BH denominator
+  ternary)...") and §6 item 2(a) ("under `catalogue_global_selection='phi'`... θ's site-2.3 effect
+  is discarded for the no-BH channel; every no-BH θ-read certifies sites 2.1/2.2 only") together
+  with B1.1 record "finding 4" are **REFUTED-IN-PART** by the registration-check chair's F-A
+  finding: site 2.3 is inert for `L_cat_no_bh` (confirmed — §0(c)/item 2(a) stand for that
+  quantity) but **NOT** inert for `combined_no_bh` (max_rel 7.45e-3 via `alpha_G_phi`/`D_tilde_phi`
+  under `"all"`+smeared vs `"2.2"`+unsmeared, mechanism: Σ^4D → r_Malm → α_G^φ → D̃^φ,
+  `bayesian_statistics.py:2440-2500,4160-4171,5770`). `combined_no_bh` — not `L_cat_no_bh` — is the
+  quantity both the P1 equivalence gate and the driver's score consume, so the practical
+  consequence (site 2.3 is NOT fully inert for the no-BH read used downstream) reverses the
+  headline claim even though the narrower `L_cat_no_bh` sub-claim survives. The GATE-PARITY
+  "batch-order" hypothesis for the 5.718e-4 driver-vs-banked-CSV residual is separately
+  **REFUTED** (F-B: 9-vs-106-event truth nodes are bit-identical on all 17 columns; a code/config
+  delta or process/thread-count effect remains the live hypothesis). See `B1_1_HIER_RECORD.md`'s
+  "Chair findings appended, verbatim" section for the full F-A/F-B text.
+  {source: `WAVE2_REGISTRATION_CHECK_20260829.md` §0, §5 item 9; verified 2026-08-29}
+
+Stamped: launched under rows #222/#223 — charter node NODE archive+minor-notes (GAP 9),
+appended-only, 2026-08-29.
+
+REPORTED.

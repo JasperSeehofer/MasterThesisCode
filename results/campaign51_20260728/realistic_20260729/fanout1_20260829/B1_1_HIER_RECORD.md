@@ -349,3 +349,103 @@ See `COMPUTE_LEDGER.md` row B1.1 (Measured CPU-h column) -- filled in with the r
 this session consumed (setup + truth + b_plus [+ b_minus, S0-C if completed by report time]),
 converted to CPU-h at the actual core count each process held (14 for S0-A, 12 for S0-C),
 NOT at the registered anchor's 16-cpu assumption.
+
+---
+
+## Refuter must-fix corrections (appended, 2026-08-29)
+
+Launched under rows #222/#223 — charter node: wave-2 PREP Notes worker. Append-only correction of
+four items flagged by the wave-1 synthesis chair (`SYNTHESIS_DOCKET_1_20260829.md` §1, row B1.1,
+"minor" refuter state). Nothing above this section is altered.
+
+1. **Pool-scaling lines**: the worker-count derivation this record cites was written against the
+   wave-1 (pre-B5.1/B6.1) line numbers `4490-4495`. Re-verified against the CURRENT file
+   (post `0b308828`/`1f003da6`/`901653a1`): `available_cpus = len(os.sched_getaffinity(0))` /
+   `os.cpu_count()` fallback / `num_workers = max(1, available_cpus - 2)` now sit at
+   `bayesian_statistics.py:4533-4536`, and the `_ctx.Pool(...)` call at `:4562` (was implicitly
+   part of the same 4490-4495 span). Wave-1 numbers 4490-4495 and current numbers 4533-4536/4562
+   both cited here so either vintage of the docket resolves. {source:
+   `darksiren_emri/bayesian_inference/bayesian_statistics.py:4533-4536,4562`; verified 2026-08-29}
+2. **The ternary**: re-verified against the current file at `bayesian_statistics.py:5187-5191`
+   (`global_denom_no_bh` — `phi`-branch selects `self._global_cat_selection_phi.get(self.h, 0.0)`,
+   else `self._global_cat_denom_no_bh.get(self.h, 0.0)`). Line numbers unchanged from the docket's
+   citation; confirmed unaffected by the wave-1 θ-hook/window commits. {source: same file, same
+   lines; verified 2026-08-29}
+3. **ln-transform of `combined_*`, previously unstated**: the score this node reads
+   (`hier_s0_driver.py:242-245`, `ln_L_no_bh`/`ln_L_with_bh`) applies `np.log` (natural log, not
+   log10) elementwise to the `combined_no_bh`/`combined_with_bh` diagnostic columns, guarded
+   `np.where(vals > 0.0, np.log(vals), np.nan)`. This is the same transform
+   `bayesian_statistics.py:5834-5838` uses internally for its own `num_log_term_*` diagnostics
+   (`math.log(combined_*_mass * _den_used)`), so the driver's score is on the same log base as the
+   production log-likelihood terms it is meant to track. {source:
+   `results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py:242-245`;
+   `darksiren_emri/bayesian_inference/bayesian_statistics.py:5834-5838`; verified 2026-08-29}
+4. **REPORTED-ONLY cap attribution**: §6 above states the cap as "PA-HIER-28 item 9 = AFFORDABLE;
+   C3 absent" — the correct attribution per the chair's docket is that the cap is **PA-HIER-28
+   item 9** on its own; "C3 absent" is this record's own gloss, not part of the cited item's text,
+   and should not be read as a second, independent citation. {source: docket
+   `SYNTHESIS_DOCKET_1_20260829.md` §1 row B1.1 refuter-state column; verified 2026-08-29}
+
+---
+
+## Chair findings appended, verbatim (2026-08-29 — wave-2 GAP-CLOSURE archive/notes worker,
+launched under rows #222/#223 — charter node: NODE archive+minor-notes, GAP 9)
+
+Closes `WAVE2_REGISTRATION_CHECK_20260829.md` §5 item 9. Append-only; nothing above this section
+is altered. Quoted verbatim from `WAVE2_REGISTRATION_CHECK_20260829.md` §0:
+
+> **F-A — The docket's P1 premise is REFUTED-IN-PART.** Docket §2 B1 P1 predicted that
+> `theta_sites="2.2"` unsmeared and `theta_sites="all"` smeared give **bit-identical
+> `combined_no_bh`** ("site 2.3 inert for the no-BH channel under `phi`", B1.1 record finding 4,
+> chair-confirmed in docket §0(c)). Zero-compute read on seed 900101, the 9 events shared by the
+> P1 smoke node (`hier_s0_work/b1_2_smoke/p1_2p2_off/s0a_seed900101/node_b_plus_sites2.2_nosmear/…/event_likelihoods.csv`,
+> event_cap=12, `theta_sites="2.2"`, `smear off`) and the registered b_plus node
+> (`hier_s0_registered_run/s0a_seed900101/node_b_plus/…/event_likelihoods.csv`, `"all"`, smeared),
+> both at b = +0.02, h = 0.73 {2026-08-29}:
+>
+> | column | 2.2/unsmeared vs all/smeared (9 shared events) | verdict |
+> |---|---|---|
+> | `L_cat_no_bh` | **bit-identical** (max_rel 0.0) | P1 CONFIRMED for the catalogue kernel: sites 2.1/2.3 add nothing to `L_cat` |
+> | `B_num`, `B_num_wbh`, `L_comp`, `g_frac`, `w_G_legacy` | bit-identical | — |
+> | `alpha_G_phi` | 5.8688310e7 vs **5.1635200e7 (−12.0 %)** | NOT inert |
+> | `D_tilde_phi` | 9.470921e8 vs **9.40039e8 (−0.745 %)** | NOT inert |
+> | `w_G` = `w_tilde_G` | 0.06196684 vs 0.05492879 | NOT inert |
+> | `combined_no_bh` | max_rel **7.45e-3** | P1 REFUTED for the combined no-BH likelihood |
+>
+> Mechanism (source read): the ternary at `bayesian_statistics.py:5187-5191` does pick the
+> θ-inert `_global_cat_selection_phi` for `global_denom_no_bh`, **but** the path-(A) assembly
+> `path_a_mixture_objects` (`:2440-2500`; `alpha_G_phi = Σ^4D / n̂_w^φ`, `D̃^φ = α_G^φ + β_Ḡ^φ`,
+> `:2489`) takes `sigma_4d = _global_cat_denom_with_bh[h]` (`:4160-4171` under
+> `theta_b=_theta_b_23`, `smear_sigma_z=smear_global_selection`), and the no-BH per-event
+> likelihood is `(β_G^φ·L_cat + B_num^φ)/D̃^φ` (`:5770`). So under `"all"`+smeared, site 2.3 reaches
+> the no-BH channel through Σ^4D → r_Malm → α_G^φ → D̃^φ. Whether the −12 % is θ_b at site 2.3 or
+> the smear switch itself is **UNDETERMINED** from the banked nodes (no (0,1)-smeared node exists);
+> either way it is absent from CoR-P (`smear_global_selection=False`,
+> `headreadout_20260827/iiib/run_metadata_21.json:cli_args`). Consequence for the registered S0-A
+> b_plus node (106 events): the mean per-event Δln`combined_no_bh` = −0.1118, of which
+> −ln(D̃ ratio) = +0.0075 is a **constant global offset** (every C-C event moves by exactly
+> ×1.00750, measured on the one L_cat = 0 event) and −0.1193 is the kernel part; a C-C class
+> scored under `"all"`+smeared would return a non-zero constant score (+0.374 per unit b) with
+> zero per-event scatter — an infinite Z manufactured by the global table, not a lever.
+> **PA-HIER-31 must register the CoR-P-faithful form (`theta_sites="2.2"`,
+> `smear_global_selection=False`) for S0-B and for the S0-A remainder**, and the already-run
+> smeared b_plus node is REPORTED-ONLY / non-CoR-P.
+>
+> **F-B — The GATE PARITY "batch-order" hypothesis is REFUTED.** The 9-event P1 smoke truth node
+> and the 106-event registered truth node are **bit-identical on all 17 numeric columns** over the
+> 9 shared events (`node_truth_sites2.2_nosmear` vs `hier_s0_registered_run/…/node_truth`; also
+> identical to `default_regress/…/node_truth`, `"all"`/auto) {2026-08-29}. Summation order does not
+> depend on N here, so the 5.718e-4 residual of the driver vs the **banked** bc CSV
+> (`p3_b0_work/bc_900101_work`, B1.1 record §2.2) is not a batch-size effect; the live hypotheses
+> are a code/config delta between that CSV's commit and HEAD, or a process/thread-count effect in
+> the banked run (both smoke and registered nodes ran at a 14-core pin) — the docket P2(e)'s "one
+> re-run of the banked bc CSV at the current commit" remains the deciding read. Bearing on C0: a
+> same-N, same-commit reproduction gate CAN fail on a code delta, which is exactly what C0 is for
+> (A15 control-capable-of-failing: satisfied by this evidence).
+
+**Bearing on this record's own "finding 4"**: finding 4 (site 2.3 inert for the no-BH channel
+under `"phi"`) and the docket's §0(c)/§6 item 2(a) restatement of it are **REFUTED-IN-PART** by
+F-A above — inert for `L_cat_no_bh` (confirmed), NOT inert for `combined_no_bh` (the quantity the
+P1 equivalence gate and the driver's score actually consume). This does not retract finding 4's
+`L_cat_no_bh` claim; it narrows its scope. {source: `WAVE2_REGISTRATION_CHECK_20260829.md` §0,
+§5 item 9; verified 2026-08-29}

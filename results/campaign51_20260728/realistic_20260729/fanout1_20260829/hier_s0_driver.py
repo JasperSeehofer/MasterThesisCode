@@ -100,6 +100,43 @@ BC_EVENT_MEASURE = "ratio"  # c1d.ARM_EVENT_MEASURE.get("b0i", "ratio")
 # c1d.ARM_SEEDS["b0i"], p3_b0_identity_test.py BSEL_SEEDS).
 DEFAULT_BC_SEEDS: tuple[int, ...] = (900101, 900102, 900103, 900104)
 
+# FT venue flags (B4.2 KW-Q1, SYNTHESIS_DOCKET_1_20260829.md sec 2 B4;
+# CLAIM_IMPOSTOR_DRAG_20260829.md sec 1.3), copied EXACTLY from
+# p3_twin_test.py's ``_run_bsel_seed(seed, "phi", ..., completion_cell=
+# "fused")`` (fusedarm stage, ``--survival phi --completion-cell fused --tag
+# ft``, p3_twin_test.py:186-224): ``sigma_z_scale, area_scale =
+# c1d.ARM_SPECS["bsel"]`` (both 1.0), ``host_mode="population_selected"``
+# (c1d.ARM_HOST_MODE["bsel"]), ``completeness_obj, phi_survival_table =
+# c1d.build_bsel_selection_objects()`` (no ``h_true`` kwarg -- default is
+# c1d.H_TRUE, identical to H_GEN), ``catalogue_numerator_survival="phi"``,
+# ``selection_in_completion_numerator="fused"``,
+# ``completion_event_measure="ratio"`` (c1d.ARM_EVENT_MEASURE["bsel"]).
+# Unlike build_bc_venue, ``_run_bsel_seed`` never calls
+# ``c1d._verify_rate_weight_parity()`` -- disclosed, not added (this driver
+# copies the arm EXACTLY, including that omission). ``catalogue_global_
+# selection`` is likewise never passed by ``_run_bsel_seed`` -- left at
+# run_mirror_seed_inprocess's own "auto" default, which resolves to "phi"
+# under normalization_mode="absolute_marginal" (production default),
+# functionally identical to BC_CATALOGUE_GLOBAL_SELECTION="phi" but kept
+# implicit here to match the copied call site literally.
+FT_CATALOGUE_NUMERATOR_SURVIVAL = "phi"
+FT_COMPLETION_CELL = "fused"
+FT_EVENT_MEASURE = "ratio"  # c1d.ARM_EVENT_MEASURE["bsel"]
+FT_SIGMA_Z_SCALE: float = 1.0  # c1d.ARM_SPECS["bsel"][0]
+FT_AREA_SCALE: float = 1.0  # c1d.ARM_SPECS["bsel"][1]
+
+# --config choices (b0i = pre-existing hardcoded bc venue, unchanged default;
+# ft = KW-Q1's B-SEL/phi/fused venue, new).
+CONFIG_CHOICES: tuple[str, ...] = ("b0i", "ft")
+# --theta-sites choices: exactly evaluate()'s own validated set
+# (bayesian_statistics.py's theta_sites guard, "all"/"2.1"/"2.2"/"2.3" only --
+# no other string is accepted by the estimator).
+THETA_SITES_CHOICES: tuple[str, ...] = ("all", "2.1", "2.2", "2.3")
+# --smear choices: "auto" reproduces this driver's ORIGINAL, pre-P1 dispatch
+# (smear_global_selection = theta_engaged, unconditionally on theta_sites) --
+# see run_theta_node's docstring for the byte-identical-by-default argument.
+SMEAR_CHOICES: tuple[str, ...] = ("auto", "on", "off")
+
 # The registered 5-node theta-cross (prereg §2.1 S0-A row / §4.1):
 # {(0,1), (+-0.02, 1), (0, 1/sqrt(2)), (0, sqrt(2))} at h = 0.73 only.
 THETA_NODES: dict[str, tuple[float, float]] = {
@@ -181,6 +218,104 @@ def build_bc_venue(
     return events, handler
 
 
+def build_ft_venue(work_root: Path, seed: int, sigma_z_scale: float = 1.0) -> tuple[pd.DataFrame, Any]:
+    """Build one FT-venue (bsel/phi/fused) mirror realization -- KW-Q1 (B4.2).
+
+    Kwargs copied EXACTLY from ``p3_twin_test.py``'s ``_run_bsel_seed(seed,
+    "phi", ..., completion_cell="fused")`` (fusedarm stage, as of this
+    driver's authoring, 2026-08-29; ``p3_twin_test.py:186-201``):
+    ``sigma_z_scale, area_scale = c1d.ARM_SPECS["bsel"]`` (both 1.0),
+    ``cfg = c1d.CorrespondenceConfig(sigma_z_scale=sigma_z_scale,
+    area_scale=area_scale)``, ``completeness_obj, phi_survival_table =
+    c1d.build_bsel_selection_objects()`` (no ``h_true`` kwarg -- default is
+    ``c1d.H_TRUE``, identical to :data:`H_GEN`), ``host_mode=
+    "population_selected"``. Unlike :func:`build_bc_venue`, this arm does
+    NOT call ``c1d._verify_rate_weight_parity()`` -- disclosed, not added
+    (this function copies the arm EXACTLY, including that omission).
+
+    ``sigma_z_scale`` is accepted for signature parity with
+    :func:`build_bc_venue` (both are threaded through ``_build_venue``
+    below) but the FT/bsel arm's own ``ARM_SPECS`` pins it to 1.0 -- KW-Q1
+    never doses this axis (S0-R's ``sigma_z_scale=1.5`` fork has no
+    FT-config analogue). A caller passing anything else is a build error,
+    raised here rather than silently ignored.
+
+    Returns:
+        ``(events, handler)`` -- as :func:`build_bc_venue`.
+    """
+    if sigma_z_scale != FT_SIGMA_Z_SCALE:
+        raise ValueError(
+            f"build_ft_venue: sigma_z_scale must be {FT_SIGMA_Z_SCALE!r} "
+            f"(c1d.ARM_SPECS['bsel'] pin), got {sigma_z_scale!r} -- the FT "
+            "config has no S0-R-style dosed analogue."
+        )
+    cfg = c1d.CorrespondenceConfig(sigma_z_scale=FT_SIGMA_Z_SCALE, area_scale=FT_AREA_SCALE)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    host_pool, _observed_path, handler = gen.host_pool_for_sigma_scale(
+        work_root / "catalogue", seed, sigma_z_scale=FT_SIGMA_Z_SCALE
+    )
+    completeness_obj, phi_survival_table = c1d.build_bsel_selection_objects()
+    events = gen.draw_realization(
+        seed,
+        host_pool=host_pool,
+        host_mode="population_selected",
+        completeness=completeness_obj,
+        phi_survival_table=phi_survival_table,
+    )
+    return events, handler
+
+
+def _build_venue(config: str, work_root: Path, seed: int, sigma_z_scale: float) -> tuple[pd.DataFrame, Any]:
+    """Dispatch to :func:`build_bc_venue` (``config="b0i"``, unchanged default)
+    or :func:`build_ft_venue` (``config="ft"``, KW-Q1/B4.2, new)."""
+    if config == "b0i":
+        return build_bc_venue(work_root, seed, sigma_z_scale=sigma_z_scale)
+    if config == "ft":
+        return build_ft_venue(work_root, seed, sigma_z_scale=sigma_z_scale)
+    raise ValueError(f"config must be one of {CONFIG_CHOICES}, got {config!r}")
+
+
+def _resolve_smear(theta_engaged: bool, theta_sites: str, smear: str) -> bool:
+    """Resolve ``--smear {auto,on,off}`` to the actual ``smear_global_selection``
+    bool passed to ``evaluate()``.
+
+    ``"auto"`` reproduces this driver's ORIGINAL (pre-P1) dispatch exactly
+    when ``theta_sites == "all"`` (the only value the driver ever passed
+    before P1): ``smear = theta_engaged`` -- BYTE-IDENTICAL default
+    behaviour. For ``theta_sites in ("2.1", "2.2")`` (P1's whole point),
+    ``"auto"`` does NOT force smearing -- those sites never consume the
+    smeared table (P1's own source-read finding, SYNTHESIS_DOCKET_1_
+    20260829.md sec 2 B1 P1), so the unsmeared path is both sufficient and
+    ~18x cheaper. ``"on"``/``"off"`` force the flag regardless of engagement
+    or sites (the caller's responsibility to keep this consistent with
+    evaluate()'s own guard -- see the raise below).
+    """
+    if smear == "auto":
+        return theta_engaged and theta_sites in ("all", "2.3")
+    if smear == "on":
+        return True
+    if smear == "off":
+        return False
+    raise ValueError(f"smear must be one of {SMEAR_CHOICES}, got {smear!r}")
+
+
+def _node_dir_suffix(theta_sites: str, smear: str, config: str) -> str:
+    """Node output-directory suffix encoding the P1/KW-Q1 variant, so a
+    non-default run never overwrites another variant's (or the default's)
+    banked node outputs. Byte-identical default (``theta_sites="all"``,
+    ``smear="auto"``, ``config="b0i"``) -> empty suffix -> the ORIGINAL
+    ``node_<name>`` paths, unchanged.
+    """
+    parts: list[str] = []
+    if config != "b0i":
+        parts.append(config)
+    if theta_sites != "all":
+        parts.append(f"sites{theta_sites}")
+    if smear != "auto":
+        parts.append("smearon" if smear == "on" else "nosmear")
+    return ("_" + "_".join(parts)) if parts else ""
+
+
 def run_theta_node(
     work_root: Path,
     events: pd.DataFrame,
@@ -188,37 +323,82 @@ def run_theta_node(
     handler: Any,
     theta_b: float,
     theta_s: float,
+    h_values: tuple[float, ...] = (H_GEN,),
+    theta_sites: str = "all",
+    smear: str = "auto",
+    config: str = "b0i",
 ) -> tuple[Path, float]:
-    """Evaluate one theta node at h = H_GEN only (n_h = 1, prereg §2.1 S0-A/S0-R row).
+    """Evaluate one theta node (prereg §2.1 S0-A/S0-R row row; KW-Q1 reuses this
+    for the FT config at h_values=(0.725, 0.735)).
 
-    ``smear_global_selection`` is forced ``True`` iff theta is engaged
-    (``theta_b != 0`` or ``theta_s != 1``) -- theta_sites="all" includes
-    site 2.3, which REQUIRES smear_global_selection=True
-    (``bayesian_statistics.py`` evaluate()'s own guard). This keeps the
-    truth node (identity theta) on the byte-identical unsmeared path (GATE
-    PARITY) while off-truth nodes engage the registered site-2.3 kernel
-    (GATE ENG) -- an explicit driver-level decision, disclosed in
-    ``B1_1_HIER_BUILD_NOTE.md`` section "ambiguities resolved", extending
-    GATE D3(a)'s stated principle (force the branch on engagement, never
-    leave it to a separately-set flag) to this driver's own dispatch.
+    ``smear`` resolves via :func:`_resolve_smear` (see its docstring for the
+    byte-identical-by-default argument -- the ORIGINAL unconditional
+    ``smear_global_selection = theta_engaged`` dispatch is exactly
+    ``theta_sites="all", smear="auto"``, this function's defaults). This
+    keeps the truth node (identity theta) on the byte-identical unsmeared
+    path (GATE PARITY) while off-truth nodes at the default P1-untested
+    config engage the registered site-2.3 kernel (GATE ENG) -- an explicit
+    driver-level decision, disclosed in ``B1_1_HIER_BUILD_NOTE.md`` section
+    "ambiguities resolved", extending GATE D3(a)'s stated principle (force
+    the branch on engagement, never leave it to a separately-set flag) to
+    this driver's own dispatch.
+
+    ``config`` selects the venue's fixed flags (:data:`BC_*` for "b0i",
+    :data:`FT_*` for "ft", B4.2 KW-Q1) -- see :data:`CONFIG_CHOICES`.
     """
     theta_engaged = theta_b != 0.0 or theta_s != 1.0
-    diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
-        work_root,
-        events,
-        seed,
-        galaxy_catalog=handler,
-        h_values=(H_GEN,),
+    smear_flag = _resolve_smear(theta_engaged, theta_sites, smear)
+    if theta_engaged and theta_sites in ("all", "2.3") and not smear_flag:
+        # Mirrors evaluate()'s own guard (bayesian_statistics.py's theta_sites
+        # validation) -- raised HERE, before the (expensive) evaluate() call,
+        # with a driver-level message; --smear off + --theta-sites all/2.3 is
+        # also refused earlier, at CLI parse time in main() (clearer still,
+        # since it does not require a theta-engaged node to be selected to
+        # surface) -- this is the library-level backstop for any other
+        # caller (e.g. kwq1_score.py's GATE PARITY re-evaluation) that
+        # invokes run_theta_node directly.
+        raise ValueError(
+            f"theta engaged (b={theta_b}, s={theta_s}) with theta_sites={theta_sites!r} "
+            "requires smear_global_selection=True (evaluate()'s own guard) -- "
+            "pass theta_sites='2.1' or '2.2' together with --smear off"
+        )
+    common_kwargs: dict[str, Any] = dict(
+        h_values=h_values,
         h_bounds=H_BOUNDS,
-        selection_in_completion_numerator=BC_COMPLETION_CELL,
-        completion_event_measure=BC_EVENT_MEASURE,
-        catalogue_numerator_survival=BC_CATALOGUE_NUMERATOR_SURVIVAL,
-        catalogue_global_selection=BC_CATALOGUE_GLOBAL_SELECTION,
         theta_b=theta_b,
         theta_s=theta_s,
-        theta_sites="all",
-        smear_global_selection=theta_engaged,
+        theta_sites=theta_sites,
+        smear_global_selection=smear_flag,
     )
+    if config == "b0i":
+        diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
+            work_root,
+            events,
+            seed,
+            galaxy_catalog=handler,
+            selection_in_completion_numerator=BC_COMPLETION_CELL,
+            completion_event_measure=BC_EVENT_MEASURE,
+            catalogue_numerator_survival=BC_CATALOGUE_NUMERATOR_SURVIVAL,
+            catalogue_global_selection=BC_CATALOGUE_GLOBAL_SELECTION,
+            **common_kwargs,
+        )
+    elif config == "ft":
+        diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
+            work_root,
+            events,
+            seed,
+            galaxy_catalog=handler,
+            selection_in_completion_numerator=FT_COMPLETION_CELL,
+            completion_event_measure=FT_EVENT_MEASURE,
+            catalogue_numerator_survival=FT_CATALOGUE_NUMERATOR_SURVIVAL,
+            # catalogue_global_selection deliberately NOT passed -- "auto"
+            # resolves to "phi" under absolute_marginal, matching
+            # p3_twin_test.py's _run_bsel_seed call site exactly (see
+            # FT_CATALOGUE_NUMERATOR_SURVIVAL's docstring comment above).
+            **common_kwargs,
+        )
+    else:
+        raise ValueError(f"config must be one of {CONFIG_CHOICES}, got {config!r}")
     return diag_csv, elapsed
 
 
@@ -258,27 +438,68 @@ class NodeResult:
     ln_l: pd.DataFrame = field(repr=False)
 
 
+def _resolve_score_h(h_values: tuple[float, ...], score_h: float | None) -> float:
+    """Resolve the single h used for this driver's own internal per-event
+    readback/scoring (``read_event_ln_l``'s ``h`` argument -- distinct from
+    ``h_values``, the possibly-multi-h grid actually evaluated).
+
+    Byte-identical default: ``score_h=None`` with the default ``h_values=
+    (H_GEN,)`` resolves to ``H_GEN``, exactly the old hardcoded call. For a
+    KW-Q1-style multi-h run (``h_values=(0.725, 0.735)``, H_GEN absent),
+    ``score_h`` must be passed explicitly (this driver's own compute_scores/
+    gate_eng/gate_parity are not KW-Q1's statistic -- KW-Q1 is scored by
+    ``kwq1_score.py`` directly from the diagnostics CSVs, which read both h
+    rows itself); if omitted in that case, the first h_values entry is used
+    as an inert placeholder so run_arm_seed_s0a/s0r still produce a valid
+    (if not directly meaningful) NodeResult.ln_l rather than crashing.
+    """
+    if score_h is not None:
+        return score_h
+    if H_GEN in h_values:
+        return H_GEN
+    return h_values[0]
+
+
 def run_arm_seed_s0a(
     seed: int,
     out_root: Path,
     nodes: tuple[str, ...],
     event_cap: int | None,
+    theta_sites: str = "all",
+    smear: str = "auto",
+    config: str = "b0i",
+    h_values: tuple[float, ...] = (H_GEN,),
+    score_h: float | None = None,
 ) -> list[NodeResult]:
-    """S0-A: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.0 (truth-theta=(0,1))."""
+    """S0-A: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.0 (truth-theta=(0,1)).
+
+    ``theta_sites``/``smear``/``config``/``h_values``/``score_h`` default to
+    exactly the pre-P1/pre-KW-Q1 behaviour (BYTE-IDENTICAL: theta_sites=
+    "all", smear="auto" -> smear_global_selection=theta_engaged, config=
+    "b0i" -> the original bc venue/flags, h_values=(H_GEN,) -> the single
+    h=0.73 node, score_h=None -> H_GEN). Node output directories gain a
+    suffix (:func:`_node_dir_suffix`) that is EMPTY at these defaults, so
+    default-run paths are unchanged.
+    """
     work_root = out_root / f"s0a_seed{seed}"
     work_root.mkdir(parents=True, exist_ok=True)
-    events, handler = build_bc_venue(work_root, seed, sigma_z_scale=1.0)
+    events, handler = _build_venue(config, work_root, seed, sigma_z_scale=1.0)
     if event_cap is not None:
         events = events.head(event_cap).reset_index(drop=True)
+    suffix = _node_dir_suffix(theta_sites, smear, config)
+    read_h = _resolve_score_h(h_values, score_h)
     results: list[NodeResult] = []
     for node in nodes:
         theta_b, theta_s = THETA_NODES[node]
-        node_root = work_root / f"node_{node}"
+        node_root = work_root / f"node_{node}{suffix}"
         node_root.mkdir(parents=True, exist_ok=True)
         t0 = time.time()
-        diag_csv, elapsed = run_theta_node(node_root, events, seed, handler, theta_b, theta_s)
+        diag_csv, elapsed = run_theta_node(
+            node_root, events, seed, handler, theta_b, theta_s,
+            h_values=h_values, theta_sites=theta_sites, smear=smear, config=config,
+        )
         wall = time.time() - t0
-        ln_l = read_event_ln_l(diag_csv, H_GEN)
+        ln_l = read_event_ln_l(diag_csv, read_h)
         results.append(
             NodeResult(
                 node=node,
@@ -292,7 +513,8 @@ def run_arm_seed_s0a(
             )
         )
         print(
-            f"[S0-A seed={seed} node={node} theta=({theta_b},{theta_s})] "
+            f"[S0-A seed={seed} node={node} theta=({theta_b},{theta_s}) "
+            f"theta_sites={theta_sites} smear={smear} config={config}] "
             f"n_events={len(ln_l)} evaluate_s={elapsed:.2f} wall_s={wall:.2f} -> {diag_csv}",
             flush=True,
         )
@@ -304,22 +526,36 @@ def run_arm_seed_s0r(
     out_root: Path,
     nodes: tuple[str, ...],
     event_cap: int | None,
+    theta_sites: str = "all",
+    smear: str = "auto",
+    config: str = "b0i",
+    h_values: tuple[float, ...] = (H_GEN,),
+    score_h: float | None = None,
 ) -> list[NodeResult]:
-    """S0-R: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.5 (DISCLOSED NULL, see module docstring)."""
+    """S0-R: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.5 (DISCLOSED NULL, see module docstring).
+
+    Same byte-identical-default argument as :func:`run_arm_seed_s0a` (this
+    arm's own S0_R_SIGMA_SCALE dose is orthogonal to the P1/KW-Q1 axes).
+    """
     work_root = out_root / f"s0r_seed{seed}"
     work_root.mkdir(parents=True, exist_ok=True)
-    events, handler = build_bc_venue(work_root, seed, sigma_z_scale=S0_R_SIGMA_SCALE)
+    events, handler = _build_venue(config, work_root, seed, sigma_z_scale=S0_R_SIGMA_SCALE)
     if event_cap is not None:
         events = events.head(event_cap).reset_index(drop=True)
+    suffix = _node_dir_suffix(theta_sites, smear, config)
+    read_h = _resolve_score_h(h_values, score_h)
     results: list[NodeResult] = []
     for node in nodes:
         theta_b, theta_s = THETA_NODES[node]
-        node_root = work_root / f"node_{node}"
+        node_root = work_root / f"node_{node}{suffix}"
         node_root.mkdir(parents=True, exist_ok=True)
         t0 = time.time()
-        diag_csv, elapsed = run_theta_node(node_root, events, seed, handler, theta_b, theta_s)
+        diag_csv, elapsed = run_theta_node(
+            node_root, events, seed, handler, theta_b, theta_s,
+            h_values=h_values, theta_sites=theta_sites, smear=smear, config=config,
+        )
         wall = time.time() - t0
-        ln_l = read_event_ln_l(diag_csv, H_GEN)
+        ln_l = read_event_ln_l(diag_csv, read_h)
         results.append(
             NodeResult(
                 node=node,
@@ -333,7 +569,8 @@ def run_arm_seed_s0r(
             )
         )
         print(
-            f"[S0-R seed={seed} node={node} theta=({theta_b},{theta_s})] "
+            f"[S0-R seed={seed} node={node} theta=({theta_b},{theta_s}) "
+            f"theta_sites={theta_sites} smear={smear} config={config}] "
             f"n_events={len(ln_l)} evaluate_s={elapsed:.2f} wall_s={wall:.2f} -> {diag_csv}",
             flush=True,
         )
@@ -586,14 +823,22 @@ def verdict_s0r(scores: dict[str, Any], eng: dict[str, Any]) -> dict[str, Any]:
 # ── Multi-seed orchestration with a bounded process budget ─────────────────
 
 
-def _run_one_seed_worker(args: tuple[str, int, Path, tuple[str, ...], int | None, int]) -> Any:
+def _run_one_seed_worker(
+    args: tuple[str, int, Path, tuple[str, ...], int | None, int, str, str, str, tuple[float, ...], float | None],
+) -> Any:
     """Top-level (picklable) worker: pin this process's CPU affinity to a budget, then run one
     seed's cells for the given arm. Affinity pinning (not a num_workers kwarg -- that plumbing
     does not exist in run_mirror_seed_inprocess) is how this driver keeps
     ``BayesianStatistics.evaluate``'s own ``available_cpus - 2`` auto-sizing
     (bayesian_statistics.py:4490-4495) from oversubscribing when several seeds run concurrently.
+
+    Args tuple extended (P1/KW-Q1, byte-identical when the 5 new trailing
+    fields are theta_sites="all", smear="auto", config="b0i",
+    h_values=(H_GEN,), score_h=None) with ``theta_sites``, ``smear``,
+    ``config``, ``h_values``, ``score_h`` -- forwarded verbatim to
+    run_arm_seed_s0a/s0r (S0-C ignores them, per its own "stays as is" scope).
     """
-    arm, seed, out_root, nodes, event_cap, cpu_budget = args
+    arm, seed, out_root, nodes, event_cap, cpu_budget, theta_sites, smear, config, h_values, score_h = args
     try:
         all_cpus = sorted(os.sched_getaffinity(0))
         budget = max(1, min(cpu_budget, len(all_cpus)))
@@ -602,9 +847,15 @@ def _run_one_seed_worker(args: tuple[str, int, Path, tuple[str, ...], int | None
         pass  # affinity control unavailable (e.g. non-Linux); proceed unpinned, disclosed
     try:
         if arm == "S0-A":
-            results = run_arm_seed_s0a(seed, out_root, nodes, event_cap)
+            results = run_arm_seed_s0a(
+                seed, out_root, nodes, event_cap,
+                theta_sites=theta_sites, smear=smear, config=config, h_values=h_values, score_h=score_h,
+            )
         elif arm == "S0-R":
-            results = run_arm_seed_s0r(seed, out_root, nodes, event_cap)
+            results = run_arm_seed_s0r(
+                seed, out_root, nodes, event_cap,
+                theta_sites=theta_sites, smear=smear, config=config, h_values=h_values, score_h=score_h,
+            )
         elif arm == "S0-C":
             return {"seed": seed, "s0c": run_seed_s0c(seed, out_root, event_cap)}
         else:
@@ -654,11 +905,19 @@ def run_arm(
     total_cpu_budget: int,
     nodes: tuple[str, ...],
     event_cap: int | None,
+    theta_sites: str = "all",
+    smear: str = "auto",
+    config: str = "b0i",
+    h_values: tuple[float, ...] = (H_GEN,),
+    score_h: float | None = None,
 ) -> dict[str, Any]:
     out_root.mkdir(parents=True, exist_ok=True)
     jobs = max(1, min(jobs, len(seeds)))
     cpu_per_job = max(1, total_cpu_budget // jobs)
-    task_args = [(arm, seed, out_root, nodes, event_cap, cpu_per_job) for seed in seeds]
+    task_args = [
+        (arm, seed, out_root, nodes, event_cap, cpu_per_job, theta_sites, smear, config, h_values, score_h)
+        for seed in seeds
+    ]
 
     t0 = time.time()
     if jobs == 1:
@@ -681,6 +940,12 @@ def run_arm(
         "n_seeds_ok": len(ok),
         "n_seeds_error": len(errors),
         "errors": errors,
+        "theta_sites": theta_sites,
+        "smear": smear,
+        "config": config,
+        "h_values": list(h_values),
+        "score_h": score_h,
+        "node_dir_suffix": _node_dir_suffix(theta_sites, smear, config),
     }
 
     if arm == "S0-C":
@@ -730,6 +995,157 @@ def _grouped_by_node(seed: int, nodes_payload: dict[str, Any]) -> dict[str, list
     for r in _records_to_node_results(seed, nodes_payload):
         out.setdefault(r.node, []).append(r)
     return out
+
+
+# ── --score-only: pooled score_b/score_s/Z_b/Z_s from on-disk node outputs,
+# NO evaluation (P0 completion, SYNTHESIS_DOCKET_1_20260829.md sec 2 B1 P0) ──
+
+
+def gather_node_results_from_disk(
+    arm: str,
+    seeds: tuple[int, ...],
+    out_root: Path,
+    nodes: tuple[str, ...],
+    theta_sites: str,
+    smear: str,
+    config: str,
+    score_h: float,
+) -> tuple[dict[str, list[NodeResult]], list[str]]:
+    """Read ``event_likelihoods.csv`` for every requested (seed, node) pair
+    directly off disk -- NO ``evaluate()`` call, NO venue construction. Used
+    by ``--score-only`` to compute the pooled prereg §4.1 statistic from
+    whatever nodes/seeds a prior (possibly partial, possibly multi-invocation)
+    run already banked, e.g. "seed 900101 nodes b_minus,s_plus,s_minus" run
+    separately from "truth,b_plus" (P0's "remaining nodes" case) -- each
+    invocation writes fresh node dirs (``run_theta_node`` always calls
+    ``evaluate()``; nothing here is a stale reuse), and this function simply
+    unions whatever is present at scoring time.
+
+    Returns ``(all_nodes, missing_paths)`` -- ``missing_paths`` lists every
+    (seed, node) CSV that was requested but not found on disk (reported, not
+    fatal: :func:`score_only_payload` computes whatever the union of present
+    nodes allows and states plainly what could not be pooled).
+    """
+    prefix = {"S0-A": "s0a_seed", "S0-R": "s0r_seed"}.get(arm)
+    if prefix is None:
+        raise ValueError(f"--score-only supports S0-A/S0-R only (no node cross to pool for {arm!r})")
+    suffix = _node_dir_suffix(theta_sites, smear, config)
+    all_nodes: dict[str, list[NodeResult]] = {n: [] for n in nodes}
+    missing: list[str] = []
+    for seed in seeds:
+        for node in nodes:
+            theta_b, theta_s = THETA_NODES[node]
+            diag_csv = out_root / f"{prefix}{seed}" / f"node_{node}{suffix}" / "simulations" / "diagnostics" / "event_likelihoods.csv"
+            if not diag_csv.is_file():
+                missing.append(str(diag_csv))
+                continue
+            ln_l = read_event_ln_l(diag_csv, score_h)
+            all_nodes[node].append(
+                NodeResult(
+                    node=node,
+                    theta_b=theta_b,
+                    theta_s=theta_s,
+                    seed=seed,
+                    diag_csv=str(diag_csv),
+                    elapsed_s=float("nan"),  # not measured -- no evaluation happened this invocation
+                    n_events=len(ln_l),
+                    ln_l=ln_l,
+                )
+            )
+    return all_nodes, missing
+
+
+def score_only_payload(
+    arm: str,
+    seeds: tuple[int, ...],
+    nodes: tuple[str, ...],
+    all_nodes: dict[str, list[NodeResult]],
+    missing: list[str],
+) -> dict[str, Any]:
+    """Build the same scores/gate_eng/gate_parity/verdict payload
+    :func:`run_arm` computes, from disk-gathered ``all_nodes`` -- reuses
+    :func:`compute_scores`/:func:`gate_eng`/:func:`gate_parity`/
+    :func:`verdict_s0a`/:func:`verdict_s0r` verbatim (the statistic is
+    IDENTICAL whether the ``ln_l`` frames came from a fresh ``evaluate()``
+    call or an on-disk CSV -- both are the same columns read the same way).
+    """
+    payload: dict[str, Any] = {
+        "arm": arm,
+        "seeds_requested": list(seeds),
+        "nodes_requested": list(nodes),
+        "score_only": True,
+        "n_present_by_node": {n: len(v) for n, v in all_nodes.items()},
+        "seeds_present_by_node": {n: sorted({r.seed for r in v}) for n, v in all_nodes.items()},
+        "n_missing_csv": len(missing),
+        "missing_csv_paths": missing,
+    }
+    need_all_four = all(len(all_nodes.get(n, [])) > 0 for n in ("b_plus", "b_minus", "s_plus", "s_minus"))
+    if need_all_four:
+        scores = compute_scores(all_nodes)
+        eng = gate_eng(all_nodes)
+        payload["scores"] = scores
+        payload["gate_eng"] = eng
+        if len(all_nodes.get("truth", [])) > 0:
+            parity = gate_parity(all_nodes)
+            payload["gate_parity"] = parity
+            if arm == "S0-A":
+                payload["verdict"] = verdict_s0a(scores, eng, parity)
+        if arm == "S0-R":
+            payload["verdict"] = verdict_s0r(scores, eng)
+    else:
+        have = {n: len(all_nodes.get(n, [])) for n in ("b_plus", "b_minus", "s_plus", "s_minus")}
+        payload["note"] = (
+            "on-disk node set is INCOMPLETE for pooling -- scores/gate_eng/verdict require "
+            f">=1 seed present for EACH of b_plus/b_minus/s_plus/s_minus; have {have}. "
+            "This is not an error: run the remaining (seed, node) combinations, then re-invoke "
+            "--score-only."
+        )
+    return payload
+
+
+def write_score_markdown(payload: dict[str, Any], md_path: Path) -> None:
+    """Render :func:`score_only_payload`'s (or :func:`run_arm`'s) output as a
+    short human-readable markdown summary -- the "per-arm score ... md" P0
+    deliverable (SYNTHESIS_DOCKET_1_20260829.md sec 2 B1 P0)."""
+    lines = [
+        f"# {payload['arm']} pooled score (prereg §4.1) -- {'score-only, zero-compute read' if payload.get('score_only') else 'from a live run'}",
+        "",
+        f"Seeds requested: {payload.get('seeds_requested')}",
+        f"Nodes requested: {payload.get('nodes_requested', payload.get('nodes'))}",
+    ]
+    if "n_present_by_node" in payload:
+        lines.append(f"Nodes present on disk (n seeds each): {payload['n_present_by_node']}")
+    if payload.get("missing_csv_paths"):
+        lines.append(f"Missing CSVs ({payload['n_missing_csv']}): first 5 -> {payload['missing_csv_paths'][:5]}")
+    lines.append("")
+    if "scores" in payload:
+        for channel, d in payload["scores"].items():
+            lines.append(f"## {channel}")
+            for stat_name in ("score_b", "score_s"):
+                s = d[stat_name]
+                lines.append(
+                    f"- {stat_name}: mean={s['mean']!r} sem={s['sem']!r} Z={s['Z']!r} n_pooled={s['n_pooled']}"
+                )
+            lines.append("")
+    if "verdict" in payload:
+        v = payload["verdict"]
+        lines.append(f"## Verdict: band={v.get('band')!r}")
+        lines.append(f"{v.get('verdict')}")
+        lines.append("")
+    if "gate_eng" in payload:
+        lines.append("## GATE ENG (mean fraction of events moved >=1e-6 rel, per node)")
+        for node, d in payload["gate_eng"].items():
+            lines.append(f"- {node}: mean_fraction_moved={d['mean_fraction_moved']!r} pass={d['pass']}")
+        lines.append("")
+    if "gate_parity" in payload:
+        lines.append("## GATE PARITY (truth node vs banked bc CSV, per seed)")
+        for seed, d in payload["gate_parity"].items():
+            lines.append(f"- seed {seed}: {d.get('status')}, pass_exact={d.get('pass_exact')}")
+        lines.append("")
+    if payload.get("note"):
+        lines.append(f"**Note:** {payload['note']}")
+        lines.append("")
+    md_path.write_text("\n".join(lines))
 
 
 # ── CLI ──────────────────────────────────────────────────────────────────
@@ -783,6 +1199,66 @@ def main() -> int:
         "event_idx values remain comparable to the banked full-N CSVs for GATE PARITY). "
         "--smoke implies a small cap unless this is set explicitly.",
     )
+    ap.add_argument(
+        "--theta-sites",
+        type=str,
+        default="all",
+        choices=THETA_SITES_CHOICES,
+        help="Forwarded to run_mirror_seed_inprocess's theta_sites kwarg (P1 equivalence gate, "
+        "SYNTHESIS_DOCKET_1_20260829.md sec 2 B1 P1). Default 'all' is BYTE-IDENTICAL to every "
+        "pre-P1 invocation of this driver. '2.1'/'2.2' isolate the per-host numerator sites "
+        "(never require smearing); '2.3' isolates the global-selection denominator site (always "
+        "requires --smear on/auto, since it IS the smeared table).",
+    )
+    ap.add_argument(
+        "--smear",
+        type=str,
+        default="auto",
+        choices=SMEAR_CHOICES,
+        help="'auto' (default) reproduces this driver's ORIGINAL dispatch exactly at "
+        "--theta-sites all (smear_global_selection = theta_engaged) -- BYTE-IDENTICAL default. "
+        "'on'/'off' force the flag. 'off' is REFUSED at parse time (see below) if --theta-sites "
+        "is 'all' or '2.3' and any requested node is theta-engaged (evaluate()'s own guard would "
+        "otherwise raise mid-run, after paying the venue setup cost).",
+    )
+    ap.add_argument(
+        "--config",
+        type=str,
+        default="b0i",
+        choices=CONFIG_CHOICES,
+        help="'b0i' (default, BYTE-IDENTICAL) is this driver's original hardcoded bc/b0i venue "
+        "(hier_s0_driver.py:94-97-era flags). 'ft' is the KW-Q1/B4.2 venue (catalogue_numerator_"
+        "survival='phi', fused, HEAD Sigma^phi, host_mode='population_selected' -- copied "
+        "EXACTLY from p3_twin_test.py's fusedarm/--survival phi stage). Applies to S0-A/S0-R "
+        "only (S0-C stays 'b0i', per its own registered costing-probe scope).",
+    )
+    ap.add_argument(
+        "--h-nodes",
+        type=str,
+        default=None,
+        help="Comma-separated h values fused into ONE evaluate() call per theta node (S0-A/S0-R "
+        "only; S0-C's H_GRID_41 sweep is unaffected). Default (unset) is the single H_GEN=0.73 "
+        "node -- BYTE-IDENTICAL. KW-Q1 (B4.2) uses '0.725,0.735'.",
+    )
+    ap.add_argument(
+        "--score-h",
+        type=float,
+        default=None,
+        help="Which evaluated h this driver's OWN internal ln-L readback (compute_scores/"
+        "gate_eng/gate_parity) uses, when --h-nodes does not include H_GEN=0.73 (e.g. KW-Q1's "
+        "0.725/0.735 grid). Default (unset) resolves to H_GEN if present in --h-nodes, else the "
+        "first --h-nodes value -- see _resolve_score_h. Irrelevant/unused for the default "
+        "--h-nodes (single H_GEN node).",
+    )
+    ap.add_argument(
+        "--score-only",
+        action="store_true",
+        help="P0 completion (SYNTHESIS_DOCKET_1_20260829.md sec 2 B1 P0): compute the pooled "
+        "prereg §4.1 score_b/score_s/Z_b/Z_s/GATE ENG/GATE PARITY/verdict from event_likelihoods."
+        "csv files ALREADY ON DISK under --out-root (matching --seeds/--nodes/--theta-sites/"
+        "--smear/--config, for locating the right node directories) -- NO evaluate() call, NO "
+        "venue construction. S0-A/S0-R only. Writes <arm>_score_output.json and <arm>_score.md.",
+    )
     args = ap.parse_args()
 
     out_root = Path(args.out_root)
@@ -804,7 +1280,56 @@ def main() -> int:
         if n not in THETA_NODES:
             raise SystemExit(f"unknown node {n!r}; must be one of {sorted(THETA_NODES)}")
 
-    result = run_arm(args.arm, seeds, out_root, jobs, args.total_cpu_budget, nodes, event_cap)
+    h_values: tuple[float, ...] = (
+        tuple(float(x) for x in args.h_nodes.split(",")) if args.h_nodes else (H_GEN,)
+    )
+    if not h_values:
+        raise SystemExit("--h-nodes must not resolve to an empty grid")
+
+    # CLI-level validation (clearer than evaluate()'s own mid-run ValueError,
+    # and fires BEFORE the (expensive) venue setup): --smear off is
+    # incompatible with --theta-sites all/2.3 whenever any requested node is
+    # theta-engaged (every THETA_NODES entry except "truth").
+    any_theta_engaged_node = any(n != "truth" for n in nodes)
+    if args.smear == "off" and args.theta_sites in ("all", "2.3") and any_theta_engaged_node:
+        raise SystemExit(
+            f"--smear off is incompatible with --theta-sites {args.theta_sites!r} while "
+            f"--nodes={nodes} includes a theta-engaged node (all THETA_NODES except 'truth') -- "
+            "evaluate() REQUIRES smear_global_selection=True whenever theta is engaged and "
+            "theta_sites includes '2.3'/'all' (bayesian_statistics.py's theta_sites guard). "
+            "Pass --theta-sites 2.1 or 2.2 together with --smear off, or drop --smear off."
+        )
+
+    if args.score_only:
+        if args.arm == "S0-C":
+            raise SystemExit("--score-only is not supported for --arm S0-C (no node cross to pool)")
+        score_h = _resolve_score_h(h_values, args.score_h)
+        all_nodes, missing = gather_node_results_from_disk(
+            args.arm, seeds, out_root, nodes,
+            theta_sites=args.theta_sites, smear=args.smear, config=args.config, score_h=score_h,
+        )
+        result = score_only_payload(args.arm, seeds, nodes, all_nodes, missing)
+        result["theta_sites"] = args.theta_sites
+        result["smear"] = args.smear
+        result["config"] = args.config
+        result["h_values"] = list(h_values)
+        result["score_h"] = score_h
+        result["registration"] = str(REGISTRATION)
+        out_root.mkdir(parents=True, exist_ok=True)
+        out_json = out_root / f"{args.arm.lower().replace('-', '')}_score_output.json"
+        out_json.write_text(json.dumps(result, indent=2, default=str))
+        out_md = out_root / f"{args.arm.lower().replace('-', '')}_score.md"
+        write_score_markdown(result, out_md)
+        print(f"wrote {out_json}")
+        print(f"wrote {out_md}")
+        print(json.dumps({k: v for k, v in result.items() if k != "missing_csv_paths"}, indent=2, default=str)[:4000])
+        return 0 if not missing or result.get("scores") else 1
+
+    result = run_arm(
+        args.arm, seeds, out_root, jobs, args.total_cpu_budget, nodes, event_cap,
+        theta_sites=args.theta_sites, smear=args.smear, config=args.config,
+        h_values=h_values, score_h=args.score_h,
+    )
     result["smoke"] = bool(args.smoke)
     result["event_cap"] = event_cap
     result["registration"] = str(REGISTRATION)
