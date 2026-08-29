@@ -390,6 +390,30 @@ class Arguments:
         """
         return str(self._parsed_arguments.catalogue_global_selection)
 
+    @property
+    def mass_filter_geometry(self) -> str:
+        """Mass-window GEOMETRY instrument flag (charter node B5.1,
+        results/campaign51_20260728/realistic_20260729/fanout1_20260829/
+        PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+        #220-#223). 'linear' (default, PRODUCTION, byte-identical): the
+        existing --mass_filter_sigma interval-overlap window, unchanged in
+        form. 'log': the SAME window re-expressed in ln-space on both sides
+        (small-error correspondence on the GW side; the existing R&V15
+        ln-space budget BH_MASS_ERROR/BH_MASS on the candidate side -- no
+        re-derivation). Never a production posterior at 'log'.
+        """
+        return str(self._parsed_arguments.mass_filter_geometry)
+
+    @property
+    def mass_filter_k(self) -> float:
+        """Mass-window half-width in units of sigma (charter node B5.1,
+        same reference as ``mass_filter_geometry``). Decouples the mass
+        window's half-width from the sky-cone ``sigma_multiplier``. Default
+        1.5 matches the current coupled call-site value, so the default
+        pairing of both new flags is byte-identical to the pre-flag path.
+        """
+        return float(self._parsed_arguments.mass_filter_k)
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -1049,6 +1073,35 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "the no-BH catalogue divisor is the separately fitted Sigma^3D "
             "(the pre-adoption production behaviour). The with-BH leg is "
             "deliberately untouched in either case."
+        ),
+    )
+    parser.add_argument(
+        "--mass_filter_geometry",
+        type=str,
+        choices=["linear", "log"],
+        default="linear",
+        help=(
+            "Mass-window GEOMETRY instrument flag (charter node B5.1, "
+            "results/campaign51_20260728/realistic_20260729/fanout1_20260829/"
+            "PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows "
+            "#220-#223). 'linear' (default, PRODUCTION) is byte-identical "
+            "to the pre-flag --mass_filter_sigma interval-overlap window. "
+            "'log' re-expresses the same window in ln-space on both sides "
+            "(small-error correspondence on the GW side; the existing R&V15 "
+            "ln-space budget BH_MASS_ERROR/BH_MASS on the candidate side -- "
+            "no re-derivation). Never a production posterior at 'log'."
+        ),
+    )
+    parser.add_argument(
+        "--mass_filter_k",
+        type=float,
+        default=1.5,
+        help=(
+            "Mass-window half-width in units of sigma, decoupled from the "
+            "sky-cone sigma_multiplier (charter node B5.1, same reference "
+            "as --mass_filter_geometry). Default 1.5 matches the current "
+            "coupled call-site value, so the default pairing of both new "
+            "flags is byte-identical to the pre-flag path."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

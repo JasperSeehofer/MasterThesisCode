@@ -211,6 +211,8 @@ def main() -> None:
             catalogue_numerator_survival_2d=arguments.catalogue_numerator_survival_2d,
             catalogue_numerator_survival_2d_center=arguments.catalogue_numerator_survival_2d_center,
             catalogue_global_selection=arguments.catalogue_global_selection,
+            mass_filter_geometry=arguments.mass_filter_geometry,
+            mass_filter_k=arguments.mass_filter_k,
         )
 
     if arguments.snr_analysis:
@@ -1418,6 +1420,13 @@ def evaluate(
     # else "s3d" (byte-identical elsewhere). "s3d" is the explicit
     # COUNTERFACTUAL under absolute_marginal.
     catalogue_global_selection: str = "auto",
+    # Mass-window GEOMETRY instrument flag (charter node B5.1, results/
+    # campaign51_20260728/realistic_20260729/fanout1_20260829/
+    # PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+    # #220-#223): "linear"/1.5 (defaults) are byte-identical to the
+    # pre-flag path.
+    mass_filter_geometry: str = "linear",
+    mass_filter_k: float = 1.5,
 ) -> None:
     from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1452,6 +1461,8 @@ def evaluate(
         catalogue_numerator_survival_2d=catalogue_numerator_survival_2d,
         catalogue_numerator_survival_2d_center=catalogue_numerator_survival_2d_center,
         catalogue_global_selection=catalogue_global_selection,
+        mass_filter_geometry=mass_filter_geometry,
+        mass_filter_k=mass_filter_k,
     )
 
 

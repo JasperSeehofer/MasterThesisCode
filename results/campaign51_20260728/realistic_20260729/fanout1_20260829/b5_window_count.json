@@ -1,0 +1,91 @@
+{
+  "provenance": {
+    "launched_under": "rows #222/#223 -- charter node B5.1",
+    "git_commit": "a794404c2adcc2857fad8c2f7abc6c7ad08b4159",
+    "catalogue_md5": "c52c13b5cab61f6b3f04bbe202550969",
+    "fleet_base": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/p3_2d_fleet_20260825",
+    "fleet_arm_glob": "bc_9001??_work",
+    "n_events_loaded": 2261,
+    "elapsed_s": 12.40360689163208
+  },
+  "configs": [
+    {
+      "label": "i_linear_k1.5",
+      "geometry": "linear",
+      "k": 1.5
+    },
+    {
+      "label": "ii_log_k1.5",
+      "geometry": "log",
+      "k": 1.5
+    },
+    {
+      "label": "iii_log_k3.0",
+      "geometry": "log",
+      "k": 3.0
+    },
+    {
+      "label": "iv_log_k2.5",
+      "geometry": "log",
+      "k": 2.5
+    }
+  ],
+  "pass_fraction": {
+    "i_linear_k1.5": 0.9576806472967873,
+    "ii_log_k1.5": 0.40613214027372024,
+    "iii_log_k3.0": 0.6950868985888955,
+    "iv_log_k2.5": 0.6148892665982285
+  },
+  "totals": {
+    "i_linear_k1.5": {
+      "n_all": 2249231,
+      "n_pass": 2154045
+    },
+    "ii_log_k1.5": {
+      "n_all": 2249231,
+      "n_pass": 913485
+    },
+    "iii_log_k3.0": {
+      "n_all": 2249231,
+      "n_pass": 1563411
+    },
+    "iv_log_k2.5": {
+      "n_all": 2249231,
+      "n_pass": 1383028
+    }
+  },
+  "gate_i_reproduces_0.9577": {
+    "computed_full_precision": 0.9576806472967873,
+    "computed_4dp": 0.9577,
+    "target": 0.9577,
+    "target_source": "wgeom_result.json p3.ratios.n_lin_over_n_all=0.9576899838211371 (builder-run 2026-08-28, ledger row #220/#221 W-1 correction) == CLAIM_WGEO_20260827.md line 199",
+    "passed": true
+  },
+  "growth_factor_iii_vs_i": {
+    "n_events_with_nonzero_linear_candidates": 2221,
+    "mean": 0.8139467452282884,
+    "median": 0.9485530546623794,
+    "p95": 1.4983870967741935,
+    "max": 10.0,
+    "n_events_zero_linear_candidates_gain_some_under_iii": 16,
+    "n_events_zero_under_both": 24
+  },
+  "true_host_retention": {
+    "n_events_total": 2261,
+    "n_events_with_valid_catalogued_true_host": 2261,
+    "n_true_host_position_out_of_pruned_range": 0,
+    "note": "Mass-window-only test on the true host's own catalogue BH_MASS/BH_MASS_ERROR vs the observed GW mass window at the same k -- independent of the sky+redshift cone cut, to isolate the mass-geometry parameter under test. host_galaxy_index reads directly as a position in this handler's pruned frame: fleet is UNSCATTERED (no observed_realization sidecar found under any bc_9001XX_work arm), so handler.py's resolve_host_recovery_position 'not self.scattered' branch (handler.py:718-721) applies -- injection-time position == evaluation-time position.",
+    "fraction_retained": {
+      "i_linear_k1.5": 0.9566563467492261,
+      "ii_log_k1.5": 0.7001326846528085,
+      "iii_log_k3.0": 0.7890314020344981,
+      "iv_log_k2.5": 0.7682441397611677
+    },
+    "n_retained": {
+      "i_linear_k1.5": 2163,
+      "ii_log_k1.5": 1583,
+      "iii_log_k3.0": 1784,
+      "iv_log_k2.5": 1737
+    }
+  }
+}

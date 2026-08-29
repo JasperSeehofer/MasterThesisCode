@@ -3299,6 +3299,15 @@ class BayesianStatistics:
     # ±1.5σ-vs-±1σ window). Single read site: the mask branch in
     # get_possible_hosts_from_ball_tree; this attribute is inert plumbing.
     _mass_filter_sigma: str = "symmetric"
+    # Mass-window GEOMETRY instrument flag (charter node B5.1,
+    # PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+    # #220-#223). "linear" (default, PRODUCTION, byte-identical) is the
+    # pre-flag interval-overlap form; "log" re-expresses both sides in
+    # ln-space. Not a production posterior at "log". Single read site: the
+    # mask branch in get_possible_hosts_from_ball_tree; these two attributes
+    # are inert plumbing.
+    _mass_filter_geometry: str = "linear"
+    _mass_filter_k: float = 1.5
 
     def __init__(self) -> None:
         self.h_values = []
@@ -3362,6 +3371,11 @@ class BayesianStatistics:
         # "symmetric" (default) = production; "asymmetric" pins the pre-flag
         # counterfactual.
         self._mass_filter_sigma: str = "symmetric"
+        # Mass-window GEOMETRY instrument flag (charter node B5.1, ledger
+        # rows #220-#223): "linear" (default) = production, byte-identical;
+        # "log" is the ln-space re-expression, not a production posterior.
+        self._mass_filter_geometry: str = "linear"
+        self._mass_filter_k: float = 1.5
 
     def evaluate(
         self,
@@ -3511,6 +3525,27 @@ class BayesianStatistics:
         # mass_filter_mask branch in
         # galaxy_catalogue/handler.py:get_possible_hosts_from_ball_tree.
         mass_filter_sigma: str = "symmetric",
+        # Mass-window GEOMETRY instrument flag (charter node B5.1,
+        # PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+        # #220-#223). "linear" (default, PRODUCTION, byte-identical): the
+        # mass_filter_sigma interval-overlap window above, unchanged in
+        # form. "log": the SAME window re-expressed in ln-space on both
+        # sides (small-error correspondence on the GW side, the existing
+        # R&V15 ln-space budget BH_MASS_ERROR/BH_MASS on the candidate
+        # side -- no re-derivation). Orthogonal to mass_filter_sigma (that
+        # flag still selects the candidate-side multiplier convention under
+        # EITHER geometry). Never a production posterior at "log". Purely
+        # plumbing: validated and read at exactly one site, the
+        # mass_filter_mask branch in
+        # galaxy_catalogue/handler.py:get_possible_hosts_from_ball_tree.
+        mass_filter_geometry: str = "linear",
+        # Mass-window half-width in units of sigma, decoupled from
+        # sigma_multiplier (which after this flag's introduction sets ONLY
+        # the sky-cone search radius, never the mass window). Default 1.5
+        # matches the current call-site sigma_multiplier=1.5, so the
+        # default pairing of both new flags is byte-identical to the
+        # pre-flag path (same reference as mass_filter_geometry).
+        mass_filter_k: float = 1.5,
         # [HIER] θ-hook (C1, PHYSICS_CHANGE_THETA_HOOK_20260828.md, ledger row
         # #216): affine photo-z systematic θ = (b, s) — z̃ = z + b(1+z),
         # σ̃_eff = s·σ_eff at estimator sites 2.1/2.2/2.3 (Ma, Hu & Huterer
@@ -3725,6 +3760,12 @@ class BayesianStatistics:
         # (get_possible_hosts_from_ball_tree's mass_filter_mask branch), not
         # here, so there is exactly one place that interprets the value.
         self._mass_filter_sigma = str(mass_filter_sigma)
+        # Mass-window GEOMETRY instrument flag (charter node B5.1, ledger
+        # rows #220-#223): same "opaque plumbing" convention as
+        # mass_filter_sigma above -- validated at the single read site in
+        # get_possible_hosts_from_ball_tree, not here.
+        self._mass_filter_geometry = str(mass_filter_geometry)
+        self._mass_filter_k = float(mass_filter_k)
         # Prod2d closure counterfactual instrument (results/
         # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1,
         # P8): validated here the same way selection_in_completion_numerator
@@ -4799,6 +4840,8 @@ class BayesianStatistics:
                 M_z_sigma=self.detection.M_uncertainty,
                 sigma_multiplier=1.5,  # type: ignore[arg-type]
                 mass_filter_sigma=self._mass_filter_sigma,
+                mass_filter_geometry=self._mass_filter_geometry,
+                mass_filter_k=self._mass_filter_k,
             )
 
             if possible_hosts is None:

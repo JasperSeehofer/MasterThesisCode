@@ -568,6 +568,8 @@ class GalaxyCatalogueHandler:
         sigma_multiplier: int = 2,
         cov_theta_phi: float = 0.0,
         mass_filter_sigma: str = "symmetric",
+        mass_filter_geometry: str = "linear",
+        mass_filter_k: float = 1.5,
     ) -> tuple[list[HostGalaxy], list[HostGalaxy]] | None:
         """Find candidate host galaxies within the sky-Fisher error ellipse + mass-redshift cuts.
 
@@ -608,6 +610,35 @@ class GalaxyCatalogueHandler:
                 Scope: the MASS filter only — the redshift filter above keeps
                 its own ±1σ galaxy-side convention (out of the row-#198
                 grant's scope).
+            mass_filter_geometry: mass-window GEOMETRY instrument flag
+                (charter node B5.1; ``PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_
+                20260829.md`` §2; ledger rows #220-#223). "linear" (default,
+                PRODUCTION, byte-identical): the interval-overlap test above,
+                ``M_z ± mass_filter_k·M_z_sigma`` vs. ``BH_MASS ±
+                _bh_mass_error_multiplier·BH_MASS_ERROR``, unchanged in form
+                from the pre-flag path. "log": the SAME interval-overlap
+                test re-expressed in ln-space on both sides —
+                ``σ_lnM,z = M_z_sigma/M_z`` (small-error correspondence,
+                ``Var[ln M] ≈ (σ_M/M)²`` to leading order) and
+                ``σ_lnM = BH_MASS_ERROR/BH_MASS`` (already the R&V15 ln-space
+                budget, no re-derivation) give GW-side edges
+                ``M_z·exp(∓mass_filter_k·σ_lnM,z)/(1+z)`` and candidate-side
+                edges ``BH_MASS·exp(±_bh_mass_error_multiplier·σ_lnM)``. Not
+                a production posterior at any adopted default; NOT
+                interchangeable with ``mass_filter_sigma`` (that flag still
+                selects the candidate-side multiplier convention under
+                EITHER geometry). Single read/validate site for this flag
+                (this docstring + the mask branch below).
+            mass_filter_k: mass-window half-width in units of σ (charter
+                node B5.1, same reference as ``mass_filter_geometry``).
+                Decouples the mass window's half-width from
+                ``sigma_multiplier`` (which after this flag's introduction
+                sets ONLY the sky-cone search radius above, never the mass
+                window). Default ``1.5`` is chosen to exactly match today's
+                coupled ``sigma_multiplier=1.5`` production call-site value
+                under ``mass_filter_geometry="linear"`` — i.e. the default
+                pairing of both new flags is byte-identical to the pre-flag
+                path. Must be finite; a non-finite value is rejected here.
 
         Returns:
             Tuple of (hosts_without_BH_mass_filter, hosts_with_BH_mass_filter) or None.
@@ -645,32 +676,79 @@ class GalaxyCatalogueHandler:
         )
         candidate_hosts_without_bh_mass = candidate_hosts[redshift_filter_mask]
 
+        # Single read/validate site for mass_filter_geometry/mass_filter_k
+        # (charter node B5.1, PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md
+        # §2; ledger rows #220-#223). `mass_filter_k` REPLACES
+        # `sigma_multiplier` as the mass-window half-width; `sigma_multiplier`
+        # from here on feeds ONLY the sky-cone radius above. Default
+        # `mass_filter_k=1.5` matches the current call-site
+        # `sigma_multiplier=1.5`, so the default pairing
+        # (geometry="linear", k=1.5) reproduces the pre-flag mask bit-for-bit
+        # (regression plan item 1 / invariant 1).
+        if mass_filter_geometry not in ("linear", "log"):
+            raise ValueError(
+                f"mass_filter_geometry must be 'linear' or 'log', got {mass_filter_geometry!r}"
+            )
+        _mass_filter_k = float(mass_filter_k)
+        if not np.isfinite(_mass_filter_k):
+            raise ValueError(f"mass_filter_k must be finite, got {mass_filter_k!r}")
+
         # Single read/validate site for mass_filter_sigma (rows #198-#202;
         # "symmetric" adopted as production per PROPOSAL_MASS_FILTER_
-        # SYMMETRIC_20260825.md sec 7(a)): "symmetric" (default) scales
-        # BH_MASS_ERROR by the SAME sigma_multiplier as the GW side on both
-        # window sides; "asymmetric" pins the retired pre-flag counterfactual
-        # (galaxy error at x1). Scope: the MASS filter only.
+        # SYMMETRIC_20260825.md sec 7(a)): "symmetric" (default) scales the
+        # candidate/galaxy-side error by the SAME k as the GW side (linear:
+        # BH_MASS_ERROR; log: σ_lnM); "asymmetric" pins the retired pre-flag
+        # counterfactual (galaxy error at its bare, un-k-scaled value; k=1
+        # equivalent). Scope: the MASS filter only. This split is orthogonal
+        # to mass_filter_geometry -- both flags are read independently, each
+        # at its own single site.
         if mass_filter_sigma == "asymmetric":
             _bh_mass_error_multiplier: float = 1.0
         elif mass_filter_sigma == "symmetric":
-            _bh_mass_error_multiplier = float(sigma_multiplier)
+            _bh_mass_error_multiplier = _mass_filter_k
         else:
             raise ValueError(
                 f"mass_filter_sigma must be 'asymmetric' or 'symmetric', got {mass_filter_sigma!r}"
             )
 
-        mass_filter_mask = (
-            (M_z - M_z_sigma * sigma_multiplier) / (1 + z_max)
-            <= candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
-            + candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
-            * _bh_mass_error_multiplier
-        ) & (
-            candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
-            - candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
-            * _bh_mass_error_multiplier
-            <= (M_z + M_z_sigma * sigma_multiplier) / (1 + z_min)
-        )
+        if mass_filter_geometry == "linear":
+            mass_filter_mask = (
+                (M_z - M_z_sigma * _mass_filter_k) / (1 + z_max)
+                <= candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
+                + candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
+                * _bh_mass_error_multiplier
+            ) & (
+                candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
+                - candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
+                * _bh_mass_error_multiplier
+                <= (M_z + M_z_sigma * _mass_filter_k) / (1 + z_min)
+            )
+        else:
+            # "log" (PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2/§4):
+            # same interval-overlap test, both sides re-expressed in
+            # ln-space. sigma_lnM,z = M_z_sigma/M_z is the small-error
+            # correspondence (Var[ln M] ~= (sigma_M/M)^2 to leading order);
+            # sigma_lnM = BH_MASS_ERROR/BH_MASS is already the R&V15
+            # ln-space budget the catalogue error was built from (no
+            # re-derivation, sec 1). k->infinity and sigma->0 limiting
+            # cases (sec 5) both agree with the linear geometry by
+            # construction of this closed form.
+            if not (M_z > 0):
+                raise ValueError(f"mass_filter_geometry='log' requires M_z > 0, got {M_z!r}")
+            _sigma_lnM_z = M_z_sigma / M_z
+            _gw_lo = M_z * np.exp(-_mass_filter_k * _sigma_lnM_z) / (1 + z_max)
+            _gw_hi = M_z * np.exp(+_mass_filter_k * _sigma_lnM_z) / (1 + z_min)
+            _sigma_lnM = (
+                candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
+                / candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
+            )
+            _cand_lo = candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS] * np.exp(
+                -_bh_mass_error_multiplier * _sigma_lnM
+            )
+            _cand_hi = candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS] * np.exp(
+                +_bh_mass_error_multiplier * _sigma_lnM
+            )
+            mass_filter_mask = (_gw_lo <= _cand_hi) & (_cand_lo <= _gw_hi)
 
         candidate_hosts_with_bh_mass = candidate_hosts_without_bh_mass[mass_filter_mask]
         possible_hosts_without_bh_mass = [
