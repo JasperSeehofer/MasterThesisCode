@@ -246,3 +246,23 @@ job `6725283` (the banked HEAD readout, same iiib venue).
 
 Source: `fanout1_20260829/b7_2_readout.json`; `fanout1_20260829/B7_2_TWIN_CF_READOUT_RECORD.md`
 §6; `PROPOSAL_2D_TWIN_ADOPTION_20260829.md` §15; `BIAS_HISTORY_LEDGER.md` row #248.
+
+## P2 (KW-Q1) measured — appended 2026-08-29
+
+Launched under rows #222/#223 — charter node B4.2 (independent reader). Append-only; the
+estimate rows above (§ "Wave 2 cost refinements" table, P2 row: 8.4 CPU-h recommended
+`"2.2"`/unsmeared) are not edited.
+
+**P2 (KW-Q1) measured: 6.152 CPU-h** — main registered run (4 seeds × 3 s-nodes × 2 h,
+`--jobs 1`) wall 1417.786 s × 14 cpus = 5.514 CPU-h; T-ID/PARITY re-evaluation (1 seed, truth
+node) wall 164.070 s × 14 cpus = 0.638 CPU-h; total 6.152 CPU-h — against the registered
+8.4 CPU-h (`"2.2"`/unsmeared) estimate: **≈27 % below estimate** (0.73×), local, no cluster
+exposure. A first scorer invocation (path mismatch, `node_*_ft/` instead of the actual
+`node_*_ft_sites2.2_nosmear/` directories) found 0 rows and is excluded from this cost as a
+runner-side invocation error, not a measurement.
+
+Source: `fanout1_20260829/hier_s0_registered_run/logs/runner3_wave2pre_20260829.log`
+(`wall_s`/`cpu_per_job` JSON blocks under `2026-08-29T22:49:07+02:00 START KW-Q1 ft ...` and
+`2026-08-29T23:12:46+02:00 START KW-Q1 parity ...`); `fanout1_20260829/b4_2_readout.json`
+`cost_measured`; `fanout1_20260829/B4_2_KWQ1_READOUT_RECORD.md` §8;
+`BIAS_HISTORY_LEDGER.md` row #249.

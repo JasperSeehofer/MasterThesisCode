@@ -2520,3 +2520,164 @@ unaffected single-`--jobs` path before this run. `hier_s0_driver.py` is not touc
 node (owned by another agent per standing scope); re-run pending the fix.
 
 Launched under rows #222/#223 — [FABLE-ORCH], 2026-08-29.
+
+---
+
+## STAGE-0 SUBMIT/RESULT RECORD — S0-A (2026-08-29; independent-reader re-derivation and
+verdict; append-only; `[FABLE-ORCH]`, charter node B1.1)
+
+**Launched under rows #222/#223 — charter node B1.1.** Role: **independent reader**, a different
+agent from the P0 runner (runner-3, below) and from the driver's builder. Re-derives every
+pooled number from the raw per-event CSVs with an independent script (not the driver's own
+`compute_scores`/`gate_eng`/`gate_parity`), then reads the verdict off the registered text
+(§2.1, §4.1, §4.5). Full working record, per-seed/per-class tables, and the caveats:
+`results/campaign51_20260728/realistic_20260729/fanout1_20260829/B1_1_HIER_STAGE0_RECORD.md`.
+Nothing above this divider is edited.
+
+**Driver identity (SHA1, [A11]).** `hier_s0_driver.py`, sha1
+`3aad2da63bc48bc193f8b4fa5df9ca41be56e418` — the **fixed** driver (post-`B1_2_DRIVER_EXTENSION_
+NOTE.md`'s `pd.concat`/"No objects to concatenate" crash fix in `compute_scores`), distinct from
+`B1_1_HIER_RECORD.md`'s earlier-cited `5313c3198f84e3b7e90840d63356851a46677adb` (pre-fix).
+
+**Run history, this out-root, this arm (three attempts, one success):**
+1. **runner-1** (`hier_s0_registered_run/logs/runner_wave2pre_20260829.log`): P1 equivalence
+   check (seed 900101, `b_plus`, `rc=0`) → a P0 attempt (`--jobs 2`) **crashed `rc=1`**
+   (`pd.concat`/"No objects to concatenate" in `compute_scores`, per this file's own "P0 crash
+   disclosure" entry immediately above this divider) → S0-C (`rc=0`).
+2. **runner-2** (`logs/runner2_wave2pre_20260829.log`): a second P0 attempt (`--jobs 2`, fixed
+   driver) **crashed differently**: `AssertionError: daemonic processes are not allowed to have
+   children` — `--jobs 2`'s outer worker pool cannot itself spawn `evaluate()`'s inner
+   per-event pool.
+3. **runner-3** (`logs/runner3_wave2pre_20260829.log`, **run of record**): identical command
+   with **`--jobs 1`** (serializes the seed loop) — `rc=0`, 2026-08-29 21:59:44–22:49:05 CEST,
+   wall 2959.6 s at 14 cpu (`s0a_full_output.json:wall_s`). The log's own echoed stage label
+   reads "jobs2" (a copy-pasted string from the runner-2 script, disclosed as cosmetic — the
+   actual flag, confirmed against both `runner3_wave2pre.sh` and `s0a_full_output.json:"jobs":
+   1`, is `--jobs 1`).
+
+**Seeds / nodes / venue.** 4 seeds (900101–900104) × 5 nodes (truth, b_plus, b_minus, s_plus,
+s_minus), h = 0.730 only, `theta_sites="2.2"`, `smear_global_selection=False` (the CoR-P-faithful
+form registered in `PA-HIER-31(b)`, extended there to "the S0-A remainder"); venue `bc`/`b0i`
+(`host_mode="catalogue_selected"`, PA-HIER-19's b0i mode — one of exactly two modes where
+truth-θ = (0,1) genuinely holds, `catalogue_numerator_survival="off"`,
+`catalogue_global_selection="phi"`). Out-root:
+`results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/`,
+node dirs `node_<name>_sites2.2_nosmear`.
+
+### Independent re-derivation — pooled scores (N = 461 event-instances, all 4 seeds)
+
+Re-implemented from scratch against the raw `event_likelihoods.csv` files (h-filter, dedup on
+`event_idx` keep-last, `ln(combined_*)` where `>0`, inner-join b_plus/b_minus and s_plus/s_minus
+per (seed, event_idx), pool mean/SEM/Z over all seeds+events) — **reproduces the driver's own
+`s0a_score_output.json`/`s0a_full_output.json` to the last reported digit in every field**
+(scores, GATE ENG, GATE PARITY). No correction to the driver's arithmetic was needed.
+
+| channel | statistic | mean | SEM | **Z** | n_pooled |
+|---|---|---:|---:|---:|---:|
+| `ln_L_no_bh` (registered primary) | score_b | −1.61646 | 0.43968 | **−3.6764** | 461 |
+| `ln_L_no_bh` (registered primary) | score_s | −0.08625 | 0.012185 | **−7.0786** | 461 |
+| `ln_L_with_bh` (secondary) | score_b | +0.13830 | 0.36465 | +0.3793 | 461 |
+| `ln_L_with_bh` (secondary) | score_s | −0.02920 | 0.014409 | −2.0268 | 461 |
+
+Per-seed (`ln_L_no_bh`): 900101 (n=106) score_b Z=−2.669, score_s Z=−3.944; 900102 (n=120)
+score_b Z=−2.954, score_s Z=−4.286; 900103 (n=105) score_b Z=−0.248, score_s Z=−2.636; 900104
+(n=130) score_b Z=−0.853, score_s Z=−3.128. All four seeds carry the **same sign** on
+`score_s`, and three of four already individually clear 3σ on `score_s` alone — the pooled
+7.1σ is not one outlier seed.
+
+**By class** (`L_cat_no_bh == 0` ≡ dark, `B3_1_POP_RECORD.md` convention): dark (n=5 pooled)
+scores **exactly zero on both axes** (`combined_no_bh` bit-identical across all five θ-nodes for
+these events — the `PA-HIER-31(d)`-style instrument-identity check PASSES); matched (n=456)
+carries the entire pull (score_b Z=−3.677, score_s Z=−7.083). This venue's class fractions are
+not comparable to the production `iiib` split (`PA-HIER-31(d)`) — reported for context only.
+
+### Gates
+
+- **GATE ENG (§3.4): PASS**, all four off-truth nodes — mean fraction of events moved ≥1e-6
+  relative = **0.98858** (per-seed: 0.9906, 1.0000, 0.9714, 0.9923), far above the 10% floor.
+  Because `theta_sites="2.2"`, this movement is attributable to sites 2.1/2.2 (the per-host
+  numerator kernel) alone — θ is mechanically zeroed before reaching site 2.3 in this run
+  (`PA-HIER-31` REVISION NOTE 1, R3).
+- **GATE PARITY (§3.3, the registered gate): already PASS/vindicated** at the pre-execution
+  zero-compute review (this file, line ~1335) — not re-run by this arm. **Disambiguated from**
+  the driver's own separate, informal per-run byte-identity check against an older banked CSV
+  (`p3_b0_work/bc_<seed>_work/...`), which is **not** one of the eight §4.5 gate triggers:
+
+  | seed | n | `ln_L_no_bh` max abs / max rel diff | `ln_L_with_bh` max abs / max rel diff | exact? |
+  |---:|---:|---:|---:|---|
+  | 900101 | 106 | 5.716e-4 / 4.881e-5 | 0.5420 / 0.05945 | NO |
+  | 900102 | 120 | 2.380e-4 / 4.265e-5 | 0.7735 / 0.08924 | NO |
+  | 900103 | 105 | 2.186e-4 / 3.189e-5 | 0.8841 / 0.11992 | NO |
+  | 900104 | 130 | 1.153e-4 / 2.034e-5 | 0.3114 / 0.03432 | NO |
+
+  Per `PA-HIER-31(f)`'s F-B finding the batch-order hypothesis is refuted (9-event smoke and the
+  full truth node are bit-identical on shared events); the residual (order 1e-4–1e-5 relative,
+  no-BH) remains undiagnosed but is 2–4 orders of magnitude below the score-scale that drives
+  the Z-values above (score_s SEM = 0.0122) and cannot manufacture them. Open item bearing on
+  §5.1 invariant 8, not a candidate explanation for the verdict below.
+
+### Band and verdict (read from §4.1/§4.5, not re-derived)
+
+`|Z_b| = 3.676 > 3.0` **and** `|Z_s| = 7.079 > 3.0` on the registered primary channel ⇒
+**Band B0-A′** (§4.1: *"S0-A control fails"*) ⇒ per §4.5, quoted verbatim: *"a non-zero score on
+a self-consistent venue is a bug in the hook, the venue, or GATE PARITY. STOP."* ⇒
+
+## **VERDICT: INSTRUMENT-DEFECT — STOP.** REPORTED-ONLY (`PA-HIER-28` item 9, carried without
+exception per this thread's standing cap on every [HIER] verdict).
+
+Routing (§4.5): diagnosis, if it touches `bayesian_statistics.py` (a physics-trigger file),
+requires the full `/physics-change` protocol with its own gate package and ledger row; if
+harness-only (`correspondence_1d.py`), an `instrumentation` fix with GATE T-ID re-run. This
+record narrows but does not perform that diagnosis: because `theta_sites="2.2"`/`smear off`
+mechanically excludes site 2.3 here, any real defect localizes to sites 2.1/2.2 (the per-host
+numerator kernel) or to §5.1 invariant 8 (the mirror↔production kernel-identity match PA-HIER-1
+flagged as load-bearing and un-audited for this venue) — sharper than the earlier (superseded)
+`"all"`/smeared partial run's implication of the global-selection machinery, since that channel
+is entirely un-instrumented in this run.
+
+**This finding does not license any further stage.** No Stage-P/F launch, no S0-B launch, no
+C1/C3 build follows from a Stage-0 STOP — GATE SEQ (§3.7) and the standing LAUNCH-BLOCKED state
+are unaffected. "INSTRUMENT-DEFECT" is a valued, registered outcome here, not a result rescued
+or argued around; refuted/undetermined verdicts are not treated as lesser than a PASS.
+
+**Caveat, carried forward from `PA-HIER-31` REVISION NOTE 2 (R1′/R2′), unresolved and binding on
+this exact run:** this P0 run's `smear off` form is itself an unadjudicated narrowing of
+`PA-HIER-10`'s originally-pinned, unconditional `smear_sigma_z=True`-at-every-node CoR-M
+invariant — a second, CoR-M-scoped open contradiction distinct from the CoR-P one `REVISION
+NOTE 1` already returned to the author, pending its own fresh `[RULE]`. Per R3′: this run
+"certifies the instrument" only at `theta_sites="2.2"`; it does **not** certify site 2.3's
+behaviour under the originally-pinned CoR-M form. This STOP verdict is scoped accordingly — a
+defect finding about sites 2.1/2.2 under this run's flags, not a full "all sites, smeared" S0-A
+finding — and does not retroactively adjudicate the earlier `"all"`/smeared partial run
+(`B1_1_HIER_RECORD.md`), which remains REPORTED-ONLY/non-CoR-P by `PA-HIER-31(b)`'s own
+disposition.
+
+**S0-R:** not run this session (disclosed scope decision, out of this node's charter — S0-R is
+FALLBACK/DISARMED per `PA-HIER-28` item 5 regardless of outcome). **KW-Q1**
+(`fanout1_20260829/kwq1_registered_run/`): a separate local run on the same driver, in progress,
+untouched by this node per its own standing scope constraint — it rides the same
+`theta_sites="2.2"`/`smear off` flags and therefore inherits both the REPORTED-ONLY cap and the
+open CoR-M contradiction disclosed above, flagged here for whoever reads its output next.
+
+**S0-C costing (seed 900101, 12 cpu, full `H_GRID_41`):** wall 3125.11 s total (setup +
+41-h sweep = 2680.99 s of which the sweep alone, `evaluate_s`, is 2677.93 s); **measured mean
+marginal per-h cost = 24.37 s** (41 h-values, first-h cost 1704.27 s one-time table-build,
+remaining 40 h-values 22.7–28.6 s each). Full breakdown:
+`hier_s0_registered_run/s0c_full_output.json`.
+
+**Compute ledger contribution.** P0: 2959.6 s wall × 14 cpu / 3600 ≈ **11.51 CPU-h**. S0-C:
+3125.1 s wall × 12 cpu / 3600 ≈ **10.42 CPU-h**. Both measured wall-time × allocated cpu, not
+the §7.1 anchor's proportional-speedup assumption (already shown invalid for smeared cells;
+moot here since `smear off`, but a caution for anyone re-costing S0-C against a smeared cell).
+
+**Exoneration check (rule 5):** grepped `EXONERATION_REGISTER_20260827.md` and
+`gate_b_20260730/BIAS_HISTORY_LEDGER.md` §2 "DO NOT RE-TRY" for the θ-hook / host-z-kernel /
+`smear_global_selection` mechanism — no match. Not a re-litigation.
+
+*Authorization: launched under rows #222/#223 — charter node B1.1. Append-only; nothing above
+this divider is edited. No git operations; no source edits; `hier_s0_driver.py` and
+`kwq1_score.py` untouched (owned by another agent); `bayesian_statistics.py` and
+`correspondence_1d.py` untouched (physics-trigger/harness files, diagnosis is out of an
+independent-reader node's scope). Companion record:
+`fanout1_20260829/B1_1_HIER_STAGE0_RECORD.md`. Worker: inherit-tier session, independent-reader
+role, 2026-08-29.*

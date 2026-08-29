@@ -368,3 +368,60 @@ cited against the realistic-catalogue mirror.**
    may not be run by it as a registered measurement (rule 2).
 
 *(committed line — append only below)*
+
+## 5. B4.2 "KW-Q1" — RESULT RECORD (read out 2026-08-29 by the independent reader; run by the
+orchestrator; launched under rows #222/#223 — charter node B4.2)
+
+**Run of record:** `fanout1_20260829/kwq1_registered_run` (4 seeds 900101–900104, nodes
+s_minus/truth/s_plus, `_ft_sites2.2_nosmear` suffix per `B4_2_KWQ1_RUN_FORM_NOTE.md`'s registered
+run form, h ∈ {0.725, 0.735}, FT config); parity re-evaluation
+`fanout1_20260829/kwq1_parity_run/s0a_seed900101/node_truth_ft_sites2.2_nosmear`. Full detail,
+independent re-derivation, and the A15 seed-generalisation check:
+`fanout1_20260829/B4_2_KWQ1_READOUT_RECORD.md` + `b4_2_readout.json`.
+
+**T-ID/PARITY:** `combined_no_bh` and `L_cat_no_bh` bit-identical (max\|Δ\| = 0.0) between the
+primary and parity re-evaluations, seed 900101, both h-nodes, 174 events each — **PASS**.
+
+**S(s), independently re-derived (matches the scorer to full float precision):**
+S(1/√2) = −1.0456670 (sem 0.076542, n=191), S(1) = −1.0205308 (sem 0.069300, n=191),
+S(√2) = −0.9591134 (sem 0.062842, n=191). Ordering monotonically increasing with s.
+
+**R = [S(√2) − S(1/√2)] / \|S(1)\| = +0.084812.**
+
+**Gates:** GATE I max_rel 7.613×10⁻⁸ (tol 2×10⁻⁶) — PASS. GATE ENG: 486/486 active rows'
+`L_cat_no_bh` differ across s_minus/s_plus (fraction 1.0 ≥ 0.99) — PASS, non-vacuous. GATE
+T-ID/PARITY — PASS (above).
+
+**Falsifier (A14):** q1 share of Σ s_imp at truth = 92.25 % (q2 7.28 %, q3 0.47 %, q4 0.002 %) ≥
+the 50 % floor — **NOT withdrawn**; the C2 low-z localisation is reconfirmed, even more
+concentrated than the 12-seed forecast (91.7 % ft).
+
+**Per-seed robustness:** R per seed = +0.1563 (900101), +0.0386 (900102), +0.1105 (900103),
++0.0516 (900104); across-seed mean 0.0892, SD 0.0546, SEM(N=4) 0.0273. Every individual seed
+lands inside the INERT band (max \|R_seed\| = 0.156, 22 % below the 0.2 ceiling) — the verdict is
+not a borderline call.
+
+**A15:** the registered forecast (SEM of S ≈ 0.073, extrapolated from the 12-seed pooled SEM) is
+compared against the actual across-seed SD of S(1) measured directly on these 4 seeds: **SD =
+0.10584** (SEM(N=4) = 0.05292), same order as forecast. More directly: R is a within-seed paired
+ratio, so its own across-seed scatter (SD 0.0546) is much tighter than S(1)'s (SD 0.106) — level
+shifts common to all three s-nodes within a seed cancel in the ratio.
+
+**Band:** \|R\| = 0.0848 ≤ 0.2 ⇒ **KERNEL-WIDTH-INERT.**
+
+**Instrument disclosure (carried, not resolved here):** the same θ-hook driver family
+(`hier_s0_driver.py`, S0-A) returned **B0-A′ INSTRUMENT-DEFECT** on the b0i mirror score-at-truth
+null test (Z_b = −3.676, Z_s = −7.079; `hier_s0_registered_run/s0a_score.md`; forensic in
+progress). KW-Q1's design (a within-run paired comparison across s-nodes) differs from that
+score-at-truth null test, so the defect is not automatically inherited, but the instrument as a
+whole is not yet certified clean. **Verdict is REPORTED-ONLY** with this disclosure.
+
+**Verdict of record (§1.4 merge declaration):** KERNEL-WIDTH-INERT ⇒ **B4 does NOT merge into
+B1.** Per §1.4 and `SYNTHESIS_DOCKET_1_20260829.md` §2 "B4 [IMP]" condition (d): **B4.3 = the
+mixture-weight/catalogue-depth h-slope derivation** (C6 (b)/(c): `s_β = −3.2891/h`,
+`s_L = −27.08/h` on active events) **+ the per-candidate instrumented run** (part 1 §7,
+3.4 CPU-h, contingent on a non-physics-hook ruling), for the q1 impostor z-offsets.
+
+**Cost measured:** 6.152 CPU-h (main run 5.514 CPU-h, wall 1417.79 s at 14 cores; parity
+0.638 CPU-h, wall 164.07 s at 14 cores) against the registered 8.4 CPU-h primary estimate —
+≈27 % below estimate.
