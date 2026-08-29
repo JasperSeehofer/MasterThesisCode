@@ -108,6 +108,18 @@ in `cluster/cluster.env`.
     bespoke sbatch script; do not assume the template's sample
     `python -m darksiren_emri` call at the bottom is what you're actually running.
 
+13. **Fairshare is already at the floor — and it is not a block (read 2026-08-29 from
+    `scontrol show config` + `sshare`).** Priority is `multifactor`: weights QOS 15000 ·
+    FairShare 10000 · Age 5000 (max 7 d) · JobSize 2500 (`PriorityFavorSmall=yes`);
+    `PriorityDecayHalfLife = 30 days`, no usage reset. Our account holds 1 share of the
+    `st` pool (NormShares 0.0038) against EffectvUsage 0.0085 — **~2.2× over-served**, so
+    the fairshare factor sits at ~0.004 (bottom of the ranking) and **additional usage can
+    barely lower it further**; jobs run on age + QOS + backfill. Consequences: (a) the
+    penalty is continuous, not a threshold — there is no "kicks in" moment left to avoid;
+    (b) backfill-friendly shapes win: many short array tasks, modest `--time`, never one
+    monolithic job; (c) recovery only comes from the 30-day decay — a quiet fortnight
+    halves the usage term. Argue each arm's size on scientific need, not on headroom.
+
 ### The pipeline & where artifacts land
 ```
 submit_pipeline.sh --tasks N --steps M --seed S

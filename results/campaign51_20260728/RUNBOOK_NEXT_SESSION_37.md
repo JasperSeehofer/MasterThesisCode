@@ -76,3 +76,22 @@ they built · never end a turn to wait on an untracked process · per-poll SSH, 
 watchers · every submission stamps its authorization · exoneration grep is for the
 MECHANISM, not the tag · banked ✓VER rows can be internally inconsistent — one arithmetic
 check on a row's own counts before escalating.
+
+## 5. Author rulings after the charter (2026-08-29) — READ BEFORE LAUNCH
+
+- **Charter RATIFIED in full; [STANDING] grant (row #222, verbatim there):** continue through
+  every consecutive node of every branch on orchestrator judgement; one synthesis docket per
+  wave for INFORMATION; an independent **verifier pass at the end** is the author's check
+  (register it as its own workflow: sonnet panel + ≤1 top-tier adjudicator; "refuted" and
+  "undetermined" are valued outputs). Assumption pending author confirmation: production
+  DEFAULT flips still return to the author with their readout.
+- **Chair = an inherit-tier subagent with a scoped context package** (claim-card path,
+  exoneration lists verbatim, the branch registration, the node's inputs) — never the session
+  orchestrator in-line, never the whole orchestration context. The session orchestrator holds
+  the tree, dispatch, the compute ledger and the record. ≤ 3 top-tier agents per wave stands.
+- **Cluster:** no CPU-h cap; fairshare is already at the floor (skill gotcha 13) — size every
+  arm on need and shape it backfill-friendly; state each wave's total in its launch summary.
+- **B5 performance note:** the mass window currently removes only ~4.2 % of cone candidates
+  (n_lin/n_all = 0.9577), so k = 3 / log cannot add more than that; the performance risk is
+  the SKY cone (B2.2 k_sky 1.5→3 ≈ 4× candidates ≈ 4× kernel cost) — B2.2 must argue its
+  size against that scaling.
