@@ -3268,14 +3268,18 @@ class BayesianStatistics:
     # [P3-IMP] catalogue-leg twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2).
     # "off" (default) is byte-identical to the pre-flag path.
     _catalogue_numerator_survival: str = "off"
-    # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test (stage
-    # 2) (results/campaign51_20260728/realistic_20260729/
-    # PREREGISTRATION_P3_2D_20260825.md §2(i)). "off" (default) is
-    # byte-identical to the pre-flag path.
-    _catalogue_numerator_survival_2d: str = "off"
-    # Centering sub-option ("unset"/"raw"/"eff"): REFUSED ("unset") until
-    # explicitly set when the twin above is engaged -- no silent default.
-    _catalogue_numerator_survival_2d_center: str = "unset"
+    # [P3-2D] the with-BH catalogue-leg twin: production adoption (row #223
+    # standing grant, charter node B7.3; PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md).
+    # "mz_sel" (default) = the production with-BH catalogue numerator: S_4D
+    # inside the candidate's own mass quadrature (row #<adoption>); explicit
+    # "off" = the pre-adoption COUNTERFACTUAL (no per-candidate survival
+    # factor).
+    _catalogue_numerator_survival_2d: str = "mz_sel"
+    # Centering sub-option ("unset"/"raw"/"eff"): "eff" (default) is the
+    # adopted centering (A20_REVIEW_P3_2D_DESIGN_20260825.md F2); REFUSED
+    # ("unset") until explicitly set when the twin is engaged -- no silent
+    # default.
+    _catalogue_numerator_survival_2d_center: str = "eff"
     # B-DEN falsifier instrument (docs/derivations/
     # completion_numerator_data_measure.md §6; AMENDMENT A-5,
     # results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md).
@@ -3354,10 +3358,11 @@ class BayesianStatistics:
         # [P3-IMP] twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2): "off"
         # => the pre-flag production path, byte-identical.
         self._catalogue_numerator_survival: str = "off"
-        # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md
-        # §2(i)): "off" => the pre-flag production path, byte-identical.
-        self._catalogue_numerator_survival_2d: str = "off"
-        self._catalogue_numerator_survival_2d_center: str = "unset"
+        # [P3-2D] the with-BH catalogue-leg twin, ADOPTED (row #223 standing
+        # grant, charter node B7.3): "mz_sel"/"eff" => the production
+        # with-BH catalogue numerator; explicit "off" = the COUNTERFACTUAL.
+        self._catalogue_numerator_survival_2d: str = "mz_sel"
+        self._catalogue_numerator_survival_2d_center: str = "eff"
         # B-DEN falsifier instrument (docs/derivations/
         # completion_numerator_data_measure.md §6; AMENDMENT A-5). "ratio"
         # (default) => the pre-flag production path, byte-identical.
@@ -3487,19 +3492,22 @@ class BayesianStatistics:
         # ratified).
         catalogue_numerator_survival: str = "auto",
         # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test
-        # (stage 2) (results/campaign51_20260728/realistic_20260729/
-        # PREREGISTRATION_P3_2D_20260825.md §2(i)). "off" (default) is
-        # byte-identical to the pre-flag path; "mz_sel" multiplies the
+        # (row #223 standing grant, charter node B7.3;
+        # PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md). "mz_sel" (default) =
+        # the production with-BH catalogue numerator: multiplies the
         # WITH-BH catalogue numerator's mass integrand by S_4D(d_L(z;h),
         # x*M_z,det) inside the candidate's own mass quadrature (the
-        # product-Gaussian identity; see _mz_sel_2d_expectation). The
-        # without-BH twin above is deliberately untouched.
-        catalogue_numerator_survival_2d: str = "off",
+        # product-Gaussian identity; see _mz_sel_2d_expectation). Explicit
+        # "off" = the pre-adoption COUNTERFACTUAL. The without-BH twin above
+        # is deliberately untouched.
+        catalogue_numerator_survival_2d: str = "mz_sel",
         # Centering sub-option ("raw"=host_M, "eff"=host_M_eff) for the
-        # product-Gaussian mean fed to the S_4D quadrature: REQUIRED (no
-        # silent default) when catalogue_numerator_survival_2d="mz_sel" --
-        # the choice is PENDING the pre-execution review (prereg §2(i)).
-        catalogue_numerator_survival_2d_center: str = "unset",
+        # product-Gaussian mean fed to the S_4D quadrature: "eff" (default)
+        # is the adopted centering (A20_REVIEW_P3_2D_DESIGN_20260825.md F2);
+        # REQUIRED explicitly (no silent default) when
+        # catalogue_numerator_survival_2d="mz_sel" is combined with
+        # "unset".
+        catalogue_numerator_survival_2d_center: str = "eff",
         # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
         # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178).
         # "auto" (default) resolves exactly like
@@ -3697,7 +3705,8 @@ class BayesianStatistics:
                 "posterior."
             )
         self._catalogue_numerator_survival = _cat_num_surv
-        # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md §2(i)).
+        # [P3-2D] the with-BH catalogue-leg twin, ADOPTED (row #223 standing
+        # grant, charter node B7.3; PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md).
         if catalogue_numerator_survival_2d not in ("off", "mz_sel"):
             raise ValueError(
                 "catalogue_numerator_survival_2d must be 'off' or 'mz_sel', "
@@ -3713,13 +3722,32 @@ class BayesianStatistics:
                     "PREREGISTRATION_P3_2D_20260825.md §2(i)); got "
                     f"{catalogue_numerator_survival_2d_center!r}"
                 )
+            if catalogue_numerator_survival_2d_center == "eff":
+                _LOGGER.info(
+                    '[PHYSICS] catalogue_numerator_survival_2d="mz_sel" '
+                    '(center="eff") ACTIVE (adopted under row #223, charter B7.3): the WITH-BH catalogue '
+                    "numerator carries S_4D(d_L(z;h), x*M_z,det) inside its "
+                    "own mass quadrature (the product-Gaussian identity). "
+                    "This is the production with-BH catalogue-leg twin "
+                    "estimator."
+                )
+            else:
+                _LOGGER.warning(
+                    "COUNTERFACTUAL: catalogue_numerator_survival_2d=%r "
+                    "(center=%r) — S_4D inside the with-BH catalogue "
+                    "numerator's own mass quadrature with the RAW "
+                    "(non-Eddington-shifted) centering ([P3-2D] twin "
+                    "instrument only; the adopted centering is 'eff'). Not "
+                    "a production posterior.",
+                    catalogue_numerator_survival_2d,
+                    catalogue_numerator_survival_2d_center,
+                )
+        else:
             _LOGGER.warning(
-                "COUNTERFACTUAL: catalogue_numerator_survival_2d=%r "
-                "(center=%r) — S_4D inside the with-BH catalogue numerator's "
-                "own mass quadrature ([P3-2D] twin cell). Not a production "
-                "posterior.",
-                catalogue_numerator_survival_2d,
-                catalogue_numerator_survival_2d_center,
+                'COUNTERFACTUAL: catalogue_numerator_survival_2d="off" — '
+                "the pre-adoption WITH-BH catalogue numerator (no "
+                "per-candidate survival factor inside the mass quadrature). "
+                "Not a production posterior."
             )
         self._catalogue_numerator_survival_2d = catalogue_numerator_survival_2d
         self._catalogue_numerator_survival_2d_center = catalogue_numerator_survival_2d_center

@@ -356,22 +356,22 @@ class Arguments:
 
     @property
     def catalogue_numerator_survival_2d(self) -> str:
-        """[P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test
-        (results/campaign51_20260728/realistic_20260729/
-        PREREGISTRATION_P3_2D_20260825.md §2(i)). 'off' (default) is
-        byte-identical to the pre-flag path; 'mz_sel' multiplies the WITH-BH
-        catalogue numerator's mass integrand by S_4D(d_L(z;h), x*M_z,det)
-        inside the candidate's own mass quadrature. Never a production
-        posterior.
+        """[P3-2D] the with-BH catalogue-leg twin, ADOPTED in production
+        (row #223 standing grant, charter node B7.3;
+        PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md). 'mz_sel' (default)
+        multiplies the WITH-BH catalogue numerator's mass integrand by
+        S_4D(d_L(z;h), x*M_z,det) inside the candidate's own mass
+        quadrature. Explicit 'off' is the pre-adoption COUNTERFACTUAL (no
+        per-candidate survival factor); never a production posterior.
         """
         return str(self._parsed_arguments.catalogue_numerator_survival_2d)
 
     @property
     def catalogue_numerator_survival_2d_center(self) -> str:
         """Centering sub-option for --catalogue_numerator_survival_2d='mz_sel'
-        ('raw'=host_M, 'eff'=host_M_eff). REQUIRED (no silent default) when
-        the twin is engaged; the choice is PENDING the pre-execution review
-        (PREREGISTRATION_P3_2D_20260825.md §2(i)).
+        ('raw'=host_M, 'eff'=host_M_eff). 'eff' (default) is the adopted
+        centering (A20_REVIEW_P3_2D_DESIGN_20260825.md F2). REQUIRED (no
+        silent default) when the twin is engaged; 'unset' is REFUSED.
         """
         return str(self._parsed_arguments.catalogue_numerator_survival_2d_center)
 
@@ -1062,32 +1062,33 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         "--catalogue_numerator_survival_2d",
         type=str,
         choices=["off", "mz_sel"],
-        default="off",
+        default="mz_sel",
         help=(
-            "[P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test "
-            "(stage 2) (results/campaign51_20260728/realistic_20260729/"
-            "PREREGISTRATION_P3_2D_20260825.md §2(i)). 'off' (default) is "
-            "byte-identical to the pre-flag path. 'mz_sel' multiplies the "
-            "WITH-BH catalogue numerator's mass integrand by "
-            "S_4D(d_L(z;h), x*M_z,det) inside the candidate's own mass "
-            "quadrature (the product-Gaussian identity); requires "
-            "--catalogue_numerator_survival_2d_center. Never a production "
-            "posterior."
+            "[P3-2D] the with-BH catalogue-leg twin, ADOPTED in production "
+            "(row #223 standing grant, charter node B7.3; "
+            "PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md). 'mz_sel' "
+            "(default) multiplies the WITH-BH catalogue numerator's mass "
+            "integrand by S_4D(d_L(z;h), x*M_z,det) inside the candidate's "
+            "own mass quadrature (the product-Gaussian identity); requires "
+            "--catalogue_numerator_survival_2d_center. Explicit 'off' is "
+            "the pre-adoption COUNTERFACTUAL (no per-candidate survival "
+            "factor). Never a production posterior when 'off'."
         ),
     )
     parser.add_argument(
         "--catalogue_numerator_survival_2d_center",
         type=str,
         choices=["unset", "raw", "eff"],
-        default="unset",
+        default="eff",
         help=(
             "Centering sub-option for --catalogue_numerator_survival_2d "
-            "mz_sel: 'raw' uses the unshifted host_M, 'eff' uses the "
-            "(Eddington-shifted, per --eddington_m) host_M_eff, as the "
-            "product-Gaussian mean fed to the S_4D quadrature. 'unset' "
-            "(default) is REFUSED (not a silent default) whenever "
-            "--catalogue_numerator_survival_2d mz_sel is given -- the "
-            "centering choice is PENDING the pre-execution review."
+            "mz_sel: 'raw' uses the unshifted host_M, 'eff' (default) uses "
+            "the (Eddington-shifted, per --eddington_m) host_M_eff, as the "
+            "product-Gaussian mean fed to the S_4D quadrature -- the "
+            "adopted centering (A20_REVIEW_P3_2D_DESIGN_20260825.md F2). "
+            "'unset' is REFUSED (not a silent default) whenever "
+            "--catalogue_numerator_survival_2d mz_sel is given explicitly "
+            "together with it."
         ),
     )
     parser.add_argument(

@@ -193,6 +193,19 @@ def test_run_mirror_seed_inprocess_accepts_mass_filter_geometry_defaults() -> No
     assert sig.parameters["mass_filter_k"].default == 1.5
 
 
+def test_run_mirror_seed_inprocess_defaults_to_mz_sel_and_eff() -> None:
+    """[P3-2D] with-BH catalogue-leg twin production-default flip (row #223
+    standing grant, charter node B7.3;
+    PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md §1.4 site 9): this
+    function's own declaration site flips in step with
+    BayesianStatistics.evaluate()'s; explicit "off"/"unset" stays the
+    pre-adoption COUNTERFACTUAL and is what every registered CoR-P/Class-B
+    caller (§6.1 (a-v)) must now pin explicitly."""
+    sig = inspect.signature(c1d.run_mirror_seed_inprocess)
+    assert sig.parameters["catalogue_numerator_survival_2d"].default == "mz_sel"
+    assert sig.parameters["catalogue_numerator_survival_2d_center"].default == "eff"
+
+
 # ── Fleet arm-runner CLI tests (task spec item 4: fast, no pool) ────────────
 
 

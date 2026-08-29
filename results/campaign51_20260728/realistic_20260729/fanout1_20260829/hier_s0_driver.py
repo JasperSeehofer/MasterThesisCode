@@ -218,7 +218,9 @@ def build_bc_venue(
     return events, handler
 
 
-def build_ft_venue(work_root: Path, seed: int, sigma_z_scale: float = 1.0) -> tuple[pd.DataFrame, Any]:
+def build_ft_venue(
+    work_root: Path, seed: int, sigma_z_scale: float = 1.0
+) -> tuple[pd.DataFrame, Any]:
     """Build one FT-venue (bsel/phi/fused) mirror realization -- KW-Q1 (B4.2).
 
     Kwargs copied EXACTLY from ``p3_twin_test.py``'s ``_run_bsel_seed(seed,
@@ -265,7 +267,9 @@ def build_ft_venue(work_root: Path, seed: int, sigma_z_scale: float = 1.0) -> tu
     return events, handler
 
 
-def _build_venue(config: str, work_root: Path, seed: int, sigma_z_scale: float) -> tuple[pd.DataFrame, Any]:
+def _build_venue(
+    config: str, work_root: Path, seed: int, sigma_z_scale: float
+) -> tuple[pd.DataFrame, Any]:
     """Dispatch to :func:`build_bc_venue` (``config="b0i"``, unchanged default)
     or :func:`build_ft_venue` (``config="ft"``, KW-Q1/B4.2, new)."""
     if config == "b0i":
@@ -370,6 +374,17 @@ def run_theta_node(
         theta_sites=theta_sites,
         smear_global_selection=smear_flag,
     )
+    # [P3-2D] the with-BH catalogue-leg twin flipped to production default
+    # "mz_sel"/"eff" (row #223 standing grant, charter node B7.3;
+    # PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md §6.1 Class-B site B3). This
+    # driver's registered CoR-P form is the PRE-adoption estimator (cf.
+    # cluster/wave2_c1_s0b_TEMPLATE.sbatch:162), so every call site below
+    # pins the counterfactual explicitly to keep the banked Stage-0/KW-Q1
+    # comparands byte-identical.
+    cat_num_surv_2d_kwargs: dict[str, str] = dict(
+        catalogue_numerator_survival_2d="off",
+        catalogue_numerator_survival_2d_center="unset",
+    )
     if config == "b0i":
         diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
             work_root,
@@ -380,6 +395,7 @@ def run_theta_node(
             completion_event_measure=BC_EVENT_MEASURE,
             catalogue_numerator_survival=BC_CATALOGUE_NUMERATOR_SURVIVAL,
             catalogue_global_selection=BC_CATALOGUE_GLOBAL_SELECTION,
+            **cat_num_surv_2d_kwargs,
             **common_kwargs,
         )
     elif config == "ft":
@@ -395,6 +411,7 @@ def run_theta_node(
             # resolves to "phi" under absolute_marginal, matching
             # p3_twin_test.py's _run_bsel_seed call site exactly (see
             # FT_CATALOGUE_NUMERATOR_SURVIVAL's docstring comment above).
+            **cat_num_surv_2d_kwargs,
             **common_kwargs,
         )
     else:
@@ -417,13 +434,19 @@ def read_event_ln_l(diag_csv: Path, h: float, rtol: float = 1e-9) -> pd.DataFram
     mask = np.isclose(df["h"].to_numpy(dtype=float), h, rtol=rtol, atol=1e-12)
     sub = df.loc[mask, ["event_idx", *DIAG_VALUE_COLUMNS]].copy()
     if sub.empty:
-        raise RuntimeError(f"no rows at h={h!r} in {diag_csv} (h values present: {sorted(set(df['h']))})")
+        raise RuntimeError(
+            f"no rows at h={h!r} in {diag_csv} (h values present: {sorted(set(df['h']))})"
+        )
     sub = sub.drop_duplicates(subset="event_idx", keep="last")
     for col, out in (("combined_no_bh", "ln_L_no_bh"), ("combined_with_bh", "ln_L_with_bh")):
         vals = sub[col].to_numpy(dtype=float)
         with np.errstate(divide="ignore", invalid="ignore"):
             sub[out] = np.where(vals > 0.0, np.log(vals), np.nan)
-    return sub[["event_idx", "ln_L_no_bh", "ln_L_with_bh"]].sort_values("event_idx").reset_index(drop=True)
+    return (
+        sub[["event_idx", "ln_L_no_bh", "ln_L_with_bh"]]
+        .sort_values("event_idx")
+        .reset_index(drop=True)
+    )
 
 
 @dataclass
@@ -495,8 +518,16 @@ def run_arm_seed_s0a(
         node_root.mkdir(parents=True, exist_ok=True)
         t0 = time.time()
         diag_csv, elapsed = run_theta_node(
-            node_root, events, seed, handler, theta_b, theta_s,
-            h_values=h_values, theta_sites=theta_sites, smear=smear, config=config,
+            node_root,
+            events,
+            seed,
+            handler,
+            theta_b,
+            theta_s,
+            h_values=h_values,
+            theta_sites=theta_sites,
+            smear=smear,
+            config=config,
         )
         wall = time.time() - t0
         ln_l = read_event_ln_l(diag_csv, read_h)
@@ -551,8 +582,16 @@ def run_arm_seed_s0r(
         node_root.mkdir(parents=True, exist_ok=True)
         t0 = time.time()
         diag_csv, elapsed = run_theta_node(
-            node_root, events, seed, handler, theta_b, theta_s,
-            h_values=h_values, theta_sites=theta_sites, smear=smear, config=config,
+            node_root,
+            events,
+            seed,
+            handler,
+            theta_b,
+            theta_s,
+            h_values=h_values,
+            theta_sites=theta_sites,
+            smear=smear,
+            config=config,
         )
         wall = time.time() - t0
         ln_l = read_event_ln_l(diag_csv, read_h)
@@ -598,6 +637,12 @@ def run_seed_s0c(seed: int, out_root: Path, event_cap: int | None) -> dict[str, 
         completion_event_measure=BC_EVENT_MEASURE,
         catalogue_numerator_survival=BC_CATALOGUE_NUMERATOR_SURVIVAL,
         catalogue_global_selection=BC_CATALOGUE_GLOBAL_SELECTION,
+        # [P3-2D] pinned explicitly to the pre-adoption COUNTERFACTUAL after
+        # the production default flip (row #223, charter node B7.3;
+        # PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md §6.1 Class-B site B3)
+        # so this banked Stage-0/KW-Q1 comparand stays byte-identical.
+        catalogue_numerator_survival_2d="off",
+        catalogue_numerator_survival_2d_center="unset",
         theta_b=0.0,
         theta_s=1.0,
         theta_sites="all",
@@ -668,7 +713,10 @@ def compute_scores(
         n_present_by_node = {n: len(all_nodes.get(n, [])) for n in required_nodes}
         if seeds is not None:
             missing_pairs = [
-                (seed, n) for n in missing_nodes for seed in seeds if seed not in {r.seed for r in all_nodes.get(n, [])}
+                (seed, n)
+                for n in missing_nodes
+                for seed in seeds
+                if seed not in {r.seed for r in all_nodes.get(n, [])}
             ]
             detail = f"missing (seed, node) pairs: {missing_pairs}"
         else:
@@ -685,19 +733,31 @@ def compute_scores(
     for channel in channels:
         # Join b_plus/b_minus per (seed, event_idx).
         bp = pd.concat(
-            [r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]] for r in all_nodes["b_plus"]],
+            [
+                r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                for r in all_nodes["b_plus"]
+            ],
             ignore_index=True,
         ).rename(columns={channel: "b_plus"})
         bm = pd.concat(
-            [r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]] for r in all_nodes["b_minus"]],
+            [
+                r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                for r in all_nodes["b_minus"]
+            ],
             ignore_index=True,
         ).rename(columns={channel: "b_minus"})
         sp = pd.concat(
-            [r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]] for r in all_nodes["s_plus"]],
+            [
+                r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                for r in all_nodes["s_plus"]
+            ],
             ignore_index=True,
         ).rename(columns={channel: "s_plus"})
         sm = pd.concat(
-            [r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]] for r in all_nodes["s_minus"]],
+            [
+                r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                for r in all_nodes["s_minus"]
+            ],
             ignore_index=True,
         ).rename(columns={channel: "s_minus"})
 
@@ -776,7 +836,14 @@ def gate_parity(
     """
     out: dict[int, dict[str, Any]] = {}
     for r in all_nodes.get("truth", []):
-        banked_csv = bc_work_root / f"bc_{r.seed}_work" / f"seed{r.seed}" / "simulations" / "diagnostics" / "event_likelihoods.csv"
+        banked_csv = (
+            bc_work_root
+            / f"bc_{r.seed}_work"
+            / f"seed{r.seed}"
+            / "simulations"
+            / "diagnostics"
+            / "event_likelihoods.csv"
+        )
         if not banked_csv.is_file():
             out[r.seed] = {"status": "NO_BANKED_CSV", "path": str(banked_csv)}
             continue
@@ -807,7 +874,9 @@ def gate_parity(
             "diffs": diffs,
             "pass_exact": all(d.get("exact", False) for d in diffs.values() if d.get("n", 0) > 0),
             "pass_fallback_rtol": all(
-                d.get("max_rel_diff", 1.0) <= PARITY_FALLBACK_RTOL for d in diffs.values() if d.get("n", 0) > 0
+                d.get("max_rel_diff", 1.0) <= PARITY_FALLBACK_RTOL
+                for d in diffs.values()
+                if d.get("n", 0) > 0
             ),
         }
     return out
@@ -820,7 +889,10 @@ def verdict_s0a(
     z_b = scores["ln_L_no_bh"]["score_b"]["Z"]
     z_s = scores["ln_L_no_bh"]["score_s"]["Z"]
     control_null = bool(
-        np.isfinite(z_b) and np.isfinite(z_s) and abs(z_b) <= Z_THRESHOLD and abs(z_s) <= Z_THRESHOLD
+        np.isfinite(z_b)
+        and np.isfinite(z_s)
+        and abs(z_b) <= Z_THRESHOLD
+        and abs(z_s) <= Z_THRESHOLD
     )
     return {
         "band": "B0-A" if control_null else "B0-A'",
@@ -916,7 +988,19 @@ def _pin_worker_affinity(cpu_budget: int) -> None:
 
 
 def _run_one_seed_worker(
-    args: tuple[str, int, Path, tuple[str, ...], int | None, int, str, str, str, tuple[float, ...], float | None],
+    args: tuple[
+        str,
+        int,
+        Path,
+        tuple[str, ...],
+        int | None,
+        int,
+        str,
+        str,
+        str,
+        tuple[float, ...],
+        float | None,
+    ],
 ) -> Any:
     """Top-level (picklable) worker: run one seed's cells for the given arm.
 
@@ -934,19 +1018,45 @@ def _run_one_seed_worker(
     ``config``, ``h_values``, ``score_h`` -- forwarded verbatim to
     run_arm_seed_s0a/s0r (S0-C ignores them, per its own "stays as is" scope).
     """
-    arm, seed, out_root, nodes, event_cap, cpu_budget, theta_sites, smear, config, h_values, score_h = args
+    (
+        arm,
+        seed,
+        out_root,
+        nodes,
+        event_cap,
+        cpu_budget,
+        theta_sites,
+        smear,
+        config,
+        h_values,
+        score_h,
+    ) = args
     if not mp.current_process()._identity:  # noqa: SLF001 -- see docstring above
         _pin_worker_affinity(cpu_budget)
     try:
         if arm == "S0-A":
             results = run_arm_seed_s0a(
-                seed, out_root, nodes, event_cap,
-                theta_sites=theta_sites, smear=smear, config=config, h_values=h_values, score_h=score_h,
+                seed,
+                out_root,
+                nodes,
+                event_cap,
+                theta_sites=theta_sites,
+                smear=smear,
+                config=config,
+                h_values=h_values,
+                score_h=score_h,
             )
         elif arm == "S0-R":
             results = run_arm_seed_s0r(
-                seed, out_root, nodes, event_cap,
-                theta_sites=theta_sites, smear=smear, config=config, h_values=h_values, score_h=score_h,
+                seed,
+                out_root,
+                nodes,
+                event_cap,
+                theta_sites=theta_sites,
+                smear=smear,
+                config=config,
+                h_values=h_values,
+                score_h=score_h,
             )
         elif arm == "S0-C":
             return {"seed": seed, "s0c": run_seed_s0c(seed, out_root, event_cap)}
@@ -967,7 +1077,11 @@ def _run_one_seed_worker(
             },
         }
     except Exception as exc:  # noqa: BLE001 -- surfaced to the parent as a structured failure
-        return {"seed": seed, "error": f"{type(exc).__name__}: {exc}", "traceback": traceback.format_exc()}
+        return {
+            "seed": seed,
+            "error": f"{type(exc).__name__}: {exc}",
+            "traceback": traceback.format_exc(),
+        }
 
 
 def _records_to_node_results(seed: int, nodes_payload: dict[str, Any]) -> list[NodeResult]:
@@ -1007,7 +1121,19 @@ def run_arm(
     jobs = max(1, min(jobs, len(seeds)))
     cpu_per_job = max(1, total_cpu_budget // jobs)
     task_args = [
-        (arm, seed, out_root, nodes, event_cap, cpu_per_job, theta_sites, smear, config, h_values, score_h)
+        (
+            arm,
+            seed,
+            out_root,
+            nodes,
+            event_cap,
+            cpu_per_job,
+            theta_sites,
+            smear,
+            config,
+            h_values,
+            score_h,
+        )
         for seed in seeds
     ]
 
@@ -1021,7 +1147,9 @@ def run_arm(
         # this is the runner-disclosed P0 crash fix, B1_2_DRIVER_EXTENSION_
         # NOTE.md "Crash fix"). Passing cpu_per_job here (not via task_args)
         # is what makes it "once per worker" rather than "once per task".
-        with ctx.Pool(processes=jobs, initializer=_pin_worker_affinity, initargs=(cpu_per_job,)) as pool:
+        with ctx.Pool(
+            processes=jobs, initializer=_pin_worker_affinity, initargs=(cpu_per_job,)
+        ) as pool:
             raw_results = pool.map(_run_one_seed_worker, task_args)
     wall_s = time.time() - t0
 
@@ -1068,7 +1196,10 @@ def run_arm(
     payload["per_seed_summary"] = [
         {
             "seed": r["seed"],
-            "nodes": {n: {"elapsed_s": p["elapsed_s"], "n_events": p["n_events"]} for n, p in r["nodes"].items()},
+            "nodes": {
+                n: {"elapsed_s": p["elapsed_s"], "n_events": p["n_events"]}
+                for n, p in r["nodes"].items()
+            },
         }
         for r in ok
     ]
@@ -1081,7 +1212,9 @@ def run_arm(
     # errored out (all_nodes left completely empty for every node)
     # compute_scores was still called and pd.concat([]) raised an opaque
     # "No objects to concatenate" instead of this driver ever reporting WHY.
-    produced_all_four = all(len(all_nodes.get(n, [])) > 0 for n in ("b_plus", "b_minus", "s_plus", "s_minus"))
+    produced_all_four = all(
+        len(all_nodes.get(n, [])) > 0 for n in ("b_plus", "b_minus", "s_plus", "s_minus")
+    )
     if requested_all_four and produced_all_four:
         scores = compute_scores(all_nodes, seeds=seeds)
         eng = gate_eng(all_nodes)
@@ -1167,14 +1300,23 @@ def gather_node_results_from_disk(
     """
     prefix = {"S0-A": "s0a_seed", "S0-R": "s0r_seed"}.get(arm)
     if prefix is None:
-        raise ValueError(f"--score-only supports S0-A/S0-R only (no node cross to pool for {arm!r})")
+        raise ValueError(
+            f"--score-only supports S0-A/S0-R only (no node cross to pool for {arm!r})"
+        )
     suffix = _node_dir_suffix(theta_sites, smear, config)
     all_nodes: dict[str, list[NodeResult]] = {n: [] for n in nodes}
     missing: list[str] = []
     for seed in seeds:
         for node in nodes:
             theta_b, theta_s = THETA_NODES[node]
-            diag_csv = out_root / f"{prefix}{seed}" / f"node_{node}{suffix}" / "simulations" / "diagnostics" / "event_likelihoods.csv"
+            diag_csv = (
+                out_root
+                / f"{prefix}{seed}"
+                / f"node_{node}{suffix}"
+                / "simulations"
+                / "diagnostics"
+                / "event_likelihoods.csv"
+            )
             if not diag_csv.is_file():
                 missing.append(str(diag_csv))
                 continue
@@ -1186,7 +1328,9 @@ def gather_node_results_from_disk(
                     theta_s=theta_s,
                     seed=seed,
                     diag_csv=str(diag_csv),
-                    elapsed_s=float("nan"),  # not measured -- no evaluation happened this invocation
+                    elapsed_s=float(
+                        "nan"
+                    ),  # not measured -- no evaluation happened this invocation
                     n_events=len(ln_l),
                     ln_l=ln_l,
                 )
@@ -1218,7 +1362,9 @@ def score_only_payload(
         "n_missing_csv": len(missing),
         "missing_csv_paths": missing,
     }
-    need_all_four = all(len(all_nodes.get(n, [])) > 0 for n in ("b_plus", "b_minus", "s_plus", "s_minus"))
+    need_all_four = all(
+        len(all_nodes.get(n, [])) > 0 for n in ("b_plus", "b_minus", "s_plus", "s_minus")
+    )
     if need_all_four:
         scores = compute_scores(all_nodes, seeds=seeds)
         eng = gate_eng(all_nodes)
@@ -1255,7 +1401,9 @@ def write_score_markdown(payload: dict[str, Any], md_path: Path) -> None:
     if "n_present_by_node" in payload:
         lines.append(f"Nodes present on disk (n seeds each): {payload['n_present_by_node']}")
     if payload.get("missing_csv_paths"):
-        lines.append(f"Missing CSVs ({payload['n_missing_csv']}): first 5 -> {payload['missing_csv_paths'][:5]}")
+        lines.append(
+            f"Missing CSVs ({payload['n_missing_csv']}): first 5 -> {payload['missing_csv_paths'][:5]}"
+        )
     lines.append("")
     if "scores" in payload:
         for channel, d in payload["scores"].items():
@@ -1274,7 +1422,9 @@ def write_score_markdown(payload: dict[str, Any], md_path: Path) -> None:
     if "gate_eng" in payload:
         lines.append("## GATE ENG (mean fraction of events moved >=1e-6 rel, per node)")
         for node, d in payload["gate_eng"].items():
-            lines.append(f"- {node}: mean_fraction_moved={d['mean_fraction_moved']!r} pass={d['pass']}")
+            lines.append(
+                f"- {node}: mean_fraction_moved={d['mean_fraction_moved']!r} pass={d['pass']}"
+            )
         lines.append("")
     if "gate_parity" in payload:
         lines.append("## GATE PARITY (truth node vs banked bc CSV, per seed)")
@@ -1291,7 +1441,9 @@ def write_score_markdown(payload: dict[str, Any], md_path: Path) -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--arm", required=True, choices=("S0-A", "S0-R", "S0-C"))
     ap.add_argument(
         "--seeds",
@@ -1444,8 +1596,14 @@ def main() -> int:
             raise SystemExit("--score-only is not supported for --arm S0-C (no node cross to pool)")
         score_h = _resolve_score_h(h_values, args.score_h)
         all_nodes, missing = gather_node_results_from_disk(
-            args.arm, seeds, out_root, nodes,
-            theta_sites=args.theta_sites, smear=args.smear, config=args.config, score_h=score_h,
+            args.arm,
+            seeds,
+            out_root,
+            nodes,
+            theta_sites=args.theta_sites,
+            smear=args.smear,
+            config=args.config,
+            score_h=score_h,
         )
         result = score_only_payload(args.arm, seeds, nodes, all_nodes, missing)
         result["theta_sites"] = args.theta_sites
@@ -1461,13 +1619,26 @@ def main() -> int:
         write_score_markdown(result, out_md)
         print(f"wrote {out_json}")
         print(f"wrote {out_md}")
-        print(json.dumps({k: v for k, v in result.items() if k != "missing_csv_paths"}, indent=2, default=str)[:4000])
+        print(
+            json.dumps(
+                {k: v for k, v in result.items() if k != "missing_csv_paths"}, indent=2, default=str
+            )[:4000]
+        )
         return 0 if not missing or result.get("scores") else 1
 
     result = run_arm(
-        args.arm, seeds, out_root, jobs, args.total_cpu_budget, nodes, event_cap,
-        theta_sites=args.theta_sites, smear=args.smear, config=args.config,
-        h_values=h_values, score_h=args.score_h,
+        args.arm,
+        seeds,
+        out_root,
+        jobs,
+        args.total_cpu_budget,
+        nodes,
+        event_cap,
+        theta_sites=args.theta_sites,
+        smear=args.smear,
+        config=args.config,
+        h_values=h_values,
+        score_h=args.score_h,
     )
     result["smoke"] = bool(args.smoke)
     result["event_cap"] = event_cap
@@ -1478,7 +1649,13 @@ def main() -> int:
     out_json = out_root / f"{args.arm.lower().replace('-', '')}_{tag}_output.json"
     out_json.write_text(json.dumps(result, indent=2, default=str))
     print(f"wrote {out_json}")
-    print(json.dumps({k: v for k, v in result.items() if k not in ("per_seed_summary",)}, indent=2, default=str)[:4000])
+    print(
+        json.dumps(
+            {k: v for k, v in result.items() if k not in ("per_seed_summary",)},
+            indent=2,
+            default=str,
+        )[:4000]
+    )
     return 0 if not result.get("errors") else 1
 
 

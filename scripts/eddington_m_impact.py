@@ -160,6 +160,9 @@ def main() -> None:
                 # deliberate archived-baseline re-run precedent as the seed600 A/B
                 # (--allow_low_pdet_coverage; results/seed600_ab_20260710/ANALYSIS.md).
                 allow_low_pdet_coverage=True,
+                # pinned explicitly 2026-08-29: production default flipped to mz_sel/eff (charter B7.3, row #223); this archived gate keeps its documented baseline
+                catalogue_numerator_survival_2d="off",
+                catalogue_numerator_survival_2d_center="unset",
             )
             print(f"[{variant}] h={h} done in {time.time() - th:.0f}s", flush=True)
         entry: dict = {}

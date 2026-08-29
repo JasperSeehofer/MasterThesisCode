@@ -781,3 +781,119 @@ CSVs (§1.4). Nothing here addresses the author directly; every item returns to 
 and, per row #223, to the end-of-fan-out verifier.*
 
 **Stamp:** launched under rows #222/#223 — charter node B7.3; PRESENTED 2026-08-29, before code.
+
+---
+
+## 13. Implementation record (row #223, charter node B7.3; appended, presentation text above unedited)
+
+**Date:** 2026-08-29 · **Commit ref:** pre-commit (staged; SHA to be filled by the [PHYSICS] commit
+this record travels in) · **Builder:** the implementer dispatched to node B7.3 (this task); no
+separate independent verifier was dispatched — the "verified" gate-ledger row below is a
+builder-run smoke pass, disclosed as such (standing rule 2), following the row-#(B5.1) precedent.
+
+### 13.1 Diff summary (line numbers against HEAD 0d0eb691, tree unchanged from ff230621 at
+presentation time — verified via `git diff ff230621 0d0eb691 -- darksiren_emri/ darksiren_emri_test/`
+= empty)
+
+| file | lines | change |
+|---|---|---|
+| `darksiren_emri/bayesian_inference/bayesian_statistics.py` | :3272-3279 | class attributes `_catalogue_numerator_survival_2d`/`_center` "off"/"unset" -> "mz_sel"/"eff" + comment sweep |
+| | :3358-3362 | `__init__` instance defaults, same flip + comment sweep |
+| | :3492-3505 | `evaluate()` signature defaults, same flip + comment sweep |
+| | :3705-3757 | validation/log block restructured: `mz_sel`+`eff` -> INFO `[PHYSICS] ... ACTIVE (row #249)`; `mz_sel`+`raw` -> WARNING (instrument-only); `off` -> WARNING (COUNTERFACTUAL, new `else` branch) |
+| `darksiren_emri/arguments.py` | :1061-1078, :1079-1092 | argparse defaults "off"/"unset" -> "mz_sel"/"eff" + help text |
+| | :357-368, :370-376 | property docstrings updated |
+| `darksiren_emri/main.py` | :1414-1419 | module `evaluate()` signature defaults + comment |
+| `darksiren_emri/validation/correspondence_1d.py` | :2747-2759 | `run_mirror_seed_inprocess` signature defaults + comment |
+| `results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py` | `run_theta_node` (b0i/ft branches), `run_seed_s0c` | THREE `run_mirror_seed_inprocess` call sites pinned explicit `catalogue_numerator_survival_2d="off"`, `catalogue_numerator_survival_2d_center="unset"` (Class-B site B3, §6.1) |
+
+**Not touched (verified by `git diff` — empty over these ranges):** kernel read sites
+(:6823-6846, :6872-6896, :7517-7540), the composition guards (:6376-6382, :7316-7322), worker
+signature defaults (`single_host_likelihood`:6274/:6280, `single_host_likelihood_batch`:7000/:7005,
+`_starmap_host_batches`:7641-7642), threading call sites (main.py:211-212, :1471-1472;
+correspondence_1d.py:2943-2946; bayesian_statistics.py:5070-5071/:5090-5091/:7710-7711). Item
+(a-iv) (early evaluate()-layer composition guard) was NOT added — disclosed choice, explicitly
+permitted by §6.1(a-iv): the existing kernel guards alone already realize G-1.
+
+Class-A call sites (§6.1(a-v), 8 sites: `p3_2d_fleet.py`, `ca_rhs_scorer.py`,
+`p3_wbhzero_measure.py`, `p3_2d_companion.py`, `wbhzero_probe.py`, `rhs_inflation_confirmation.py`
++ `rhs_inflation_alt_construction.py`, the wave2 sbatch set) re-grepped post-implementation: all
+still pass their explicit value; zero edits landed on any of them.
+
+### 13.2 Tests re-pinned / added (§6.1(a-vi), §6.2)
+
+Re-pinned to an explicit old value (not rewritten):
+- `test_catalogue_numerator_survival_2d.py::test_evaluate_mz_sel_with_unset_center_raises` — added
+  `catalogue_numerator_survival_2d_center="unset"` explicitly.
+- `test_catalogue_numerator_survival_2d.py::test_cli_validate_refuses_mz_sel_with_unset_center` —
+  added `--catalogue_numerator_survival_2d_center unset` explicitly.
+
+Rewritten (the default pin itself):
+- `test_cli_flag_defaults_to_off_and_unset` -> `test_cli_flag_defaults_to_mz_sel_and_eff` (asserts
+  the new default pair) + new sibling `test_cli_flag_explicit_off_and_unset_parses_and_validates`
+  (pins the counterfactual explicitly).
+
+New pin tests (§6.2):
+1. `test_six_site_default_trace_is_mz_sel_and_eff` — class attribute, `__init__`, `evaluate()`
+   signature, argparse, `main.evaluate`, `run_mirror_seed_inprocess` all resolve to
+   `("mz_sel","eff")`; kernel defaults (`single_host_likelihood`/`_batch`) confirmed to stay
+   `("off","unset")`.
+2. `test_kernel_default_pair_bit_identical_to_explicit_mz_sel_eff` — the resolved default pair is
+   bit-identical to explicitly passing it to the kernel (there is no separate kernel-level "default"
+   code path).
+3. `test_evaluate_default_logs_physics_info_line` / `test_evaluate_explicit_off_logs_counterfactual_warning`
+   — caplog pins of the G-2 INFO/WARNING split, exercised through `evaluate()` (the block lives
+   there, not `__init__`), short-circuited via a deliberately invalid, UNRELATED
+   `catalogue_global_selection="bogus"` immediately after our block to avoid driving `evaluate()`
+   into real host/pool computation against `MagicMock()` stand-ins for `galaxy_catalog`/
+   `cosmological_model` — disclosed technique.
+4. `test_r5_sigma_gal_zero_limit_matches_point_s4d_at_host_mass` — R5 (§6.2 item 6, §4 row 5): as
+   sigma_gal -> 0, `E[S] -> S_4D(d_L(z;h), host_M*(1+z))`, matched to an independently-computed point
+   `S_4D` query. Isolated via `normalization_mode="generator_marginal"` (the code's genuine
+   delta-kernel branch, no z-quadrature). Collapsing `host_z_error` under `volume_deconv` instead
+   was tried FIRST and found to underflow the 50-node host-z quadrature to ~0 well before the limit
+   is reached (both "off" and "mz_sel" collapsed to exactly 0.0, a numerical-resolution artefact,
+   not the mathematical limit) — abandoned for the `generator_marginal` vehicle; disclosed, not
+   hidden.
+5. `test_run_mirror_seed_inprocess_defaults_to_mz_sel_and_eff` — appended to
+   `darksiren_emri_test/validation/test_correspondence_1d.py` in the existing `:172-195`
+   signature-default pattern (mirrors the `mass_filter_geometry` precedent immediately above it).
+
+**run_metadata (§6.3):** unaffected by construction — `Arguments.to_dict()` serializes the full
+parsed namespace (arguments.py:123-133), so the new default values flow through with no separate
+stamp-path code change; confirmed via `test_cli_flag_defaults_to_mz_sel_and_eff`'s `to_dict()`
+assertions.
+
+**Item 6.2.3 (production-scale cluster pin) NOT attempted** — explicitly out of scope for a local
+implementation task (needs the production CRB set, reduced catalogue and injection pool per
+`cluster/datasets.yaml:246`); it rides the wave-3 per-change arm as the presentation specifies.
+
+### 13.3 Suite counts
+
+| scope | result |
+|---|---|
+| `test_catalogue_numerator_survival_2d.py` + `test_survival_2d_homogeneity_falsifier.py` (run first, per dispatch) | 56 passed |
+| same two files + `darksiren_emri_test/validation/test_correspondence_1d.py` | 128 passed |
+| `darksiren_emri_test/bayesian_inference` (directory) | 572 passed, 6 skipped |
+| `test_arguments.py` + `test_theta_cli_forwarding.py` + `darksiren_emri_test/validation` | 432 passed, 1 skipped |
+| full `pytest -m "not gpu and not slow"` | **1896 passed, 15 skipped, 27 deselected**, 119.75s, coverage 73.48% (baseline §6.4 was 1889/15/27; net +7 new tests, zero drift outside the flag's own tests) |
+
+`ruff check --fix` + `ruff format`: clean on all touched files (ruff format additionally
+reformatted long pre-existing lines throughout `hier_s0_driver.py` predating this row — disclosed,
+no semantic change). `mypy darksiren_emri/`: clean, 70 source files, no issues.
+
+### 13.4 The [PHYSICS] commit message actually used (§9.3 template, filled in)
+
+    [PHYSICS] adopt the with-BH catalogue-leg twin in production (row #223 standing grant, charter node B7.3; rows #189-#212/#216 evidence chain; B7.2 C4 read IMMATERIAL-PREDICTED +0.0025, R1/R2/R6 PASS, row #248) — catalogue_numerator_survival_2d default 'off'->'mz_sel', center 'unset'->'eff' at nine declaration sites, kernel read-site logic untouched, explicit 'off' = the counterfactual; STRUCTURAL-CONSISTENCY change, no bias claim; suite 1896 passed / 15 skipped / 27 deselected green; independently verified COMMIT-READY (builder-run smoke pass, disclosed); batched into the wave-3 blind HEAD readout (F2)
+
+Body cites: this file (§1-§9, §13 above); `PROPOSAL_2D_TWIN_ADOPTION_20260829.md` §1-§9/§13/§15;
+`B7_2_TWIN_CF_READOUT_RECORD.md` §6; `B7_2_FALSIFIER_I_RECORD.md`; the three
+`docs/gates/PHYSICS-GATE-LEDGER.md` rows (presented/implemented/verified, 2026-08-29); the
+`BIAS_HISTORY_LEDGER.md` rows #248/#249. Full file list to commit:
+`results/campaign51_20260728/realistic_20260729/fanout1_20260829/B7_3_ADOPTION_IMPLEMENTATION_RECORD.md`.
+
+**What the plan said that could not be done in full (disclosed, see §13.1/§13.2):** the (a-iv)
+early evaluate()-layer guard was left unadded (permitted alternative); the §6.2 item 3
+production-scale cluster pin was not attempted locally (out of scope, rides wave-3); the "verified"
+ledger row is a builder-run smoke pass rather than an independent-agent verification (no separate
+verifier was dispatched to this node).

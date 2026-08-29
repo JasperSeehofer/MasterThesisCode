@@ -2749,12 +2749,14 @@ def run_mirror_seed_inprocess(
     # scalar twin of the same semantics. "auto" (default) resolves to "phi"
     # under absolute_marginal (production), else "off".
     catalogue_numerator_survival: str = "auto",
-    # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test (stage
-    # 2) (PREREGISTRATION_P3_2D_20260825.md §2(i)). "off" (default) is
-    # byte-identical to the pre-flag path; requires
+    # [P3-2D] the with-BH catalogue-leg twin, ADOPTED in production (row
+    # #223 standing grant, charter node B7.3;
+    # PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md). "mz_sel"/"eff" (default)
+    # is the production with-BH catalogue numerator; explicit "off" is the
+    # pre-adoption COUNTERFACTUAL; requires
     # catalogue_numerator_survival_2d_center to be "raw"/"eff" when "mz_sel".
-    catalogue_numerator_survival_2d: str = "off",
-    catalogue_numerator_survival_2d_center: str = "unset",
+    catalogue_numerator_survival_2d: str = "mz_sel",
+    catalogue_numerator_survival_2d_center: str = "eff",
     # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
     # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178);
     # scalar twin of the same semantics. "auto" (default) resolves to "phi"
