@@ -2495,3 +2495,28 @@ additional to `REVISION NOTE 1`'s CoR-P-scoped item) and, by extension, R4′'s 
 unexecuted measurement (handed to the next executing node, not gated on author action);
 execution of P0/S0-B is not blocked by either. Worker: sonnet-tier subagent, wave-2 GAP-CLOSURE
 workflow, 2026-08-29.*
+
+---
+
+**P1 full-N result (orchestrator as runner) — appended 2026-08-29.** Registered CoR-P `b_plus`
+node, seed900101, `theta_sites="2.2"`, unsmeared, at full N (single-`--jobs` path, run before the
+separate `--jobs 2` P0 crash below). Diffs, smeared "all" form vs. unsmeared "2.2" form:
+
+- `L_cat_no_bh`: max_abs **0.0** (bit-identical).
+- `combined_no_bh`: max_abs **4.378e-4**, max_rel **7.447e-3**.
+- `D_tilde_phi`: max_rel **7.503e-3**.
+- `alpha_G_phi`: max_rel **0.1366** (13.66%).
+
+Source: `fanout1_20260829/hier_s0_registered_run/logs/runner_wave2pre_20260829.log:762-765`.
+
+**P0 crash disclosure.** The subsequent local S0-A completion run (`--jobs 2`, 4 seeds × all
+nodes) crashed: `hier_s0_driver.py:970` `run_arm()` → `hier_s0_driver.py:647` `compute_scores()`
+→ `pd.concat([...])` raised `ValueError: No objects to concatenate` — the per-seed node results
+for `b_plus` are not collected across parallel workers when `--jobs>1` (only 1 of 4 requested
+seeds present for `b_plus`, 0 for `truth`/`b_minus`/`s_plus`/`s_minus`). This is a driver defect
+in the `--jobs>1` node loop, not a statistic: no `L_cat_no_bh`/`combined_no_bh`/`D_tilde_phi`/
+`alpha_G_phi` value above is affected, since the P1 full-N result was produced on the
+unaffected single-`--jobs` path before this run. `hier_s0_driver.py` is not touched by this
+node (owned by another agent per standing scope); re-run pending the fix.
+
+Launched under rows #222/#223 — [FABLE-ORCH], 2026-08-29.

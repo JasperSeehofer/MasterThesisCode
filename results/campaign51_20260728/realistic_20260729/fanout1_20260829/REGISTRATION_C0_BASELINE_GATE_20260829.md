@@ -235,3 +235,79 @@ panel marked this a minor process deviation, not a content defect.
 not, whether C1 is blocked pending diagnosis while C3/C4 remain clear per §11.3."
 
 Stamped: launched under rows #222/#223 — charter node C0 (revision pass), 2026-08-29.
+
+## 12. A22 launch stamp — appended 2026-08-29
+
+wave-2 commit `ff230621`; job `6738998`; launched 2026-08-29 under rows #222/#223. Fills the §8
+placeholder ("Wave-2 commit hash: \<to be stamped at launch\>"), which is left unedited
+(append-only). Tree clean at both the local and cluster checkouts at launch time.
+
+Stamped: launched under rows #222/#223 — charter node C0, 2026-08-29.
+
+## 13. RESULT RECORD — appended 2026-08-29 (~21:10)
+
+**Launched under rows #222/#223 — charter node C0.** Append-only; nothing above is edited.
+
+**Run.** SLURM job `6738998` **COMPLETED** (Elapsed 00:06:28, ExitCode 0:0) at commit `ff230621`
+(`GIT_COMMIT_AT_RUN.txt`). Provenance JSON `logs/provenance_6738998_none.json` reports
+`dirty=296` — this is the cluster checkout's untracked-file count at run start, not a dirty
+tracked tree; the tracked tree was clean at pull (§12). Dataset-pin STOP-gate: **OK** — CRB
+md5 `9a1f2a14384a9281c97ca3be312ddaab`, catalogue md5 `c52c13b5cab61f6b3f04bbe202550969`, both
+matching §2's pins. Evaluate stage: 1588 detections, 0 Fisher-flagged, 14 workers, host-lookup
+yield 982/1588 with catalogue hosts (606 pure-completion), P6 host-recovery 66/76 in-catalogue
+(86.84%) both channels; ~4.5 min evaluate wall (of the 6.5 min total elapsed).
+
+**Gate verdict (§3 band).** **PASS — bit-identical.** Compared
+`wave2_20260829/c0/diagnostics/event_likelihoods.csv` rows at h=0.73 (1588 rows) against
+`headreadout_20260827/iiib/event_likelihoods.csv` rows at h=0.73 (1588 of that file's 65,108
+data rows, filtered): max_abs **0.000** on all 14 non-trivial shared numeric columns (`w_G`,
+`w_G_legacy`, `w_tilde_G`, `alpha_G_phi`, `r_Malm`, `D_tilde_phi`, `L_cat_no_bh`,
+`L_cat_with_bh`, `B_num`, `B_num_wbh`, `g_frac`, `L_comp`, `combined_no_bh`,
+`combined_with_bh`) — the 15th numeric column per §3/§11.1 (`h`) is fixed at 0.73 in both files
+by construction and not a discriminating check. Far inside the ≤1e-12 band (it is exactly 0).
+**No fallback triggered.**
+
+**Column-list finding ("cols equal: False" — checked per the orchestrator's request).**
+`head -1` diff of the two CSVs: `headreadout_20260827/iiib/event_likelihoods.csv` has 16 fields
+(`event_idx, h` + the 14 columns above); `wave2_20260829/c0/diagnostics/event_likelihoods.csv`
+has 19 fields — the same 16, in the same order, plus three trailing columns:
+`den_log_term, num_log_term_no_bh, num_log_term_with_bh`. This is exactly the §11.1 correction
+already on record (HEAD's 19-field/18-numeric fieldnames vs. the pre-`d40fe5c8` 16-field form)
+— not a regression or an unexpected drift. The naive pandas `cols equal: False` print is fully
+explained by these 3 known/expected additions; it is a superset relationship, not a mismatch.
+**Coverage: the registration's gate column set (§3's 15 numeric columns, all present in both
+files, same order, same names) is fully covered** — the shared prefix is byte-identical between
+the two headers, and the extra 3 columns in c0 are outside §3's gate scope (they are gated
+separately, and only for C1, by §11.2's not-yet-run internal identity check — this RESULT
+RECORD does not run that check; it is out of this record's scope and does not affect the §3
+PASS above, which covers zero of the 3 new columns by design, per §11.3).
+
+**Posterior comparison.** Rather than a parsed max-abs-diff, md5 checksum was used (a strictly
+stronger identity claim): `wave2_20260829/c0/posteriors/h_0_73.json` md5
+`563ef45b0598dcfc8f5c9ba19efbf9fd` — **byte-identical** to
+`headreadout_20260827/iiib/posteriors/h_0_73.json` (same md5).
+`wave2_20260829/c0/posteriors_with_bh_mass/h_0_73.json` md5 `2b4fb3e0d055e08fe7a905b8d3c4d817`
+— **byte-identical** to `headreadout_20260827/iiib/posteriors_with_bh_mass/h_0_73.json` (same
+md5). Both files are dicts keyed by event index string (`'0'`…`'1589'`, with the expected gaps
+at excluded event indices, e.g. `'1203'`, `'1356'` absent) plus `'h'`; bit-identity trivially
+satisfies §3's "bit-identical or ≤1e-12 relative" condition on every key.
+
+**F4 costing correction [A11].** The HEAD-readout job `6725283`'s own per-task Elapsed ranged
+00:00:18 (task 21 — the exact h=0.730 point this gate reused as baseline) … 00:42:26 (task 13);
+the 56–76 min/h-value anchor cited in §2/§7 (`cluster/LAUNCHING_JOBS.md:47`) is measured on the
+**3355-event** set and is **not** the right anchor for this **1588-event** iiib venue. C0
+actual: 00:06:28 elapsed × 16 cpus/task ≈ **1.7 CPU-h**, against the 15–23 CPU-h estimated in
+§7 (built from the wrong anchor) — roughly a 9–13x overestimate. This correction is recorded
+for reuse: the C3/C4/C1 cost estimates in `COMPUTE_LEDGER.md` cite the same 56–76 min anchor and
+should be re-costed against the 1588-event/task-21-range anchor before being treated as tight
+bounds, not just orders of magnitude.
+
+**Verdict of record.** PASS bit-identical ⇒ per §3, the banked HEAD readout
+`headreadout_20260827/iiib/` (commit `d04d9dc9`) is the zero-compute baseline for C3 and C4
+(docket L5) and the truth node (θ=(0,1)) for C1/PA-HIER-31 item 4. §3's conditional fallback
+(+120–173 CPU-h) is **not** triggered. Per §11.3, this PASS does not by itself certify C1 as a
+*clean* truth node for the 3 OAT-toggle columns (`den_log_term`, `num_log_term_no_bh`,
+`num_log_term_with_bh`) — that remains conditional on the separate §11.2 identity check, not run
+by this record.
+
+Stamped: launched under rows #222/#223 — charter node C0, 2026-08-29.

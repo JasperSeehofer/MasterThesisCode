@@ -628,7 +628,10 @@ def run_seed_s0c(seed: int, out_root: Path, event_cap: int | None) -> dict[str, 
 # ── Registered statistics (prereg §4.1) ─────────────────────────────────────
 
 
-def compute_scores(all_nodes: dict[str, list[NodeResult]]) -> dict[str, Any]:
+def compute_scores(
+    all_nodes: dict[str, list[NodeResult]],
+    seeds: tuple[int, ...] | None = None,
+) -> dict[str, Any]:
     """Pool per-event score_b/score_s over every event and seed (prereg §4.1).
 
     ``all_nodes`` maps node name -> list of NodeResult (one per seed), each
@@ -639,7 +642,44 @@ def compute_scores(all_nodes: dict[str, list[NodeResult]]) -> dict[str, Any]:
     score_b = [lnL(b=+0.02,s=1) - lnL(b=-0.02,s=1)] / 0.04
     score_s = [lnL(b=0,s=sqrt2) - lnL(b=0,s=1/sqrt2)] / (sqrt2 - 1/sqrt2)
     Z_x = mean(score_x) / SEM(score_x), pooled over events and seeds.
+
+    Args:
+        seeds: The full seed set this caller expected results for, used ONLY
+            to name exactly which (seed, node) pairs are missing in the error
+            message below. Optional so this function stays callable with just
+            ``all_nodes`` (its pre-fix signature); when omitted, the missing-
+            node list is reported without a per-seed breakdown.
+
+    Raises:
+        ValueError: if any of the 4 off-truth nodes has ZERO ``NodeResult``
+            entries (runner-disclosed P0 crash fix, ``B1_2_DRIVER_EXTENSION_
+            NOTE.md`` "Crash fix"): every ``pd.concat`` below used to receive
+            an empty list in that case and raise pandas' own opaque "No
+            objects to concatenate" with no indication of WHICH (seed, node)
+            evaluate() call never produced a result. Both call sites
+            (:func:`run_arm`, :func:`score_only_payload`) already gate on a
+            "produced" check before calling this, so this guard is a second,
+            defensive line -- it fires only if a future caller skips that
+            check.
     """
+    required_nodes = ("b_plus", "b_minus", "s_plus", "s_minus")
+    missing_nodes = [n for n in required_nodes if not all_nodes.get(n)]
+    if missing_nodes:
+        n_present_by_node = {n: len(all_nodes.get(n, [])) for n in required_nodes}
+        if seeds is not None:
+            missing_pairs = [
+                (seed, n) for n in missing_nodes for seed in seeds if seed not in {r.seed for r in all_nodes.get(n, [])}
+            ]
+            detail = f"missing (seed, node) pairs: {missing_pairs}"
+        else:
+            detail = f"missing nodes (no seed list given): {missing_nodes}"
+        raise ValueError(
+            "compute_scores: cannot pool score_b/score_s -- "
+            f"{detail}. n_present_by_node={n_present_by_node}. Every one of these evaluate() "
+            "calls either was never attempted or raised inside its worker -- check the caller's "
+            "printed WORKER ERROR lines / payload['errors'] (run_arm) or missing_csv_paths "
+            "(--score-only) for the real underlying cause."
+        )
     channels = ("ln_L_no_bh", "ln_L_with_bh")
     out: dict[str, Any] = {}
     for channel in channels:
@@ -823,14 +863,70 @@ def verdict_s0r(scores: dict[str, Any], eng: dict[str, Any]) -> dict[str, Any]:
 # ── Multi-seed orchestration with a bounded process budget ─────────────────
 
 
+def _pin_worker_affinity(cpu_budget: int) -> None:
+    """Pin this process to a ``cpu_budget``-sized CPU slice, DISJOINT from every other
+    concurrent pool worker's slice.
+
+    Root cause of the P0 crash (runner-disclosed 2026-08-29, see
+    ``B1_2_DRIVER_EXTENSION_NOTE.md`` "Crash fix"): the previous version of this
+    function ran INSIDE ``_run_one_seed_worker`` and computed
+    ``all_cpus[:cpu_budget]`` independently in every worker -- with ``--jobs
+    N>1`` every one of the ``N`` concurrent workers pinned itself to the SAME
+    leading ``cpu_budget`` cores instead of disjoint slices, so ``N`` workers
+    (each ALSO launching its own internal multiprocessing pool inside
+    ``BayesianStatistics.evaluate``, sized off that artificially narrowed
+    affinity mask) oversubscribed the same handful of cores N-fold. Under the
+    registered P0 command (``--jobs 2 --total-cpu-budget 14``, cpu_budget=7)
+    this reproducibly killed ``evaluate()`` partway through EVERY seed's FIRST
+    node -- confirmed post-mortem: every ``node_truth_sites2.2_nosmear`` dir
+    held only the early-written ``prepared_cramer_rao_bounds.csv``/
+    ``selection_tables_h_*.json`` artifacts and no
+    ``simulations/diagnostics/event_likelihoods.csv``, i.e. ``evaluate()``
+    never returned for ANY seed's first node, each per-seed worker's
+    ``except Exception`` therefore fired before the loop ever reached a second
+    node, and ``run_arm`` was left with zero ``NodeResult`` for every node
+    (not just the off-truth ones) -- which is what made
+    ``compute_scores``'s ``pd.concat([])`` raise "No objects to concatenate".
+
+    Used two ways, both keyed off ``multiprocessing.current_process().
+    _identity`` (the 1-based ``(n,)`` slot the Pool machinery assigns each
+    worker ONCE at spawn, stable for the worker's whole lifetime -- used here
+    ONLY to pick a disjoint CPU slice, never anything statistic-facing):
+
+    * ``--jobs 1`` (no ``Pool``, direct call from ``run_arm``'s list
+      comprehension): ``_identity`` is empty, slot=0 -- BYTE-IDENTICAL to the
+      pre-fix single leading-slice pin (``all_cpus[:cpu_budget]``).
+    * ``--jobs N>1``: passed as ``ctx.Pool(..., initializer=
+      _pin_worker_affinity, initargs=(cpu_per_job,))`` -- called ONCE per
+      worker process, at Pool startup, before any task runs, while the OS
+      affinity mask this process inherited from its parent is still the FULL
+      original set (not yet narrowed by any prior pin), so each worker's
+      disjoint slice is computed correctly regardless of task-dispatch order.
+    """
+    try:
+        all_cpus = sorted(os.sched_getaffinity(0))
+        budget = max(1, min(cpu_budget, len(all_cpus)))
+        identity = mp.current_process()._identity  # noqa: SLF001 -- documented public contract
+        slot = (identity[0] - 1) if identity else 0
+        start = (slot * budget) % len(all_cpus)
+        chosen = {all_cpus[(start + i) % len(all_cpus)] for i in range(budget)}
+        os.sched_setaffinity(0, chosen)
+    except (AttributeError, OSError):
+        pass  # affinity control unavailable (e.g. non-Linux); proceed unpinned, disclosed
+
+
 def _run_one_seed_worker(
     args: tuple[str, int, Path, tuple[str, ...], int | None, int, str, str, str, tuple[float, ...], float | None],
 ) -> Any:
-    """Top-level (picklable) worker: pin this process's CPU affinity to a budget, then run one
-    seed's cells for the given arm. Affinity pinning (not a num_workers kwarg -- that plumbing
-    does not exist in run_mirror_seed_inprocess) is how this driver keeps
-    ``BayesianStatistics.evaluate``'s own ``available_cpus - 2`` auto-sizing
-    (bayesian_statistics.py:4490-4495) from oversubscribing when several seeds run concurrently.
+    """Top-level (picklable) worker: run one seed's cells for the given arm.
+
+    CPU affinity is pinned via :func:`_pin_worker_affinity` -- for ``--jobs
+    1`` (no ``Pool``), directly here, since there is no ``Pool(initializer=
+    ...)`` to have done it already; for ``--jobs N>1`` it was already pinned,
+    disjointly, once per worker, by the ``Pool``'s own initializer (see
+    :func:`_pin_worker_affinity`'s docstring) -- pinning again here would
+    re-read the ALREADY-narrowed affinity mask and corrupt the disjoint slice,
+    so it must not be repeated for the Pool-worker case.
 
     Args tuple extended (P1/KW-Q1, byte-identical when the 5 new trailing
     fields are theta_sites="all", smear="auto", config="b0i",
@@ -839,12 +935,8 @@ def _run_one_seed_worker(
     run_arm_seed_s0a/s0r (S0-C ignores them, per its own "stays as is" scope).
     """
     arm, seed, out_root, nodes, event_cap, cpu_budget, theta_sites, smear, config, h_values, score_h = args
-    try:
-        all_cpus = sorted(os.sched_getaffinity(0))
-        budget = max(1, min(cpu_budget, len(all_cpus)))
-        os.sched_setaffinity(0, set(all_cpus[:budget]))
-    except (AttributeError, OSError):
-        pass  # affinity control unavailable (e.g. non-Linux); proceed unpinned, disclosed
+    if not mp.current_process()._identity:  # noqa: SLF001 -- see docstring above
+        _pin_worker_affinity(cpu_budget)
     try:
         if arm == "S0-A":
             results = run_arm_seed_s0a(
@@ -924,12 +1016,28 @@ def run_arm(
         raw_results = [_run_one_seed_worker(a) for a in task_args]
     else:
         ctx = mp.get_context("spawn")
-        with ctx.Pool(processes=jobs) as pool:
+        # initializer=_pin_worker_affinity: pin each worker's CPU slice ONCE,
+        # disjointly, at Pool startup (see _pin_worker_affinity's docstring --
+        # this is the runner-disclosed P0 crash fix, B1_2_DRIVER_EXTENSION_
+        # NOTE.md "Crash fix"). Passing cpu_per_job here (not via task_args)
+        # is what makes it "once per worker" rather than "once per task".
+        with ctx.Pool(processes=jobs, initializer=_pin_worker_affinity, initargs=(cpu_per_job,)) as pool:
             raw_results = pool.map(_run_one_seed_worker, task_args)
     wall_s = time.time() - t0
 
     errors = [r for r in raw_results if "error" in r]
     ok = [r for r in raw_results if "error" not in r]
+    # Surface swallowed per-seed exceptions IMMEDIATELY -- previously these
+    # tracebacks only ever reached a Python dict (payload["errors"]) that, if
+    # compute_scores below raised first (e.g. from a genuinely empty node
+    # pool), was NEVER written to disk or printed: the top-level exception
+    # killed the process before out_json.write_text() ran, so the real
+    # underlying cause was invisible in the runner's log (runner-disclosed
+    # P0 crash, B1_2_DRIVER_EXTENSION_NOTE.md "Crash fix").
+    for _err in errors:
+        print(f"[{arm} seed={_err['seed']}] WORKER ERROR: {_err['error']}", flush=True)
+        if _err.get("traceback"):
+            print(_err["traceback"], flush=True)
 
     payload: dict[str, Any] = {
         "arm": arm,
@@ -965,9 +1073,17 @@ def run_arm(
         for r in ok
     ]
 
-    need_all_four = all(n in nodes for n in ("b_plus", "b_minus", "s_plus", "s_minus"))
-    if need_all_four:
-        scores = compute_scores(all_nodes)
+    requested_all_four = all(n in nodes for n in ("b_plus", "b_minus", "s_plus", "s_minus"))
+    # Requesting a node (CLI-level) is NOT the same as having produced a
+    # NodeResult for it (runner-disclosed P0 crash, B1_2_DRIVER_EXTENSION_
+    # NOTE.md "Crash fix"): the old `need_all_four = all(n in nodes ...)`
+    # check only looked at what was ASKED FOR, so when every seed's worker
+    # errored out (all_nodes left completely empty for every node)
+    # compute_scores was still called and pd.concat([]) raised an opaque
+    # "No objects to concatenate" instead of this driver ever reporting WHY.
+    produced_all_four = all(len(all_nodes.get(n, [])) > 0 for n in ("b_plus", "b_minus", "s_plus", "s_minus"))
+    if requested_all_four and produced_all_four:
+        scores = compute_scores(all_nodes, seeds=seeds)
         eng = gate_eng(all_nodes)
         payload["scores"] = scores
         payload["gate_eng"] = eng
@@ -977,7 +1093,7 @@ def run_arm(
             payload["verdict"] = verdict_s0a(scores, eng, parity)
         elif arm == "S0-R":
             payload["verdict"] = verdict_s0r(scores, eng)
-    else:
+    elif not requested_all_four:
         payload["note"] = (
             f"nodes={nodes} does not include all 4 off-truth nodes -- scores/gates/verdict "
             "require {b_plus,b_minus,s_plus,s_minus}; this is expected for a --smoke run with "
@@ -985,6 +1101,29 @@ def run_arm(
         )
         if "truth" in nodes and arm == "S0-A":
             # Still run GATE PARITY if the truth node is present -- it needs no other node.
+            payload["gate_parity"] = gate_parity(all_nodes)
+    else:
+        # All 4 off-truth nodes WERE requested but at least one produced ZERO
+        # NodeResult across every seed -- every seed's worker for that node
+        # either raised (see payload["errors"] / the WORKER ERROR lines
+        # printed above) or the arm otherwise never reached it. Report
+        # exactly what's missing instead of letting compute_scores crash.
+        have = {n: len(all_nodes.get(n, [])) for n in ("b_plus", "b_minus", "s_plus", "s_minus")}
+        missing_pairs = [
+            (seed, n)
+            for n in ("b_plus", "b_minus", "s_plus", "s_minus")
+            for seed in seeds
+            if seed not in {r.seed for r in all_nodes.get(n, [])}
+        ]
+        payload["note"] = (
+            f"all 4 off-truth nodes were REQUESTED but produced ZERO results for at least one "
+            f"(n_present_by_node={have}); missing (seed, node) pairs: {missing_pairs}. This is "
+            f"NOT the --smoke-subset case: n_seeds_error={len(errors)} of {len(seeds)} seeds "
+            "errored (see the WORKER ERROR lines printed above and payload['errors'] for the "
+            "real per-seed tracebacks). scores/gate_eng/verdict are skipped rather than raised "
+            "from an empty pool."
+        )
+        if "truth" in nodes and arm == "S0-A" and all_nodes.get("truth"):
             payload["gate_parity"] = gate_parity(all_nodes)
 
     return payload
@@ -1081,7 +1220,7 @@ def score_only_payload(
     }
     need_all_four = all(len(all_nodes.get(n, [])) > 0 for n in ("b_plus", "b_minus", "s_plus", "s_minus"))
     if need_all_four:
-        scores = compute_scores(all_nodes)
+        scores = compute_scores(all_nodes, seeds=seeds)
         eng = gate_eng(all_nodes)
         payload["scores"] = scores
         payload["gate_eng"] = eng

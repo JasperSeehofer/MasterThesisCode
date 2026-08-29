@@ -97,3 +97,6 @@ results/campaign51_20260728/realistic_20260729/realizations_staged/*.csv
 # retrieved cluster data (multi-GB, cluster is the copy of record) — 2026-08-28
 results/campaign51_20260728/realistic_20260729/headreadout_20260827/
 results/_archive/
+
+# wave-2/3 retrieved 2D posterior JSONs are >100 MB each (per-event arrays) — keep local, not in git
+results/campaign51_20260728/realistic_20260729/wave*_2026*/*/posteriors_with_bh_mass/

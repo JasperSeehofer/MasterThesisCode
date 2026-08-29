@@ -159,3 +159,90 @@ C0 FAIL (already itemized above as the "C0-FAIL fallback" row). Source:
 `SYNTHESIS_DOCKET_1_20260829.md` "L-lines re-cut" note, 2026-08-29.
 
 REPORTED.
+
+## Wave 2 — launch note, appended 2026-08-29
+
+Launched under rows #222/#223 — charter nodes C0 / B5.2 (C3) / B7.2 (C4). Append-only; the
+estimate rows in the "Wave 2 (estimates only...)" table above are not edited. Wave-2 commit of
+record: `ff230621`. Submitted 2026-08-29 20:55 CEST.
+
+| Arm | Job ID(s) | Tasks | Out-root |
+|---|---|---|---|
+| C0 | `6738998` | 1 (h=0.730) | `$WS/run_20260829_wave2_c0_iiib` |
+| C3 | `6738999` | array 0-3 (H4 grid {0.660, 0.665, 0.670, 0.730}) | `$WS/run_20260829_wave2_c3_iiib` |
+| C4 (smoke) | `6739000` | array 0 (h=0.730) | `$WS/run_20260829_wave2_c4_iiib` |
+| C4 (remainder) | `6739001` | array 1-3, `--dependency=afterok:6739000` | `$WS/run_20260829_wave2_c4_iiib` |
+| C1 | not submitted | — | held for P0 completion (driver defect, `hier_s0_driver.py:647`, `--jobs>1` node loop) |
+
+C2 remains STRUCK (row above, "Node B3 closure"). Deadline check: workspace expires 2026-09-23
+(~24 days out at launch) — OK. Archive-scheduled: yes for C0/C1/C3/C4 (unchanged from the
+GAP-6 closure append above). Source: `cluster/WAVE2_SUBMISSION_NOTE_20260829.md`; ledger row
+#245.
+
+## C0 measured — appended 2026-08-29
+
+Launched under rows #222/#223 — charter node C0. Append-only; the estimate rows above
+(§ "Wave 2 (estimates only...)" table, C0 row: 15–23 CPU-h) are not edited.
+
+**C0 measured: 1.7 CPU-h** (SLURM job `6738998`, Elapsed 00:06:28 × 16 cpus/task, 1 task,
+COMPLETED 2026-08-29), against the 15–23 CPU-h estimated pre-launch.
+
+**Anchor correction [A11].** The pre-launch estimate was built from the 56–76 min/h-value
+anchor in `cluster/LAUNCHING_JOBS.md:47`, which is measured on the **3355-event** production
+set. This run (and the iiib venue generally, at 1588 events) is not that population: job
+`6725283`'s (the banked HEAD readout, same iiib venue, same 1588-event population) own per-task
+Elapsed ranged 00:00:18 (task 21, h=0.730 — the exact point C0 reused) … 00:42:26 (task 13)
+across its 41-task array, i.e. the 56–76 min anchor is roughly 8–140x the actual per-task
+elapsed observed on this population. C0's realized 6.5 min/1.7 CPU-h is consistent with the
+low end of that observed range, not with the 3355-event anchor.
+
+**Consequence for C3/C4/C1 estimates.** The C3 (44–137 CPU-h), C4 (59.7–105 CPU-h), and C1
+(60–92 CPU-h) figures elsewhere in this ledger (Wave-2 estimates / refinement tables, and row
+#245's launch note) are built from the same 56–76 min/h-value, 3355-event anchor and should be
+treated as loose upper bounds, not tight estimates, for the 1588-event iiib venue — they are not
+retracted or re-computed here (each arm has its own per-h-value multiplicity and flag surface
+that C0's single-h read does not cover), but a reader costing the remaining wave-2 arms should
+re-derive from `6725283`'s per-task Elapsed range rather than from `LAUNCHING_JOBS.md:47` alone.
+
+Source: `REGISTRATION_C0_BASELINE_GATE_20260829.md` §13 (RESULT RECORD); ledger row #246.
+
+## C3 measured — appended 2026-08-29
+
+Launched under rows #222/#223 — charter node B5.2. Append-only; the estimate rows above
+(§ "Wave 2 (estimates only...)" table, C3 row: 44–137 CPU-h) are not edited.
+
+**C3 measured: 4.97 CPU-h** (SLURM job `6738999`, array 0-3, all 4 tasks COMPLETED
+2026-08-29, exit 0:0) — per-task: h=0.660 job `6739003` elapsed 00:04:50 (1.289 CPU-h),
+h=0.665 job `6739004` elapsed 00:04:39 (1.240 CPU-h), h=0.670 job `6739005` elapsed 00:04:36
+(1.227 CPU-h), h=0.730 job `6738999` elapsed 00:04:34 (1.218 CPU-h), all at 16 cpus/task —
+against the 44–137 CPU-h estimated pre-launch: **9×–28× below estimate**.
+
+Consistent with the [A11] anchor correction already on record (row #246 / "C0 measured"
+section above): the 56–76 min/h-value anchor (`cluster/LAUNCHING_JOBS.md:47`) is drawn from
+the 3355-event set, not the 1588-event iiib venue this arm actually ran on; C3's realized
+~4.5–4.8 min/h-value is consistent with the low end of the per-task Elapsed range observed on
+job `6725283` (the banked HEAD readout, same iiib venue).
+
+Source: `fanout1_20260829/b5_2_readout.json` `cost_F4`; `fanout1_20260829/B5_2_WIN_K3_READOUT_RECORD.md`
+§5; `PREREGISTRATION_WIN_K3_COUNTERFACTUAL_20260829.md` §13; `BIAS_HISTORY_LEDGER.md` row #247.
+
+## C4 measured — appended 2026-08-29
+
+Launched under rows #222/#223 — charter node B7.2. Append-only; the estimate rows above
+(§ "Wave 2 (estimates only...)" table, C4 row: 60–105 CPU-h) are not edited.
+
+**C4 measured: 6.8 CPU-h** (SLURM job `6739000` task 0, h=0.730, Elapsed 00:06:25; job
+`6739001` tasks 1–3, h=0.660/0.665/0.670, Elapsed 00:06:38/00:06:17/00:06:10, all 4 tasks
+COMPLETED 2026-08-29, 16 cpus/task) — against the 59.7–105 CPU-h estimated pre-launch:
+**~9×–15× below estimate**. STEP-2 overhead pin: task-0 (h=0.730) 385 s vs C0's baseline
+388 s (same h, same venue, `off` arm) ⇒ measured overhead factor ≈ 0.99×, inside the
+registered 1.0–1.3× assumed band.
+
+Consistent with the [A11] anchor correction already on record (row #246 / "C0 measured"
+section above): the 56–76 min/h-value anchor (`cluster/LAUNCHING_JOBS.md:47`) is drawn from
+the 3355-event set, not the 1588-event iiib venue this arm actually ran on; C4's realized
+~6.3–6.6 min/h-value is consistent with the low end of the per-task Elapsed range observed on
+job `6725283` (the banked HEAD readout, same iiib venue).
+
+Source: `fanout1_20260829/b7_2_readout.json`; `fanout1_20260829/B7_2_TWIN_CF_READOUT_RECORD.md`
+§6; `PROPOSAL_2D_TWIN_ADOPTION_20260829.md` §15; `BIAS_HISTORY_LEDGER.md` row #248.

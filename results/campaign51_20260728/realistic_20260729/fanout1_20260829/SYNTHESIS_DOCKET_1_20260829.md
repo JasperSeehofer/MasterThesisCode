@@ -492,3 +492,29 @@ Stamped: launched under rows #222/#223 — charter node NODE archive+minor-notes
 appended-only, 2026-08-29.
 
 REPORTED.
+
+## L10 (new) — 2026-08-29 — B5.2 → B8.2 cross-branch line (orchestrator decision, ledger row #247)
+
+**Launched under rows #222/#223 — charter node B5.2.** Append-only; nothing above this note is
+altered. B5.2's independent readout of arm C3 (`B5_2_WIN_K3_READOUT_RECORD.md`;
+`b5_2_readout.json`; `PREREGISTRATION_WIN_K3_COUNTERFACTUAL_20260829.md` §13) found the R1
+retention falsifier FALSIFIED with a documented mechanism: the mirror fleet predicted the
+log-k3 window would cost ~17-21pp of true-host retention, but on iiib production the true-host
+retention is bit-identical between arms (66/76, both arm T and baseline B) — the window's entire
+621/1588-event candidate-set collapse falls exclusively on dark/impostor-class events
+(`host_galaxy_index=-1`), never on the 76 in-catalogue events.
+
+**New line: L10 (from → to): B5.2 → B8.2.** This is a new finding for B8.2's two-channel
+calibration harness design (`B8_2_HARNESS_DESIGN_20260829.md`): the mirror fleet's
+linear-Gaussian mass law does not transfer to production mass-window retention behavior — a
+harness built on the mirror's retention-loss assumption would mis-predict the production
+mechanism (impostor/dark-class suppression, not true-host loss) for at least this counterfactual
+class. B8.2 should treat mirror-derived retention/growth predictions as a hypothesis to check
+against production, not a design input to trust directly, for any mass-window-geometry-adjacent
+harness cell.
+
+Source: `B5_2_WIN_K3_READOUT_RECORD.md` §3 ("The retention falsifier..."); `b5_2_readout.json`
+`class_migration_and_retention_mechanism`; `BIAS_HISTORY_LEDGER.md` row #247. Stamped: launched
+under rows #222/#223 — charter node B5.2, 2026-08-29.
+
+REPORTED.

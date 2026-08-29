@@ -434,3 +434,128 @@ item 1; to be filled by whichever node performs the wave-2 commit). Baseline com
 2026-08-27T19:40:20).
 
 Stamped: launched under rows #222/#223 — charter node NODE archive+minor-notes (GAP 7), 2026-08-29.
+
+**A22 launch stamp — appended 2026-08-29.** wave-2 commit `ff230621`; job `6738999` (array 0-3,
+H4 grid {0.660, 0.665, 0.670, 0.730}); launched 2026-08-29 under rows #222/#223. Fills the
+"Launch-stamp placeholder (A22)" note above, which is left unedited (append-only). Tree clean at
+both the local and cluster checkouts at launch time.
+
+Stamped: launched under rows #222/#223 — charter node B5.2, 2026-08-29.
+
+---
+
+## 13. ⟨SUBMIT⟩ / RESULT RECORD — independent readout, appended 2026-08-29
+
+**Read out 2026-08-29 by the independent reader; launched under rows #222/#223 — charter node
+B5.2.** Append-only: nothing above this section is edited. Full numeric backing:
+`b5_2_readout.json` (this directory); comprehension-first companion:
+`B5_2_WIN_K3_READOUT_RECORD.md` (this directory). All numbers below re-derived independently by
+this reader from the retrieved cluster outputs (`results/campaign51_20260728/realistic_20260729/
+wave2_20260829/c3/`), not restated from any builder claim.
+
+**Job / provenance.** `sacct -j 6738999 -X -n -P`: all 4 array tasks COMPLETED, exit 0:0
+(h=0.660/0.665/0.670/0.730). `git_commit` on all 4 provenance stamps and every
+`run_metadata_*.json`: `ff2306213e9e65abbd474f66348bc05a6f3e6547` — matches this registration's
+A22 stamp. **Flag:** the retrieved provenance stamps record `tree_dirty_file_count=296` at run
+start on all 4 tasks, which is inconsistent with the A22 stamp's "Tree clean at both the local
+and cluster checkouts at launch time" — the commit hash itself is unambiguous and correct
+everywhere checked; only the "clean" claim is unsupported by this evidence and is flagged, not
+silently accepted. {source: `logs/provenance_{6738999_3,6739003_0,6739004_1,6739005_2}.json`;
+2026-08-29}
+
+**Gates (§6).**
+- **R6** (1D bit-identity): PASS, max relative diff **2.67e-14** (≤1e-12 band) on
+  `L_cat_no_bh`/`combined_no_bh`, every H4 node. {source: independent reader's own diff of
+  `wave2_20260829/c3/simulations/diagnostics/event_likelihoods.csv` vs.
+  `headreadout_20260827/iiib/event_likelihoods.csv`; 2026-08-29}
+- **R2** (engagement): PASS, **0.9684** (951/982) ≥ 0.90. {source: same, column
+  `L_cat_with_bh`, h=0.730; 2026-08-29}
+- **R5** (stencil validity): PASS, not ambiguous. `Δℓ''(0.665) = -63.705`, ratio to
+  `I_HEAD=2965` = 2.15% — well inside "≪". No G27 escalation triggered.
+- **R1 retention falsifier**: **FALSIFIED**. Production iiib true-host retention (2D,
+  with-BH), both arm T and baseline B: **66/76 = 0.868421 (86.842%)** — IDENTICAL between
+  arms, and outside the registered ±3SE band [0.762, 0.816] around the mirror's 0.789
+  prediction. {source: `logs/wave2_c3_task3_6738999.err:9917` "P6 host-recovery (h=0.7300): ...
+  2D 66/76 ... (86.84211%)"; baseline captured from the C0 gate task's log before cluster SSH
+  access dropped mid-session; 2026-08-29} Per §6 R1's own text this implicates the
+  mirror-to-production transfer, not necessarily the window design, and the ΔMAP read below
+  proceeds regardless. Mechanistic explanation (documented, independent — see below): the
+  entire retention-loss mechanism predicted from the mirror does not occur on iiib at all —
+  checked at the per-event level, not inferred.
+- **R1 growth-factor sub-check**: **UNDETERMINED** — no per-event with-BH candidate-count
+  column exists in the retrieved diagnostics; the log's "Host-lookup yield" line is a coarser,
+  mass-filter-independent sky+z-cone metric (982/1588, identical across both arms and all 4
+  H4 nodes — itself a useful confirmation that baseline's linear-k1.5 window is non-binding on
+  this fleet, per the physics-change doc's own §7 claim). Reported as a genuine gap, not
+  inferred from a proxy.
+
+**Mechanism finding (feeds the attribution falsifier, §8 item 2, and adoption-rule item 3,
+§10).** Joining `event_likelihoods.csv` (h=0.730, both arms) against
+`seed61000/prepared_cramer_rao_bounds.csv`'s `host_galaxy_index`/`in_catalog` columns: of the
+76 in-catalogue (known-true-host) events, **0** change with-BH candidate-set membership between
+arms (75/76 non-empty under both baseline and arm, same 75). The **621** events whose with-BH
+catalogue support collapses to zero under arm T are **all** dark-class (`host_galaxy_index=-1`)
+— none are in-catalogue. This is the reader's own explanation for the R1 falsifier: the log-k3
+tightening on iiib operates entirely on the impostor/dark-class candidate pool, never on the
+true-host channel the physics-change document's §7 second caveat was worried about. Because
+this is a documented, independent explanation, the attribution falsifier (§8 item 2) does NOT
+void the ΔMAP attribution below — it only re-scopes it away from "true-host loss" and onto
+"impostor-pool suppression."
+
+**R4 (Δw̄₂, reported).** Mean with-BH mixture weight (`alpha_G_phi`) at h=0.730: baseline
+58,688,310.0, arm 58,688,310.0 — **Δ = exactly 0**. `alpha_G_phi` is a global, h-only-dependent
+selection-integral quantity (`bayesian_statistics.py`'s `path_a_mixture_objects`), untouched by
+the mass window by construction, not merely small in this instance.
+
+**R3 (ΔT, reported).** **NOT COMPUTABLE** from arm T's H4 grid — the registered row-#201
+central-difference form needs h=0.725/0.735, neither of which arm T ran; would require
+additional compute, out of scope this wave.
+
+**Primary reading — Δmean_h,pred (§3, §12 note 1: H4 adjudicates on Δmean_h,pred, not ΔMAP).**
+`Δℓ(h) = Σ_i ln[combined_with_bh_i^T(h)/combined_with_bh_i^B(h)]` over all 1588 events (0
+excluded — `combined_with_bh` never hit exactly zero for either arm at any H4 node, even for
+the 621-event collapse group, because the completion-mixture term keeps it positive):
+
+| h | 0.660 | 0.665 | 0.670 | 0.730 |
+|---|---:|---:|---:|---:|
+| Δℓ(h), with-BH | +0.5442 | +0.5972 | +0.6486 | +1.2143 |
+| Δℓ(h), no-BH | 0 | 0 | 0 | 0 |
+
+`Δℓ'(0.665) = 10.444` nats/h, `Δℓ''(0.665) = -63.705` ⇒ **Δmean_h,pred = +0.0035225**
+(`I_HEAD=2965`). Independent 3-point local-vertex cross-check on the absolute with-BH log-
+likelihood: +0.00309 (same sign, same order of magnitude — corroborating, not a second
+registered statistic). No-BH channel: exactly 0, consistent with R6.
+
+**Verdict per the registered map (§3): INTERMEDIATE.** `0.003 < 0.0035225 < 0.008 = T_mat` —
+per the registration's own honesty discipline this is REPORTED, NOT ADJUDICATED as either
+IMMATERIAL-CONSISTENT-WITH-HB or MATERIAL. ~17% over the immaterial line, ~44% of `T_mat`.
+Sign is UP (toward truth 0.73), same direction as HB's own +0.0015, ≈2.3× its magnitude.
+
+**Cost (F4).** `sacct` elapsed × 16 cpus: h=0.660 1.289 CPU-h, h=0.665 1.240 CPU-h, h=0.670
+1.227 CPU-h, h=0.730 1.218 CPU-h — **total 4.97 CPU-h**, against the registered 44–137 CPU-h
+band: **9×–28× below estimate**. Not independently diagnosed (cluster access dropped
+mid-session before C0's own walltime could be pulled for a side-by-side comparison); flagged
+as a large, favorable F4 miss, not a correctness concern (output shape, row/column counts, and
+exit codes all check out complete and correct).
+
+**5.2 adoption rule (§10, ANDed).**
+1. H₀ delta immaterial-or-argued-benign: **NOT ADJUDICATED** (INTERMEDIATE, per above).
+2. Candidate growth inside compute ceiling: **SATISFIED** (4.97 CPU-h ≪ 50–130 CPU-h envelope).
+3. True-host retention loss argued as physically right, or design returns: **SATISFIED FOR
+   IIIB** — there is no retention loss on this venue to argue about (Δ=0, checked per-event);
+   this says nothing about joint_r1 or any other venue, out of this registration's own §1
+   scope.
+
+**Overall: adoption NOT YET GRANTED.** Conditions 2 and 3 favor adoption on iiib; condition 1
+is an open, reported non-verdict pending the wave-3 full-grid (G41) read (§12 note 1) or an
+author ruling on how to treat an INTERMEDIATE primary read.
+
+**Caveats:** cluster SSH access was lost mid-session (control connection could not be
+re-authenticated non-interactively) — C0's own sacct timing was not re-pulled for a full
+wall-time comparison, though its P6 host-recovery line and commit hash had already been
+captured beforehand and are used above; R1's growth-factor sub-check and R3 are reported
+undetermined rather than approximated by a substitute; findings are iiib-specific per this
+registration's own §1 venue scoping.
+
+Stamped: read out 2026-08-29 by the independent reader; launched under rows #222/#223 —
+charter node B5.2.

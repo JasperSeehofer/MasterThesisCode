@@ -314,4 +314,224 @@ explicitly NOT the comparand (claim card sec 1.3).
 | one-time per-seed venue setup, `config="b0i"` | ~450-586s | `B1_1_HIER_RECORD.md` sec 2.1/4; this note run 1 (503s incl. 46s eval) |
 | one-time per-seed venue setup, `config="ft"` | ~260-306s (this build's own measurement, run 7 -- notably cheaper than b0i, not independently explained; population_selected host draw likely skips some catalogue-selected-specific per-event kernel setup) | this note sec 4 |
 
+## 8. Crash fix (runner-disclosed, 2026-08-29)
+
+**Role boundary unchanged:** this section documents a BUILD-side bug fix only. No statistic,
+band, or threshold was touched. Fixed by the driver's author (rule 2 permits SMOKE-testing
+only; the registered P0/KW-Q1 measurements are still for a different agent to run).
+
+### Symptom (as disclosed by the runner)
+
+Registered P0 command (`hier_s0_registered_run/logs/runner_wave2pre_20260829.log`, stage "P0"):
+
+```
+--arm S0-A --seeds 900101,900102,900103,900104 --nodes truth,b_plus,b_minus,s_plus,s_minus \
+--theta-sites 2.2 --smear off --out-root .../hier_s0_registered_run --jobs 2 --total-cpu-budget 14
+```
+
+crashed after ~18 minutes with an uncaught, un-informative pandas error:
+
+```
+File "hier_s0_driver.py", line 970 (pre-fix), in run_arm
+  scores = compute_scores(all_nodes)
+File "hier_s0_driver.py", line 647 (pre-fix), in compute_scores
+  bp = pd.concat([...for r in all_nodes["b_plus"]], ...)
+ValueError: No objects to concatenate
+```
+
+### Root cause
+
+Post-mortem on the registered run's own on-disk state (read-only inspection, no files under
+`hier_s0_registered_run/` touched): for **all four seeds**, `node_truth_sites2.2_nosmear/`
+contained only the early-written `simulations/prepared_cramer_rao_bounds.csv` /
+`simulations/cramer_rao_bounds.csv` / `selection_tables_h_0_73.json` artifacts and **no**
+`simulations/diagnostics/event_likelihoods.csv` -- i.e. `BayesianStatistics.evaluate()` never
+returned for the very FIRST node of any seed, let alone reached `b_plus`/`b_minus`/`s_plus`/
+`s_minus`. Zero `"[S0-A ...]"` per-node completion lines appear anywhere in the P0 log window.
+Every one of the 4 per-seed workers' `except Exception` (pre-fix `_run_one_seed_worker`,
+line ~877) therefore fired on the first node, discarding that seed's entire `results` list
+(including the already-on-disk-but-unread truth CSV attempt) and returning `{"seed":...,
+"error":...}` -- a structured failure that WAS captured, but never printed or written to disk,
+because `compute_scores` crashed the process (an uncaught top-level `ValueError`) before
+`main()` ever reached `out_json.write_text(...)`.
+
+The mechanism (confirmed both by re-deriving it from `_run_one_seed_worker`'s pre-fix affinity
+block, hier_s0_driver.py:842-847, and by live observation of the orchestrator's concurrently-
+running `--arm S0-C --jobs 1 --total-cpu-budget 12` process, which spawned ~10 heavy
+(700-750 MB RSS, CPU-bound) `forkserver` children -- `BayesianStatistics.evaluate`'s own
+internal multiprocessing pool, confirming it really does auto-size a large worker pool off the
+process's OWN (possibly already-narrowed) CPU affinity mask):
+
+```python
+# pre-fix _run_one_seed_worker (EVERY concurrent worker ran this independently):
+all_cpus = sorted(os.sched_getaffinity(0))
+budget = max(1, min(cpu_budget, len(all_cpus)))
+os.sched_setaffinity(0, set(all_cpus[:budget]))
+```
+
+Under `--jobs 2 --total-cpu-budget 14` (`cpu_per_job=7`), **both** outer `Pool` workers computed
+`all_cpus[:7]` independently and pinned to the exact SAME leading 7 cores instead of disjoint
+halves. Each outer worker's own `evaluate()` call then auto-sizes ITS internal pool off that
+(now-narrowed) affinity (`available_cpus - 2` = 5 inner workers), so 2 outer x 5 inner = 10
+heavy processes fought over 7 real cores -- confirmed by the live sibling job above to run into
+several-hundred-MB-per-worker memory pressure on top of the CPU oversubscription, consistent
+with the internal pool dying (OOM or a broken-pool exception) partway through the first
+`evaluate()` call, every time, for every seed.
+
+Isolated mechanism-level reproduction (fast, no `evaluate()` cost -- the full smoke command
+below could not complete within the ≤600s foreground budget even once, since `config="b0i"`
+venue construction alone measures ~450-586s per seed at a generous CPU budget and this
+environment's smoke budget, `--total-cpu-budget 4 --jobs 2`, is much tighter):
+
+```
+OLD (pre-fix) pin, 2 Pool workers, cpu_per_job=2: both report affinity [0, 1]   <- BUG (overlap)
+NEW (post-fix) pin, 2 Pool workers, cpu_per_job=2: workers report [0, 1] and [2, 3]  <- disjoint
+jobs==1 direct-call path (no Pool): affinity [0, 1] -- BYTE-IDENTICAL to pre-fix
+```
+
+### Fix (`hier_s0_driver.py`)
+
+1. **New `_pin_worker_affinity(cpu_budget)`** (replaces the inline block in
+   `_run_one_seed_worker`): keys off `multiprocessing.current_process()._identity` (the 1-based
+   slot the `Pool` machinery assigns each worker ONCE at spawn, stable for its lifetime) to pick
+   a CPU slice DISJOINT from every other concurrent worker's slice. `--jobs 1` (no `Pool`,
+   direct call): `_identity` is empty, slot=0 -- byte-identical to the pre-fix single leading
+   slice. `--jobs N>1`: passed as `ctx.Pool(..., initializer=_pin_worker_affinity,
+   initargs=(cpu_per_job,))` in `run_arm`, so it runs ONCE per worker at Pool startup (before any
+   task, while the OS affinity mask is still the full inherited set) rather than once per task
+   (which would have re-read an already-narrowed mask and corrupted the disjoint slice).
+   `_run_one_seed_worker` now calls it directly ONLY when `not mp.current_process()._identity`
+   (the `--jobs 1` case) so the Pool-worker case is never re-pinned.
+2. **`compute_scores(all_nodes, seeds=None)`** (new optional `seeds` kwarg, both call sites
+   updated): raises a clear `ValueError` listing the exact missing `(seed, node)` pairs and
+   `n_present_by_node` BEFORE attempting any `pd.concat`, instead of letting an empty node list
+   surface as pandas' opaque "No objects to concatenate". Defensive (both callers already gate
+   on "produced", not merely "requested" -- see next item) but fires correctly if a future
+   caller skips that gate.
+3. **`run_arm`**: (a) prints every worker's error + traceback immediately after `pool.map`
+   returns, so a swallowed per-seed exception is visible in the runner's log stream even if a
+   later step raises; (b) replaced the `need_all_four = all(n in nodes for n in (...))`
+   ("was requested") gate with a `requested_all_four and produced_all_four` gate
+   (`produced_all_four` checks `len(all_nodes.get(n, [])) > 0`, matching the pattern
+   `score_only_payload` already used correctly) so a run where every seed's worker for a
+   required node failed degrades to a diagnostic `payload["note"]` (listing the missing
+   `(seed, node)` pairs and `n_seeds_error`) instead of an uncaught crash that discards
+   `payload["errors"]`'s real tracebacks before they are ever written to disk.
+
+No node-dir suffix convention, CLI flag, default, or scoring formula changed. `--score-only`'s
+own `score_only_payload`/`gather_node_results_from_disk` already gated on `produced`, not merely
+`requested`, and needed no logic change beyond passing `seeds=seeds` into `compute_scores` for a
+consistent error message.
+
+### Verification
+
+- `uv run ruff check hier_s0_driver.py` -- all checks passed.
+- `uv run mypy hier_s0_driver.py` -- no issues found.
+- Isolated multiprocessing test (`ctx.Pool(processes=2, initializer=_pin_worker_affinity,
+  initargs=(2,))`, 2 concurrent 1s-sleep tasks): workers report DISJOINT affinity sets `[0, 1]`
+  and `[2, 3]` (pre-fix logic, reproduced verbatim for contrast in the same test harness, gives
+  `[0, 1]` / `[0, 1]` -- fully overlapping). `--jobs 1` direct-call path unchanged (`[0, 1]`).
+- `compute_scores({n: [] for n in NODE_ORDER}, seeds=(900101,900102,900103,900104))` now raises
+  `"compute_scores: cannot pool score_b/score_s -- missing (seed, node) pairs: [...]. "
+  "n_present_by_node={'b_plus': 0, 'b_minus': 0, 's_plus': 0, 's_minus': 0}. ..."` instead of
+  pandas' "No objects to concatenate".
+- `run_arm(..., jobs=2, ...)` with `_run_one_seed_worker` monkeypatched to return the EXACT
+  registered-crash failure mode (every one of 4 seeds returns `{"seed":..., "error":...}`, zero
+  successes) now prints all 4 `WORKER ERROR` lines + tracebacks, returns a payload with
+  `n_seeds_ok=0`, `n_seeds_error=4`, `"scores"` key ABSENT, and a `note` listing all 16 missing
+  `(seed, node)` pairs -- **no crash**, exit code still correctly 1 (`main()`'s
+  `return 0 if not result.get("errors") else 1`).
+- The full end-to-end smoke command below could not be driven to completion within repeated
+  ≤600s foreground polls in this environment (venue construction alone exceeds the smoke
+  CPU-budget's realistic wall time; confirmed both pre-fix and post-fix runs timed out at the
+  SAME pre-node-loop stage, i.e. before either could exercise the actual bug/fix) -- the fix is
+  therefore verified at the mechanism level above (root-cause reproduction + contrast, plus a
+  full `run_arm`-level dry run of the exact failure payload) rather than by an end-to-end smoke
+  banking real `event_likelihoods.csv` files. A different agent re-running the registered P0
+  command below, with a realistic (non-smoke) `--total-cpu-budget`, is the first real end-to-end
+  test of the fix and should be watched for the `WORKER ERROR` print path firing (it should not,
+  if the affinity fix holds).
+
+### Commands for the next agent
+
+P0 (now with disjoint per-worker CPU pinning; unchanged flags otherwise):
+
+```bash
+uv run python results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py \
+  --arm S0-A --seeds 900101,900102,900103,900104 \
+  --nodes truth,b_plus,b_minus,s_plus,s_minus \
+  --theta-sites 2.2 --smear off \
+  --out-root results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run \
+  --jobs 2 --total-cpu-budget 14
+```
+
+KW-Q1 (B4.2), primary read (unchanged by this fix; repeated here for convenience, see sec 6):
+
+```bash
+uv run python results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py \
+  --arm S0-A --config ft --seeds 900101,900102,900103,900104 \
+  --nodes s_minus,truth,s_plus --h-nodes 0.725,0.735 --score-h 0.725 \
+  --out-root <a fresh out-root, e.g. .../fanout1_20260829/kwq1_registered_run> \
+  --jobs 4 --total-cpu-budget 14
+```
+then:
+```bash
+uv run python results/campaign51_20260728/realistic_20260729/fanout1_20260829/kwq1_score.py \
+  --out-root <the same out-root> --seeds 900101,900102,900103,900104
+```
+
 **Standing stamp: launched under rows #222/#223 -- charter nodes B1.1/B4.2.**
+
+## 8.1 Correction (runner-disclosed, 2026-08-29)
+
+**Record-only entry -- no code changed by this entry.** The §8 fix (disjoint per-worker CPU
+affinity pinning) was necessary but NOT sufficient. The orchestrator's registered P0 re-run
+with the §8 fix in place, still under `--jobs 2`, failed on **every** seed with:
+
+```
+AssertionError: daemonic processes are not allowed to have children
+```
+
+raised inside `run_arm_seed_s0a` -> `run_theta_node` -> `run_mirror_seed_inprocess` ->
+`BayesianStatistics.evaluate()` (log:
+`hier_s0_registered_run/logs/runner2_wave2pre_20260829.log`).
+
+**True structural cause:** `multiprocessing.Pool` worker processes are created as **daemonic**
+(`Process.daemon = True` is the `Pool` default), and daemonic processes are forbidden by the
+`multiprocessing` module from starting their own child processes. `BayesianStatistics.evaluate()`
+spawns its own internal worker pool (the `available_cpus - 2` auto-sizing referenced in §7/§8
+above, confirmed live via the forkserver children observed under the orchestrator's `--jobs 1`
+S0-C job). When `run_arm`'s outer `ctx.Pool(processes=jobs, ...)` runs `_run_one_seed_worker` in
+one of ITS (daemonic) workers, and that worker's call into `evaluate()` tries to start its own
+internal pool, Python's `multiprocessing` layer raises `AssertionError` immediately -- this fires
+regardless of CPU affinity, regardless of how many cores are free, and regardless of the §8 fix.
+The §8 disjoint-affinity fix was a real defect (confirmed by the isolated mechanism-level test in
+§8) and remains correct as far as it goes, but it addressed a SECONDARY resource-contention
+symptom, not the primary blocker: **outer `--jobs N>1` is structurally incompatible with
+`evaluate()`'s own internal multiprocessing pool, full stop, independent of affinity.**
+
+**Run form of record:** `--jobs 1` is the form of record for both P0 and KW-Q1 until a
+non-daemonic worker mechanism is implemented (see below). `--jobs 1` never goes through
+`ctx.Pool` at all (`run_arm`'s `if jobs == 1: raw_results = [_run_one_seed_worker(a) for a in
+task_args]` branch calls the worker function directly in the (non-daemonic) main/orchestrator
+process), so `evaluate()`'s internal pool starts without issue -- this is exactly the form
+the orchestrator's runner-3 is now using for all seeds, sequentially.
+
+**Proper future fix (NOT implemented tonight, follow-up only):** replace the daemonic
+`multiprocessing.Pool` in `run_arm`'s `jobs > 1` branch with a non-daemonic worker mechanism,
+e.g. (a) one `subprocess.Popen` per seed (each a fresh, non-daemonic OS process, free to spawn
+its own children) instead of an in-process `Pool` worker; (b) a `NoDaemonProcess`/
+`NoDaemonContext` pool (the well-known multiprocessing recipe that subclasses `Process` to force
+`daemon = False`, then builds a `Pool` on that context) so `evaluate()`'s internal pool is
+allowed to start; or (c) `concurrent.futures.ProcessPoolExecutor`, which is built on the same
+daemonic-worker `Process` under the hood and would need the same `NoDaemonProcess`-style
+workaround to lift the restriction -- it does not sidestep the constraint on its own. Any of
+these needs its own smoke-test pass (this driver's rule 2 boundary applies to that follow-up
+build too) before `--jobs N>1` can be reinstated as a run form of record.
+
+**Standing note:** §8's disjoint-affinity fix (`_pin_worker_affinity`, the `compute_scores`
+clear-error guard, and `run_arm`'s produced-vs-requested gate) all remain in the file and are
+still correct/beneficial in their own right (in particular the `compute_scores`/`run_arm`
+error-surfacing fix is what let this AssertionError be diagnosed cleanly instead of being
+swallowed the way the original crash was) -- none of it is reverted by this correction. Only the
+"`--jobs N>1` is now safe" implication of §8 is withdrawn.

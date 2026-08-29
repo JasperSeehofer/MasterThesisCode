@@ -1,0 +1,117 @@
+{
+  "arm_csv": "results/campaign51_20260728/realistic_20260729/wave2_20260829/c4/simulations/diagnostics/event_likelihoods.csv",
+  "baseline_csv": "results/campaign51_20260728/realistic_20260729/headreadout_20260827/iiib/event_likelihoods.csv",
+  "gates": {
+    "R1": {
+      "gate": "R1",
+      "verdict": "PASS",
+      "n_rows_checked": 6352,
+      "n_violations": 0,
+      "n_empty_candidate_equal_rows": 2424,
+      "violation_sample": []
+    },
+    "R2": {
+      "gate": "R2",
+      "verdict": "PASS",
+      "h_engage": 0.73,
+      "n_active_rows": 982,
+      "n_considered_finite": 982,
+      "n_engaged": 982,
+      "engagement_fraction": 1.0,
+      "threshold": 0.95
+    },
+    "R6": {
+      "gate": "R6",
+      "verdict": "PASS",
+      "columns_checked": [
+        "L_cat_no_bh",
+        "combined_no_bh"
+      ],
+      "per_node_max_abs": {
+        "0.66": {
+          "L_cat_no_bh": 0.0,
+          "combined_no_bh": 0.0
+        },
+        "0.665": {
+          "L_cat_no_bh": 0.0,
+          "combined_no_bh": 0.0
+        },
+        "0.67": {
+          "L_cat_no_bh": 0.0,
+          "combined_no_bh": 0.0
+        },
+        "0.73": {
+          "L_cat_no_bh": 0.0,
+          "combined_no_bh": 0.0
+        }
+      },
+      "max_abs_overall": 0.0
+    }
+  },
+  "stencil": {
+    "per_node_delta_ell": {
+      "0.66": {
+        "delta_ell": -3.03067408140695,
+        "n_events": 1588,
+        "n_dropped_nonpositive": 0
+      },
+      "0.665": {
+        "delta_ell": -2.9931484145135636,
+        "n_events": 1588,
+        "n_dropped_nonpositive": 0
+      },
+      "0.67": {
+        "delta_ell": -2.956380531717331,
+        "n_events": 1588,
+        "n_dropped_nonpositive": 0
+      }
+    },
+    "step": 0.0050000000000000044,
+    "delta_ell_prime_at_0_665": 7.429354968961904,
+    "delta_ell_doubleprime_at_0_665": -30.31136388614181,
+    "I_HEAD": 2965.0,
+    "delta_mean_h_pred": 0.002505684643832008,
+    "validity_condition_ok": true,
+    "validity_note": "interpreted as |Delta ell''| < 0.1 * I_HEAD (10% threshold, DISCLOSED interpretation of the registered '<<')"
+  },
+  "direct_map_mean_over_h4": {
+    "arm": {
+      "log_L_relative": {
+        "0.66": -0.044642612388997804,
+        "0.665": 0.0,
+        "0.67": -0.04023028925439576,
+        "0.73": -4.688053666998712
+      },
+      "weights": {
+        "0.66": 0.32682932390738756,
+        "0.665": 0.3417504190486437,
+        "0.67": 0.32827458663264075,
+        "0.73": 0.0031456704113279805
+      },
+      "MAP": 0.665,
+      "mean": 0.6652116948903627
+    },
+    "baseline": {
+      "log_L_relative": {
+        "0.66": -0.007116945495909022,
+        "0.665": 0.0,
+        "0.67": -0.0769981720513897,
+        "0.73": -5.110024961539239
+      },
+      "weights": {
+        "0.66": 0.33947489310488554,
+        "0.665": 0.3418995352049933,
+        "0.67": 0.3165618892574167,
+        "0.73": 0.0020636824327045456
+      },
+      "MAP": 0.665,
+      "mean": 0.6650195743388885
+    },
+    "delta_MAP": 0.0,
+    "delta_mean": 0.00019212055147421747,
+    "caveat": "4-node MAP/mean is NOT a valid full-grid posterior read (only 4 of 41 H_GRID_41 nodes); REPORTED-ONLY secondary cross-check against the registered stencil reading."
+  },
+  "verdict_map_classification": "IMMATERIAL-PREDICTED",
+  "T_mat": 0.008,
+  "T_mat_half": 0.004
+}

@@ -1,0 +1,197 @@
+{
+  "_meta": {
+    "role": "independent reader, wave-2 arm C3, charter node B5.2",
+    "launched_under": "rows #222/#223",
+    "read_out_date": "2026-08-29",
+    "registration": "results/campaign51_20260728/realistic_20260729/fanout1_20260829/PREREGISTRATION_WIN_K3_COUNTERFACTUAL_20260829.md",
+    "job_id": "6738999 (array 0-3)",
+    "sub_job_ids": ["6739003 (task0 h=0.660)", "6739004 (task1 h=0.665)", "6739005 (task2 h=0.670)", "6738999 (task3 h=0.730)"],
+    "git_commit_at_run": "ff2306213e9e65abbd474f66348bc05a6f3e6547",
+    "baseline_commit": "d04d9dc9bfe39e6c5a72e768a26f2dcc38355bf5",
+    "baseline_source": "results/campaign51_20260728/realistic_20260729/headreadout_20260827/iiib/event_likelihoods.csv (banked HEAD readout, reused per C0 PASS)",
+    "arm_source": "results/campaign51_20260728/realistic_20260729/wave2_20260829/c3/simulations/diagnostics/event_likelihoods.csv (retrieved this readout)"
+  },
+
+  "task_completion": {
+    "value": "sacct -j 6738999 -X -n -P: all 4 array tasks COMPLETED, exit 0:0",
+    "tasks": [
+      {"array_task": "6738999_0", "underlying_job": "6739003", "h": 0.660, "state": "COMPLETED", "elapsed": "00:04:50", "exitcode": "0:0", "node": "uc2n848"},
+      {"array_task": "6738999_1", "underlying_job": "6739004", "h": 0.665, "state": "COMPLETED", "elapsed": "00:04:39", "exitcode": "0:0", "node": "uc2n796"},
+      {"array_task": "6738999_2", "underlying_job": "6739005", "h": 0.670, "state": "COMPLETED", "elapsed": "00:04:36", "exitcode": "0:0", "node": "uc2n765"},
+      {"array_task": "6738999_3", "underlying_job": "6738999", "h": 0.730, "state": "COMPLETED", "elapsed": "00:04:34", "exitcode": "0:0", "node": "uc2n648"}
+    ],
+    "source": "sacct -j 6738999 -X -n -P (cluster, run 2026-08-29)",
+    "date": "2026-08-29",
+    "note": "Each array task actually dispatched as a distinct underlying SLURM job id (6739003-6739005 plus 6738999 itself for task 3); job=/task= fields in each task's own .out file confirm the array_task-index<->h-value mapping is correct."
+  },
+
+  "provenance": {
+    "git_commit_all_4_tasks": {"value": "ff2306213e9e65abbd474f66348bc05a6f3e6547", "source": "logs/provenance_*.json (all 4) + GIT_COMMIT_AT_RUN.txt + run_metadata_*.json:git_commit", "date": "2026-08-29"},
+    "tree_dirty_file_count_at_run_start": {"value": 296, "source": "logs/provenance_6738999_3.json, logs/provenance_6739003_0.json, logs/provenance_6739004_1.json, logs/provenance_6739005_2.json (all identical)", "date": "2026-08-29"},
+    "discrepancy_flag": "The registration's A22 launch stamp (section 12) states 'Tree clean at both the local and cluster checkouts at launch time.' The retrieved provenance stamps instead record tree_dirty_file_count=296 for all 4 tasks. The git_commit hash itself (ff230621) is unambiguous and consistent across every provenance artifact, run_metadata file, and GIT_COMMIT_AT_RUN.txt, so the CODE STATE actually exercised is verified correct; the 'clean' claim in the A22 stamp is not supported by the retrieved provenance and should be corrected in a future append, not silently accepted. Independent reader did not verify what the 296 dirty files were (plausibly untracked results/scratch artifacts visible in local git status, not darksiren_emri/ source changes, but this was NOT independently confirmed against the cluster checkout's exact dirty-file list)."
+  },
+
+  "gates": {
+    "R6_1D_bit_identity": {
+      "definition": "L_cat_no_bh, combined_no_bh bit-identical between arms at every H4 node, band <=1e-12 relative",
+      "result": "PASS",
+      "max_relative_diff": {"value": 2.667e-14, "source": "computed by independent reader: compare wave2_20260829/c3/simulations/diagnostics/event_likelihoods.csv vs headreadout_20260827/iiib/event_likelihoods.csv, columns L_cat_no_bh/combined_no_bh, all 4 H4 nodes, 1588 events/node", "date": "2026-08-29"},
+      "per_node_max_abs_diff": {"h_0.660": 1.041e-16, "h_0.665": 9.714e-17, "h_0.670": 9.714e-17, "h_0.730": 1.041e-16},
+      "verdict": "PASS -- well within the registered <=1e-12 band; residual is floating-point noise only."
+    },
+    "R2_engagement": {
+      "definition": "fraction of events with non-empty baseline-B with-BH candidate set (L_cat_with_bh>0) whose L_cat_with_bh differs (arm vs baseline) at h=0.730, must be >=0.90",
+      "n_events_total": 1588,
+      "n_nonempty_baseline_with_bh": 982,
+      "n_differing_among_nonempty": 951,
+      "engagement_fraction": {"value": 0.9684317718940937, "source": "computed by independent reader from event_likelihoods.csv at h=0.730, arm vs baseline, column L_cat_with_bh", "date": "2026-08-29"},
+      "threshold": 0.90,
+      "verdict": "PASS (0.968 >= 0.90)"
+    },
+    "R5_stencil_validity": {
+      "definition": "|Delta ell''| at the 3-node {0.660,0.665,0.670} local fit must be much less than I_HEAD=2965",
+      "delta_ell_doubleprime_at_0665": {"value": -63.70506631355954, "unit": "nats/h^2", "source": "computed by independent reader, central second difference of Delta_ell(h) over {0.660,0.665,0.670}, with-BH channel", "date": "2026-08-29"},
+      "I_HEAD": 2965.0,
+      "ratio_abs_dpp_over_IHEAD": 0.02148568847000322,
+      "verdict": "PASS (not ambiguous) -- 63.7 is ~46x smaller than I_HEAD=2965 (ratio 2.1%), satisfying the '<<' validity condition; no G27 escalation triggered by this rule."
+    },
+    "R1_falsifier_retention": {
+      "definition": "production iiib true-host retention (with-BH channel) under arm T must fall within the superseded +/-3SE band [0.762, 0.816] around the mirror-fleet prediction 0.78903 (jackknife SE 0.0093), per the registration's own appended note item 2",
+      "arm_T_production_retention": {"value_fraction": "66/76", "value": 0.868421052631579, "pct": "86.84211%", "source": "logs/wave2_c3_task3_6738999.err:9917 'P6 host-recovery (h=0.7300): ... 2D 66/76 hosts recovered/in-cat events seen (86.84211%)'", "date": "2026-08-29"},
+      "baseline_B_production_retention": {"value_fraction": "66/76", "value": 0.868421052631579, "pct": "86.84211%", "source": "C0 baseline gate task log, /pfs/work9/workspace/scratch/st_ac147838-emri/run_20260829_wave2_c0_iiib/darksiren_emri_20260829_205014_h_0_73.log:8620 'P6 host-recovery (h=0.7300): ... 2D 66/76 ...' -- captured via ssh before the cluster connection dropped mid-session", "date": "2026-08-29"},
+      "measured_delta_retention": {"value": 0.0, "note": "identical numerator (66) and denominator (76) for arm and baseline; also confirmed at the per-event level (see class_migration_and_retention_mechanism below) that the with-BH candidate-set POSITIVITY pattern for all 76 in-catalogue events is identical between arm and baseline (0 events change from candidate/no-candidate)"},
+      "falsifier_band": [0.762, 0.816],
+      "in_band": false,
+      "verdict": "FALSIFIED per registration section 8 item 1 -- 0.8684 is outside [0.762, 0.816] (above the upper bound). Per the registration's own R1 text this means 'the mirror-to-production transfer assumption (not necessarily the window design) is implicated -- the DeltaMAP read proceeds regardless (it is measured directly on iiib, not inferred from the mirror), but section 4's retention PREDICTION is falsified and must be flagged before any adoption argument cites it.' Independent reader's mechanistic explanation for the transfer failure is given below (class_migration_and_retention_mechanism) -- this IS a documented, independent explanation, so per the attribution falsifier's (section 8 item 2) own escape clause the DeltaMAP/Delta_mean_h attribution to mass-window geometry is NOT thereby voided, though it must be attributed specifically to the impostor/dark-class channel, not the true-host channel (see below)."
+    },
+    "R1_growth_factor_subcheck": {
+      "definition": "production per-event with-BH candidate-count growth distribution (median/p95/max) vs mirror prediction (0.949/1.498/10.0)",
+      "verdict": "UNDETERMINED from zero-compute artifacts retrieved this readout -- event_likelihoods.csv does not carry a per-event candidate-COUNT column, and the retrieved application logs' 'Host-lookup yield' line is a coarser, mass-filter-INDEPENDENT sky+z-cone metric (982/1588 nonempty, identical across both arms and all 4 h-nodes -- confirmed below), not the with-BH-specific candidate count the mirror-fleet growth-factor prediction targets. Reproducing the exact median/p95/max growth-factor number would require either re-instrumenting the production code to log per-event with-BH candidate counts, or a local get_possible_hosts_from_ball_tree replica run against the real iiib CRB/catalogue -- both out of scope for a foreground-only, no-new-compute independent read. This is reported as undetermined rather than inferred.",
+      "indirect_proxy": {"n_events_losing_all_with_bh_support": 621, "of_982_previously_nonempty": true, "fraction": 0.6324, "note": "L_cat_with_bh: baseline>0 -> arm==0, at h=0.730 -- a coarse zero/nonzero transition count, not a candidate-count ratio; see class_migration_and_retention_mechanism"}
+    }
+  },
+
+  "host_lookup_yield_cross_check": {
+    "definition": "aggregate sky+z-cone-only nonzero-candidate rate (mass-filter-independent; possible_hosts is None triggers the pure-completion fallback before any mass filtering happens)",
+    "arm_T_all_4_H4_nodes": {"n_nonzero": 982, "n_total": 1588, "n_pure_completion_fallback": 606, "identical_across_h_0.660_0.665_0.670_0.730": true, "source": "logs/wave2_c3_task{0,1,2,3}_*.err: 'Host-lookup yield at h=X: 982/1588 events with catalogue hosts, 606 pure-completion (zero-host) fallbacks'", "date": "2026-08-29"},
+    "note": "982 coincides with the baseline's L_cat_with_bh>0 count (982) -- this is the independent reader's confirmation of the physics-change doc's own claim (PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md section 7) that under linear k=1.5 the with-BH mass window is effectively NON-BINDING at this catalogue's CV distribution (the 'negative-lower-edge loophole' passes almost every candidate already inside the sky+z cone); i.e. baseline's with-BH candidate set equals the raw cone set on this production fleet."
+  },
+
+  "class_migration_and_retention_mechanism": {
+    "b3_1_class_definition_by_construction": {
+      "statement": "The B3.1/B3_1_POP_RECORD.md C-A/C-B/C-C class scheme is defined on L_cat_no_bh (dark = C-C iff L_cat_no_bh==0 at a given h). Since the mass_filter_geometry/mass_filter_k flags ONLY feed candidate_hosts_with_bh_mass (darksiren_emri/galaxy_catalogue/handler.py:558-712) and never candidate_hosts_without_bh_mass, L_cat_no_bh cannot differ between arms BY CONSTRUCTION, at any h -- not merely at the 4 tested H4 nodes. R6's bit-identity result (above) is the empirical confirmation of this at the tested nodes.",
+      "migration_count_under_strict_L_cat_no_bh_definition": 0,
+      "reported_at_h_0.730_only": true,
+      "reported_at_all_41_h_node_basis": "not computed this readout (no new evaluate() call was needed or made; the construction argument above makes the all-41-node count provably 0 as well, without needing the banked all-41-node CSV re-check)"
+    },
+    "with_bh_channel_specific_collapse": {
+      "definition": "events where L_cat_with_bh goes from >0 (baseline) to ==0 (arm) at h=0.730 -- the with-BH-channel's own analog of 'losing candidate support', NOT the B3.1 C-A/B/C label",
+      "n_total_lost": 621,
+      "n_gained": 0,
+      "of_which_in_catalog_host_galaxy_index_geq_0": 0,
+      "of_which_dark_class_host_galaxy_index_eq_neg1": 621,
+      "source": "computed by independent reader: join event_likelihoods.csv (h=0.730, both arms) on event_idx against seed61000/prepared_cramer_rao_bounds.csv's host_galaxy_index/in_catalog columns",
+      "date": "2026-08-29",
+      "n_in_catalog_events_total": 76,
+      "n_in_catalog_events_with_baseline_with_bh_support": 75,
+      "n_in_catalog_events_with_arm_with_bh_support": 75,
+      "n_in_catalog_events_changing_positivity_arm_vs_baseline": 0,
+      "finding": "The entire 621-event with-BH candidate-set collapse under the log-k3 geometry, on this production venue, falls EXCLUSIVELY within the dark class (host_galaxy_index==-1, no known true host). Not one of the 76 in-catalogue (known-true-host) events changes with-BH candidate-set membership. This is the mechanistic explanation for the R1 retention falsifier above: the mirror-fleet-predicted 17-21-point TRUE-HOST retention loss does not materialize on iiib production because the log-k3 window's tightening effect here is confined to impostor/dark-class candidate suppression, not true-host exclusion."
+    }
+  },
+
+  "R4_delta_w2_mixture_weight": {
+    "definition": "Delta w-bar_2 = mean with-BH catalogue mixture-weight (alpha_G_phi) shift, arm T vs baseline B, at h=0.730 -- reported, not gated",
+    "mean_alpha_G_phi_baseline": {"value": 58688310.0, "source": "computed by independent reader from event_likelihoods.csv column alpha_G_phi, h=0.730, all 1588 events", "date": "2026-08-29"},
+    "mean_alpha_G_phi_arm": {"value": 58688310.0, "source": "same, arm CSV", "date": "2026-08-29"},
+    "delta": 0.0,
+    "restricted_to_in_catalog_76_events": {"baseline": 58688310.0, "arm": 58688310.0, "delta": 0.0},
+    "finding": "Exactly zero shift, at every precision digit examined. alpha_G_phi = beta_G_phi * r_Malm is a GLOBAL, h-dependent (not per-event, not mass-window-dependent) selection-integral quantity (bayesian_statistics.py path_a_mixture_objects) -- the mass window enters ONLY through the per-event catalogue numerator L_cat_with_bh, never through this global normalization. R4 is therefore identically 0 by construction for this counterfactual, not merely small."
+  },
+
+  "R3_score_at_truth_tilt": {
+    "definition": "the with-BH score-at-truth tilt shift, arm T vs baseline B, at h=0.730 (row-#201 form: central difference of ln L over the two H_GRID_41 nodes bracketing h=0.730, i.e. h=0.725 and h=0.735)",
+    "verdict": "NOT COMPUTABLE from the retrieved data. Arm T's H4 grid is {0.660, 0.665, 0.670, 0.730} -- it does not include h=0.725 or h=0.735, the nodes the registered 'row-#201 form' central difference requires. Computing R3 would need additional cluster compute at those two nodes, out of scope for this zero-additional-compute wave-2 read. Reported as undetermined rather than approximated by a non-registered substitute stencil."
+  },
+
+  "primary_reading_delta_mean_h_pred": {
+    "method": "Delta ell(h) = sum_i [ln(combined_with_bh_arm_i(h)) - ln(combined_with_bh_baseline_i(h))], summed over events where BOTH values are strictly positive (0/1588 events excluded at any H4 node this run -- combined_with_bh never hit exactly zero for either arm, even for the 621-event with-BH-candidate-collapse group, because the completion-mixture term keeps it positive); central-difference stencil over {0.660,0.665,0.670}; Delta_mean_h,pred = Delta_ell'(0.665) / I_HEAD, I_HEAD=2965 per registration",
+    "channel_no_bh": {
+      "delta_ell_h_0.660": 0.0, "delta_ell_h_0.665": 0.0, "delta_ell_h_0.670": 0.0, "delta_ell_h_0.730": 0.0,
+      "delta_ell_prime_at_0.665": 0.0,
+      "delta_mean_h_pred": 0.0,
+      "note": "Exactly 0 at every node, consistent with R6 bit-identity (the 1D channel cannot be affected by a with-BH-only flag)."
+    },
+    "channel_with_bh": {
+      "sum_lnL_baseline_h_0.660": -7398.158871050374, "sum_lnL_arm_h_0.660": -7397.614711335973,
+      "sum_lnL_baseline_h_0.665": -7398.151754104878, "sum_lnL_arm_h_0.665": -7397.55457778954,
+      "sum_lnL_baseline_h_0.670": -7398.228752276929, "sum_lnL_arm_h_0.670": -7397.580151987313,
+      "sum_lnL_baseline_h_0.730": -7403.261779066417, "sum_lnL_arm_h_0.730": -7402.047519902811,
+      "delta_ell_h_0.660": 0.5441597144008483,
+      "delta_ell_h_0.665": 0.5971763153374923,
+      "delta_ell_h_0.670": 0.6486002896162972,
+      "delta_ell_h_0.730": 1.2142591636065845,
+      "delta_ell_prime_at_0.665_nats_per_h": 10.444057521544883,
+      "delta_ell_doubleprime_at_0.665": -63.70506631355954,
+      "I_HEAD": 2965.0,
+      "delta_mean_h_pred": 0.0035225270694619774,
+      "source": "computed by independent reader from event_likelihoods.csv, columns combined_no_bh/combined_with_bh, both arms, all 4 H4 nodes",
+      "date": "2026-08-29"
+    },
+    "ancillary_check_local_quadratic_vertex": {
+      "definition": "informal, non-registered check: 3-point quadratic vertex of the ABSOLUTE sum_lnL(h) (with-BH channel) over {0.660,0.665,0.670}, computed separately for arm and baseline (NOT a claim of a full-grid MAP -- registration section 12 note 1 states ANY ΔMAP claim from H4 is out of scope this wave; this is offered only as a cross-check on the STENCIL result's sign and rough magnitude)",
+      "baseline_local_vertex_h": 0.6629229,
+      "arm_local_vertex_h": 0.6660080,
+      "implied_shift": 0.0030851,
+      "agreement_with_stencil_result": "same sign (up), same order of magnitude (0.00309 vs 0.00352, ~12% relative difference) -- corroborates the primary stencil reading without adding new information."
+    },
+    "verdict_map_application": {
+      "value": 0.0035225270694619774,
+      "bands": {"IMMATERIAL_CONSISTENT_WITH_HB": "<= 0.003", "INTERMEDIATE": "0.003 < |x| < 0.008", "MATERIAL": ">= 0.008 (T_mat)"},
+      "verdict": "INTERMEDIATE",
+      "note": "0.003523 exceeds the IMMATERIAL threshold (0.003) by 0.000523 (~17% over) and is well short of T_mat=0.008. Per the registration's own honesty discipline this is REPORTED, NOT ADJUDICATED as either IMMATERIAL-CONSISTENT-WITH-HB or MATERIAL. Sign is UP (positive), i.e. toward truth (0.73) -- the same corrective direction as HB's own +0.0015 and roughly 2.3x its magnitude.",
+      "comparison_to_HB": {"HB_value": 0.0015, "ratio_to_HB": 2.348},
+      "comparison_to_T_mat": {"T_mat": 0.008, "fraction_of_T_mat": 0.4403}
+    }
+  },
+
+  "cost_F4": {
+    "registered_estimate_CPU_h": [44, 137],
+    "measured_tasks": [
+      {"task": "h=0.660 (job 6739003)", "elapsed": "00:04:50", "cpus": 16, "cpu_h": 1.2889},
+      {"task": "h=0.665 (job 6739004)", "elapsed": "00:04:39", "cpus": 16, "cpu_h": 1.24},
+      {"task": "h=0.670 (job 6739005)", "elapsed": "00:04:36", "cpus": 16, "cpu_h": 1.2267},
+      {"task": "h=0.730 (job 6738999)", "elapsed": "00:04:34", "cpus": 16, "cpu_h": 1.2178}
+    ],
+    "measured_total_CPU_h": 4.973,
+    "source": "sacct -j 6738999 -X -n -P --format=JobID,JobName,State,Elapsed,ExitCode,NodeList,AllocCPUS,Start,End",
+    "date": "2026-08-29",
+    "measured_vs_estimate_ratio": {"vs_low_44": 0.113, "vs_high_137": 0.0363},
+    "finding": "Actual measured cost (4.97 CPU-h) is roughly 9x-27.6x BELOW the registered 44-137 CPU-h band -- each task ran in ~4.5-4.8 minutes wall time at 16 cpus, not the ~56-76 uncontended / up to 85-min contended minutes/h-value anchor the estimate was built from. Not independently diagnosed (cluster access was lost mid-session before C0's own walltime could be pulled for comparison); flagged as a large, favorable F4 miss for the record, not as a correctness concern (task exit codes, row counts, and column counts all check out as complete, correct-shape output)."
+  },
+
+  "adoption_rule_5.2": {
+    "condition_1_H0_delta": {
+      "status": "NOT ADJUDICATED (INTERMEDIATE)",
+      "detail": "Delta_mean_h,pred = +0.003523 falls in the registered INTERMEDIATE band, neither IMMATERIAL-CONSISTENT-WITH-HB nor MATERIAL. Per registration section 10 item 1, adoption requires the delta to land IMMATERIAL, or if MATERIAL-UP be accepted per the correctness-over-bias-removal ruling. An INTERMEDIATE read satisfies neither branch outright; it is a reported non-verdict pending the wave-3 full G41 read (registration section 12 note 1)."
+    },
+    "condition_2_compute_ceiling": {
+      "status": "SATISFIED",
+      "detail": "Measured cost 4.97 CPU-h (all 4 H4 tasks) is far inside the ~50-130 CPU-h charter envelope for this class of change, independent of whether the growth-factor prediction (R1 sub-check a) itself reproduces on iiib."
+    },
+    "condition_3_true_host_retention_argument": {
+      "status": "SATISFIED FOR IIIB, WITH A SCOPE CAVEAT",
+      "detail": "The measured true-host retention delta on iiib production is exactly 0 (66/76 for both arms, same 76-event population, identical positivity pattern) -- there is no true-host retention loss on this venue to argue as physically right or wrong; the physics-change doc's ~17-21 point mirror-fleet-based concern does not transfer to iiib (R1 falsifier triggered, with a documented mechanistic explanation: the log-k3 tightening on this fleet operates entirely within the 621-event dark/impostor class, never touching the 76 in-catalogue events). This resolves condition 3 for iiib specifically; it says nothing about joint_r1 or any other venue, which this registration explicitly excluded from scope (registration section 1)."
+    },
+    "overall": "NOT YET GRANTED -- conditions are ANDed and condition 1 is an open, reported non-verdict (INTERMEDIATE). Conditions 2 and 3 favor adoption on iiib; condition 1 requires the wave-3 full-grid read (or an author ruling on how to treat an INTERMEDIATE primary read) before the adoption rule can close."
+  },
+
+  "caveats": [
+    "Cluster SSH access was lost partway through this readout (multiplexed control connection closed and could not be re-authenticated non-interactively); C0's exact sacct timing and the C0 task's 'Host-lookup yield' line could not be independently re-pulled for a full side-by-side wall-time comparison. The C0 P6 host-recovery line and commit hash HAD already been captured before the disconnect and are used above.",
+    "R1's growth-factor sub-check (median/p95/max candidate-count ratio) is UNDETERMINED, not measured -- no per-event candidate-count column exists in the retrieved diagnostics, and the log's 'Host-lookup yield' line is a coarser, mass-filter-independent metric. This is reported as an honest gap, not inferred from a proxy.",
+    "R3 (score-at-truth tilt) is NOT COMPUTABLE from arm T's H4 grid, which does not bracket h=0.730 with the registered row-#201 stencil nodes (0.725/0.735).",
+    "The A22 launch-stamp claim of a clean tree at launch is contradicted by the retrieved provenance stamps (tree_dirty_file_count=296 at run start, all 4 tasks); the commit hash itself is unambiguous and verified consistent everywhere checked.",
+    "The 'true-host retention is unaffected on iiib' finding is venue-specific (iiib only, as the registration itself scopes); it does not bear on joint_r1 or generalize to the mirror-fleet's own regime (100% in-catalogue by construction, vs iiib's 76/1588 = 4.8%).",
+    "This is the independent reader's own re-derivation of every number reported here from the retrieved CSVs, JSONs, and logs -- not a re-statement of any builder's prior claim; all sources and dates are cited per-number above."
+  ]
+}

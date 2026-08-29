@@ -673,3 +673,116 @@ Baseline commit: `d04d9dc9bfe39e6c5a72e768a26f2dcc38355bf5` (the banked HEAD rea
 `run_metadata_21.json`, 2026-08-27T19:40:20).
 
 Stamped: launched under rows #222/#223 — charter node NODE archive+minor-notes (GAP 8), 2026-08-29.
+
+**A22 launch stamp — appended 2026-08-29.** wave-2 commit `ff230621`; job `6739000` (STEP-2
+smoke, array 0, h=0.730) + `6739001` (remainder, array 1-3, `--dependency=afterok:6739000`);
+launched 2026-08-29 under rows #222/#223. Fills the "Launch-stamp placeholder (A22)" note above,
+which is left unedited (append-only). The previously-flagged untracked falsifier test file
+(`darksiren_emri_test/bayesian_inference/test_survival_2d_homogeneity_falsifier.py`) is confirmed
+tracked in `ff230621` (`git ls-tree -r ff230621` lists it; introduced by `cc305748`) — the
+condition for a clean A22 stamp is met. Tree clean at both the local and cluster checkouts at
+launch time.
+
+Stamped: launched under rows #222/#223 — charter node B7.2, 2026-08-29.
+
+---
+
+## 15. ⟨SUBMIT⟩/RESULT RECORD — B7.2 (PROD-CF-2D), independent reader — appended 2026-08-29
+
+**Launched under rows #222/#223 — charter node B7.2.** Read out 2026-08-29 by the independent
+reader; launched under rows #222/#223 — charter node B7.2. Append-only; nothing above is edited.
+
+**PROVISIONAL — provenance extras (`run_metadata_*.json`, `logs/`, 2 `posteriors_with_bh_mass`
+JSONs for h=0.67/0.73, a local `GIT_COMMIT_AT_RUN.txt` copy) pending retrieval; commit `ff230621`
+confirmed pre-outage via `ssh cat`; the numeric readout below is complete on the diagnostics CSV**
+(`wave2_20260829/c4/simulations/diagnostics/event_likelihoods.csv`, all 4 H4 nodes, 1588 events
+each — the sole input R1/R2/R6 and the registered Δℓ′ stencil consume, per
+`REGISTRATION_C0_BASELINE_GATE_20260829.md` §3's per-arm column table: C4 consumes
+`L_cat_with_bh`, `combined_with_bh`). Cluster SSH went down for non-interactive auth mid-retrieval
+(the `ControlMaster` session expired; re-auth needs an interactive OTP); retrieval of the
+provenance extras resumes when that is available — see
+`B7_2_TWIN_CF_READOUT_RECORD.md` for the exact resume commands. Full detail (comprehension-first
+paragraph, gate/reading tables) lives in that file; this section is the compact record of the
+verdict of record for the proposal document itself.
+
+**Run.** All 4 tasks COMPLETED (job `6739000` task 0, h=0.730, Elapsed 00:06:25; job `6739001`
+tasks 1–3, Elapsed 00:06:38/00:06:17/00:06:10) at commit `ff2306213e9e65abbd474f66348bc05a6f3e6547`
+— confirmed via a pre-outage `ssh cat GIT_COMMIT_AT_RUN.txt` and matching the local
+`fix/p32d-classg-venue-repair` HEAD. STEP-2 overhead pin: task-0 (h=0.730) 385 s vs C0's
+baseline 388 s (same h, same venue, `off` arm) ⇒ **measured overhead factor ≈ 0.99×** — essentially
+1.0×, inside the registered 1.0–1.3× assumed band, matching the mirror-venue evidence (not
+slower). Walltime resubmit rule (§14 item 2) NOT triggered. Measured cost: Σ Elapsed × 16 cpus ≈
+**6.8 CPU-h actual** for the 4-task arm vs the registered 59.7–105 CPU-h estimate — a ~9–15×
+overestimate, consistent with C0's own finding of the same stale-anchor overestimate. Baseline:
+C0 PASSED bit-identical (row #246) ⇒ the banked HEAD readout `headreadout_20260827/iiib/`
+(commit `d04d9dc9`) is the zero-compute baseline used below; no separate baseline task was run.
+
+**Gates (registered order, §6.2/§13.3).**
+
+| gate | verdict | detail | source |
+|---|---|---|---|
+| **R1** (eventwise `ln L_cat,wbh^T ≤ ln L_cat,wbh^B`) | **PASS** | 6352 rows checked (4 H4 nodes × 1588 events), 0 violations, 2424 rows with an empty candidate set (equality by construction) | `b7_2_readout.json:gates.R1` |
+| **R2** (A13 engagement, ≥0.95 at h=0.730) | **PASS** | 982/982 active events (baseline `L_cat_with_bh>0`) show `\|Δ ln L_cat,wbh\|>1e-6` — engagement fraction **1.0** | `b7_2_readout.json:gates.R2` |
+| **R6** (1D channel bit-identical, all H4 nodes) | **PASS** | `max_abs = 0.0` exactly on `L_cat_no_bh` and `combined_no_bh` at every H4 node (operationalized at ≤1e-12, matching C0's own "bit-identical" definition; here the observed value is exact 0.0, tighter than the floor) | `b7_2_readout.json:gates.R6` |
+
+**Registered primary reading — the Δℓ′(0.665)/I_HEAD stencil.**
+
+| quantity | value | source |
+|---|---|---|
+| Δℓ(0.660) = Σ_events ln[combined_with_bh^T/combined_with_bh^B] | −3.030674 (1588 events, 0 dropped) | `b7_2_readout.json:stencil.per_node_delta_ell` |
+| Δℓ(0.665) | −2.993148 | same |
+| Δℓ(0.670) | −2.956381 | same |
+| Δℓ′(0.665) (central difference, step 0.005) | **+7.429355 nats/unit h** | `b7_2_readout.json:stencil.delta_ell_prime_at_0_665` |
+| Δℓ″(0.665) | −30.311364 | `b7_2_readout.json:stencil.delta_ell_doubleprime_at_0_665` |
+| Validity condition `\|Δℓ″\| ≪ I_HEAD` | **HOLDS** (30.3 vs 0.1·I_HEAD=296.5 — operationalized as `<0.1·I_HEAD`, disclosed interpretation of the registered "≪") | `b7_2_readout.json:stencil.validity_condition_ok` |
+| I_HEAD | 2965 (registered, σ_h=0.018366) | proposal §6.2 |
+| **Δmean_h,pred = Δℓ′/I_HEAD** | **+0.0025057** | `b7_2_readout.json:stencil.delta_mean_h_pred` |
+
+**Verdict per the registered map (two-sided, T_mat=0.008, T_mat/2=0.004):**
+`\|Δmean_h,pred\| = 0.0025 ≤ 0.004` ⇒ **IMMATERIAL-PREDICTED.** Not AMBIGUOUS (validity condition
+holds cleanly, nowhere near the 0.004–0.008 band) ⇒ the conditional G27 escalation (proposal §6.2
+item 2 / §11 item 2) is **NOT triggered**.
+
+**Secondary readings (REPORTED-ONLY).**
+
+- **Direct 4-node MAP/mean cross-check** (CSV-derived `combined_with_bh` totals over just the H4
+  nodes — explicitly NOT a valid full-grid posterior, only 4 of 41 `H_GRID_41` nodes): arm MAP
+  0.665 / mean 0.665212; baseline MAP 0.665 / mean 0.665020 ⇒ ΔMAP = 0.0, Δmean = **+0.000192** —
+  same sign and same order of immateriality as the primary stencil reading.
+  `posteriors_with_bh_mass/h_0_67.json` and `h_0_73.json` were not yet retrieved (§ provenance
+  extras above); this cross-check is stated as **the CSV-derived total** per the coordinator's
+  instruction — the independent JSON-object cross-check at those two nodes is added when
+  retrieval completes (expected to reconcile, since C0 and the C3 dry run both showed the JSON
+  posterior objects are per-event dicts redundant with the CSV's own `combined_with_bh` column).
+- **Per-event sign distribution of Δln combined_with_bh** (active events only, baseline
+  `L_cat_with_bh>0`): at h=0.730 (982 active), 0 positive / 872 negative / 110 ≈0
+  (mean −0.002618, median −0.000007); at h=0.665 (982 active), 0 positive / 935 negative / 47 ≈0
+  (mean −0.003048). **Zero events tilt positive at any H4 node** — this matches the proposal's own
+  "Expected direction" note (§6.2 last paragraph): `S_4D<1` lowers the with-BH catalogue-leg
+  likelihood and its mixture share (R4<0 expected), and the sign census here confirms that
+  direction exactly, with no counterexample event.
+- R3 (ΔT score-at-truth tilt, row-#201 form) and R4 (Δw̄₂ mixture-weight shift) were **not computed
+  this pass** — out of the scope the coordinator specified for this readout (gates, primary
+  numbers, verdict, caveats); the sign-distribution finding above is offered as directionally
+  consistent evidence in their place, not a substitute measurement.
+- The ×2.5 residual check (falsifier (ii)) is **not readable from this arm** — it requires the
+  separate Option A′ fleet re-run (208–286 CPU-h), unrun this wave (row #220); not attempted here.
+- Class-resolved deltas: **not computed this pass** (out of scope, as above).
+
+**Caveats (every cap carried forward, per the task's mandatory list).**
+1. **Attribution provisional.** Falsifier (i) PASSED (§13.1); falsifier (ii) has NOT run this wave
+   (row #220) — the attribution of this IMMATERIAL-PREDICTED read to the twin's
+   `S_4D`-homogeneity property stays PROVISIONAL until falsifier (ii) returns (§14 item 1).
+2. **Not the adoption's H₀ verdict.** Per F2 (§9), this B7.2 read is the measure-first production
+   read informing the B7.3 `/physics-change` gate; the actual H₀ effect on the with-BH channel is
+   read once, unconditionally, in the wave-3 blind HEAD readout with its own per-change arm.
+3. **Provenance extras pending** — see the PROVISIONAL label above; does not affect the gate or
+   stencil numbers, all of which are diagnostics-CSV-derived and already complete.
+4. **Validity-condition and R6-tolerance interpretations disclosed above are this reader's
+   operationalization** of the registered "≪" and "bit-identical" language, not a silent band
+   change — both are stated explicitly with their numeric thresholds.
+5. **No ssh attempted** in producing this record, per the coordinator's instruction — the
+   provenance extras remain to be retrieved in a resumed session.
+
+Stamped: read out 2026-08-29 by the independent reader; launched under rows #222/#223 — charter
+node B7.2.
