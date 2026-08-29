@@ -266,3 +266,24 @@ Source: `fanout1_20260829/hier_s0_registered_run/logs/runner3_wave2pre_20260829.
 `2026-08-29T23:12:46+02:00 START KW-Q1 parity ...`); `fanout1_20260829/b4_2_readout.json`
 `cost_measured`; `fanout1_20260829/B4_2_KWQ1_READOUT_RECORD.md` §8;
 `BIAS_HISTORY_LEDGER.md` row #249.
+
+## P0 (S0-A/S0-C) measured — appended 2026-08-29 (row #250/#251 companion)
+
+Launched under rows #222/#223 — charter node B1.1. Append-only; entries above (rows 11/41/76)
+not edited.
+
+**P0 measured (S0-A full pass, `hier_s0_registered_run`): 2960 s wall x 14 cpu_per_job = 11.5
+CPU-h** (`s0a_full_output.json` `elapsed_s`; 4 seeds, sites2.2_nosmear, "bc" numerator, 20 cells
+mean ~65 s/cell). **S0-C (seed 900101, 41-h grid, 12 cpu): 3125.1 s wall = 10.42 CPU-h**
+(`s0c_full_output.json`); S0-C marginal cost quoted at 24.4 s/h-node in the B1.1 stage-0 record
+and this pass's authorization text (not independently re-derived from the 41-h-grid timing
+above in this pass -- flagged for reconciliation, not treated as a discrepancy).
+
+**C1 (S0-B) NOT LAUNCHED.** Per row #250's ORCHESTRATOR PATH DECISION: B1 stops at 1.1 pending
+the B1.1-F forensic; `cluster/wave2_c1_s0b_TEMPLATE.sbatch` remains a template (theta flags
+commented out); no SLURM submission occurred for C1 this pass. The forensic (row #251) localises
+the S0-A defect to VENUE-LAW/INSTRUMENT-FORM but does not lift the B0-A' STOP and does not
+license C1 launch.
+
+Source: `fanout1_20260829/B1_1_HIER_STAGE0_RECORD.md`; `fanout1_20260829/B1_1_S0A_DEFECT_FORENSIC_20260829.md`
+sec 7; `BIAS_HISTORY_LEDGER.md` rows #250-#251.

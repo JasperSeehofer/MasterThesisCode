@@ -104,3 +104,39 @@ dispositioned).
   ruff format clean (70 files), mypy clean (70 files), pytest 1889 passed / 15 skipped / 27
   deselected, 0 failed, 169.56s, coverage 73.21%.
 - `COMMIT_PLAN_3.md` — this pass's proposed 3-way commit split (cli / test / docs).
+
+## Wave-2 registration end / wave-3 build + docket-2 synthesis (2026-08-29/30, rows #245–#252)
+
+Ledger rows: #245 (PA-HIER-31 F-A full-N + P6 CLI committed, `fb9d8aff`) · #246 (C0 baseline
+gate run + PASS bit-identical) · #247 (B5.2 [WIN] C3 k=3 counterfactual readout, INTERMEDIATE)
+· #248 (B7.2 [2D-TWIN] C4 PROD-CF-2D readout, IMMATERIAL-PREDICTED → 7.3 adoption gate opened)
+· #249 (B4.2 [IMP] KW-Q1 readout, KERNEL-WIDTH-INERT/REPORTED-ONLY) · #250 (B1.1 [HIER] Stage 0
+COMPLETE, B0-A′ INSTRUMENT-DEFECT → STOP) · #251 (B1.1-F forensic filed, LOCALISATION
+VENUE-LAW/INSTRUMENT-FORM) · #252 (SYNTHESIS DOCKET 2 filed, information only, this pass).
+Adoption commit `d4765539` ([PHYSICS] `catalogue_numerator_survival_2d="mz_sel"`/`center="eff"`,
+STRUCTURAL-CONSISTENCY, pending wave-3 ratification). Wave-3 build commit of record `60f9996e`
+(sbatch set + submission note); NOT submitted — SSH down since ≈21:15 on 2026-08-29.
+
+**New files this pass (docket-2 chair, 2026-08-29/30, foreground/local only):**
+- `SYNTHESIS_DOCKET_2_20260829.md` — wave-2 verdict table (§1), tree state per branch (§2),
+  wave-3 plan + stop/continue logic (§3), F4 compute reconciliation (§4), valued findings
+  including refuted/undetermined (§5), 7 [RULE] items returning to the author (§6)
+- `DOCKET2_PACKAGE_20260829.md` — chair's scoped input package (record index for docket 2)
+- `REGISTRATION_END_VERIFIER_PASS_20260829.md` — registered end-of-fan-out verifier pass (the
+  author's check per row #222 form (ii); this docket is information-only, not an approval ask)
+- `B1_1_S0A_DEFECT_FORENSIC_20260829.md` — B1.1-F forensic (E1–E21 sub-tests): θ-free no-BH
+  divisor localisation, candidate-ball truncation, secant O(Δ²) bias, KW-Q1 cancellation check
+- `b1_1_forensic_work/` — forensic scripts + JSON outputs (`f1`–`f21` twin/decomposition runs)
+- `hier_s0_registered_run/s0a_full_output.json`, `s0a_seed900101..104/`, `s0c_seed900101/` —
+  B1.1 Stage-0 P0 remainder + S0-C run artifacts (logs + per-node `event_likelihoods.csv`)
+- `kwq1_registered_run/s0a_full_output.json`, `s0a_seed900101..104/`, `kwq1_parity_run/` —
+  B4.2 KW-Q1 registered run (4 seeds × 3 s-nodes, FT config) + T-ID/PARITY re-evaluation
+- `COMPUTE_LEDGER.md` — modified (this pass): F4 measured-cost reconciliation folded in
+  (C0/C3/C4 cluster arms, P0/P2/S0-C local arms, corrected anchor [A11])
+- `COMMIT_PLAN_4.md` — this pass's proposed single docs commit (filtered `git status`)
+
+**Quality gate:** not re-run this pass (no source/test files touched; append-only ledger +
+docs + read-only run artifacts). Last measured green gate: COMMIT_PLAN_3.md §3
+(HEAD `dd63fe0c` + diff, 1889 passed / 15 skipped / 27 deselected, coverage 73.21%); the wave-2
+adoption pass (`d4765539`) separately reported 1896 passed / 15 skipped / 27 deselected
+(`B7_3_ADOPTION_VERIFIER_REPORT.md`).
