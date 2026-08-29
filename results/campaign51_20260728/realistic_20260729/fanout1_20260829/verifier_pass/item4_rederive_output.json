@@ -1,0 +1,62 @@
+{
+  "crb": {
+    "path": "results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv",
+    "md5": "9a1f2a14384a9281c97ca3be312ddaab",
+    "md5_matches_expected": true,
+    "n_rows": 1590,
+    "n_dark_in_catalog_false": 1514,
+    "n_in_catalog_true": 76
+  },
+  "venues": {
+    "iiib": {
+      "n_events_csv": 1588,
+      "n_h_nodes": 41,
+      "n_dark_class": 606,
+      "n_score_nonfinite_dropped": 0,
+      "dark_ensemble_score_mean": -0.46679800530233134,
+      "dark_ensemble_score_sem": 0.016195809673473442,
+      "dark_ensemble_n": 606,
+      "historical_mean": -0.635,
+      "historical_sem": 0.017,
+      "abs_diff_vs_historical": 0.16820199469766867,
+      "combined_sigma_vs_historical": 7.163668344248303,
+      "bin_counts_1to5": [
+        121,
+        121,
+        122,
+        120,
+        121
+      ],
+      "n_in_5_registered_bins": 605,
+      "n_underflow_below_bottom_edge": 1,
+      "n_overflow_above_top_edge": 0,
+      "n_all_dark_events": 606,
+      "n_all_minus_n_5bins": 1
+    },
+    "joint_r1": {
+      "n_events_csv": 1588,
+      "n_h_nodes": 41,
+      "n_dark_class": 493,
+      "n_score_nonfinite_dropped": 0,
+      "dark_ensemble_score_mean": -0.39379150901421817,
+      "dark_ensemble_score_sem": 0.020673034630077722,
+      "dark_ensemble_n": 493,
+      "historical_mean": -0.565,
+      "historical_sem": 0.02,
+      "abs_diff_vs_historical": 0.17120849098578178,
+      "combined_sigma_vs_historical": 5.952155521120475,
+      "bin_counts_1to5": [
+        119,
+        118,
+        77,
+        78,
+        99
+      ],
+      "n_in_5_registered_bins": 491,
+      "n_underflow_below_bottom_edge": 2,
+      "n_overflow_above_top_edge": 0,
+      "n_all_dark_events": 493,
+      "n_all_minus_n_5bins": 2
+    }
+  }
+}

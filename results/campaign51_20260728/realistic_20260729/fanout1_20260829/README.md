@@ -140,3 +140,26 @@ docs + read-only run artifacts). Last measured green gate: COMMIT_PLAN_3.md §3
 (HEAD `dd63fe0c` + diff, 1889 passed / 15 skipped / 27 deselected, coverage 73.21%); the wave-2
 adoption pass (`d4765539`) separately reported 1896 passed / 15 skipped / 27 deselected
 (`B7_3_ADOPTION_VERIFIER_REPORT.md`).
+
+## END-of-fan-out verifier pass, part 1 (2026-08-30, row #254)
+
+Registered author check per row #222 (`REGISTRATION_END_VERIFIER_PASS_20260829.md`). Covers
+items 1-19 of the registration; item 20 (wave-3 blind readout) is DEFERRED — cluster SSH has
+been down since ≈21:15 on 2026-08-29, so wave-3 (built at `60f9996e`+`85dae577`) was never
+submitted. Falsification brief (A20): job was to REFUTE, re-executing decisive computations
+from source, not from a record restating them.
+
+Counts: 18 confirmed, 0 refuted, 1 undetermined (item 19 — cluster sacct Elapsed primitives
+for C0/C3/C4 exist only as quoted strings, not re-derivable from a raw sacct artefact on disk;
+all locally-sourced costs and downstream arithmetic reproduce cleanly), 1 deferred (item 20).
+17 items returned to the author ([RULE] ×12 incl. A3's [DO]+[RULE], [DO] ×4, [STANDING] ×1);
+10 orchestrator path decisions of record remain open to veto. Three new verifier-found
+findings not previously disclosed in any record (F1–F3, see report). No tracked file was
+modified by this pass (append-only ledger row #254 in
+`gate_b_20260730/BIAS_HISTORY_LEDGER.md`).
+
+- `END_VERIFIER_REPORT_PART1_20260830.md` — this pass's report (full item-by-item verdicts,
+  provenance, findings F1–F3)
+
+Per row #222, the standing grant this pass exercises lapses on the author reading ledger
+row #254. Part 2 (item 20, wave-3 blind readout) is blocked on cluster SSH recovery.

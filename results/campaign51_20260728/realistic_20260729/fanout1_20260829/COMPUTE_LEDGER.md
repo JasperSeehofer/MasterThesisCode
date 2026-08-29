@@ -289,3 +289,7 @@ Source: `fanout1_20260829/B1_1_HIER_STAGE0_RECORD.md`; `fanout1_20260829/B1_1_S0
 sec 7; `BIAS_HISTORY_LEDGER.md` rows #250-#251.
 
 **B7.3 adoption housekeeping (row #253, 2026-08-30):** [PHYSICS] adoption commit `d4765539` (catalogue_numerator_survival_2d="mz_sel", center="eff") ledger row filed retroactively (docket 2 §7 item 7); zero compute, no new run. Wave 3 (commit of record `60f9996e`, sbatch set built) remains BLOCKED on cluster SSH (down since ~21:15 on 2026-08-29) — not submitted.
+
+## Local run archive (2026-08-30, orchestrator; verifier F4 item)
+
+The registered local Stage-0 (S0-A/S0-C) and KW-Q1 run directories (incl. the 41 gitignored *.log / simulations/ files) are archived locally as `results/_archive/local_runs/fanout1_stage0_kwq1_runs_20260830.tgz` (gitignored; sha256 recorded in the shell log of this session). Not in git; not on the cluster.

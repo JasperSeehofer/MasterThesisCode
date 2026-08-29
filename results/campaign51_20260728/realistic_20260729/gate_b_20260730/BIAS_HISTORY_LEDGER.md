@@ -3098,3 +3098,33 @@ Sources: `fanout1_20260829/B1_1_S0A_DEFECT_FORENSIC_20260829.md` (secs 0, 5, 6, 
 Sources: `fanout1_20260829/SYNTHESIS_DOCKET_2_20260829.md` §0–§6 (chair re-derivations, verdict table, tree state, compute ledger, findings, RULE list); `fanout1_20260829/README.md`; `fanout1_20260829/COMMIT_PLAN_4.md`. Filed under rows #222/#223 — information only, no approval requested.
 
 ## Row #253 — 2026-08-30 — [PHYSICS] ADOPTED under row #223 (charter B7.3): catalogue_numerator_survival_2d = "mz_sel", center = "eff" is the production default — commit `d4765539`. Housekeeping row per docket 2 §7 item 7 (`results/campaign51_20260728/realistic_20260729/fanout1_20260829/SYNTHESIS_DOCKET_2_20260829.md` §7 item 7: "file the B7.3 adoption row in `BIAS_HISTORY_LEDGER.md`"); no new measurement, no code change. **Justification chain:** structural consistency — the with-BH catalogue leg gets the same survival treatment as the fused completion leg (rows #117–#118) and the 1D catalogue leg twin `bac48696` (row #195); CONFIRMED-supported basis at 33 seeds (row #216 item 1, [P3-2D] repair ratified as verdict of record); C4 production counterfactual read IMMATERIAL-PREDICTED, Δmean_h,pred = +0.0025057 ≤ T_mat/2 = 0.004 (row #248); falsifier (i) (S_4D-homogeneity double-weight regression) PASS, rel. dev. 2.60e-16/1.30e-16 vs coded 1.500/5.667 (row #236); gate presentation panel-clean at 0 rounds (`docs/gates/PHYSICS-GATE-LEDGER.md` row `2026-08-29 | ff230621 | presented`, charter node B7.3); independent verifier PASS on all 6 dispatch items, full suite 1896 passed / 15 skipped / 27 deselected reproduced (`fanout1_20260829/B7_3_ADOPTION_VERIFIER_REPORT.md` PASS/FAIL table; `docs/gates/PHYSICS-GATE-LEDGER.md` row `2026-08-29 | pre-commit | implemented | PASS` + the following `verified | PASS` row); five archived scripts (Class-A call sites: p3_2d_fleet.py, ca_rhs_scorer.py, p3_wbhzero_measure.py, p3_2d_companion.py, wbhzero_probe.py/rhs_inflation_*.py + the cluster sbatch set — 8 sites total, re-grepped post-implementation, all unchanged) and the mirror-harness caller (`fanout1_20260829/hier_s0_driver.py`, three `run_mirror_seed_inprocess` call sites, Class-B site B3) pinned to explicit `"off"`/`"unset"` so banked Stage-0/KW-Q1 comparands stay byte-identical. **Caps:** attribution PROVISIONAL until falsifier (ii) (unrun, class-G fleet, ≈208–286 CPU-h at the old anchor) per row #220; calibration status capped `supported` (not upgraded); the ×2.25–2.35 C2* 2D identity residual (bt 2.253±0.082 / bc 2.700±0.101 at 33 seeds) disclosed and unclosed, row #211 PARK unchanged. **F2 (serialization):** batched into the one wave-3 blind HEAD readout per `PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md` §6 (A14 falsifier registered: wave-3 per-change arm, |Δmean_h(2D)| ≥ T_mat = 0.008 on either venue falsifies IMMATERIAL-PREDICTED; R1/R6 at full grid = INSTRUMENT-DEFECT if violated); baseline for that readout = the banked 2026-08-27 HEAD readout (`headreadout_20260827/iiib/`, commit `d04d9dc9`), certified bit-identical by the C0 gate at `ff230621` (row #246: max_abs 0.000 on all 14 shared numeric columns, both posterior JSONs md5-identical). **Commit of record for wave 3:** `60f9996e` (wave-3 sbatch set, records adoption commit `d4765539`); wave 3 is BLOCKED on cluster SSH (down since ~21:15 on 2026-08-29), not submitted (row #252). **Adoption returns to the author as a fresh [RULE] for ratification after the wave-3 readout** (docket 2 §6 item 3: "ratify `mz_sel`/`eff` as the production default (or revert to `"off"` pending falsifier (ii))" — inputs post-date row #223's standing grant per the approval-scope convention, so "all approved" does not cover this ruling). Sources: `results/campaign51_20260728/realistic_20260729/fanout1_20260829/PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md`; `results/campaign51_20260728/realistic_20260729/fanout1_20260829/B7_3_ADOPTION_IMPLEMENTATION_RECORD.md`; `results/campaign51_20260728/realistic_20260729/fanout1_20260829/B7_3_ADOPTION_VERIFIER_REPORT.md`; `docs/gates/PHYSICS-GATE-LEDGER.md` (rows dated 2026-08-29: `ff230621 | presented`, `pre-commit | implemented | PASS`, `pre-commit | verified | PASS`, charter node B7.3); this ledger rows #117–#118, #195, #211, #216, #220, #236, #246, #248, #252. Filed under row #223 — housekeeping, no approval requested.
+
+## Row #254 — 2026-08-30 — END-OF-FAN-OUT VERIFIER PASS, PART 1 (items 1-19; item 20 wave-3 readout DEFERRED, SSH outage) — results/campaign51_20260728/realistic_20260729/fanout1_20260829/END_VERIFIER_REPORT_PART1_20260830.md
+
+Report written; no tracked file was modified (0 modified entries in `git status`); the only writes are the report and nothing new under `verifier_pass/`.
+
+```
+END VERIFIER PASS, PART 1 — counts (items 1-19)
+confirmed:    18   (items 1-18; items 12-19 adjudicator-run because their verifier verdicts never reached this task)
+refuted:       0
+undetermined:  1   (item 19 — cluster sacct Elapsed primitives for C0/C3/C4 exist only as quoted strings; arithmetic and all local-sourced costs reproduce)
+deferred:      1   (item 20 — wave-3 blind readout; cluster SSH down, wave 3 built at 60f9996e+85dae577 but not submitted)
+
+author items returned: 17  ([RULE] 12 incl. A3's [DO]+[RULE] · [DO] 4 · [STANDING] 1)
+orchestrator path decisions of record open to veto: 10
+
+report: /home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/END_VERIFIER_REPORT_PART1_20260830.md
+stamp: registered verifier pass, part 1, 2026-08-30; author check per row #222
+HEAD at adjudication: 85dae577 (brief named b87ad2e6; one commit later, no verdict affected)
+
+new verifier-found findings not disclosed in any record:
+- F1 item 1: the must-fix note's own ln-transform citation (hier_s0_driver.py:242-245) is wrong; guard is at :425 (ff230621)
+- F2 item 7: paraphrase of row #223 labelled "(author, verbatim)" in runbook 37 §5 + mass-window gate-doc header
+- F3 item 10: no builder/verifier report artefact on disk behind B7.1's "panel clean after 0 rework" claim
+```
+
+Refuted/undetermined items (one line each):
+- Item 19 (undetermined): cluster sacct Elapsed primitives for C0/C3/C4 (compute-cost ledger) exist only as quoted strings in the record, not re-derivable from a raw sacct artefact on disk — arithmetic built on top of them, and every locally-sourced cost figure, reproduces cleanly from source.
+- No item was REFUTED in this pass (0 of 19).
+
+This is the author check named in ledger row #222 (the registered END-OF-FAN-OUT VERIFIER PASS, part 1 of 2 — item 20's wave-3 blind readout is deferred to part 2 pending cluster SSH recovery). Per row #222, the standing grant it exercises lapses on the author reading this row.
