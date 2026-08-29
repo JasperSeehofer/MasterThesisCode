@@ -2766,7 +2766,25 @@ def run_mirror_seed_inprocess(
     # the explicit counterfactual pinning the retired pre-flag window (the
     # wza/wza0/proda0 arms pass it explicitly).
     mass_filter_sigma: str = "symmetric",
+    # Mass-window GEOMETRY instrument flag (charter node B5.1,
+    # PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+    # #220-#223); scalar passthrough of the same semantics.
+    # "linear"/1.5 (defaults) are byte-identical to the pre-flag path.
+    mass_filter_geometry: str = "linear",
+    mass_filter_k: float = 1.5,
     h_bounds: tuple[float, float] | None = None,
+    # [HIER] Stage-0 driver (B1.1, charter node; PREREGISTRATION_HIER_HTHETA_
+    # 20260826.md §2.1/§4.1): passthrough to ``BayesianStatistics.evaluate``'s
+    # theta hook (C1, PHYSICS_CHANGE_THETA_HOOK_20260828.md). Defaults are
+    # byte-identical to every pre-existing call site (theta_b=0.0, theta_s=1.0,
+    # theta_sites="all", smear_global_selection=False -- evaluate()'s own
+    # defaults, unchanged). This function is NOT a physics-trigger file
+    # (CLAUDE.md trigger list); the theta hook itself already landed, gated,
+    # inside bayesian_statistics.py.
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
+    theta_sites: str = "all",
+    smear_global_selection: bool = False,
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
 
@@ -2859,6 +2877,22 @@ def run_mirror_seed_inprocess(
         widening when ``h_values`` already sits inside ``[0.6, 0.86]``, e.g.
         every G-1/G-2 call) rather than editing production's
         ``LamCDMScenario`` class default -- no production file is touched.
+
+        theta_b, theta_s, theta_sites: Forwarded verbatim to
+            ``BayesianStatistics.evaluate`` ([HIER] C1 theta hook,
+            PHYSICS_CHANGE_THETA_HOOK_20260828.md). Defaults are the
+            identity/no-op values -- byte-identical to every pre-existing
+            call site.
+        smear_global_selection: Forwarded verbatim to
+            ``BayesianStatistics.evaluate``. theta engaged (``theta_b != 0``
+            or ``theta_s != 1``) on a site set including "2.3"/"all" REQUIRES
+            this ``True`` (``evaluate``'s own guard raises otherwise); this
+            function does not force it automatically -- the [HIER] Stage-0
+            driver (``hier_s0_driver.py``) sets it per-node so the truth node
+            (theta identity) stays on the unsmeared, byte-identical path
+            (GATE PARITY) while off-truth nodes engage the smeared kernel
+            (GATE ENG). Default ``False`` is byte-identical to every
+            pre-existing call site.
     """
     import darksiren_emri.bayesian_inference.bayesian_statistics as _bs_mod
 
@@ -2913,12 +2947,20 @@ def run_mirror_seed_inprocess(
             catalogue_global_selection=catalogue_global_selection,
             # [P3-WBHZERO] mass-filter sigma-window instrument (row #198).
             mass_filter_sigma=mass_filter_sigma,
+            # Mass-window GEOMETRY instrument flag (charter node B5.1).
+            mass_filter_geometry=mass_filter_geometry,
+            mass_filter_k=mass_filter_k,
             catalogue_mass_overlap=PRODUCTION_FLAGS["--catalogue_mass_overlap"],
             completion_b_scale=PRODUCTION_FLAGS["--completion_b_scale"],
             pdet_dl_bins=int(PRODUCTION_FLAGS["--pdet_dl_bins"]),
             pdet_mass_bins=int(PRODUCTION_FLAGS["--pdet_mass_bins"]),
             pdet_estimator=PRODUCTION_FLAGS["--pdet_estimator"],
             allow_low_pdet_coverage=allow_low_pdet_coverage,
+            # [HIER] C1 theta hook passthrough (identity defaults => no-op).
+            theta_b=theta_b,
+            theta_s=theta_s,
+            theta_sites=theta_sites,
+            smear_global_selection=smear_global_selection,
         )
         elapsed = time.time() - start
     finally:

@@ -179,6 +179,20 @@ def test_run_mirror_seed_inprocess_accepts_mass_filter_sigma_default_symmetric()
     assert sig.parameters["mass_filter_sigma"].default == "symmetric"
 
 
+def test_run_mirror_seed_inprocess_accepts_mass_filter_geometry_defaults() -> None:
+    """Mass-window GEOMETRY instrument flag (charter node B5.1,
+    PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+    #220-#223): the pass-through parameters exist with the
+    production-inert ("linear"/1.5, byte-identical) defaults, following the
+    same inert-plumbing pattern as the neighboring ``mass_filter_sigma`` /
+    ``catalogue_*`` flags on this function."""
+    sig = inspect.signature(c1d.run_mirror_seed_inprocess)
+    assert "mass_filter_geometry" in sig.parameters
+    assert sig.parameters["mass_filter_geometry"].default == "linear"
+    assert "mass_filter_k" in sig.parameters
+    assert sig.parameters["mass_filter_k"].default == 1.5
+
+
 # ── Fleet arm-runner CLI tests (task spec item 4: fast, no pool) ────────────
 
 
