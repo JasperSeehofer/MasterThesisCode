@@ -1695,13 +1695,16 @@ def _smeared_global_pdet_expectation(
     sigma_eff = np.maximum(np.sqrt(z_err_g**2 + sigma_z_pv**2), 1e-10)
     if theta_b != 0.0 or theta_s != 1.0:
         # Sec. 2 in Ma, Hu & Huterer (2006), arXiv:astro-ph/0506614 — affine
-        # photo-z systematic (b, s). Registered pin: b shifts the kernel centre
-        # AFTER the PV width fold; s scales the folded width; the 1e-10 floor
-        # re-applies after scaling so the delta limit stays exact.
+        # photo-z systematic (b, s). HIER §1.2 s-placement (row #221 item 4;
+        # 2026-08-29 note supersedes the 2026-08-28 "s on the folded width"
+        # pin): s scales the RAW z_err_g BEFORE the PV fold; b is unchanged
+        # (still AFTER the fold, using sigma_z_pv from the UNSHIFTED z_g);
+        # the 1e-10 floor re-applies after the combine so the delta limit
+        # stays exact.
         _validate_theta(theta_b, theta_s)
         _theta_hook_count("site_2_3")
+        sigma_eff = np.maximum(np.sqrt((theta_s * z_err_g) ** 2 + sigma_z_pv**2), 1e-10)
         z_g = z_g + theta_b * (1.0 + z_g)
-        sigma_eff = np.maximum(theta_s * sigma_eff, 1e-10)
     for start in range(0, z_g.size, chunk_size):
         sl = slice(start, min(start + chunk_size, z_g.size))
         zc = z_g[sl]
@@ -6371,14 +6374,16 @@ def single_host_likelihood(
     host_z_error_eff = float(np.sqrt(host_z_error**2 + sigma_z_pv**2))
     if theta_b != 0.0 or theta_s != 1.0:
         # [HIER] θ-hook site 2.1 — Sec. 2 in Ma, Hu & Huterer (2006),
-        # arXiv:astro-ph/0506614. Registered pin: b shifts the kernel centre
-        # AFTER the PV width fold; s scales the folded width. Every downstream
-        # consumer (windows, kernel loc/scale, point numerator, S̄_φ interp)
-        # reads the substituted (z̃, σ̃_eff) through these two locals.
+        # arXiv:astro-ph/0506614. HIER §1.2 s-placement (row #221 item 4;
+        # 2026-08-29 note in PHYSICS_CHANGE_THETA_HOOK_20260828.md supersedes
+        # the 2026-08-28 "s scales the folded width" pin): s scales the RAW
+        # host_z_error BEFORE the PV quadrature fold; b is unchanged — it
+        # still shifts the kernel centre AFTER the fold, using sigma_z_pv
+        # computed above from the UNSHIFTED host_z.
         _validate_theta(theta_b, theta_s)
         _theta_hook_count("site_2_1")
+        host_z_error_eff = float(np.sqrt((theta_s * host_z_error) ** 2 + sigma_z_pv**2))
         host_z = host_z + theta_b * (1.0 + host_z)
-        host_z_error_eff = float(theta_s * host_z_error_eff)
 
     numerator_integration_upper_redshift_limit = dist_to_redshift(
         _det_d_L + integration_limit_sigma_multiplier * _det_d_L_unc, h=h
@@ -7042,12 +7047,15 @@ def single_host_likelihood_batch(
     host_z_error_eff = np.sqrt(host_z_error**2 + sigma_z_pv**2)
     if theta_b != 0.0 or theta_s != 1.0:
         # [HIER] θ-hook site 2.2 — Sec. 2 in Ma, Hu & Huterer (2006),
-        # arXiv:astro-ph/0506614; same registered pin as the scalar twin
-        # (b AFTER the PV fold, s on the folded width).
+        # arXiv:astro-ph/0506614. HIER §1.2 s-placement (row #221 item 4;
+        # 2026-08-29 note supersedes the 2026-08-28 "s on the folded width"
+        # pin): s scales the RAW host_z_error BEFORE the PV fold; b is
+        # unchanged (still AFTER the fold, using sigma_z_pv from the
+        # UNSHIFTED host_z) — same registered form as the scalar twin (2.1).
         _validate_theta(theta_b, theta_s)
         _theta_hook_count("site_2_2")
+        host_z_error_eff = np.sqrt((theta_s * host_z_error) ** 2 + sigma_z_pv**2)
         host_z = host_z + theta_b * (1.0 + host_z)
-        host_z_error_eff = theta_s * host_z_error_eff
 
     # Numerator window depends only on the event (and h): computed once per batch.
     numerator_integration_upper_redshift_limit = dist_to_redshift(

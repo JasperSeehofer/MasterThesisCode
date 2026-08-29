@@ -143,3 +143,229 @@ commit, three ledger rows in `docs/gates/PHYSICS-GATE-LEDGER.md`.
 | 3 | **[DO]** | After merge + green regression suite: build the option-B quadrature grid (b from ±0.0661, s log-grid, H_GRID_41) and run S0-A — all verdicts capped REPORTED-ONLY (item 9 = AFFORDABLE). |
 
 *Presented 2026-08-28. Every file:line above was re-verified at source during authoring.*
+
+---
+
+## Appended note 2026-08-29 — s-placement alignment gate (row #221 item 4; authorization row #223, charter node B6.1)
+
+**Status: PRESENTED, awaiting author approval. No code has been written under this note.**
+This is a gate presentation only (node B6.1 [ALIGN], "gate presentation BEFORE CODE"); it does
+not itself authorize the edit. Row #221 item 4 ratified aligning the built θ-hook's `s`
+placement to `[HIER]` §1.2's registered arithmetic
+(`PREREGISTRATION_HIER_HTHETA_20260826.md:53-56`), which places `s` on the **raw catalogue
+error, before** the peculiar-velocity quadrature fold — not on the folded width, as Sections 1
+and 2 above (and the implemented code) currently do. **This note supersedes the "Pinned
+order-of-operations" paragraph of Section 2 above and Decision-table item 1's approval of that
+paragraph; neither is edited — both stand as the record of what was approved and built on
+2026-08-28, and are superseded going forward by the form below.**
+
+### 1. OLD formula (as implemented, verbatim with current line numbers)
+
+**Site 2.1 — scalar `single_host_likelihood`, `bayesian_statistics.py:6370-6381`:**
+```python
+sigma_z_pv = (1.0 + host_z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+host_z_error_eff = float(np.sqrt(host_z_error**2 + sigma_z_pv**2))
+if theta_b != 0.0 or theta_s != 1.0:
+    _validate_theta(theta_b, theta_s)
+    _theta_hook_count("site_2_1")
+    host_z = host_z + theta_b * (1.0 + host_z)
+    host_z_error_eff = float(theta_s * host_z_error_eff)          # <- s AFTER the fold
+```
+
+**Site 2.2 — batch `single_host_likelihood_batch`, `bayesian_statistics.py:7041-7050`:**
+```python
+sigma_z_pv = (1.0 + host_z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+host_z_error_eff = np.sqrt(host_z_error**2 + sigma_z_pv**2)
+if theta_b != 0.0 or theta_s != 1.0:
+    _validate_theta(theta_b, theta_s)
+    _theta_hook_count("site_2_2")
+    host_z = host_z + theta_b * (1.0 + host_z)
+    host_z_error_eff = theta_s * host_z_error_eff                 # <- s AFTER the fold
+```
+
+**Site 2.3 — global selection denominator `_smeared_global_pdet_expectation`,
+`bayesian_statistics.py:1692-1704`:**
+```python
+sigma_z_pv = (1.0 + z_g) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+sigma_eff = np.maximum(np.sqrt(z_err_g**2 + sigma_z_pv**2), 1e-10)
+if theta_b != 0.0 or theta_s != 1.0:
+    _validate_theta(theta_b, theta_s)
+    _theta_hook_count("site_2_3")
+    z_g = z_g + theta_b * (1.0 + z_g)
+    sigma_eff = np.maximum(theta_s * sigma_eff, 1e-10)            # <- s AFTER the fold
+```
+
+(`SIGMA_V_PEC_KM_S = 0.0`, `darksiren_emri/constants.py:95` — reverified this session,
+2026-08-29.)
+
+### 2. NEW formula (registered s-placement, HIER §1.2)
+
+`s` scales the **raw** catalogue-quoted redshift error, and the PV term is folded in
+**afterward**, in quadrature, unscaled:
+
+```
+sigma_z_pv        = (1 + z̃) · SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+host_z_error_eff  = sqrt( (s · host_z_error_raw)**2 + sigma_z_pv**2 )
+```
+
+where `z̃ = host_z + b·(1 + host_z)` (the `b` placement is UNCHANGED by this note — `b` still
+shifts the centre; only the fold ORDER for `s` moves). At site 2.3 the corresponding
+substitution is `z̃_g = z_g + b·(1+z_g)`, `sigma_eff = max(sqrt((s·z_err_g)**2 + sigma_z_pv(z̃_g)**2), 1e-10)`,
+with the 1e-10 floor re-applied after the combine (unchanged floor semantics, moved combine
+step). `host_z_error_raw` at each site is the pre-hook local (`host_z_error` at 2.1/2.2,
+`z_err_g` at 2.3) — the same input variable the OLD code fed into the fold, just read BEFORE
+rather than after `sqrt(·**2 + sigma_z_pv**2)`.
+
+### 3. Reference
+
+- `PREREGISTRATION_HIER_HTHETA_20260826.md` §1.2 (lines 40-63): "Registered arithmetic form,
+  pinned to remove the recon's §5/finding-9 ambiguity — `s` scales the *catalogue's quoted*
+  error (the quantity whose misstatement is the hypothesis), never the peculiar-velocity term
+  (a separate physical contribution the hypothesis says nothing about)."
+- Row #221 item 4 (ledger row #221, 2026-08-29 charter): ratifies applying this alignment ahead
+  of the fan-out wave.
+- Ma, Hu & Huterer (2006), arXiv:astro-ph/0506614, §2 — unchanged as the general affine
+  photo-z reference (§3 of the original presentation above); this note only relocates where `s`
+  attaches relative to the PV quadrature, not the affine parametrization itself.
+
+### 4. Dimensional analysis
+
+Unchanged from Section 4 above: `host_z_error_raw` and `sigma_z_pv` are both redshifts, `s` is
+a dimensionless scale factor (`s > 0`), so `s · host_z_error_raw` is a redshift; summing its
+square with `sigma_z_pv**2` inside the root is quadrature of two redshift-valued quantities →
+redshift ✓. Identical dimensional status to the OLD form — the two formulas differ only in
+*which* redshift-valued term `s` multiplies, not in units.
+
+### 5. Limiting cases
+
+1. **σ_pv = 0 (today's value, `SIGMA_V_PEC_KM_S = 0.0`, verified above)**: `sigma_z_pv ≡ 0`
+   identically in both the OLD and NEW forms, so `host_z_error_eff = s · host_z_error_raw` in
+   both — **the two formulas coincide bit-for-bit at every θ**, not just at θ=(0,1). This is
+   why the presented-2026-08-28 code is unaffected in production today; the alignment is a
+   change to an as-yet-unobservable branch.
+2. **s = 1 (any σ_pv)**: both formulas reduce to
+   `host_z_error_eff = sqrt(host_z_error_raw**2 + sigma_z_pv**2)` — the un-hooked fold —
+   identically, for any value of `SIGMA_V_PEC_KM_S`. `s` scaling is a genuine no-op at s=1
+   regardless of placement, as it must be.
+3. **σ_z,raw → 0 with σ_pv > 0 (the case that motivates the ordering, per HIER §1.2)**: NEW
+   form → `host_z_error_eff → sigma_z_pv`, independent of `s` — a vanishing catalogue error
+   still leaves the (unscaled) peculiar-velocity floor, because `s` never touches
+   `sigma_z_pv`. OLD form → `host_z_error_eff → s · sigma_z_pv` (since at `host_z_error_raw=0`
+   the pre-scaling `sqrt(0 + sigma_z_pv**2) = sigma_z_pv` and `s` then multiplies the whole
+   folded width) — `s` incorrectly rescales a term the hypothesis makes no claim about. This is
+   the substantive difference the alignment fixes, and it is exactly the case HIER §1.2 flags
+   as the reason the arithmetic form was pinned ("stops being a no-op the moment that constant
+   is ever set").
+
+### 6. Regression plan
+
+(a) **Existing pins unchanged.** All `test_theta_hook.py` byte-identity/closed-form pins
+    (θ=(0,1) identity at all 3 sites; θ-engaged-vs-substituted-inputs at
+    `SIGMA_V_PEC_KM_S == 0.0`) hold under the NEW form exactly as under the OLD — by limiting
+    case 1 above, the two forms are bit-identical whenever `SIGMA_V_PEC_KM_S == 0.0`, which is
+    every existing assertion's precondition (`test_theta_hook.py:120,145`, `assert
+    bs.SIGMA_V_PEC_KM_S == 0.0`). No existing pin needs to change.
+
+(b) **New test — nonzero-σ_pv discriminator, all three sites.** Monkeypatch the module
+    attribute the code actually reads: `monkeypatch.setattr(bs, "SIGMA_V_PEC_KM_S", <value>)`
+    on `darksiren_emri.bayesian_inference.bayesian_statistics` (module alias `bs` — this is the
+    name bound by `from darksiren_emri.constants import SIGMA_V_PEC_KM_S` at
+    `bayesian_statistics.py:41`; module-level globals are read at call time, so patching the
+    module attribute is sufficient and is the pattern already used at
+    `test_generator_marginal_mode.py:471` and `test_smear_global_selection.py:179` for this
+    same constant). With a non-zero value (e.g. 200.0, matching the removed runtime-addition
+    magnitude cited at `constants.py:90-94`) and `theta_s != 1.0`:
+      - compute `host_z_error_eff` both ways in the test (OLD closed form: `s` post-fold; NEW
+        closed form: `s` pre-fold) and assert they DIFFER (`rtol` guard, not
+        `assert_allclose` — the point is divergence);
+      - call each production site (`single_host_likelihood`, `single_host_likelihood_batch`,
+        `_smeared_global_pdet_expectation`) with the patched constant and `theta_s != 1.0`, and
+        assert the returned `host_z_error_eff`-driven quantity matches the NEW closed form
+        (not the OLD) at `rtol=1e-12` — i.e. this test only goes green once the code is edited
+        to implement Section 2 above.
+      - one case per site (2.1 scalar, 2.2 batch, 2.3 smeared) = 3 new test functions minimum,
+        landing in `test_theta_hook.py` alongside the existing suite.
+    This is the regression test that currently does not exist and cannot pass against today's
+    code — it is written here, before the edit, per protocol; the edit itself is a separate
+    node.
+
+Post-implementation (when this note's [RULE] is granted and the edit lands): sign/units/limit
+checklist re-run against Section 4/5 above, a
+`# HIER §1.2 s-placement (row #221 item 4) — s scales RAW host_z_error BEFORE the PV fold`
+reference comment at each of the three edit sites, `[PHYSICS]` commit, ledger rows.
+
+### 7. Decision table (this note)
+
+| # | tag | decision |
+|---|---|---|
+| 1 | **[RULE]** | Approve this alignment (items 1-6 above): `s` moves to scale the raw catalogue `host_z_error` BEFORE the peculiar-velocity quadrature fold, at all three sites, superseding the OLD post-fold placement approved 2026-08-28. `b`'s placement is unchanged. |
+| 2 | **[DO]** | After merge + the 3 new nonzero-σ_pv regression tests green (plus the unchanged pins): three ledger rows (`presented`/`implemented`/`verified`) in `docs/gates/PHYSICS-GATE-LEDGER.md`, per protocol. |
+
+*Appended 2026-08-29 under rows #222/#223 (charter node B6.1). Every file:line above
+re-verified at source this session (`bayesian_statistics.py` at HEAD `a794404c`;
+`constants.py:95` confirms `SIGMA_V_PEC_KM_S = 0.0` still holds).*
+
+---
+
+## Implementation record 2026-08-29 — node B6.1 [ALIGN], IMPLEMENT
+
+**Status: IMPLEMENTED (not committed — the orchestrator commits). Launched under rows
+#222/#223, charter node B6.1.**
+
+Code written at the three sites, matching the appended note's §2 formula in substance
+(`host_z_error_eff = sqrt((theta_s * host_z_error_raw)**2 + sigma_z_pv**2)`), but with one
+deliberate deviation from that section's literal formula text, called out here for the
+record:
+
+**Deviation, and why.** The note's own §2 formula literal reads
+`sigma_z_pv = (1 + z̃) · SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S` — i.e. computed from the
+POST-b-shift z̃ — while the same paragraph's prose states *"the `b` placement is UNCHANGED by
+this note — `b` still shifts the centre; only the fold ORDER for `s` moves."* These two
+statements disagree whenever `b ≠ 0` and `SIGMA_V_PEC_KM_S ≠ 0`: the literal formula silently
+reverses the 2026-08-28 pin ("`b` shifts the centre AFTER the PV width fold" — i.e. `sigma_z_pv`
+computed from the RAW, unshifted host redshift), while the prose says that pin is untouched.
+Neither the note's three limiting cases (§5) nor its regression plan (§6) exercises
+`theta_b ≠ 0` together with `SIGMA_V_PEC_KM_S ≠ 0` — the one regime where the two readings of
+§2 diverge numerically — so the discrepancy would have shipped undetected by every test named
+in the gate.
+
+**Resolution taken:** implemented the PROSE ("`b` unchanged"), not the formula literal. At all
+three sites, `sigma_z_pv` is computed from the host redshift local as it stood BEFORE the
+`theta_b` shift is applied (same line, same order, as the 2026-08-28 code); only the
+computation of `host_z_error_eff` (site 2.1/2.2) / `sigma_eff` (site 2.3) changes, to read the
+RAW catalogue error before combining in quadrature with that (unshifted-z) `sigma_z_pv`. This
+is: (a) consistent with the note's own stated intent and its Reference §3 quote ("`s` scales
+the catalogue's quoted error... never the peculiar-velocity term — a separate physical
+contribution the hypothesis says nothing about"), which is a claim about `s` only; (b)
+numerically inert today exactly like every other reading, since `SIGMA_V_PEC_KM_S = 0.0`
+(`constants.py:95`, reverified this session) makes `sigma_z_pv ≡ 0` under EITHER b-order; and
+(c) the conservative choice — it changes nothing about `b`'s behavior beyond what was already
+approved and built on 2026-08-28, so no new [RULE] gate is needed for the s-placement note to
+land as scoped ("`b`'s placement is unchanged by this note").
+
+**New regression coverage added specifically for this deviation:**
+`test_theta_b_order_unchanged_uses_raw_host_z_for_pv` in `test_theta_hook.py` — patches
+`SIGMA_V_PEC_KM_S` nonzero, engages `theta_b` alone (`theta_s = 1.0`), and asserts the
+production kernel matches the RAW-host_z closed form for `sigma_z_pv`, not the z̃-based one.
+This pins the resolution above so a future edit that reintroduces the z̃-based literal would
+fail this test rather than ship silently.
+
+**Files changed:**
+- `darksiren_emri/bayesian_inference/bayesian_statistics.py` — sites 2.1 (:6370-6382), 2.2
+  (:7041-7051), 2.3 (:1696-1706, line numbers approximate post-edit).
+- `darksiren_emri_test/bayesian_inference/test_theta_hook.py` — module docstring updated;
+  6 new test functions appended (3 required nonzero-σ_pv discriminators per §6(b) of this
+  note, 1 discriminator-sanity check, 1 b-order regression pin, matching the "7." gate line
+  added to the docstring).
+- `docs/gates/PHYSICS-GATE-LEDGER.md` — `implemented` and `verified` rows appended.
+
+**Test results:** `test_theta_hook.py` + `test_catalog_only_diagnostic.py`: 27 passed.
+Full suite `uv run pytest -m "not gpu and not slow"`: **1851 passed, 15 skipped, 27
+deselected**. `ruff check --fix` and `ruff format` clean on both changed files; `mypy` clean
+on `bayesian_statistics.py`.
+
+Full detail (line-by-line diff description, bit-identity evidence, exact files-to-commit
+list) is in
+`results/campaign51_20260728/realistic_20260729/fanout1_20260829/B6_1_ALIGN_RECORD.md`.
+
+*Appended 2026-08-29 under rows #222/#223 — launched under rows #222/#223, charter node B6.1.*
