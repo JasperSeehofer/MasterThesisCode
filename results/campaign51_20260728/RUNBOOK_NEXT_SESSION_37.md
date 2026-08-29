@@ -95,3 +95,7 @@ check on a row's own counts before escalating.
   (n_lin/n_all = 0.9577), so k = 3 / log cannot add more than that; the performance risk is
   the SKY cone (B2.2 k_sky 1.5→3 ≈ 4× candidates ≈ 4× kernel cost) — B2.2 must argue its
   size against that scaling.
+- **Row #223 (author, verbatim in the ledger): production changes inside the tree are
+  covered too.** Physics gates: presentation before code + ledger rows as always; the approval
+  step cites row #223; every gate goes to the end verifier. Cycle of record: tree → verify →
+  plan next tree → repeat.
