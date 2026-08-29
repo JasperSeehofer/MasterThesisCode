@@ -414,6 +414,41 @@ class Arguments:
         """
         return float(self._parsed_arguments.mass_filter_k)
 
+    @property
+    def theta_b(self) -> float:
+        """[HIER] theta-hook affine photo-z bias offset b (charter node
+        P6/B1.2, results/campaign51_20260728/realistic_20260729/
+        fanout1_20260829/WAVE2_REGISTRATION_CHECK_20260829.md F-C; ledger
+        rows #216, #221-#223). Puts the theta-hook on the production CLI
+        dispatch path so cluster ``--evaluate`` runs can reach
+        ``BayesianStatistics.evaluate()``'s ``theta_b``/``theta_s``/
+        ``theta_sites`` kwargs, which previously had no CLI surface (F-C:
+        zero ``--theta_*`` hits in this module). Default 0.0 is the
+        literal-skip identity (GATE T-ID): byte-identical to the pre-flag
+        path.
+        """
+        return float(self._parsed_arguments.theta_b)
+
+    @property
+    def theta_s(self) -> float:
+        """[HIER] theta-hook affine photo-z scale s (same reference as
+        ``theta_b``). Default 1.0 is the literal-skip identity (GATE T-ID):
+        byte-identical to the pre-flag path.
+        """
+        return float(self._parsed_arguments.theta_s)
+
+    @property
+    def theta_sites(self) -> str:
+        """[HIER] theta-hook site-selection OAT toggle (same reference as
+        ``theta_b``): which estimator site(s) ('all', '2.1', '2.2', '2.3')
+        receive theta; the rest are forced to their (0, 1) evaluation.
+        Validated identically to ``BayesianStatistics.evaluate()``
+        (bayesian_statistics.py ~3542-3600) so an invalid value is rejected
+        at the CLI layer with the same message. Default 'all' matches the
+        estimator's own default (still the identity at theta=(0,1)).
+        """
+        return str(self._parsed_arguments.theta_sites)
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -1102,6 +1137,51 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "as --mass_filter_geometry). Default 1.5 matches the current "
             "coupled call-site value, so the default pairing of both new "
             "flags is byte-identical to the pre-flag path."
+        ),
+    )
+    parser.add_argument(
+        "--theta_b",
+        type=float,
+        default=0.0,
+        help=(
+            "[HIER] theta-hook (charter node P6/B1.2, WAVE2_REGISTRATION_"
+            "CHECK_20260829.md F-C; ledger rows #216, #221-#223): affine "
+            "photo-z systematic offset b in z~ = z + b(1+z), applied at "
+            "estimator sites 2.1/2.2/2.3 (Ma, Hu & Huterer 2006, "
+            "arXiv:astro-ph/0506614, Sec. 2). Forwarded to "
+            "BayesianStatistics.evaluate()'s theta_b kwarg. Default 0.0 "
+            "pairs with --theta_s=1.0 as the literal-skip identity (GATE "
+            "T-ID): byte-identical to the pre-flag path. NEVER applied "
+            "generator-side (GATE GEN-FROZEN, PA-HIER-2)."
+        ),
+    )
+    parser.add_argument(
+        "--theta_s",
+        type=float,
+        default=1.0,
+        help=(
+            "[HIER] theta-hook scale s (same reference as --theta_b): "
+            "sigma~_eff = s * sigma_eff at estimator sites 2.1/2.2/2.3. "
+            "Forwarded to BayesianStatistics.evaluate()'s theta_s kwarg. "
+            "Default 1.0 pairs with --theta_b=0.0 as the literal-skip "
+            "identity (GATE T-ID): byte-identical to the pre-flag path."
+        ),
+    )
+    parser.add_argument(
+        "--theta_sites",
+        type=str,
+        choices=["all", "2.1", "2.2", "2.3"],
+        default="all",
+        help=(
+            "[HIER] theta-hook OAT site-selection toggle (same reference "
+            "as --theta_b): which estimator site(s) receive theta; the "
+            "others are forced to their (0, 1) evaluation. Forwarded to "
+            "BayesianStatistics.evaluate()'s theta_sites kwarg, which "
+            "validates against this same set (bayesian_statistics.py "
+            "~3542-3600). Site '2.3' requires --smear_global_selection "
+            "(the registered site is the smeared global-selection kernel); "
+            "evaluate() raises ValueError otherwise. Default 'all' matches "
+            "the estimator's own default."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

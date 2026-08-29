@@ -213,6 +213,9 @@ def main() -> None:
             catalogue_global_selection=arguments.catalogue_global_selection,
             mass_filter_geometry=arguments.mass_filter_geometry,
             mass_filter_k=arguments.mass_filter_k,
+            theta_b=arguments.theta_b,
+            theta_s=arguments.theta_s,
+            theta_sites=arguments.theta_sites,
         )
 
     if arguments.snr_analysis:
@@ -1427,6 +1430,13 @@ def evaluate(
     # pre-flag path.
     mass_filter_geometry: str = "linear",
     mass_filter_k: float = 1.5,
+    # [HIER] theta-hook CLI plumbing (charter node P6/B1.2,
+    # WAVE2_REGISTRATION_CHECK_20260829.md F-C; ledger rows #216,
+    # #221-#223): "(0.0, 1.0, 'all')" is the literal-skip identity, so the
+    # defaults are byte-identical to the pre-flag path.
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
+    theta_sites: str = "all",
 ) -> None:
     from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1463,6 +1473,9 @@ def evaluate(
         catalogue_global_selection=catalogue_global_selection,
         mass_filter_geometry=mass_filter_geometry,
         mass_filter_k=mass_filter_k,
+        theta_b=theta_b,
+        theta_s=theta_s,
+        theta_sites=theta_sites,
     )
 
 
