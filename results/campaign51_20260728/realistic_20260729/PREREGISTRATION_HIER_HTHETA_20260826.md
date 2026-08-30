@@ -2809,3 +2809,67 @@ configuration (a different theta_sites value, a different smear form) rather tha
 heading is edited; no git operations; no source edits (hier_s0_driver.py, correspondence_1d.py,
 bayesian_statistics.py, kwq1_score.py all untouched — this node is a registration amendment, not
 an instrument change). Worker: [FABLE-ORCH] inherit-tier session, 2026-08-30.*
+
+---
+
+### Stage-0-recert record (2026-08-30; T1.2 independent readout; append-only)
+
+Launched under row #255 — tree 2 node T1.2 (independent reader). Run of record:
+`tree2_20260830/hier_s0_recert_run` (4 seeds x the 5-node theta-cross, `theta_sites="2.2"`,
+`smear=off`, `theta_phi_divisor="on"`, sky_cone_k=1.5 default, h=0.73, wall 13084.808 s at 14
+cores). Full account: `tree2_20260830/T1_2_RECERT_READOUT_RECORD.md`,
+`tree2_20260830/t1_2_readout.json`; gate-doc mirror:
+`tree2_20260830/PHYSICS_CHANGE_THETA_DIVISOR_20260830.md` section "T1.2 result, 2026-08-30."
+
+Independently re-derived from raw `event_likelihoods.csv` (method identical to the "Independent
+re-derivation" section above, applied to this run's node directories) — reproduces the driver's
+`s0a_score_output.json` to the last digit. Pooled `ln_L_no_bh`: score_b -0.28878 +/- 0.42705
+(**Z_b = -0.6762**, n=461); score_s -0.07196 +/- 0.012051 (**Z_s = -5.9711**, n=461). Per-seed
+score_b Z: -1.548, -1.459, +1.911, +0.870 (mixed sign, unlike the previous all-negative pattern;
+means match the forensic's pre-registered rho-based per-seed forecast almost to the digit).
+Dark class (n=5) scores exactly zero both axes, unchanged; matched (n=456) carries the pull.
+
+**Result against the divisor gate doc's registered predictions (sec 5.6/sec 9):** F1 (b-axis,
+mechanism i) CONFIRMED — |Z_b| = 0.676 <= 3 and score_b within 0.0208 of the -0.268 exact
+prediction. s-axis FAILS `|Z_s| <= 3` exactly as predicted (-0.073 +/- 0.012, Z~-6, divisor-only,
+"not a falsifier" per that document's own F2). Change from the previous (no-divisor) run:
+|Z_b| fell 5.4x (mechanism-sized, C_b=-2.25/unit); |Z_s| fell only 16% (C_s=-0.024/unit, two
+orders of magnitude smaller) — the asymmetry sec 5.3 predicted.
+
+**Disclosure on score_s form (this node's assigned check).** The driver's `compute_scores()`
+(`hier_s0_driver.py`, unedited, grep-confirmed no `Es_null_det` term) computes the OLD/superseded
+raw linear secant, not this PA-HIER-32(d)'s corrected `score_s = score_lns - Es_null_det`. This
+matches the divisor gate doc's own sec 5.6/F2 prediction (registered in the raw/uncorrected form
+for the divisor-only leg, with the corrected form stated to apply "once PA-HIER-32's secant
+replacement is in force" only for the future enlarged-ball E12 measurement) but is in tension with
+this PA-HIER-32(d) block's own scope note above, which reads unqualified: "the S0-A
+re-certification (tree 2 T1.2...) runs UNDER PA-HIER-32 ... must use score_s and Z_s as defined
+here, not the superseded score_lns." The two registered texts disagree on T1.2's scope; this
+reader discloses the disagreement without adjudicating it — a fresh [RULE]/reconciliation item for
+the author/orchestrator, not resolved here.
+
+**E12 status:** UNTESTED by this run (sky_cone_k stayed at 1.5 default; z_window_k never
+engaged — orchestrator path choice, decision-table item 3 of the divisor doc, not yet exercised).
+This run confirms only the divisor-only precursor leg of the same registered chain, to high
+precision — supporting but not testing the truncation attribution E12 makes for the enlarged-ball
+configuration.
+
+**Verdict (read from sec 4.5, not re-derived): b-axis CERTIFIED (REPORTED-ONLY cap, mechanism (i)
+CONFIRMED); s-axis B0-A' persists -> INSTRUMENT-DEFECT (s) STOP stands, unchanged in kind from the
+previous run.** Licenses nothing beyond row #255/the tree-2 charter — no Stage-P/F, no S0-B, no
+C1/C3 launch.
+
+**Cost:** measured 13084.808 s wall x 14 cpu = 50.885 CPU-h (wall 3.635 h) against the
+TREE2_CHARTER_20260830.md T1 branch-2 anchor (11.5 CPU-h, 6 CPU-h cached): ~4.4x/~8.5x over;
+against the divisor doc's own sec 6 wall-time bands (6.3 h serial / 4.4 h cached / 1.3 h at
+14-way row parallelism): measured 3.63 h sits between cached and full-parallelism, closer to
+cached — the row-chunk mitigation appears not fully engaged.
+
+**Orchestrator path decision of record:** T1.3 = the z-window/cone companion knob as its own
+gate (the divisor doc's decision-table item 3), re-run s-nodes only after it; S0-B stays
+unlaunched.
+
+*Authorization: launched under row #255 — tree 2 node T1.2. Independent reader, distinct from the
+PA-HIER-32 registration-amendment worker and from the run-of-record orchestrator. Append-only;
+nothing above this heading is edited; no git operations; no source edits; did not touch
+`candidate_dump_bi_run/` (owned by another reader). Foreground only, <= 600 s budget.*

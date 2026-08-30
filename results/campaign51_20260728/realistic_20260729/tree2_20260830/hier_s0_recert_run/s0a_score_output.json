@@ -1,0 +1,355 @@
+{
+  "arm": "S0-A",
+  "seeds_requested": [
+    900101,
+    900102,
+    900103,
+    900104
+  ],
+  "nodes_requested": [
+    "truth",
+    "b_plus",
+    "b_minus",
+    "s_plus",
+    "s_minus"
+  ],
+  "score_only": true,
+  "n_present_by_node": {
+    "truth": 4,
+    "b_plus": 4,
+    "b_minus": 4,
+    "s_plus": 4,
+    "s_minus": 4
+  },
+  "seeds_present_by_node": {
+    "truth": [
+      900101,
+      900102,
+      900103,
+      900104
+    ],
+    "b_plus": [
+      900101,
+      900102,
+      900103,
+      900104
+    ],
+    "b_minus": [
+      900101,
+      900102,
+      900103,
+      900104
+    ],
+    "s_plus": [
+      900101,
+      900102,
+      900103,
+      900104
+    ],
+    "s_minus": [
+      900101,
+      900102,
+      900103,
+      900104
+    ]
+  },
+  "n_missing_csv": 0,
+  "missing_csv_paths": [],
+  "scores": {
+    "ln_L_no_bh": {
+      "score_b": {
+        "mean": -0.28878240960372603,
+        "sem": 0.42705252094828333,
+        "Z": -0.6762222336551854,
+        "n_pooled": 461
+      },
+      "score_s": {
+        "mean": -0.07195958393659582,
+        "sem": 0.012051274307800423,
+        "Z": -5.971118248467597,
+        "n_pooled": 461
+      }
+    },
+    "ln_L_with_bh": {
+      "score_b": {
+        "mean": 0.1382981807270816,
+        "sem": 0.36465410051128905,
+        "Z": 0.379258537153897,
+        "n_pooled": 461
+      },
+      "score_s": {
+        "mean": -0.02920333412346437,
+        "sem": 0.014408551690508958,
+        "Z": -2.02680566032885,
+        "n_pooled": 461
+      }
+    }
+  },
+  "gate_eng": {
+    "b_plus": {
+      "per_seed_fraction_moved": [
+        0.9905660377358491,
+        1.0,
+        0.9714285714285714,
+        0.9923076923076923
+      ],
+      "mean_fraction_moved": 0.9885755753680282,
+      "pass": true
+    },
+    "b_minus": {
+      "per_seed_fraction_moved": [
+        0.9905660377358491,
+        1.0,
+        0.9714285714285714,
+        0.9923076923076923
+      ],
+      "mean_fraction_moved": 0.9885755753680282,
+      "pass": true
+    },
+    "s_plus": {
+      "per_seed_fraction_moved": [
+        0.9905660377358491,
+        1.0,
+        0.9714285714285714,
+        0.9923076923076923
+      ],
+      "mean_fraction_moved": 0.9885755753680282,
+      "pass": true
+    },
+    "s_minus": {
+      "per_seed_fraction_moved": [
+        0.9905660377358491,
+        1.0,
+        0.9714285714285714,
+        0.9923076923076923
+      ],
+      "mean_fraction_moved": 0.9885755753680282,
+      "pass": true
+    }
+  },
+  "gate_parity": {
+    "900101": {
+      "status": "COMPARED",
+      "n_events_compared": 106,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 106,
+          "max_abs_diff": 0.0005716385844749539,
+          "max_rel_diff": 4.8809220290741974e-05,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 106,
+          "max_abs_diff": 0.5419975154864733,
+          "max_rel_diff": 0.05944567723644743,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    },
+    "900102": {
+      "status": "COMPARED",
+      "n_events_compared": 120,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 120,
+          "max_abs_diff": 0.00023802111977122564,
+          "max_rel_diff": 4.265336735848246e-05,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 120,
+          "max_abs_diff": 0.773500188722303,
+          "max_rel_diff": 0.08923685076598077,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    },
+    "900103": {
+      "status": "COMPARED",
+      "n_events_compared": 105,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 105,
+          "max_abs_diff": 0.0002185586661038741,
+          "max_rel_diff": 3.1893372263772794e-05,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 105,
+          "max_abs_diff": 0.884100372710428,
+          "max_rel_diff": 0.1199224835809446,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    },
+    "900104": {
+      "status": "COMPARED",
+      "n_events_compared": 130,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 130,
+          "max_abs_diff": 0.00011527267314725975,
+          "max_rel_diff": 2.034417756835591e-05,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 130,
+          "max_abs_diff": 0.3113858186652294,
+          "max_rel_diff": 0.03432768037259123,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    }
+  },
+  "verdict": {
+    "band": "B0-A'",
+    "verdict": "INSTRUMENT-DEFECT -- STOP (prereg \u00a74.5)",
+    "Z_b": -0.6762222336551854,
+    "Z_s": -5.971118248467597,
+    "threshold": 3.0,
+    "channel": "ln_L_no_bh (registered primary; ln_L_with_bh reported alongside, see scores)",
+    "gate_eng": {
+      "b_plus": {
+        "per_seed_fraction_moved": [
+          0.9905660377358491,
+          1.0,
+          0.9714285714285714,
+          0.9923076923076923
+        ],
+        "mean_fraction_moved": 0.9885755753680282,
+        "pass": true
+      },
+      "b_minus": {
+        "per_seed_fraction_moved": [
+          0.9905660377358491,
+          1.0,
+          0.9714285714285714,
+          0.9923076923076923
+        ],
+        "mean_fraction_moved": 0.9885755753680282,
+        "pass": true
+      },
+      "s_plus": {
+        "per_seed_fraction_moved": [
+          0.9905660377358491,
+          1.0,
+          0.9714285714285714,
+          0.9923076923076923
+        ],
+        "mean_fraction_moved": 0.9885755753680282,
+        "pass": true
+      },
+      "s_minus": {
+        "per_seed_fraction_moved": [
+          0.9905660377358491,
+          1.0,
+          0.9714285714285714,
+          0.9923076923076923
+        ],
+        "mean_fraction_moved": 0.9885755753680282,
+        "pass": true
+      }
+    },
+    "gate_parity": {
+      "900101": {
+        "status": "COMPARED",
+        "n_events_compared": 106,
+        "diffs": {
+          "ln_L_no_bh": {
+            "n": 106,
+            "max_abs_diff": 0.0005716385844749539,
+            "max_rel_diff": 4.8809220290741974e-05,
+            "exact": false
+          },
+          "ln_L_with_bh": {
+            "n": 106,
+            "max_abs_diff": 0.5419975154864733,
+            "max_rel_diff": 0.05944567723644743,
+            "exact": false
+          }
+        },
+        "pass_exact": false,
+        "pass_fallback_rtol": false
+      },
+      "900102": {
+        "status": "COMPARED",
+        "n_events_compared": 120,
+        "diffs": {
+          "ln_L_no_bh": {
+            "n": 120,
+            "max_abs_diff": 0.00023802111977122564,
+            "max_rel_diff": 4.265336735848246e-05,
+            "exact": false
+          },
+          "ln_L_with_bh": {
+            "n": 120,
+            "max_abs_diff": 0.773500188722303,
+            "max_rel_diff": 0.08923685076598077,
+            "exact": false
+          }
+        },
+        "pass_exact": false,
+        "pass_fallback_rtol": false
+      },
+      "900103": {
+        "status": "COMPARED",
+        "n_events_compared": 105,
+        "diffs": {
+          "ln_L_no_bh": {
+            "n": 105,
+            "max_abs_diff": 0.0002185586661038741,
+            "max_rel_diff": 3.1893372263772794e-05,
+            "exact": false
+          },
+          "ln_L_with_bh": {
+            "n": 105,
+            "max_abs_diff": 0.884100372710428,
+            "max_rel_diff": 0.1199224835809446,
+            "exact": false
+          }
+        },
+        "pass_exact": false,
+        "pass_fallback_rtol": false
+      },
+      "900104": {
+        "status": "COMPARED",
+        "n_events_compared": 130,
+        "diffs": {
+          "ln_L_no_bh": {
+            "n": 130,
+            "max_abs_diff": 0.00011527267314725975,
+            "max_rel_diff": 2.034417756835591e-05,
+            "exact": false
+          },
+          "ln_L_with_bh": {
+            "n": 130,
+            "max_abs_diff": 0.3113858186652294,
+            "max_rel_diff": 0.03432768037259123,
+            "exact": false
+          }
+        },
+        "pass_exact": false,
+        "pass_fallback_rtol": false
+      }
+    },
+    "reported_only": true
+  },
+  "theta_sites": "2.2",
+  "smear": "off",
+  "config": "b0i",
+  "h_values": [
+    0.73
+  ],
+  "score_h": 0.73,
+  "theta_phi_divisor": "on",
+  "sky_cone_k": 1.5,
+  "registration": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/PREREGISTRATION_HIER_HTHETA_20260826.md"
+}

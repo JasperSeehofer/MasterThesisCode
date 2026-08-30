@@ -279,3 +279,98 @@ Sources: this readout's own computation over `candidate_dump_run/` (all files, 2
 (`from_cache_or_build`, `m_th_map_nside32.npy`).
 
 Launched under row #255 — tree 2 node T2.2 (this readout).
+
+---
+
+## 8. BI gate closure (2026-08-30)
+
+A second run, `candidate_dump_bi_run/` (same FT config, truth node, driver defaults
+`theta_sites="all"`/`smear="auto"`, `--jobs 1`, but this time **h ∈ {0.725, 0.735}** — the exact
+h-nodes the KW-Q1 comparand actually evaluates), closes the gap flagged in §1.1. Log:
+`hier_s0_recert_run/logs/runner5_tree2_20260830.log`, stage BIDUMP; driver's own
+`candidate_dump_bi_run/s0a_full_output.json`: `wall_s = 569.09`, `cpu_per_job = 14`,
+`n_seeds_ok = 4`, `h_values = [0.725, 0.735]`, `config = "ft"`, `node_dir_suffix = "_ft"`.
+
+### 8.1 GATE BI (registered) — PASS, bit-for-bit
+
+Compared this run's `event_likelihoods.csv` against
+`fanout1_20260829/kwq1_registered_run/s0a_seed9001NN/node_truth_ft_sites2.2_nosmear/…` at h =
+0.725 and h = 0.735, all 18 non-`h` columns, all 4 seeds, event-index-matched:
+
+| seed | h | n rows compared | all 18 columns exact (max\|Δ\| = 0.0)? |
+|---|---|---|---|
+| 900101 | 0.725 | 174 | yes |
+| 900101 | 0.735 | 174 | yes |
+| 900102 | 0.725 | 184 | yes |
+| 900102 | 0.735 | 184 | yes |
+| 900103 | 0.725 | 174 | yes |
+| 900103 | 0.735 | 174 | yes |
+| 900104 | 0.725 | 182 | yes |
+| 900104 | 0.735 | 182 | yes |
+
+**PASS.** Every one of `w_G`, `w_G_legacy`, `w_tilde_G`, `alpha_G_phi`, `r_Malm`, `D_tilde_phi`,
+`L_cat_no_bh`, `L_cat_with_bh`, `B_num`, `B_num_wbh`, `g_frac`, `L_comp`, `combined_no_bh`,
+`combined_with_bh`, `den_log_term`, `num_log_term_no_bh`, `num_log_term_with_bh` is bit-identical
+(max\|Δ\| = 0.0, all rows) at both h-nodes, all 4 seeds, despite the θ-site/smear settings
+differing between the two runs (`all`/`auto` here vs `2.2`/off in KW-Q1) — exactly the
+literal-skip-identity behaviour §1.1 predicted for θ = (0,1). The §1.1 informal substitute
+comparison is superseded by this direct, registered-comparand result; the small (9–13 %) drift
+noted there is now understood to be pre-hook code drift between `p3_work` (rev 53b7831e) and this
+tree (rev ecd33336), not anything to do with the instrumentation or with θ-site/smear
+configuration.
+
+### 8.2 GATE R (reconstruction) — PASS at both h-nodes, all seeds
+
+Same check as §1.2, re-run on `candidate_dump_bi_run`'s own per-candidate rows:
+
+| seed | h | max abs diff | max rel diff (nonzero rows) |
+|---|---|---|---|
+| 900101 | 0.725 | 9.74e-17 | 7.05e-13 |
+| 900101 | 0.735 | 9.93e-17 | 9.30e-13 |
+| 900102 | 0.725 | 9.89e-17 | 6.26e-13 |
+| 900102 | 0.735 | 9.80e-17 | 4.27e-13 |
+| 900103 | 0.725 | 9.71e-17 | 3.70e-13 |
+| 900103 | 0.735 | 9.93e-17 | 4.97e-13 |
+| 900104 | 0.725 | 9.71e-17 | 6.50e-13 |
+| 900104 | 0.735 | 9.71e-17 | 4.67e-13 |
+
+All 8 (seed, h) cells clear the registered ≤ 1e-12 relative tolerance by close to three orders of
+magnitude, matching §1.2's original result.
+
+### 8.3 Φ_low h-stability
+
+Recomputed the registered statistic (dark, q1, active, `W_ig = w_g · N_g_used`) independently at
+each h-node:
+
+| h | n q1 dark | n q1 active | mean Φ_low | SD | SE | median |
+|---|---|---|---|---|---|---|
+| 0.725 | 198 | 164 | 0.7342 | 0.1737 | 0.0136 | 0.7359 |
+| 0.735 | 186 | 154 | 0.7338 | 0.1744 | 0.0141 | 0.7385 |
+
+Δ(mean Φ_low, 0.735 − 0.725) = **−0.00043**, combined SE 0.0195 → **≈ 0.02 σ** — Φ_low is
+h-stable across the secant pair, consistent with the derivation's own claim that the depth-skew
+effect is independent of GW-distance precision and (at first order) of h over this range. Both
+values sit within 1σ of the original single-node (h = 0.73) figure of 0.7299 (§2), and the active
+fraction is consistent (164/198 = 82.8 %, 154/186 = 82.8 %, vs 157/191 = 82.2 % at h = 0.73). The
+small q1-membership shuffle between h-nodes (198 vs 186 dark events land in q1, vs 191 at h=0.73)
+is expected — q1 membership is a fixed z_true cut and z_true itself does not depend on h, but the
+recovered z_true is inverted from `d_hat` at each node's own h via `dist_to_redshift`, so an event
+sitting near the 0.358 boundary can cross it between the two secant nodes; this does not affect
+the pooled statistic's stability, which sits inside 0.02σ.
+
+### 8.4 Updated verdict
+
+The registered BI gate now **PASSES** cleanly (§8.1), superseding §1.1's UNDETERMINED finding.
+Combined with GATE R (§8.2, also PASS) and Φ_low's demonstrated h-stability (§8.3), every gate
+this readout's registration names is now satisfied. **Verdict unchanged and now fully
+gate-clean: DEPTH-SKEW-CONFIRMED** (§5's numbers stand; this section adds gate closure only, no
+statistic in §2–§4 is revised).
+
+### 8.5 Cost of the closure run
+
+569.09 s wall (driver's own `s0a_full_output.json`) × 14 cores = **2.21 CPU-h**, additional to the
+1.31 CPU-h of §6 (total for the T2.2 read-and-close arc: 3.52 CPU-h, now within the original
+3.4–3.9 CPU-h registered anchor).
+
+Sources: `candidate_dump_bi_run/` (all files, this closure, 2026-08-30);
+`fanout1_20260829/kwq1_registered_run/` (BI comparand); `hier_s0_recert_run/logs/runner5_tree2_20260830.log`.

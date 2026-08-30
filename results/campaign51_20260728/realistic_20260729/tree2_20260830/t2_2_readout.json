@@ -12,40 +12,92 @@
     "BI_registered": {
       "status": "NOT_EXECUTABLE",
       "reason": "KW-Q1 truth node (kwq1_registered_run) evaluates only h in {0.725, 0.735} for all 4 seeds; never h=0.73. No row overlap exists to diff.",
-      "checked_h_values": {"900101": [0.725, 0.735], "900102": [0.725, 0.735], "900103": [0.725, 0.735], "900104": [0.725, 0.735]}
+      "checked_h_values": {
+        "900101": [
+          0.725,
+          0.735
+        ],
+        "900102": [
+          0.725,
+          0.735
+        ],
+        "900103": [
+          0.725,
+          0.735
+        ],
+        "900104": [
+          0.725,
+          0.735
+        ]
+      }
     },
     "BI_informal_substitute": {
       "comparand": "results/campaign51_20260728/realistic_20260729/p3_work/ft_<seed>_work/seed<seed>/.../event_likelihoods.csv (code rev 53b7831e, 2026-08-23)",
       "note": "not the registered comparand; reported for information only",
       "global_selection_columns_max_abs_diff": 0.0,
       "catalogue_leg_columns_max_rel_diff_by_seed": {
-        "900101": {"L_cat_no_bh": 0.12868803255282524, "combined_no_bh": 0.11880676450211061},
-        "900102": {"L_cat_no_bh": 0.1286880325531237, "combined_no_bh": 0.08860738368556012},
-        "900103": {"L_cat_no_bh": 0.1286880325533544, "combined_no_bh": 0.10022084001233995},
-        "900104": {"L_cat_no_bh": 0.12868803255288128, "combined_no_bh": 0.09633601007906589}
+        "900101": {
+          "L_cat_no_bh": 0.12868803255282524,
+          "combined_no_bh": 0.11880676450211061
+        },
+        "900102": {
+          "L_cat_no_bh": 0.1286880325531237,
+          "combined_no_bh": 0.08860738368556012
+        },
+        "900103": {
+          "L_cat_no_bh": 0.1286880325533544,
+          "combined_no_bh": 0.10022084001233995
+        },
+        "900104": {
+          "L_cat_no_bh": 0.12868803255288128,
+          "combined_no_bh": 0.09633601007906589
+        }
       }
     },
     "R_reconstruction": {
       "status": "PASS",
       "tolerance_registered": "<=1e-12 relative",
       "per_seed": {
-        "900101": {"n_events": 174, "max_abs_diff": 9.8879238130678e-17, "max_rel_diff_nonzero": 6.174198337701977e-13},
-        "900102": {"n_events": 184, "max_abs_diff": 9.71445146547012e-17, "max_rel_diff_nonzero": 6.63112548048527e-13},
-        "900103": {"n_events": 174, "max_abs_diff": 9.942133921692076e-17, "max_rel_diff_nonzero": 5.107992840561683e-13},
-        "900104": {"n_events": 182, "max_abs_diff": 1.0061396160665481e-16, "max_rel_diff_nonzero": 6.070222585086323e-13}
+        "900101": {
+          "n_events": 174,
+          "max_abs_diff": 9.8879238130678e-17,
+          "max_rel_diff_nonzero": 6.174198337701977e-13
+        },
+        "900102": {
+          "n_events": 184,
+          "max_abs_diff": 9.71445146547012e-17,
+          "max_rel_diff_nonzero": 6.63112548048527e-13
+        },
+        "900103": {
+          "n_events": 174,
+          "max_abs_diff": 9.942133921692076e-17,
+          "max_rel_diff_nonzero": 5.107992840561683e-13
+        },
+        "900104": {
+          "n_events": 182,
+          "max_abs_diff": 1.0061396160665481e-16,
+          "max_rel_diff_nonzero": 6.070222585086323e-13
+        }
       }
     },
-    "SCHEMA": {"status": "PASS", "note": "17 per-candidate / 13 per-event columns match section 6.2 exactly, all 4 seeds"},
+    "SCHEMA": {
+      "status": "PASS",
+      "note": "17 per-candidate / 13 per-event columns match section 6.2 exactly, all 4 seeds"
+    },
     "ENG": {
       "status": "PASS (engagement sub-check); cross-h sub-check N/A (single h-node run)",
-      "q1_active_fraction": 0.8220,
+      "q1_active_fraction": 0.822,
       "q1_active_n": 157,
       "q1_n": 191,
-      "registered_threshold": 0.60,
-      "banked_comparand_fraction": 0.7870
+      "registered_threshold": 0.6,
+      "banked_comparand_fraction": 0.787
     },
     "disclosed_schema_gap": {
-      "columns_all_nan_on_real_data": ["z_true", "f_bar_z_true", "f_k_z_true"],
+      "columns_all_nan_on_real_data": [
+        "z_true",
+        "f_bar_z_true",
+        "f_k_z_true"
+      ],
       "n_events_affected": 714,
       "workaround_z_true": "dist_to_redshift(d_hat, h=0.73) using the noiseless truth-node identity d_hat == d_L(z_true;h); verified d_hat == prepared_cramer_rao_bounds.csv luminosity_distance bit-for-bit on spot check",
       "workaround_f_bar": "PixelCompleteness.from_cache_or_build().f_bar(z, h=0.73) from m_th_map_nside32.npy"
@@ -54,7 +106,12 @@
   "registered_statistic": {
     "population": "dark (host_galaxy_index=-1, all 714 events), q1 (z_true<0.358), active (L_cat_no_bh>0)",
     "n_dark_total": 714,
-    "quartile_counts_dark": {"q1": 191, "q2": 182, "q3": 172, "q4": 169},
+    "quartile_counts_dark": {
+      "q1": 191,
+      "q2": 182,
+      "q3": 172,
+      "q4": 169
+    },
     "n_q1": 191,
     "n_q1_active": 157,
     "phi_low": {
@@ -64,7 +121,10 @@
       "median": 0.7394071834759295,
       "null": 0.5,
       "sigma_from_null": 16.5,
-      "registered_band": [0.60, 0.70],
+      "registered_band": [
+        0.6,
+        0.7
+      ],
       "sigma_above_confirm_threshold_0.57": 11.5
     },
     "u_w_mean": {
@@ -73,32 +133,115 @@
       "median": -3.0625957598838727,
       "trimmed_5_95_mean": -10.35145277065767,
       "trimmed_5_95_sd": 20.92429399155795,
-      "registered_band": [-1.5, -0.5],
+      "registered_band": [
+        -1.5,
+        -0.5
+      ],
       "note": "heavy right tail driven by near-zero sigma_dL single-candidate events; no formal SE registered for this statistic"
     },
     "per_seed_A15": [
-      {"seed": 900101, "n": 34, "mean_phi_low": 0.7371616701395701, "sd_phi_low": 0.19730873237251415, "mean_uW": 44.72290519845183, "sd_uW": 662.9065951479247},
-      {"seed": 900102, "n": 38, "mean_phi_low": 0.732055598873825, "sd_phi_low": 0.16740079085180115, "mean_uW": -14.138801630829349, "sd_uW": 42.35791104439442},
-      {"seed": 900103, "n": 37, "mean_phi_low": 0.7255255858517325, "sd_phi_low": 0.17773145633190882, "mean_uW": -8.184770529283721, "sd_uW": 62.485178854660425},
-      {"seed": 900104, "n": 48, "mean_phi_low": 0.7262908274025529, "sd_phi_low": 0.1659437048047276, "mean_uW": -49.06880742375865, "sd_uW": 198.12058765176596}
+      {
+        "seed": 900101,
+        "n": 34,
+        "mean_phi_low": 0.7371616701395701,
+        "sd_phi_low": 0.19730873237251415,
+        "mean_uW": 44.72290519845183,
+        "sd_uW": 662.9065951479247
+      },
+      {
+        "seed": 900102,
+        "n": 38,
+        "mean_phi_low": 0.732055598873825,
+        "sd_phi_low": 0.16740079085180115,
+        "mean_uW": -14.138801630829349,
+        "sd_uW": 42.35791104439442
+      },
+      {
+        "seed": 900103,
+        "n": 37,
+        "mean_phi_low": 0.7255255858517325,
+        "sd_phi_low": 0.17773145633190882,
+        "mean_uW": -8.184770529283721,
+        "sd_uW": 62.485178854660425
+      },
+      {
+        "seed": 900104,
+        "n": 48,
+        "mean_phi_low": 0.7262908274025529,
+        "sd_phi_low": 0.1659437048047276,
+        "mean_uW": -49.06880742375865,
+        "sd_uW": 198.12058765176596
+      }
     ],
     "across_seed_sd_mean_phi_low": 0.0054475139433298675,
     "across_seed_sd_mean_uW": 38.716779633443835,
     "true_host_flagged_total": 0,
     "true_host_flagged_out_of_rows": 606571,
     "quartile_split_active_phi_low": {
-      "q1": {"n": 157, "mean_phi_low": 0.729860, "se": 0.013936},
-      "q2": {"n": 141, "mean_phi_low": 0.808910, "se": 0.022152},
-      "q3": {"n": 122, "mean_phi_low": 0.974227, "se": 0.010249},
-      "q4": {"n": 66, "mean_phi_low": 0.970056, "se": 0.021012}
+      "q1": {
+        "n": 157,
+        "mean_phi_low": 0.72986,
+        "se": 0.013936
+      },
+      "q2": {
+        "n": 141,
+        "mean_phi_low": 0.80891,
+        "se": 0.022152
+      },
+      "q3": {
+        "n": 122,
+        "mean_phi_low": 0.974227,
+        "se": 0.010249
+      },
+      "q4": {
+        "n": 66,
+        "mean_phi_low": 0.970056,
+        "se": 0.021012
+      }
     },
     "closed_form_E_s_imp_given_z": [
-      {"z": 0.10, "f_bar": 0.7088379796182198, "df_dz": -2.8418058081952635, "z_eff": 0.09353070948492115, "E_s_imp": -0.8864168865265326},
-      {"z": 0.15, "f_bar": 0.570625715527077, "df_dz": -2.7285098312435085, "z_eff": 0.1367505076607622, "E_s_imp": -0.6792770141119053},
-      {"z": 0.20, "f_bar": 0.43408783386542354, "df_dz": -2.715470867820924, "z_eff": 0.1784385663373297, "E_s_imp": -0.5091427881965145},
-      {"z": 0.25, "f_bar": 0.3032074685419757, "df_dz": -2.4691167290985527, "z_eff": 0.2190126045351669, "E_s_imp": -0.322347479894094},
-      {"z": 0.30, "f_bar": 0.19159623945495366, "df_dz": -1.9632891309871725, "z_eff": 0.2587846694428665, "E_s_imp": -0.16495238629847347},
-      {"z": 0.35, "f_bar": 0.10853528801648869, "df_dz": -1.3577628069647019, "z_eff": 0.2979907891827037, "E_s_imp": -0.06747931955458783}
+      {
+        "z": 0.1,
+        "f_bar": 0.7088379796182198,
+        "df_dz": -2.8418058081952635,
+        "z_eff": 0.09353070948492115,
+        "E_s_imp": -0.8864168865265326
+      },
+      {
+        "z": 0.15,
+        "f_bar": 0.570625715527077,
+        "df_dz": -2.7285098312435085,
+        "z_eff": 0.1367505076607622,
+        "E_s_imp": -0.6792770141119053
+      },
+      {
+        "z": 0.2,
+        "f_bar": 0.43408783386542354,
+        "df_dz": -2.715470867820924,
+        "z_eff": 0.1784385663373297,
+        "E_s_imp": -0.5091427881965145
+      },
+      {
+        "z": 0.25,
+        "f_bar": 0.3032074685419757,
+        "df_dz": -2.4691167290985527,
+        "z_eff": 0.2190126045351669,
+        "E_s_imp": -0.322347479894094
+      },
+      {
+        "z": 0.3,
+        "f_bar": 0.19159623945495366,
+        "df_dz": -1.9632891309871725,
+        "z_eff": 0.2587846694428665,
+        "E_s_imp": -0.16495238629847347
+      },
+      {
+        "z": 0.35,
+        "f_bar": 0.10853528801648869,
+        "df_dz": -1.3577628069647019,
+        "z_eff": 0.2979907891827037,
+        "E_s_imp": -0.06747931955458783
+      }
     ],
     "mean_f_bar_z_true_q1": 0.2616340904407929,
     "median_f_bar_z_true_q1": 0.21169503159298586,
@@ -121,7 +264,97 @@
     "wall_s": 337.21276021003723,
     "cores": 14,
     "cpu_h": 1.311,
-    "registered_anchor_cpu_h": [3.4, 3.9],
+    "registered_anchor_cpu_h": [
+      3.4,
+      3.9
+    ],
     "note": "single h-node run (0.73) vs the design's 3-node {0.725,0.730,0.735} grid, hence below the registered anchor"
+  },
+  "bi_gate_closure_20260830": {
+    "run_of_record": "results/campaign51_20260728/realistic_20260729/tree2_20260830/candidate_dump_bi_run/",
+    "log": "hier_s0_recert_run/logs/runner5_tree2_20260830.log (stage BIDUMP)",
+    "config": {
+      "theta_sites": "all",
+      "smear": "auto",
+      "config": "ft",
+      "h_values": [
+        0.725,
+        0.735
+      ],
+      "jobs": 1,
+      "cpu_per_job": 14,
+      "wall_s": 569.0926370620728
+    },
+    "gate_BI_registered": {
+      "status": "PASS",
+      "note": "all 18 non-h columns bit-identical (max_abs_diff=0.0) vs kwq1_registered_run truth node, both h=0.725 and h=0.735, all 4 seeds",
+      "per_seed_h_all_exact": {
+        "900101": {
+          "0.725": true,
+          "0.735": true
+        },
+        "900102": {
+          "0.725": true,
+          "0.735": true
+        },
+        "900103": {
+          "0.725": true,
+          "0.735": true
+        },
+        "900104": {
+          "0.725": true,
+          "0.735": true
+        }
+      }
+    },
+    "gate_R_reconstruction": {
+      "status": "PASS",
+      "per_seed_h": {
+        "900101": {
+          "0.725": 7.046104713734482e-13,
+          "0.735": 9.298476261167073e-13
+        },
+        "900102": {
+          "0.725": 6.257692223575917e-13,
+          "0.735": 4.2701862134095737e-13
+        },
+        "900103": {
+          "0.725": 3.695060193551857e-13,
+          "0.735": 4.968902486606989e-13
+        },
+        "900104": {
+          "0.725": 6.495127796775421e-13,
+          "0.735": 4.6653843881997e-13
+        }
+      },
+      "note": "max relative diff (nonzero rows) per seed per h; all << 1e-12 registered tolerance"
+    },
+    "phi_low_h_stability": {
+      "h_0.725": {
+        "n_q1_active": 164,
+        "mean": 0.7342426713589981,
+        "sd": 0.1736545304212426,
+        "se": 0.01356014064244242,
+        "median": 0.7358793870915553
+      },
+      "h_0.735": {
+        "n_q1_active": 154,
+        "mean": 0.7338156805174432,
+        "sd": 0.17444894613342263,
+        "se": 0.014057496684433853,
+        "median": 0.7385191801144853
+      },
+      "delta_0735_minus_0725": -0.0004269908415549528,
+      "combined_se": 0.019531785050928844,
+      "sigma": -0.02186133220499716,
+      "conclusion": "h-stable (~0.02 sigma), consistent with the single-h-node figure 0.7299 at h=0.73"
+    },
+    "verdict_update": "registered BI gate now PASSES (supersedes the original NOT_EXECUTABLE finding); verdict DEPTH-SKEW-CONFIRMED unchanged, now fully gate-clean",
+    "cost": {
+      "wall_s": 569.0926370620728,
+      "cores": 14,
+      "cpu_h": 2.2131,
+      "cumulative_cpu_h_with_original_run": 3.524
+    }
   }
 }

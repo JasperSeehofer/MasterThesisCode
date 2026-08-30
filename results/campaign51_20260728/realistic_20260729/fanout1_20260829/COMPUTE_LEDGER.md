@@ -298,3 +298,27 @@ The registered local Stage-0 (S0-A/S0-C) and KW-Q1 run directories (incl. the 41
 
 bwUniCluster Lustre `/pfs/data6` (home + `/opt/bwhpc` software stack) reports `ost 5 is inactive: rc = -100` (dmesg). Consequences measured: ~12 % of tracked repo files, 10/70 package `.py` files, 43/300 sampled venv `.so` files and 15/127 core stdlib files of the module Python (`encodings/utf_8.py`, `libpython3.13.so`) are unreadable; `git fetch` fails on unreadable objects; the module Python cannot initialise. The workspace `/pfs/work9` is HEALTHY (wave-2 outputs intact; C4 provenance extras retrieved; catalogue md5 c52c13b5… and CRB md5 9a1f2a14… verified by full read). Prepared for recovery: a shallow clone at `4159fc28` in `$WS/darksiren-emri-wave3` with the catalogue copied in (md5 verified); its `uv sync` (workspace-local `UV_CACHE_DIR`/XDG dirs) is blocked only by the module Python. Wave-3 submission WAITS for the OST. No compute lost.
 
+## T1.2 (S0-A re-certification, divisor on) measured — appended 2026-08-30 (row #266 companion)
+
+Launched under row #255 — tree 2 node T1.2 (independent reader). Append-only; entries above (incl.
+the P0 measured 11.5 CPU-h line for the no-divisor S0-A pass) not edited.
+
+**T1.2 measured: 50.885 CPU-h** — `tree2_20260830/hier_s0_recert_run` (4 seeds x 5-node theta-cross,
+`theta_sites="2.2"`, `smear off`, `theta_phi_divisor="on"`, sky_cone_k 1.5, h=0.73): wall
+13084.808 s x 14 cpu_per_job = 50.885 CPU-h (`s0a_full_output.json` `wall_s`/`cpu_per_job`) — wall
+3.635 h. Against the `TREE2_CHARTER_20260830.md` T1 branch-2 registered anchor ("approx 11.5 CPU-h
+local, approx 6 if venue builds are cached"): **≈4.4x / ≈8.5x over estimate.** Against
+`PHYSICS_CHANGE_THETA_DIVISOR_20260830.md` §6 item 4's wall-time bands (6.3 h single-process
+serial / 4.4 h with cached normaliser / 1.3 h with 14-way row parallelism): measured 3.63 h wall
+sits between the cached and full-parallelism bands, closer to (and under) the cached-normaliser
+figure — the registered row-chunk-parallelism mitigation (§6 item 3) appears not to have been fully
+engaged, though some speedup over naive single-core evidently was achieved. Per-cell: off-truth
+cells averaged 701.65 s (11.7 min) this run vs ~169.5 s (2.8 min) per off-truth cell in the previous
+no-divisor S0-A pass (2960 s wall / 20 cells, row above) — a ~4.1x per-cell increase from the
+divisor's per-host kernel integral pass. Truth-node cells (literal skip at theta=(0,1)) were
+unchanged at ~62–77 s.
+
+Source: `tree2_20260830/hier_s0_recert_run/s0a_full_output.json`;
+`tree2_20260830/T1_2_RECERT_READOUT_RECORD.md` §6; `tree2_20260830/t1_2_readout.json` `cost`;
+`BIAS_HISTORY_LEDGER.md` row #266.
+

@@ -874,3 +874,70 @@ Verified against darksiren_emri/bayesian_inference/bayesian_statistics.py at HEA
 confirmed 2026-08-30, same commit as this document's header). Presenter for this note: top-tier
 subagent, per the branch's standing grant (row #255) covering production/documentation changes within
 the tree (author-verbatim, row #223). No code written; no git operations; foreground only.
+
+---
+
+## T1.2 result, 2026-08-30 (independent reader; append-only)
+
+Launched under row #255 — tree 2 node T1.2 (independent reader; instrument built by other agents,
+run of record executed by the orchestrator: `tree2_20260830/hier_s0_recert_run`, 4 seeds x 5 nodes,
+`--theta-sites 2.2 --smear off --theta-phi-divisor on`, wall 13084.808 s at 14 cores). Full account:
+`tree2_20260830/T1_2_RECERT_READOUT_RECORD.md`, `tree2_20260830/t1_2_readout.json`. Independently
+re-derived from the raw `event_likelihoods.csv` files (h=0.73 filter, dedup on `event_idx` keep-last,
+ln(combined_*) where positive, inner-joined per (seed, event_idx), pooled per prereg sec 4.1) —
+reproduces the driver's own `s0a_score_output.json` to the last reported digit on every field; no
+correction to the driver's arithmetic was needed.
+
+**F1 (mechanism i, b-axis): CONFIRMED.** Measured Z_b = -0.6762 (n=461, no-BH primary channel) —
+inside the registered `|Z_b| <= 3` band; measured score_b = -0.28878 is within 0.0208 of the sec 5.6
+exact prediction (-0.268), well inside the +/-0.10 exactness tolerance. Per-seed score_b means
+(-1.714, -1.283, +1.112, +0.659) reproduce the pre-registered rho-based per-seed forecast (E11/
+f12_out.json: -1.71, -1.26, +1.17, +0.69) almost to the digit. Both the loose band and the sharper
+exactness check pass; the b-axis result is not merely "inside band" but hits the predicted
+*operation*, as F1 requires.
+
+**s-axis: FAILS the `|Z_s| <= 3` band, exactly as this document predicted.** Measured Z_s = -5.971
+(score_s = -0.07196 +/- 0.01205, n=461) against this section's own sec 5.6/sec 9 (F2) divisor-only
+prediction of -0.073 +/- 0.012 (Z ~ -6) — matched almost exactly. Per F2: "a divisor-only |Z_s| <= 3
+would itself be a SURPRISE" — none occurred; this is not a falsifier of the divisor change. Relative
+to the previous (no-divisor) S0-A pass (Z_b -3.6764, Z_s -7.0786): |Z_b| fell 5.4x (mechanism-sized
+move, C_b=-2.25/unit) while |Z_s| fell only 16% (small move, C_s=-0.024/unit, two orders of magnitude
+smaller) — the asymmetry this document's sec 5.3 predicted.
+
+**E12 (enlarged-ball, mechanism ii): UNTESTED by this run, as registered/expected.** This run kept
+sky_cone_k at its 1.5 default; z_window_k was never engaged (decision table item 3, "orchestrator's
+call," not yet exercised). E12's -0.005 +/- 0.011 (Z -0.5) prediction applies to that different,
+not-yet-run configuration, scored under PA-HIER-32(d)'s corrected `score_s = score_lns - Es_null_det`
+re-derived fresh for that configuration. This run instead confirms the divisor-only precursor leg of
+the same chain to high precision — necessary-but-not-sufficient supporting evidence for the
+truncation story, not a test of E12 itself.
+
+**Disclosure — which score_s form the driver used.** `hier_s0_driver.py`'s `compute_scores()` is
+unedited (grep-confirmed: no `Es_null_det` term, no PA-HIER-32 reference); it computes the OLD,
+superseded raw secant, not PA-HIER-32(d)'s bias-corrected form. This is consistent with THIS
+document's own sec 5.6/F2 prediction (which is stated in the raw/uncorrected form for the
+divisor-only configuration) but is in tension with PA-HIER-32(d)'s own scope note in
+`PREREGISTRATION_HIER_HTHETA_20260826.md`, which reads unqualified: "the S0-A re-certification
+(tree 2 T1.2...) runs UNDER PA-HIER-32 ... must use score_s and Z_s as defined here, not the
+superseded score_lns." The two registered texts disagree on T1.2's scope; this reader discloses the
+disagreement and does not adjudicate it.
+
+**Cost.** Measured 13084.808 s wall x 14 cpu_per_job / 3600 = 50.885 CPU-h (wall 3.635 h) — against
+the TREE2_CHARTER_20260830.md T1 branch-2 anchor ("approx 11.5 CPU-h local, approx 6 cached"):
+~4.4x / ~8.5x over. Against this section's own sec 6 item 4 wall-time bands (6.3 h serial / 4.4 h
+cached-normaliser / 1.3 h at 14-way row parallelism): measured 3.63 h sits between the cached and
+full-parallelism bands, closer to (and under) cached-normaliser — the registered row-chunk
+parallelism mitigation (sec 6 item 3) appears not fully engaged. Per-cell: off-truth cells averaged
+701.65 s this run vs ~169.5 s per off-truth cell in the previous (no-divisor) pass, a ~4.1x per-cell
+increase, directionally consistent with the registered multiplier.
+
+**Verdict (read from prereg sec 4.5, not re-derived): b-axis CERTIFIED (REPORTED-ONLY cap, mechanism
+(i) CONFIRMED); s-axis B0-A' persists -> INSTRUMENT-DEFECT (s) STOP stands, unchanged in kind.** This
+finding licenses nothing beyond row #255/the tree-2 charter — no Stage-P/F, no S0-B, no C1/C3
+launch.
+
+**Orchestrator path decision of record:** T1.3 = the z-window/cone companion knob as its own gate
+(decision table item 3, sec 10), re-run s-nodes only after it; S0-B stays unlaunched.
+
+Presenter: independent reader (sonnet-tier), row #255. Foreground only (<= 600 s budget); no git; no
+ssh; append-only; did not touch `candidate_dump_bi_run/` (owned by another reader).
