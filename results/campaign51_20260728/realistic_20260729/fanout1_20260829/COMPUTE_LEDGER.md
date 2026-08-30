@@ -293,3 +293,8 @@ sec 7; `BIAS_HISTORY_LEDGER.md` rows #250-#251.
 ## Local run archive (2026-08-30, orchestrator; verifier F4 item)
 
 The registered local Stage-0 (S0-A/S0-C) and KW-Q1 run directories (incl. the 41 gitignored *.log / simulations/ files) are archived locally as `results/_archive/local_runs/fanout1_stage0_kwq1_runs_20260830.tgz` (gitignored; sha256 recorded in the shell log of this session). Not in git; not on the cluster.
+
+## Cluster storage incident (2026-08-30 ~09:00 CEST, orchestrator)
+
+bwUniCluster Lustre `/pfs/data6` (home + `/opt/bwhpc` software stack) reports `ost 5 is inactive: rc = -100` (dmesg). Consequences measured: ~12 % of tracked repo files, 10/70 package `.py` files, 43/300 sampled venv `.so` files and 15/127 core stdlib files of the module Python (`encodings/utf_8.py`, `libpython3.13.so`) are unreadable; `git fetch` fails on unreadable objects; the module Python cannot initialise. The workspace `/pfs/work9` is HEALTHY (wave-2 outputs intact; C4 provenance extras retrieved; catalogue md5 c52c13b5… and CRB md5 9a1f2a14… verified by full read). Prepared for recovery: a shallow clone at `4159fc28` in `$WS/darksiren-emri-wave3` with the catalogue copied in (md5 verified); its `uv sync` (workspace-local `UV_CACHE_DIR`/XDG dirs) is blocked only by the module Python. Wave-3 submission WAITS for the OST. No compute lost.
+

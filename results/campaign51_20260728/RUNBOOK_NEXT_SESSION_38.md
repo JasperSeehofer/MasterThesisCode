@@ -128,3 +128,8 @@ venue's per-h anchor is **≈5–7 min** measured (16 cpus), not `LAUNCHING_JOBS
   physics gate still presents before code and still goes to the end verifier.
 - **No ruling exists yet** on A1–A17 or P1–P10 (item 20 deferred) — this runbook's job is to put
   the report and §2's tables in front of the author before §3's resume recipe executes.
+
+## Cluster storage incident (2026-08-30 ~09:00 CEST, orchestrator)
+
+bwUniCluster Lustre `/pfs/data6` (home + `/opt/bwhpc` software stack) reports `ost 5 is inactive: rc = -100` (dmesg). Consequences measured: ~12 % of tracked repo files, 10/70 package `.py` files, 43/300 sampled venv `.so` files and 15/127 core stdlib files of the module Python (`encodings/utf_8.py`, `libpython3.13.so`) are unreadable; `git fetch` fails on unreadable objects; the module Python cannot initialise. The workspace `/pfs/work9` is HEALTHY (wave-2 outputs intact; C4 provenance extras retrieved; catalogue md5 c52c13b5… and CRB md5 9a1f2a14… verified by full read). Prepared for recovery: a shallow clone at `4159fc28` in `$WS/darksiren-emri-wave3` with the catalogue copied in (md5 verified); its `uv sync` (workspace-local `UV_CACHE_DIR`/XDG dirs) is blocked only by the module Python. Wave-3 submission WAITS for the OST. No compute lost.
+
