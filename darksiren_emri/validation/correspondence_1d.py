@@ -234,7 +234,9 @@ from darksiren_emri.bayesian_inference.bayesian_statistics import (
     _warn_zoa_hostz_kernel_fallback,
     path_a_completion_numerators,
     path_a_mixture_objects,
+    precompute_global_catalog_selection,
     precompute_phi_marginal_survival,
+    precompute_phi_selection_integrals,
 )
 from darksiren_emri.bayesian_inference.simulation_detection_probability import (
     SimulationDetectionProbability,
@@ -1124,6 +1126,121 @@ def build_b0i_2d_selection_objects(
     return completeness, phi_survival_table, detection_probability
 
 
+# ── B8.2 S1 (results/campaign51_20260728/realistic_20260729/fanout1_20260829/
+# B8_2_HARNESS_DESIGN_20260829.md §2.1; launched under rows #255/#268 -- tree 2
+# node B8.2.S1) -- the "mixture_selected" host_mode's class weight. ─────────
+
+
+def compute_catalogue_class_weight_p_g(
+    galaxy_catalog: GalaxyCatalogueHandler,
+    h_true: float = H_TRUE,
+    injection_dir: str = INJECTION_POOL_DIR,
+    pdet_dl_bins: int = 60,
+    pdet_mass_bins: int = 40,
+    pdet_estimator: str = "local_linear",
+    allow_low_pdet_coverage: bool = True,
+    z_max_cap: float = HOST_DRAW_Z_MAX,
+) -> dict[str, float]:
+    r"""The estimator's own catalogue-class weight ``P_G = alpha_G^phi(h_true) / D_tilde^phi(h_true)``.
+
+    Design §2.1 item 1: computed from the SAME production construction calls
+    :func:`build_b0i_2d_selection_objects` already makes (``from_cache_or_build``,
+    :class:`SimulationDetectionProbability`, :func:`precompute_phi_marginal_survival`),
+    plus the two additional production module-level calls the mixture weight
+    itself needs: :func:`precompute_phi_selection_integrals` (``beta_G^phi``,
+    ``beta_Gbar^phi``) and :func:`precompute_global_catalog_selection` at
+    ``with_bh_mass=False`` (``Sigma^phi``) and ``with_bh_mass=True``
+    (``Sigma^4D``, the SAME catalogue rows/weights/eligibility as ``Sigma^phi``
+    per decision D2). The four legs are assembled by the REAL
+    :func:`~darksiren_emri.bayesian_inference.bayesian_statistics.path_a_mixture_objects`
+    (not reimplemented) -- its ``w_tilde_G`` output IS ``P_G`` by construction
+    (the SAME scalar ``evaluate()`` itself would report as ``w_tilde_G`` in
+    ``event_likelihoods.csv`` for a run over this catalogue at this ``h_true``,
+    design §0's banked-CSV note: production iiib reads ``w_tilde_G = 0.0620``).
+
+    Harness-side only (no production file edited); NOT called by
+    :func:`~darksiren_emri.validation.correspondence_1d.MirrorUniverseGenerator.draw_realization`
+    itself -- callers build ``P_G`` here, exactly once per ``(catalogue, h_true)``,
+    and pass it into ``draw_realization(..., host_mode="mixture_selected",
+    class_weight_p_g=P_G)``, mirroring how ``completeness``/``phi_survival_table``
+    are already built outside ``draw_realization`` and threaded in.
+
+    Args:
+        galaxy_catalog: The pinned (or dosed) catalogue handler -- the SAME
+            handler :func:`run_mirror_seed_inprocess` receives as
+            ``galaxy_catalog``, so ``Sigma^phi``/``Sigma^4D`` are summed over
+            the identical rows a wholesale ``evaluate()`` run would use.
+        h_true: The mirror-universe truth (default :data:`H_TRUE`) -- the
+            ONLY ``h`` this weight is evaluated at (design §2.1: the mixture
+            law is a truth-only object, not a function of the evaluation
+            grid).
+        injection_dir: The pinned injection pool (default :data:`INJECTION_POOL_DIR`).
+        pdet_dl_bins, pdet_mass_bins, pdet_estimator: :data:`PRODUCTION_FLAGS`
+            values, forwarded to :func:`build_b0i_2d_selection_objects`.
+        allow_low_pdet_coverage: Forwarded to :func:`build_b0i_2d_selection_objects`.
+        z_max_cap: Forwarded to :func:`build_b0i_2d_selection_objects` and to
+            both :func:`precompute_global_catalog_selection` calls (default
+            :data:`HOST_DRAW_Z_MAX`, matching the ``S_bar_phi`` table's own
+            domain).
+
+    Returns:
+        ``{"p_g", "alpha_G_phi", "D_tilde_phi", "beta_G_phi", "beta_Gbar_phi",
+        "sigma_phi", "sigma_4d"}`` -- ``p_g`` is
+        :func:`~darksiren_emri.bayesian_inference.bayesian_statistics.path_a_mixture_objects`'s
+        ``w_tilde_G`` at ``h_true``, the rest are the intermediate legs
+        (reported so a caller/registration can audit the derivation without
+        recomputing it).
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7)
+        (:func:`path_a_mixture_objects`'s own reference).
+    """
+    completeness, phi_survival_table, detection_probability = build_b0i_2d_selection_objects(
+        h_true=h_true,
+        injection_dir=injection_dir,
+        pdet_dl_bins=pdet_dl_bins,
+        pdet_mass_bins=pdet_mass_bins,
+        pdet_estimator=pdet_estimator,
+        allow_low_pdet_coverage=allow_low_pdet_coverage,
+        z_max_cap=z_max_cap,
+    )
+    beta_G_phi_table, beta_Gbar_phi_table = precompute_phi_selection_integrals(
+        h_values=[h_true],
+        phi_survival_table=phi_survival_table,
+        completeness=completeness,
+    )
+    sigma_phi_table = precompute_global_catalog_selection(
+        h_values=[h_true],
+        galaxy_catalog=galaxy_catalog,
+        detection_probability_obj=detection_probability,
+        with_bh_mass=False,
+        z_max_cap=z_max_cap,
+        phi_survival_table=phi_survival_table,
+    )
+    sigma_4d_table = precompute_global_catalog_selection(
+        h_values=[h_true],
+        galaxy_catalog=galaxy_catalog,
+        detection_probability_obj=detection_probability,
+        with_bh_mass=True,
+        z_max_cap=z_max_cap,
+    )
+    mix = path_a_mixture_objects(
+        beta_G_phi=beta_G_phi_table[h_true],
+        beta_Gbar_phi=beta_Gbar_phi_table[h_true],
+        sigma_phi=sigma_phi_table[h_true],
+        sigma_4d=sigma_4d_table[h_true],
+    )
+    return {
+        "p_g": mix["w_tilde_G"],
+        "alpha_G_phi": mix["alpha_G_phi"],
+        "D_tilde_phi": mix["D_tilde_phi"],
+        "beta_G_phi": beta_G_phi_table[h_true],
+        "beta_Gbar_phi": beta_Gbar_phi_table[h_true],
+        "sigma_phi": sigma_phi_table[h_true],
+        "sigma_4d": sigma_4d_table[h_true],
+    }
+
+
 # ── PA-2 (prereg PREREGISTRATION_B0_IDENTITY_20260823.md; A20 review
 # A20_REVIEW_B0_DESIGN_20260823.md Finding 2) -- estimator-aligned
 # catalogue-hosted draw ("catalogue_selected", the b0i arm). Finding 2
@@ -1951,11 +2068,14 @@ class MirrorUniverseGenerator:
             "population_selected",
             "catalogue_selected",
             "catalogue_selected_2d",
+            "mixture_selected",
         ] = "catalogue",
         completeness: CompletenessModel | None = None,
         phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]
         | None = None,
         detection_probability: SimulationDetectionProbability | None = None,
+        class_weight_p_g: float | None = None,
+        gw_scatter: bool = True,
     ) -> pd.DataFrame:
         """Draw one mirror-universe realization: ``n_events`` synthetic CRB rows.
 
@@ -2020,13 +2140,37 @@ class MirrorUniverseGenerator:
                 ``detection_probability`` (e.g. from
                 :func:`build_b0i_2d_selection_objects`); ``host_pool`` must
                 carry both ``M`` and ``M_error``.
-            completeness: Required for ``host_mode="population_selected"``
-                or ``host_mode="catalogue_selected_2d"`` -- see
+                ``"mixture_selected"`` (B8.2 S1,
+                ``B8_2_HARNESS_DESIGN_20260829.md`` §2.1, launched under rows
+                #255/#268, tree 2 node B8.2.S1 -- "the consistent truth"): a
+                ``Binomial(n, class_weight_p_g)`` split of the ``n`` events
+                into ``n_g`` catalogue-hosted events (drawn by the EXACT
+                ``"catalogue_selected"`` law above, on the SAME ``rng``
+                stream) and ``n - n_g`` dark events (drawn by the EXACT
+                ``"population_selected"`` law above, continuing the SAME
+                stream) -- byte-for-byte reuse of both existing branches, no
+                new draw law. ``class_weight_p_g == 1.0`` reproduces
+                ``"catalogue_selected"`` bit-for-bit (no ``rng.binomial``
+                call at all -- ``n_g := n`` is set directly so the RNG
+                stream is untouched by the split decision);
+                ``class_weight_p_g == 0.0`` reproduces
+                ``"population_selected"`` bit-for-bit (``n_g := 0``,
+                likewise no ``rng.binomial`` call). Requires
+                ``phi_survival_table``, ``completeness`` AND
+                ``class_weight_p_g`` (build the latter via
+                :func:`compute_catalogue_class_weight_p_g`, the estimator's
+                own catalogue-class weight at ``H_TRUE``); ``host_pool`` must
+                carry ``M`` (unused by the 1D mixture law itself, but
+                :func:`catalogue_selected_host_draw_weights` reads it).
+            completeness: Required for ``host_mode="population_selected"``,
+                ``host_mode="catalogue_selected_2d"``, or
+                ``host_mode="mixture_selected"`` -- see
                 :func:`build_bsel_selection_objects`/
                 :func:`build_b0i_2d_selection_objects`.
             phi_survival_table: Required for ``host_mode="population_selected"``,
-                ``host_mode="catalogue_selected"``, or
-                ``host_mode="catalogue_selected_2d"`` -- see
+                ``host_mode="catalogue_selected"``,
+                ``host_mode="catalogue_selected_2d"``, or
+                ``host_mode="mixture_selected"`` -- see
                 :func:`build_bsel_selection_objects`/
                 :func:`build_b0i_2d_selection_objects`.
             detection_probability: Required (only) for
@@ -2035,6 +2179,25 @@ class MirrorUniverseGenerator:
                 (e.g. from :func:`build_b0i_2d_selection_objects`), the
                 production ``S_4D`` interpolator the latent-mass acceptance
                 step queries.
+            class_weight_p_g: Required (only) for
+                ``host_mode="mixture_selected"`` -- the estimator's own
+                catalogue-class weight at ``H_TRUE`` (``P_G =
+                alpha_G^phi/D_tilde^phi``, design §2.1), a scalar in
+                ``[0, 1]``. Build via :func:`compute_catalogue_class_weight_p_g`.
+            gw_scatter: Design §2.3 (B8.2 S1). ``True`` (default) is
+                byte-identical to every pre-existing call site: the GW
+                observation noise draws (``d_hat``/``M_hat_z`` about the
+                latent truth, and the sky offset about the host) are added as
+                before. ``False`` (Cell T, the truth-centred width-only
+                comparand for the HEAD readout's ⟨σ_h⟩, which has NO GW
+                measurement scatter) draws the SAME noise realizations from
+                the SAME ``rng`` calls -- so every OTHER draw on this stream
+                (host selection, ``z_true``, the class split) is completely
+                unaffected by this flag -- but discards them instead of
+                adding them, following the ``pp_coverage.py``
+                "draw made and discarded" convention (:data:`pp_coverage`
+                module, Q-0 note) so a paired scatter/no-scatter A/B run
+                stays on one random stream.
 
         Returns:
             A DataFrame with the SAME columns/order as
@@ -2060,7 +2223,10 @@ class MirrorUniverseGenerator:
             host_phiS = pool.phiS[host_idx]
             host_qS = pool.qS[host_idx]
             host_index_col = host_idx.astype(np.int64)
-            in_catalog_col = True
+            # Annotated (bool | array) here at first use: "mixture_selected"
+            # below assigns an array (a per-event mix of True/False), the
+            # only branch that does so.
+            in_catalog_col: bool | npt.NDArray[np.bool_] = True
         elif host_mode == "population":
             # (a) AMENDMENT A-2 (B-OUT): population-model host draw, never a
             # pinned-catalogue member -- see the module docstring's
@@ -2181,11 +2347,114 @@ class MirrorUniverseGenerator:
             s4d_at_truth_col = latents.s4d_at_truth
             b0i2d_s_tilde_phi_host = latents.s_tilde_phi_host
             link_id_col = row_idx.astype(np.int64)
+        elif host_mode == "mixture_selected":
+            # (a) B8.2 S1 (B8_2_HARNESS_DESIGN_20260829.md §2.1, rows
+            # #255/#268, tree 2 node B8.2.S1): Binomial(n, class_weight_p_g)
+            # split on the SAME rng stream, then EXACT reuse of the
+            # "catalogue_selected" branch (n_g events) and the
+            # "population_selected" branch (n - n_g events) above -- no new
+            # draw law, only a class split. See the docstring's
+            # "mixture_selected" paragraph for the bit-identity guarantee at
+            # the P_G in {0, 1} limits.
+            if phi_survival_table is None or completeness is None:
+                raise ValueError(
+                    "host_mode='mixture_selected' requires completeness and "
+                    "phi_survival_table (build via build_bsel_selection_objects)"
+                )
+            if class_weight_p_g is None:
+                raise ValueError(
+                    "host_mode='mixture_selected' requires class_weight_p_g "
+                    "(the estimator's own catalogue-class weight at H_TRUE; "
+                    "build via compute_catalogue_class_weight_p_g)"
+                )
+            p_g = float(class_weight_p_g)
+            if not (0.0 <= p_g <= 1.0):
+                raise ValueError(f"class_weight_p_g must be in [0, 1]; got {p_g}")
+            # Edge cases special-cased (rather than left to rng.binomial(n, 0
+            # or 1)) so the RNG stream is UNTOUCHED by the split decision at
+            # the P_G in {0, 1} limits -- the acceptance test (design §8 S1
+            # (ii)) requires bit-for-bit reproduction of the pure arms there.
+            if p_g >= 1.0:
+                n_g = n
+            elif p_g <= 0.0:
+                n_g = 0
+            else:
+                n_g = int(rng.binomial(n, p_g))
+            n_dark = n - n_g
+
+            pool = host_pool if host_pool is not None else _load_host_pool(REDUCED_CATALOGUE_PATH)
+
+            if n_g > 0:
+                # EXACT "catalogue_selected" branch (b0i law), size n_g.
+                host_w, _mix_w_g, mix_s_tilde_phi = catalogue_selected_host_draw_weights(
+                    pool, phi_survival_table, completeness, h=H_TRUE
+                )
+                host_idx_g = rng.choice(pool.n, size=n_g, replace=False, p=host_w)
+                host_z_listed_g = pool.z[host_idx_g]
+                host_z_error_listed_g = pool.z_error[host_idx_g]
+                host_phiS_g = pool.phiS[host_idx_g]
+                host_qS_g = pool.qS[host_idx_g]
+                z_true_g = _draw_kernel_survival_redshifts(
+                    rng,
+                    host_z_listed_g,
+                    host_z_error_listed_g,
+                    phi_survival_table,
+                    completeness,
+                    host_phiS_g,
+                    host_qS_g,
+                    h=H_TRUE,
+                )
+                host_index_g = host_idx_g.astype(np.int64)
+                in_catalog_g = np.full(n_g, True)
+                s_tilde_phi_host_g = mix_s_tilde_phi[host_idx_g]
+                class_g = np.full(n_g, "catalogue_hosted", dtype=object)
+            else:
+                z_true_g = np.empty(0, dtype=np.float64)
+                host_phiS_g = np.empty(0, dtype=np.float64)
+                host_qS_g = np.empty(0, dtype=np.float64)
+                host_index_g = np.empty(0, dtype=np.int64)
+                in_catalog_g = np.empty(0, dtype=bool)
+                s_tilde_phi_host_g = np.empty(0, dtype=np.float64)
+                class_g = np.empty(0, dtype=object)
+
+            if n_dark > 0:
+                # EXACT "population_selected" branch (B-SEL law), size n_dark,
+                # continuing the SAME rng stream (no fresh generator; the
+                # diagnostic unweighted comparison draw that branch makes is
+                # deliberately NOT reproduced here -- it uses an independent
+                # rng seeded from ``seed``, so omitting it cannot perturb this
+                # branch's bit-identity).
+                z_true_dark = draw_selected_population_redshifts(
+                    rng, n_dark, completeness, phi_survival_table, h=H_TRUE
+                )
+                host_phiS_dark, host_qS_dark = draw_isotropic_sky(rng, n_dark)
+                host_index_dark = np.full(n_dark, -1, dtype=np.int64)
+                in_catalog_dark = np.full(n_dark, False)
+                s_tilde_phi_host_dark = np.full(n_dark, np.nan)
+                class_dark = np.full(n_dark, "dark", dtype=object)
+            else:
+                z_true_dark = np.empty(0, dtype=np.float64)
+                host_phiS_dark = np.empty(0, dtype=np.float64)
+                host_qS_dark = np.empty(0, dtype=np.float64)
+                host_index_dark = np.empty(0, dtype=np.int64)
+                in_catalog_dark = np.empty(0, dtype=bool)
+                s_tilde_phi_host_dark = np.empty(0, dtype=np.float64)
+                class_dark = np.empty(0, dtype=object)
+
+            host_z = np.concatenate([z_true_g, z_true_dark])
+            host_phiS = np.concatenate([host_phiS_g, host_phiS_dark])
+            host_qS = np.concatenate([host_qS_g, host_qS_dark])
+            host_index_col = np.concatenate([host_index_g, host_index_dark])
+            in_catalog_col = np.concatenate([in_catalog_g, in_catalog_dark])
+            z_true_col = host_z
+            mix_s_tilde_phi_host = np.concatenate([s_tilde_phi_host_g, s_tilde_phi_host_dark])
+            mix_class_col = np.concatenate([class_g, class_dark])
+            mix_n_g = n_g
         else:
             raise ValueError(
                 f"unknown host_mode {host_mode!r}; expected "
                 "'catalogue'/'population'/'population_selected'/'catalogue_selected'/"
-                "'catalogue_selected_2d'"
+                "'catalogue_selected_2d'/'mixture_selected'"
             )
 
         # (c) true d_L from host z at h_true; observed d_L about it.
@@ -2217,13 +2486,23 @@ class MirrorUniverseGenerator:
                     chol = np.linalg.cholesky(cov)
                 except np.linalg.LinAlgError:
                     chol = np.diag([np.sqrt(max(var_dL[i], 0.0)), np.sqrt(max(var_m[i], 0.0))])
+                # B8.2 S1 gw_scatter knob (design §2.3): the draw is ALWAYS
+                # made (same rng.normal(size=2) call, same stream position
+                # regardless of gw_scatter) and only conditionally ADDED --
+                # the pp_coverage.py "draw made and discarded" convention, so
+                # a paired scatter/no-scatter run stays on one RNG stream.
+                # gw_scatter=True is byte-identical to the pre-B8.2 code.
                 offset = chol @ rng.normal(size=2)
-                obs_d_L[i] = true_d_L[i] + offset[0]
-                obs_m[i] = m_z_true_col[i] + offset[1]
+                obs_d_L[i] = true_d_L[i] + (offset[0] if gw_scatter else 0.0)
+                obs_m[i] = m_z_true_col[i] + (offset[1] if gw_scatter else 0.0)
             obs_d_L = np.clip(obs_d_L, _M2D_OBS_DL_FLOOR, None)
             obs_m = np.clip(obs_m, _M2D_OBS_M_FLOOR, None)
         else:
-            obs_d_L = true_d_L + rng.normal(size=n) * sigma_dL
+            # Same "draw made and discarded" convention as the 2D branch
+            # above (design §2.3): the noise vector is always drawn from
+            # ``rng`` so the stream is identical regardless of gw_scatter.
+            _dl_noise = rng.normal(size=n) * sigma_dL
+            obs_d_L = true_d_L + (_dl_noise if gw_scatter else 0.0)
             obs_d_L = np.clip(obs_d_L, 1.0e-6, None)
 
         # (c) sky: correlated draw about the host's true position using the
@@ -2249,9 +2528,12 @@ class MirrorUniverseGenerator:
                 chol = np.linalg.cholesky(cov)
             except np.linalg.LinAlgError:
                 chol = np.diag([np.sqrt(max(phi_var[i], 0.0)), np.sqrt(max(theta_var[i], 0.0))])
+            # B8.2 S1 gw_scatter knob (design §2.3): same "draw made and
+            # discarded" convention as the d_L/M draw above -- the sky offset
+            # is always drawn, only conditionally added.
             offset = chol @ rng.normal(size=2)
-            obs_phiS[i] = host_phiS[i] + offset[0]
-            obs_qS[i] = host_qS[i] + offset[1]
+            obs_phiS[i] = host_phiS[i] + (offset[0] if gw_scatter else 0.0)
+            obs_qS[i] = host_qS[i] + (offset[1] if gw_scatter else 0.0)
         obs_phiS = np.mod(obs_phiS, 2.0 * np.pi)
         obs_qS = np.clip(obs_qS, 0.0, np.pi)
 
@@ -2291,6 +2573,22 @@ class MirrorUniverseGenerator:
             rows["M"] = obs_m
             rows["s4d_at_truth"] = s4d_at_truth_col
             rows["link_id"] = link_id_col
+        elif host_mode == "mixture_selected":
+            # B8.2 S1 record (design §2.1): host draw mode, the per-event
+            # drawn z_true, S̃_φ,g of the drawn host (NaN for dark events --
+            # they have no catalogue host), the per-event class label
+            # ("catalogue_hosted"/"dark"), the realized catalogue-class count
+            # n_g (constant per realization -- how many of the n events the
+            # Binomial split routed to the catalogue-hosted branch), and the
+            # class_weight_p_g used to draw this realization (constant;
+            # self-describing so a mixture JSON does not need cross-
+            # referencing the caller's P_G computation).
+            rows["host_draw_mode"] = "mixture_selected"
+            rows["z_true"] = z_true_col
+            rows["s_tilde_phi_host"] = mix_s_tilde_phi_host
+            rows["event_class"] = mix_class_col
+            rows["n_catalogue_hosted"] = mix_n_g
+            rows["class_weight_p_g"] = p_g
         return rows
 
 
@@ -2731,6 +3029,101 @@ def write_mirror_crb_csv(events: pd.DataFrame, out_path: str) -> str:
     return out_path
 
 
+# ── B8.2 S1 (B8_2_HARNESS_DESIGN_20260829.md §3 item 1; rows #255/#268, tree
+# 2 node B8.2.S1) -- the resolved-flags return + engagement assertion. ──────
+
+# The BayesianStatistics instance attributes design §3 item 1 names as the
+# resolved (post-"auto"-dispatch) engagement record: normalization_mode,
+# catalogue_global_selection, selection_in_completion_numerator,
+# catalogue_numerator_survival, catalogue_numerator_survival_2d, the mass-
+# window triple, and the theta-hook state (theta_b/theta_s/theta_sites plus
+# the two [HIER] site-2.3 sibling flags, since a non-identity theta engaged
+# on those sites would silently change the SAME resolved-flag surface this
+# assertion exists to catch).
+_RESOLVED_FLAG_ATTRS: tuple[str, ...] = (
+    "_normalization_mode",
+    "_catalogue_global_selection",
+    "_selection_in_completion_numerator",
+    "_catalogue_numerator_survival",
+    "_catalogue_numerator_survival_2d",
+    "_mass_filter_sigma",
+    "_mass_filter_geometry",
+    "_mass_filter_k",
+    "_theta_b",
+    "_theta_s",
+    "_theta_sites",
+    "_theta_phi_divisor",
+    "_theta_zwindow",
+)
+
+
+def _resolved_flags_from_bs(bs: BayesianStatistics) -> dict[str, Any]:
+    """Read the resolved (post-``evaluate()``) engagement flags off a live instance.
+
+    Args:
+        bs: A ``BayesianStatistics`` instance AFTER its ``evaluate()`` call has
+            returned (the resolved attributes are set during ``evaluate()``,
+            not ``__init__``).
+
+    Returns:
+        ``{name (leading underscore stripped): value}`` for every attribute
+        in :data:`_RESOLVED_FLAG_ATTRS`.
+    """
+    return {name.lstrip("_"): getattr(bs, name) for name in _RESOLVED_FLAG_ATTRS}
+
+
+# The registered production values these resolve to (design §3): the chair-
+# confirmed "phi"/"phi"/"fused" triple under `absolute_marginal`
+# (PRODUCTION_FLAGS + the row #195/#172-178/#117-118 adoptions), the B5.1
+# mass-window defaults, the with-BH twin adopted under row #223 (charter
+# B7.3), and theta identity (no [HIER] instrument engaged).
+REGISTERED_RESOLVED_FLAGS: dict[str, Any] = {
+    "normalization_mode": PRODUCTION_FLAGS["--normalization_mode"],
+    "catalogue_global_selection": "phi",
+    "selection_in_completion_numerator": PRODUCTION_FLAGS["--selection_in_completion_numerator"],
+    "catalogue_numerator_survival": "phi",
+    "catalogue_numerator_survival_2d": "mz_sel",
+    "mass_filter_sigma": "symmetric",
+    "mass_filter_geometry": "linear",
+    "mass_filter_k": 1.5,
+    "theta_b": 0.0,
+    "theta_s": 1.0,
+    "theta_sites": "all",
+    "theta_phi_divisor": "off",
+    "theta_zwindow": "off",
+}
+
+
+def assert_resolved_production_flags(
+    resolved: dict[str, Any],
+    expected: dict[str, Any] | None = None,
+) -> None:
+    """STOP-gate the resolved flags against the registered production set (design §3 item 1).
+
+    Args:
+        resolved: A dict from :func:`_resolved_flags_from_bs` (e.g. populated
+            via ``run_mirror_seed_inprocess``'s ``resolved_flags_out``).
+        expected: The registered values to check against (default
+            :data:`REGISTERED_RESOLVED_FLAGS`). Only the keys present in
+            ``expected`` are checked, so a caller auditing a wave-2 with-BH
+            adoption can pass a narrower/updated mapping (design §3: "the
+            harness runs at the wave-2 commit and asserts whichever value
+            production resolves there").
+
+    Raises:
+        AssertionError: On the first mismatched key, naming both the
+            resolved and the expected value.
+    """
+    check = REGISTERED_RESOLVED_FLAGS if expected is None else expected
+    for key, want in check.items():
+        got = resolved.get(key)
+        if got != want:
+            raise AssertionError(
+                f"resolved flag {key!r} = {got!r}, expected {want!r} (B8.2 S1 "
+                "engagement assertion, B8_2_HARNESS_DESIGN_20260829.md §3 item 1)"
+            )
+
+
 def run_mirror_seed_inprocess(
     work_root: Path,
     events: pd.DataFrame,
@@ -2813,6 +3206,15 @@ def run_mirror_seed_inprocess(
     # §6). Forwarded verbatim to BayesianStatistics.evaluate(). None
     # (default) is byte-identical (GATE BI) -- pattern 0b308828.
     candidate_dump_dir: str | None = None,
+    # B8.2 S1 (B8_2_HARNESS_DESIGN_20260829.md §3 item 1; rows #255/#268, tree
+    # 2 node B8.2.S1): the resolved-flags return. None (default) is a no-op
+    # (GATE BI pattern, byte-identical to every pre-existing call site -- the
+    # dict is only populated when a caller supplies one). An out-parameter
+    # rather than a return-type change: this function has many call sites
+    # across results/ scripts that unpack a 2-tuple
+    # (``diag_csv, elapsed = run_mirror_seed_inprocess(...)``); changing the
+    # return arity would break every one of them.
+    resolved_flags_out: dict[str, Any] | None = None,
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
 
@@ -2950,6 +3352,18 @@ def run_mirror_seed_inprocess(
             ``"off"`` (default) is byte-identical to every pre-existing call
             site. ``hier_s0_driver.py`` exposes this as
             ``--catalogue-leg-1d-mass-aware``.
+        resolved_flags_out: B8.2 S1 engagement assertion (design §3 item 1).
+            When given a dict, it is updated (in place, after ``evaluate()``
+            returns) with the RESOLVED post-``"auto"``-dispatch flag values
+            read off the ``BayesianStatistics`` instance itself --
+            :func:`_resolved_flags_from_bs`'s keys. ``None`` (default) skips
+            this entirely (no attribute reads, no dict mutation) -- byte-
+            identical to every pre-existing call site. Pass
+            :func:`assert_resolved_production_flags` the populated dict to
+            STOP-gate a run whose resolved flags do not match the registered
+            production triple (``phi``/``phi``/``fused`` under
+            ``absolute_marginal``, plus the mass-window and theta-identity
+            defaults).
     """
     import darksiren_emri.bayesian_inference.bayesian_statistics as _bs_mod
 
@@ -3033,6 +3447,11 @@ def run_mirror_seed_inprocess(
             candidate_dump_dir=candidate_dump_dir,
         )
         elapsed = time.time() - start
+        if resolved_flags_out is not None:
+            # B8.2 S1 (design §3 item 1): read the RESOLVED (post-"auto"-
+            # dispatch) flags off the live `bs` instance -- must happen here,
+            # inside the try block, before `bs` goes out of scope.
+            resolved_flags_out.update(_resolved_flags_from_bs(bs))
     finally:
         _bs_mod.from_cache_or_build = original_from_cache
         os.chdir(original_cwd)

@@ -63,7 +63,21 @@
         "Z": -0.6762222336551854,
         "n_pooled": 461
       },
+      "score_b_available": true,
       "score_s": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0
+      },
+      "score_s_available": false,
+      "score_lns": {
+        "mean": -0.07340881013441411,
+        "sem": 0.012293980303145635,
+        "Z": -5.971118248467598,
+        "n_pooled": 461
+      },
+      "score_s_raw": {
         "mean": -0.07195958393659582,
         "sem": 0.012051274307800423,
         "Z": -5.971118248467597,
@@ -77,7 +91,21 @@
         "Z": 0.379258537153897,
         "n_pooled": 461
       },
+      "score_b_available": true,
       "score_s": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0
+      },
+      "score_s_available": false,
+      "score_lns": {
+        "mean": -0.02979147311149209,
+        "sem": 0.014698731947817047,
+        "Z": -2.02680566032885,
+        "n_pooled": 461
+      },
+      "score_s_raw": {
         "mean": -0.02920333412346437,
         "sem": 0.014408551690508958,
         "Z": -2.02680566032885,
@@ -213,7 +241,7 @@
     "band": "B0-A'",
     "verdict": "INSTRUMENT-DEFECT -- STOP (prereg \u00a74.5)",
     "Z_b": -0.6762222336551854,
-    "Z_s": -5.971118248467597,
+    "Z_s": NaN,
     "threshold": 3.0,
     "channel": "ln_L_no_bh (registered primary; ln_L_with_bh reported alongside, see scores)",
     "gate_eng": {
@@ -351,5 +379,8 @@
   "score_h": 0.73,
   "theta_phi_divisor": "on",
   "sky_cone_k": 1.5,
+  "catalogue_leg_1d_mass_aware": "off",
+  "theta_zwindow": "off",
+  "z_window_k": 1.0,
   "registration": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/PREREGISTRATION_HIER_HTHETA_20260826.md"
 }

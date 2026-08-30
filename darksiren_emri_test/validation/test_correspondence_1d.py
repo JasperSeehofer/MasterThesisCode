@@ -2232,3 +2232,447 @@ def test_catalogue_selected_mode_does_not_enter_catalogue_selected_2d_code_path(
     assert "M_true" not in events.columns
     assert "s4d_at_truth" not in events.columns
     assert "link_id" not in events.columns
+
+
+# ── B8.2 S1 (B8_2_HARNESS_DESIGN_20260829.md §2.1/§2.3/§3; rows #255/#268,
+# tree 2 node B8.2.S1) -- host_mode="mixture_selected", the gw_scatter knob,
+# and the resolved-flags engagement assertion. Same pool-free, synthetic-
+# test-double convention as the PA-2/[P3-2D] sections above.
+
+
+def test_mixture_selected_requires_completeness_and_phi_survival_table(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 10
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    with pytest.raises(ValueError, match="phi_survival_table"):
+        gen.draw_realization(
+            seed=1, host_pool=pool, host_mode="mixture_selected", class_weight_p_g=0.5
+        )
+
+
+def test_mixture_selected_requires_class_weight_p_g(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 10
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    with pytest.raises(ValueError, match="class_weight_p_g"):
+        gen.draw_realization(
+            seed=1,
+            host_pool=pool,
+            host_mode="mixture_selected",
+            completeness=completeness,
+            phi_survival_table=table,
+        )
+
+
+def test_mixture_selected_rejects_p_g_outside_unit_interval(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 10
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    for bad_p_g in (-0.1, 1.1):
+        with pytest.raises(ValueError, match="class_weight_p_g"):
+            gen.draw_realization(
+                seed=1,
+                host_pool=pool,
+                host_mode="mixture_selected",
+                completeness=completeness,
+                phi_survival_table=table,
+                class_weight_p_g=bad_p_g,
+            )
+
+
+def test_mixture_selected_p_g_one_matches_catalogue_selected_bit_for_bit(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Design §8 S1 acceptance (ii): class_weight_p_g=1.0 reproduces
+    host_mode='catalogue_selected' bit-for-bit on the same seed -- no
+    ``rng.binomial`` call is made at this limit, so the RNG stream (hence
+    every downstream draw) is untouched by the split decision."""
+    n = 30
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    # n_g == n at this limit (every event draws a host without replacement),
+    # so the pool must have at least n hosts.
+    pool = _make_host_pool_with_mass(n_pool=n)
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+
+    mixture = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=7,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=1.0,
+    )
+    pure = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=7,
+        host_pool=pool,
+        host_mode="catalogue_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+    )
+    shared_cols = [
+        "luminosity_distance",
+        "phiS",
+        "qS",
+        "host_galaxy_index",
+        "in_catalog",
+        "z_true",
+        "s_tilde_phi_host",
+    ]
+    for col in shared_cols:
+        np.testing.assert_array_equal(
+            mixture[col].to_numpy(), pure[col].to_numpy(), err_msg=f"column {col!r} diverged"
+        )
+    assert (mixture["n_catalogue_hosted"] == n).all()
+    assert (mixture["event_class"] == "catalogue_hosted").all()
+
+
+def test_mixture_selected_p_g_zero_matches_population_selected_bit_for_bit(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Design §8 S1 acceptance (ii): class_weight_p_g=0.0 reproduces
+    host_mode='population_selected' bit-for-bit on the same seed."""
+    n = 30
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    pool = _make_host_pool_with_mass()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+
+    mixture = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=11,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=0.0,
+    )
+    pure = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=11,
+        host_pool=pool,
+        host_mode="population_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+    )
+    shared_cols = ["luminosity_distance", "phiS", "qS", "host_galaxy_index", "in_catalog"]
+    for col in shared_cols:
+        np.testing.assert_array_equal(
+            mixture[col].to_numpy(), pure[col].to_numpy(), err_msg=f"column {col!r} diverged"
+        )
+    assert (mixture["n_catalogue_hosted"] == 0).all()
+    assert (mixture["event_class"] == "dark").all()
+    assert (mixture["host_galaxy_index"].to_numpy() == -1).all()
+
+
+def test_mixture_selected_class_split_matches_class_weight_p_g_statistically(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """The mixture weight equals the estimator class weight on a fixture (design
+    §8 S1 unit tests, item 1): with a fixed ``p_g`` strictly inside ``(0, 1)``
+    and a large ``n``, the realized catalogue-hosted fraction sits within a
+    wide (5 sigma) binomial band of ``p_g``."""
+    n = 4000
+    p_g = 0.3
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    # Sized to n (not the realized n_g ~ 1200) so no realized binomial draw
+    # can ever exceed the pool (without-replacement host sampling).
+    pool = _make_host_pool_with_mass(n_pool=n)
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    events = gen.draw_realization(
+        seed=99,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=p_g,
+    )
+    n_g = int(events["n_catalogue_hosted"].iloc[0])
+    assert n_g == int((events["event_class"] == "catalogue_hosted").sum())
+    realized_fraction = n_g / n
+    sd = float(np.sqrt(p_g * (1.0 - p_g) / n))
+    assert abs(realized_fraction - p_g) < 5.0 * sd
+    assert np.allclose(events["class_weight_p_g"].to_numpy(), p_g)
+
+
+def test_mixture_selected_records_columns(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 20
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    events = gen.draw_realization(
+        seed=5,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=0.5,
+    )
+    assert (events["host_draw_mode"] == "mixture_selected").all()
+    assert set(events["event_class"].unique()) <= {"catalogue_hosted", "dark"}
+    dark = events[events["event_class"] == "dark"]
+    hosted = events[events["event_class"] == "catalogue_hosted"]
+    assert (dark["host_galaxy_index"].to_numpy() == -1).all()
+    assert not dark["in_catalog"].any()
+    assert (hosted["host_galaxy_index"].to_numpy() >= 0).all()
+    assert bool(hosted["in_catalog"].all())
+    assert dark["s_tilde_phi_host"].isna().all()
+    assert hosted["s_tilde_phi_host"].notna().all()
+
+
+def test_mixture_selected_is_deterministic(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 25
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    pool = _make_host_pool_with_mass()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    a = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=3,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=0.4,
+    )
+    b = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=3,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=0.4,
+    )
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_compute_catalogue_class_weight_p_g_matches_path_a_mixture_objects(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Design §8 S1 unit tests, item 1 (the assembly half): on a fixture (the
+    three production leg-builders monkeypatched to fixed values, never
+    recomputed), ``compute_catalogue_class_weight_p_g``'s ``p_g`` equals the
+    REAL ``path_a_mixture_objects``'s own ``w_tilde_G`` -- i.e. this tests the
+    WIRING this stage added (which leg feeds which ``with_bh_mass`` flag),
+    not production's already-tested selection integrals (fixtured out, not
+    re-derived)."""
+    h_true = 0.73
+    fake_completeness = object()
+    fake_table = {h_true: (np.array([0.0, 1.0]), np.array([1.0, 1.0]))}
+    fake_dp = object()
+
+    monkeypatch.setattr(
+        c1d,
+        "build_b0i_2d_selection_objects",
+        lambda **kwargs: (fake_completeness, fake_table, fake_dp),
+    )
+    monkeypatch.setattr(
+        c1d,
+        "precompute_phi_selection_integrals",
+        lambda h_values, phi_survival_table, completeness: ({h_true: 3.0}, {h_true: 7.0}),
+    )
+
+    def _fake_global_sel(
+        h_values: list[float],
+        galaxy_catalog: object,
+        detection_probability_obj: object,
+        *,
+        with_bh_mass: bool,
+        **kwargs: object,
+    ) -> dict[float, float]:
+        return {h_true: 13.0} if with_bh_mass else {h_true: 11.0}
+
+    monkeypatch.setattr(c1d, "precompute_global_catalog_selection", _fake_global_sel)
+
+    result = c1d.compute_catalogue_class_weight_p_g(galaxy_catalog=object(), h_true=h_true)  # type: ignore[arg-type]
+
+    expected = c1d.path_a_mixture_objects(
+        beta_G_phi=3.0, beta_Gbar_phi=7.0, sigma_phi=11.0, sigma_4d=13.0
+    )
+    assert result["p_g"] == pytest.approx(expected["w_tilde_G"])
+    assert result["alpha_G_phi"] == pytest.approx(expected["alpha_G_phi"])
+    assert result["D_tilde_phi"] == pytest.approx(expected["D_tilde_phi"])
+    assert result["beta_G_phi"] == pytest.approx(3.0)
+    assert result["beta_Gbar_phi"] == pytest.approx(7.0)
+    assert result["sigma_phi"] == pytest.approx(11.0)
+    assert result["sigma_4d"] == pytest.approx(13.0)
+
+
+def test_gw_scatter_false_is_truth_centred_and_shares_rng_stream_with_true(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Design §2.3/§8 S1 unit tests, item 2: ``gw_scatter`` on/off, paired on one
+    RNG stream. Host selection (a draw made BEFORE the noise draws) is
+    IDENTICAL between the two -- "same draws elsewhere" -- and the
+    truth-centred (``False``) realization's observed d_L/sky sit exactly at
+    the host truth."""
+    n = 50
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    pool = _make_host_pool(n)
+
+    scattered = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=42, host_pool=pool, host_mode="catalogue", gw_scatter=True
+    )
+    truth_centred = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=42, host_pool=pool, host_mode="catalogue", gw_scatter=False
+    )
+
+    np.testing.assert_array_equal(
+        scattered["host_galaxy_index"].to_numpy(), truth_centred["host_galaxy_index"].to_numpy()
+    )
+    host_idx = truth_centred["host_galaxy_index"].to_numpy()
+    true_d_L = c1d.dist_vectorized(pool.z[host_idx], h=c1d.H_TRUE)
+    np.testing.assert_allclose(
+        truth_centred["luminosity_distance"].to_numpy(), true_d_L, rtol=0.0, atol=1e-12
+    )
+    assert not np.allclose(scattered["luminosity_distance"].to_numpy(), true_d_L)
+    np.testing.assert_allclose(
+        truth_centred["phiS"].to_numpy(), np.mod(pool.phiS[host_idx], 2.0 * np.pi), atol=1e-12
+    )
+    np.testing.assert_allclose(
+        truth_centred["qS"].to_numpy(), np.clip(pool.qS[host_idx], 0.0, np.pi), atol=1e-12
+    )
+    assert not np.allclose(scattered["phiS"].to_numpy(), truth_centred["phiS"].to_numpy())
+
+
+def test_gw_scatter_true_default_is_byte_identical_to_omitting_it(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """B8.2 S1 acceptance (i)/(iv): ``gw_scatter``'s default (``True``) is a
+    byte-identical no-op relative to the pre-B8.2 call signature (which had
+    no such kwarg)."""
+    n = 20
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    pool = _make_host_pool(n)
+    a = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=1, host_pool=pool, host_mode="catalogue"
+    )
+    b = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=1, host_pool=pool, host_mode="catalogue", gw_scatter=True
+    )
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_gw_scatter_false_truth_centres_2d_joint_draw(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """The 2D loop's own ``gw_scatter`` branch (design §2.3): with
+    ``gw_scatter=False`` the joint (d_hat, M_hat_z) draw sits exactly at the
+    latent truth."""
+    n = 6
+    donor_csv = _make_donor_csv_2d(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    pool = _make_host_pool_with_mass_and_error()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    dp = _FakeS4D()
+    events = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=13,
+        host_pool=pool,
+        host_mode="catalogue_selected_2d",
+        completeness=completeness,
+        phi_survival_table=table,
+        detection_probability=dp,  # type: ignore[arg-type]
+        gw_scatter=False,
+    )
+    true_d_L = c1d.dist_vectorized(events["z_true"].to_numpy(), h=c1d.H_TRUE)
+    np.testing.assert_allclose(
+        events["luminosity_distance"].to_numpy(), true_d_L, rtol=0.0, atol=1e-9
+    )
+    np.testing.assert_allclose(
+        events["M"].to_numpy(), events["M_z_true"].to_numpy(), rtol=0.0, atol=1e-9
+    )
+
+
+def test_resolved_flags_from_bs_reads_registered_attribute_set() -> None:
+    """The resolved-flags reader extracts exactly :data:`c1d._RESOLVED_FLAG_ATTRS`
+    (underscore stripped)."""
+
+    class _FakeBS:
+        _normalization_mode = "absolute_marginal"
+        _catalogue_global_selection = "phi"
+        _selection_in_completion_numerator = "fused"
+        _catalogue_numerator_survival = "phi"
+        _catalogue_numerator_survival_2d = "mz_sel"
+        _mass_filter_sigma = "symmetric"
+        _mass_filter_geometry = "linear"
+        _mass_filter_k = 1.5
+        _theta_b = 0.0
+        _theta_s = 1.0
+        _theta_sites = "all"
+        _theta_phi_divisor = "off"
+        _theta_zwindow = "off"
+
+    resolved = c1d._resolved_flags_from_bs(_FakeBS())  # type: ignore[arg-type]
+    assert resolved == c1d.REGISTERED_RESOLVED_FLAGS
+
+
+def test_assert_resolved_production_flags_passes_on_the_registered_values() -> None:
+    c1d.assert_resolved_production_flags(dict(c1d.REGISTERED_RESOLVED_FLAGS))
+
+
+def test_assert_resolved_production_flags_fires_on_a_wrong_flag() -> None:
+    """Design §8 S1 unit tests, item 3: the resolved-flags assertion fires on a
+    wrong flag."""
+    resolved = dict(c1d.REGISTERED_RESOLVED_FLAGS)
+    resolved["mass_filter_sigma"] = "asymmetric"
+    with pytest.raises(AssertionError, match="mass_filter_sigma"):
+        c1d.assert_resolved_production_flags(resolved)
+
+
+def test_assert_resolved_production_flags_fires_on_a_wrong_theta_flag() -> None:
+    """A non-identity theta silently changing the resolved surface must also fire."""
+    resolved = dict(c1d.REGISTERED_RESOLVED_FLAGS)
+    resolved["theta_b"] = 0.02
+    with pytest.raises(AssertionError, match="theta_b"):
+        c1d.assert_resolved_production_flags(resolved)
+
+
+def test_assert_resolved_production_flags_accepts_a_narrower_expected_mapping() -> None:
+    """A caller (e.g. a wave-2 with-BH-adoption audit) may pass a narrower/updated
+    ``expected`` mapping (design §3 item 1's "asserts whichever value production
+    resolves there")."""
+    resolved = {"catalogue_numerator_survival_2d": "off"}
+    c1d.assert_resolved_production_flags(
+        resolved, expected={"catalogue_numerator_survival_2d": "off"}
+    )
+    with pytest.raises(AssertionError):
+        c1d.assert_resolved_production_flags(
+            resolved, expected={"catalogue_numerator_survival_2d": "mz_sel"}
+        )
+
+
+def test_run_mirror_seed_inprocess_accepts_resolved_flags_out_default_none() -> None:
+    """The out-parameter is additive: ``None`` by default, so every pre-B8.2 call
+    site (which never passes it) is unaffected."""
+    sig = inspect.signature(c1d.run_mirror_seed_inprocess)
+    assert "resolved_flags_out" in sig.parameters
+    assert sig.parameters["resolved_flags_out"].default is None
