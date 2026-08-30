@@ -70,6 +70,18 @@ identified above.
 - T4 -- B7 falsifier (ii) + the tree-1 wave-3 readout (A4 pending, input does not exist yet)
 - T6 -- CMEM >=90%-power registration (A8 = parked; available)
 
+## Synthesis docket (information only)
+
+- TREE2_SYNTHESIS_DOCKET_20260830.md -- chair synthesis over tree 2 to date: verdict table
+  (section 1), the [HIER] instrument story (section 2 -- three sequential instrument defects
+  found and fixed; S0-A null-consistent on both axes only under the still-unratified PA-HIER-33),
+  the 1D-rail/B4.3 story (section 3 -- mass-blind-numerator/mass-aware-divisor mechanism,
+  mass-aware remedy arm +0.1158 +/- 0.0136 above band, censored, production flip a fresh [RULE]),
+  and the morning docket's author items (section 4 -- 4 primary [RULE] items plus 3 secondary
+  [RULE] items bundled under (v), 7 [RULE] asks total, none actioned). Runner-9 (B8.2 S3, stage
+  LADDER at filing) was running throughout and its work root was not touched. Information only --
+  no approval, default change, STOP lift, or arm launch. Ledger row #276.
+
 ## Open items carried forward
 
 - T1.2 needs the hier_s0_driver.py --theta_phi_divisor CLI flag (regression item R13) before it
