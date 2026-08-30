@@ -1622,7 +1622,15 @@ def precompute_completeness_population_volume(
 # multiprocessing workers under production dispatch — increments land in the
 # worker process, not the parent; the decisive engagement evidence is the
 # per-term ln L diagnostics (PA-HIER-23), never this counter alone.
-_THETA_HOOK_COUNTERS: dict[str, int] = {"site_2_1": 0, "site_2_2": 0, "site_2_3": 0}
+_THETA_HOOK_COUNTERS: dict[str, int] = {
+    "site_2_1": 0,
+    "site_2_2": 0,
+    "site_2_3": 0,
+    # [HIER] site 2.3phi (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md section 2.2,
+    # row #255 tree 2 node T1.1): the theta-consistent no-BH phi divisor
+    # ratio rho(theta). Incremented once per (h) pass when engaged.
+    "site_2_3_phi": 0,
+}
 
 
 def _theta_hook_count(site: str) -> None:
@@ -2598,6 +2606,19 @@ def write_selection_table_json(
     sigma_phi: float,
     sigma_4d: float,
     directory: str = ".",
+    # [HIER] site 2.3phi instrumentation (PHYSICS_CHANGE_THETA_DIVISOR_
+    # 20260830.md section 2.2, row #255 tree 2 node T1.1). None (default) =
+    # theta_phi_divisor="off" or the theta=(0,1) literal skip -- byte-
+    # identical JSON (no new keys written), matching every pre-existing call.
+    sigma_phi_theta: float | None = None,
+    sigma_phi_smear_truth: float | None = None,
+    rho_theta: float | None = None,
+    kappa_smear_over_point: float | None = None,
+    n_degenerate_rows: float | None = None,
+    w_share_degenerate: float | None = None,
+    theta_b: float | None = None,
+    theta_s: float | None = None,
+    theta_phi_divisor: str | None = None,
 ) -> str:
     r"""P4 banked source (PREREGISTRATION_TILT_BATTERY.md §2, N-2(J)).
 
@@ -2619,6 +2640,20 @@ def write_selection_table_json(
         sigma_4d: Global with-BH-mass catalogue selection sum Sigma^4D(h).
         directory: Output directory (default: the current working directory,
             i.e. the run's working directory).
+        sigma_phi_theta: [HIER] site 2.3phi (optional): the registered
+            theta-consistent divisor ``Sigma_phi_reg(theta;h)`` actually
+            consumed at :5215-5219 when engaged. ``None`` omits the key.
+        sigma_phi_smear_truth: The site-2.3phi ``(0,1)`` normaliser pass
+            ``Sigma_phi_smear((0,1);h)`` (section 2.1).
+        rho_theta: The per-node ratio ``rho(theta;h)`` (section 2.3).
+        kappa_smear_over_point: ``Sigma_phi_smear((0,1);h)/Sigma_phi_point(h)``
+            (section 5.5) -- a REPORTED diagnostic, never a divisor.
+        n_degenerate_rows: Count of degenerate transformed windows at this
+            node (section 2.4).
+        w_share_degenerate: Their total ``w_g``-share of the eligible pool.
+        theta_b: The node's theta_b (recorded for T1.2 gate scoring from files).
+        theta_s: The node's theta_s.
+        theta_phi_divisor: The node's ``theta_phi_divisor`` flag value.
 
     Returns:
         The path written.
@@ -2626,19 +2661,37 @@ def write_selection_table_json(
     obj = path_a_mixture_objects(beta_G_phi, beta_Gbar_phi, sigma_phi, sigma_4d)
     h_label = str(np.round(h, 4)).replace(".", "_")
     path = os.path.join(directory, f"selection_tables_h_{h_label}.json")
+    payload: dict[str, float | str] = {
+        "h": h,
+        "beta_G_phi": beta_G_phi,
+        "beta_Gbar_phi": beta_Gbar_phi,
+        "sigma_phi": sigma_phi,
+        "sigma_4d": sigma_4d,
+        "r_Malm": obj["r_Malm"],
+    }
+    # [HIER] site 2.3phi instrumentation: only written when engaged (None ==
+    # off / literal-skip), so the payload is byte-identical (same key set)
+    # whenever the divisor is off -- R1/R2/regression-item byte-identity.
+    if sigma_phi_theta is not None:
+        payload["sigma_phi_theta"] = sigma_phi_theta
+    if sigma_phi_smear_truth is not None:
+        payload["sigma_phi_smear_truth"] = sigma_phi_smear_truth
+    if rho_theta is not None:
+        payload["rho_theta"] = rho_theta
+    if kappa_smear_over_point is not None:
+        payload["kappa_smear_over_point"] = kappa_smear_over_point
+    if n_degenerate_rows is not None:
+        payload["n_degenerate_rows"] = n_degenerate_rows
+    if w_share_degenerate is not None:
+        payload["w_share_degenerate"] = w_share_degenerate
+    if theta_b is not None:
+        payload["theta_b"] = theta_b
+    if theta_s is not None:
+        payload["theta_s"] = theta_s
+    if theta_phi_divisor is not None:
+        payload["theta_phi_divisor"] = theta_phi_divisor
     with open(path, "w") as sel_file:
-        json.dump(
-            {
-                "h": h,
-                "beta_G_phi": beta_G_phi,
-                "beta_Gbar_phi": beta_Gbar_phi,
-                "sigma_phi": sigma_phi,
-                "sigma_4d": sigma_4d,
-                "r_Malm": obj["r_Malm"],
-            },
-            sel_file,
-            indent=2,
-        )
+        json.dump(payload, sel_file, indent=2)
     return path
 
 
@@ -3036,6 +3089,283 @@ def precompute_global_catalog_selection(
     return global_table
 
 
+def _phi_divisor_kernel_pass(
+    z_g: npt.NDArray[np.float64],
+    z_err_g: npt.NDArray[np.float64],
+    w_g: npt.NDArray[np.float64],
+    host_pixels: npt.NDArray[np.int64],
+    completeness: CompletenessModel,
+    h: float,
+    phi_z_grid: npt.NDArray[np.float64],
+    phi_s_grid: npt.NDArray[np.float64],
+    theta_b: float,
+    theta_s: float,
+    *,
+    n_quad: int = 50,
+    chunk_size: int = 200_000,
+) -> tuple[float, int, float]:
+    r"""One theta-node pass of the site-2.3phi kernel sum.
+
+    [HIER] PHYSICS_CHANGE_THETA_DIVISOR_20260830.md section 2.1 (row #255,
+    tree 2 node T1.1). Computes ``sum_{g eligible} w_g * S_tilde_g(theta;h)``
+    with the SAME per-host kernel form as the site-2.2 numerator
+    (``single_host_likelihood_batch``, :7117-7208; the C7-core kernel
+    ``N(z; z_g^theta, sigma_g^theta) * f_k(g)(z;h) * dVc/dz(z;h) / (1+z)``, the
+    +/-4 sigma window, the 1e-6 floor, GL-50 quadrature) — NOT the
+    theta-INERT point evaluation and NOT the pre-C7 bare smear branch of
+    :func:`_smeared_global_pdet_expectation` (section 1g, disclosed and left
+    untouched). ``S_bar_phi`` is read off ``phi_z_grid``/``phi_s_grid`` by
+    plain (endpoint-clamped) ``np.interp``, the same table-object convention
+    :func:`precompute_global_catalog_selection`'s phi branch uses.
+
+    A degenerate transformed window (``hi <= lo``, only possible at ``b < 0``,
+    section 2.4) contributes exactly ``0`` (zero physical support => zero
+    survival mass) and is counted, never integrated.
+
+    Row-chunked over the ACTIVE (non-degenerate) rows only, for memory
+    (mirrors :func:`_smeared_global_pdet_expectation` and the harness's
+    ``_KERNEL_SMEAR_CHUNK`` precedent, correspondence_1d.py:1248-1345): each
+    row's contribution depends only on its own window/nodes, so the final
+    reduction is a single ``np.sum`` over the completed per-row array,
+    independent of ``chunk_size`` (regression R8).
+
+    Args:
+        z_g: Eligible-row redshifts (UNSHIFTED), shape ``(n,)``.
+        z_err_g: Eligible-row RAW catalogue redshift errors (before the s
+            scale and the PV fold), shape ``(n,)``.
+        w_g: Eligible-row rate weights ``R_eff_per_mbh(M_g)/(1+z_g)``.
+        host_pixels: HEALPix pixel index per row (:func:`_host_pixels`).
+        completeness: Per-pixel completeness model.
+        h: Dimensionless Hubble parameter.
+        phi_z_grid: ``S_bar_phi`` table's z-grid for this ``h``.
+        phi_s_grid: ``S_bar_phi`` table's survival values for this ``h``.
+        theta_b: Affine photo-z bias offset.
+        theta_s: Affine photo-z scale.
+        n_quad: Gauss-Legendre order (default 50, GL-50).
+        chunk_size: Row-chunk size for the active-row loop.
+
+    Returns:
+        ``(sigma_phi_smear, n_degenerate_rows, w_degenerate)`` — the kernel
+        sum, the degenerate-row count, and their total ``w_g`` weight.
+
+    References:
+        Ma, Hu & Huterer (2006), arXiv:astro-ph/0506614, sec. 2.
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7).
+        Gray et al. (2020), arXiv:1908.06050, Eq. (A.10).
+    """
+    x_nodes, x_weights = roots_legendre(n_quad)
+    x_nodes = np.asarray(x_nodes, dtype=np.float64)
+    x_weights = np.asarray(x_weights, dtype=np.float64)
+
+    # Section 2.1: sigma_pv,g from the UNSHIFTED z_g, s on the RAW catalogue
+    # error BEFORE the PV fold -- the same registered form and operation
+    # order as site 2.2 (:7117-7129).
+    sigma_z_pv = (1.0 + z_g) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+    z_g_theta = z_g + theta_b * (1.0 + z_g)
+    sigma_g_theta = np.sqrt((theta_s * z_err_g) ** 2 + sigma_z_pv**2)
+    lo = np.maximum(z_g_theta - 4.0 * sigma_g_theta, 1e-6)
+    hi = z_g_theta + 4.0 * sigma_g_theta
+    degenerate = hi <= lo
+    n_degenerate = int(np.count_nonzero(degenerate))
+    w_degenerate = float(np.sum(w_g[degenerate])) if n_degenerate else 0.0
+
+    idx_active = np.nonzero(~degenerate)[0]
+    m = idx_active.size
+    contrib = np.zeros(m, dtype=np.float64)
+    for start in range(0, m, chunk_size):
+        sl = slice(start, min(start + chunk_size, m))
+        rows = idx_active[sl]
+        lo_a = lo[rows]
+        hi_a = hi[rows]
+        zc_a = z_g_theta[rows]
+        se_a = sigma_g_theta[rows]
+        pix_a = host_pixels[rows]
+
+        z_nodes = _batched_gl_nodes(lo_a, hi_a, x_nodes)
+        gauss = _gaussian_pdf(z_nodes, zc_a[:, None], se_a[:, None])
+        w_pop = (
+            np.asarray(comoving_volume_element(z_nodes.reshape(-1), h=h), dtype=np.float64)
+            / (1.0 + z_nodes.reshape(-1))
+        ).reshape(z_nodes.shape)
+        f_host = _completeness_at_host_nodes(completeness, z_nodes, pix_a, h)
+        zoa = ~np.any(f_host > 0.0, axis=1)
+        if bool(np.any(zoa)):
+            f_host = f_host.copy()
+            f_host[zoa, :] = 1.0
+        kern = gauss * f_host * w_pop
+        z_row = _batched_gl_reduce(lo_a, hi_a, x_weights, kern)
+        s_phi_nodes = np.interp(z_nodes, phi_z_grid, phi_s_grid)
+        numer = _batched_gl_reduce(lo_a, hi_a, x_weights, kern * s_phi_nodes)
+        z_row_safe = np.where(z_row > 0.0, z_row, 1.0)
+        s_tilde = np.where(z_row > 0.0, numer / z_row_safe, 0.0)
+        contrib[sl] = w_g[rows] * s_tilde
+
+    return float(np.sum(contrib)), n_degenerate, w_degenerate
+
+
+def precompute_phi_divisor_theta_ratio(
+    h_values: list[float],
+    galaxy_catalog: GalaxyCatalogueHandler,
+    completeness: CompletenessModel,
+    phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    *,
+    theta_b: float,
+    theta_s: float,
+    n_quad: int = 50,
+    chunk_size: int = 200_000,
+) -> dict[float, dict[str, float]]:
+    r"""[HIER] site 2.3phi: the theta-consistent no-BH divisor ratio ``rho(theta)``.
+
+    [PHYSICS] PHYSICS_CHANGE_THETA_DIVISOR_20260830.md sections 2.1-2.4 (row
+    #255, tree 2 node T1.1). The forensic (B1_1_S0A_DEFECT_FORENSIC_20260829.md,
+    mechanism (i)) localised the S0-A b-axis non-null to the no-BH catalogue
+    divisor Sigma^phi carrying no theta-dependence in any BUILT form
+    (:func:`precompute_global_catalog_selection`'s phi branch, :2906-2915,
+    :3022), while the site-2.2 numerator DOES reparametrize under theta. This
+    function restores the theta-dependence as a per-``(h, theta)`` SCALAR
+    ratio to the stored point table, computed EXACTLY (not to first order):
+
+    .. math::
+
+        \rho(\theta; h) = \frac{\Sigma^\phi_\mathrm{smear}(\theta; h)}
+            {\Sigma^\phi_\mathrm{smear}((0,1); h)}, \qquad
+        \Sigma^\phi_\mathrm{smear}(\theta; h) = \sum_{g\ \mathrm{eligible}}
+            w_g\, \tilde S_g(\theta; h),
+
+    with :math:`\tilde S_g(\theta;h)` the theta-consistent per-galaxy
+    survival — the SAME C7-core host-z kernel the site-2.2 numerator
+    integrates against (:func:`_phi_divisor_kernel_pass`), evaluated on the
+    galaxy's OWN transformed window. Two full pool passes are performed per
+    ``h`` (the theta pass and the ``(0,1)`` normaliser pass); the caller forms
+    the registered divisor ``Sigma_phi_reg(theta;h) = Sigma_phi_point(h) *
+    rho(theta;h)``, so the object returned here is deliberately the RATIO,
+    never a replacement table (section 2.3: dividing a banked node's
+    ``L_cat,i(theta)`` by this scalar is algebraically identical to
+    re-evaluating with the registered divisor — exact, not a linearisation).
+
+    Eligibility (decision D2): identical mask to
+    :func:`precompute_global_catalog_selection`'s phi branch and to
+    ``Sigma^4D`` — ``z_g < z_max(h)`` (read off ``phi_survival_table``'s own
+    capped z-grid domain, so no separate ``z_max_cap`` argument is needed)
+    with finite, positive source-frame mass. The weights ``w_g`` are the
+    IDENTICAL rate weights.
+
+    Args:
+        h_values: Hubble parameter values to evaluate.
+        galaxy_catalog: Loaded catalogue handler (same rows the phi-point
+            divisor sums over).
+        completeness: Per-pixel completeness model (the C7-core ``f_k``
+            accessor site 2.2 uses).
+        phi_survival_table: Output of :func:`precompute_phi_marginal_survival`
+            (``h -> (z_grid, S_bar_phi(z_grid))``); its domain fixes the
+            eligibility ``z_max(h)``.
+        theta_b: Affine photo-z bias offset (Ma, Hu & Huterer 2006, sec. 2).
+        theta_s: Affine photo-z scale.
+        n_quad: Gauss-Legendre order (default 50, GL-50, matching site 2.2).
+        chunk_size: Row-chunk size (memory only; bit-identical sums for any
+            chunk size, regression R8).
+
+    Returns:
+        ``h -> {"sigma_phi_smear_theta", "sigma_phi_smear_truth", "rho",
+        "n_degenerate_rows", "w_share_degenerate"}``.
+
+    References:
+        Ma, Hu & Huterer (2006), arXiv:astro-ph/0506614, sec. 2.
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7).
+        Gray et al. (2020), arXiv:1908.06050, Eq. (29).
+        B1_1_S0A_DEFECT_FORENSIC_20260829.md (mechanism (i), E10/E11/E20).
+    """
+    _validate_theta(theta_b, theta_s)
+    catalog = galaxy_catalog.reduced_galaxy_catalog
+    if InternalCatalogColumns.REDSHIFT_ERROR not in catalog.columns:
+        raise ValueError(
+            "precompute_phi_divisor_theta_ratio requires the catalogue "
+            "REDSHIFT_MEASUREMENT_ERROR column (the site-2.3phi kernel width)."
+        )
+    z_all = np.asarray(
+        catalog[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64), dtype=np.float64
+    )
+    M_all = np.asarray(
+        catalog[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64), dtype=np.float64
+    )
+    z_err_all = np.asarray(
+        catalog[InternalCatalogColumns.REDSHIFT_ERROR].to_numpy(dtype=np.float64), dtype=np.float64
+    )
+    phi_s_all = np.asarray(
+        catalog[InternalCatalogColumns.PHI_S].to_numpy(dtype=np.float64), dtype=np.float64
+    )
+    theta_s_col_all = np.asarray(
+        catalog[InternalCatalogColumns.THETA_S].to_numpy(dtype=np.float64), dtype=np.float64
+    )
+
+    result: dict[float, dict[str, float]] = {}
+    for h in h_values:
+        z_grid, s_phi_grid = phi_survival_table[h]
+        z_max = float(z_grid[-1])
+        # Decision D2: the SAME eligibility mask precompute_global_catalog_
+        # selection's phi branch applies (:2890) -- the table's own domain
+        # already carries the run's z_max_cap.
+        eligible = (z_all < z_max) & np.isfinite(M_all) & (M_all > 0.0)
+        z_g = z_all[eligible]
+        z_err_g = z_err_all[eligible]
+        M_g = M_all[eligible]
+        w_g = np.asarray(R_eff_per_mbh(M_g), dtype=np.float64) / (1.0 + z_g)
+        host_pixels = _host_pixels(completeness, phi_s_all[eligible], theta_s_col_all[eligible])
+
+        sigma_theta, n_deg_theta, w_deg_theta = _phi_divisor_kernel_pass(
+            z_g,
+            z_err_g,
+            w_g,
+            host_pixels,
+            completeness,
+            h,
+            z_grid,
+            s_phi_grid,
+            theta_b,
+            theta_s,
+            n_quad=n_quad,
+            chunk_size=chunk_size,
+        )
+        sigma_truth, _n_deg_truth, _w_deg_truth = _phi_divisor_kernel_pass(
+            z_g,
+            z_err_g,
+            w_g,
+            host_pixels,
+            completeness,
+            h,
+            z_grid,
+            s_phi_grid,
+            0.0,
+            1.0,
+            n_quad=n_quad,
+            chunk_size=chunk_size,
+        )
+        w_total = float(np.sum(w_g))
+        rho = sigma_theta / sigma_truth if sigma_truth > 0.0 else 0.0
+        w_share_degenerate = (w_deg_theta / w_total) if w_total > 0.0 else 0.0
+        result[h] = {
+            "sigma_phi_smear_theta": sigma_theta,
+            "sigma_phi_smear_truth": sigma_truth,
+            "rho": rho,
+            "n_degenerate_rows": float(n_deg_theta),
+            "w_share_degenerate": w_share_degenerate,
+        }
+        _LOGGER.info(
+            "site 2.3phi(h=%.4f, theta=(%.6g,%.6g)): Sigma_phi_smear(theta)=%.7g, "
+            "Sigma_phi_smear(0,1)=%.7g, rho=%.7g, n_degenerate=%d, "
+            "w_share_degenerate=%.4e",
+            h,
+            theta_b,
+            theta_s,
+            sigma_theta,
+            sigma_truth,
+            rho,
+            n_deg_theta,
+            w_share_degenerate,
+        )
+    return result
+
+
 def _log_sigma_4d_mass_band_shares(
     contributions: npt.NDArray[np.float64],
     M_g: npt.NDArray[np.float64],
@@ -3312,6 +3642,27 @@ class BayesianStatistics:
     # are inert plumbing.
     _mass_filter_geometry: str = "linear"
     _mass_filter_k: float = 1.5
+    # [HIER] site 2.3phi theta-consistent no-BH divisor instrument
+    # (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md, row #255 tree 2 node T1.1).
+    # "off" (default, PRODUCTION, byte-identical): the no-BH catalogue
+    # divisor stays Sigma_phi_point (or Sigma^3D under catalogue_global_
+    # selection="s3d") -- no code path change. "on" arms the theta-consistent
+    # ratio; at theta=(0,1) the literal skip applies (GATE T-ID, no floating
+    # operation performed). Single read site: the global_denom_no_bh branch
+    # in p_Di.
+    _theta_phi_divisor: str = "off"
+    # Sky-cone-radius instrument flag (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md
+    # §2.5): decouples the sky search radius from the (now-mass-only)
+    # mass_filter_k. Default 1.5 matches the pre-flag sigma_multiplier
+    # literal -- byte-identical. Single read site: the sigma_multiplier
+    # argument of get_possible_hosts_from_ball_tree.
+    _sky_cone_k: float = 1.5
+    # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
+    # guard, not a physics gate). None (default) => OFF, byte-identical: no
+    # computed value is read or written differently. A directory path arms a
+    # READ-ONLY per-(event, candidate) diagnostic serialiser -- see
+    # B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md §6.
+    _candidate_dump_dir: str | None = None
 
     def __init__(self) -> None:
         self.h_values = []
@@ -3381,6 +3732,19 @@ class BayesianStatistics:
         # "log" is the ln-space re-expression, not a production posterior.
         self._mass_filter_geometry: str = "linear"
         self._mass_filter_k: float = 1.5
+        # [HIER] site 2.3phi theta-consistent no-BH divisor instrument (row
+        # #255 tree 2 node T1.1): "off" (default) = production, byte-identical.
+        self._theta_phi_divisor: str = "off"
+        # Sky-cone-radius instrument flag (same reference): default 1.5
+        # matches the pre-flag sigma_multiplier literal, byte-identical.
+        self._sky_cone_k: float = 1.5
+        # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2): None (default)
+        # => production path, byte-identical (GATE BI). See evaluate()'s
+        # candidate_dump_dir parameter.
+        self._candidate_dump_dir = None
+        self._candidate_dump_rows: list[dict[str, object]] = []
+        self._candidate_dump_event_rows: list[dict[str, object]] = []
+        self._candidate_dump_warned: bool = False
 
     def evaluate(
         self,
@@ -3554,6 +3918,15 @@ class BayesianStatistics:
         # default pairing of both new flags is byte-identical to the
         # pre-flag path (same reference as mass_filter_geometry).
         mass_filter_k: float = 1.5,
+        # Sky-cone-radius instrument flag (PHYSICS_CHANGE_THETA_DIVISOR_
+        # 20260830.md §2.5, row #255 tree 2 node T1.1): decouples the sky
+        # search radius from mass_filter_k (which after B5.1 already governs
+        # ONLY the mass window). Default 1.5 matches the pre-flag
+        # sigma_multiplier literal at the get_possible_hosts_from_ball_tree
+        # call site -- byte-identical mask, candidate list and every
+        # downstream value. Purely plumbing: validated (finite, > 0) and read
+        # at exactly one site.
+        sky_cone_k: float = 1.5,
         # [HIER] θ-hook (C1, PHYSICS_CHANGE_THETA_HOOK_20260828.md, ledger row
         # #216): affine photo-z systematic θ = (b, s) — z̃ = z + b(1+z),
         # σ̃_eff = s·σ_eff at estimator sites 2.1/2.2/2.3 (Ma, Hu & Huterer
@@ -3567,6 +3940,26 @@ class BayesianStatistics:
         # smear_global_selection=True (the registered site is the smeared
         # kernel).
         theta_sites: str = "all",
+        # [HIER] site 2.3phi (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2,
+        # row #255 tree 2 node T1.1): the theta-consistent no-BH divisor
+        # ratio ρ(θ). "off" (default) is byte-identical -- no code path
+        # change. "on" arms the divisor; INDEPENDENT of theta_sites (composes
+        # with "2.2" for the CoR-P/CoR-M form of record) and valid with
+        # smear_global_selection=False. At θ=(0,1) the literal skip applies
+        # (GATE T-ID). Guards: "on" with catalogue_global_selection resolving
+        # to "s3d", or with normalization_mode != "absolute_marginal", raises.
+        theta_phi_divisor: str = "off",
+        # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
+        # guard, not a physics gate; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md
+        # §6). None (default) is byte-identical -- no code path change, no
+        # value read or written differently (GATE BI). When set to a directory
+        # path, a READ-ONLY per-(event, candidate) diagnostic serialiser writes
+        # per_candidate_h_<label>.csv and per_event_h_<label>.csv there, built
+        # entirely from state p_Di already computed for a normal run (the
+        # candidate_hosts lists, posterior_data_with_bh_mass, the phi-survival
+        # table, the diagnostic row); it never writes into anything the
+        # likelihood consumes.
+        candidate_dump_dir: str | None = None,
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3582,6 +3975,11 @@ class BayesianStatistics:
         if not _h_list:
             raise ValueError("h_values must contain at least one value")
         self.catalog_only = catalog_only
+        # INSTRUMENTATION (T2.2, row #255 A10): None => byte-identical, no
+        # directory created, nothing collected or written below.
+        self._candidate_dump_dir = candidate_dump_dir
+        if self._candidate_dump_dir is not None:
+            os.makedirs(self._candidate_dump_dir, exist_ok=True)
         # [HIER] θ-hook (C1/C2): validate, then store for p_Di's site-2.2
         # dispatch and the site-2.3 precompute below. The identity default
         # stores (0.0, 1.0, "all") and engages nothing.
@@ -3794,6 +4192,37 @@ class BayesianStatistics:
         # get_possible_hosts_from_ball_tree, not here.
         self._mass_filter_geometry = str(mass_filter_geometry)
         self._mass_filter_k = float(mass_filter_k)
+        # Sky-cone-radius instrument flag (PHYSICS_CHANGE_THETA_DIVISOR_
+        # 20260830.md §2.5): guard pattern, not a silent no-op.
+        self._sky_cone_k = float(sky_cone_k)
+        if not (self._sky_cone_k > 0.0) or not np.isfinite(self._sky_cone_k):
+            raise ValueError(f"sky_cone_k must be finite and > 0, got {sky_cone_k}")
+        # [HIER] site 2.3phi theta-consistent no-BH divisor instrument
+        # (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2, row #255 tree 2 node
+        # T1.1). Guard pattern: "on" requires a phi table to transform
+        # (catalogue_global_selection resolving to "phi", i.e.
+        # normalization_mode="absolute_marginal", which precompute_
+        # global_catalog_selection's phi branch also requires) -- checked
+        # here so a misconfiguration raises at setup, not silently no-ops.
+        _theta_phi_div = str(theta_phi_divisor)
+        if _theta_phi_div not in ("off", "on"):
+            raise ValueError(f"theta_phi_divisor must be 'off' or 'on', got {theta_phi_divisor!r}")
+        if _theta_phi_div == "on":
+            if self._catalogue_global_selection != "phi":
+                raise ValueError(
+                    "theta_phi_divisor='on' requires catalogue_global_selection "
+                    "to resolve to 'phi' (site 2.3phi transforms the phi-"
+                    f"marginal divisor); resolved to "
+                    f"{self._catalogue_global_selection!r} (no phi table to "
+                    "transform)"
+                )
+            if normalization_mode != "absolute_marginal":
+                raise ValueError(
+                    "theta_phi_divisor='on' requires normalization_mode="
+                    "'absolute_marginal' (no phi objects are built otherwise); "
+                    f"got {normalization_mode!r}"
+                )
+        self._theta_phi_divisor = _theta_phi_div
         # Prod2d closure counterfactual instrument (results/
         # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1,
         # P8): validated here the same way selection_in_completion_numerator
@@ -4207,6 +4636,12 @@ class BayesianStatistics:
         _beta_G_phi_table: dict[float, float] = {}
         _beta_Gbar_phi_table: dict[float, float] = {}
         _global_cat_selection_phi: dict[float, float] = {}
+        # [HIER] site 2.3phi (row #255 tree 2 node T1.1): stays empty unless
+        # theta_phi_divisor="on" AND theta != (0,1) -- the consumer (p_Di)
+        # falls back to _global_cat_selection_phi (the point table) whenever
+        # this dict has no entry for the current h (GATE T-ID literal skip,
+        # and the "off" default).
+        _global_cat_selection_phi_theta: dict[float, float] = {}
         _use_phi_selection = normalization_mode == "absolute_marginal"
         if _use_phi_selection:
             # MINOR-1 (row #118): the frozen-g_frac counterfactual re-enters the
@@ -4240,6 +4675,36 @@ class BayesianStatistics:
                 smear_sigma_z=False,
                 phi_survival_table=_phi_survival_table,
             )
+            # [HIER] site 2.3phi (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md
+            # §2.2, row #255 tree 2 node T1.1): theta-consistent no-BH
+            # divisor ratio. INDEPENDENT of theta_sites; engages only when
+            # armed AND theta != (0,1). At theta=(0,1) the literal skip
+            # applies (GATE T-ID) -- _global_cat_selection_phi_theta stays
+            # empty and the consumer (p_Di) falls back to the stored point
+            # table object itself, no floating operation performed.
+            _theta_phi_engaged = self._theta_phi_divisor == "on" and (
+                self._theta_b != 0.0 or self._theta_s != 1.0
+            )
+            _phi_divisor_ratio_table: dict[float, dict[str, float]] = {}
+            if _theta_phi_engaged:
+                _theta_hook_count("site_2_3_phi")
+                _phi_divisor_ratio_table = precompute_phi_divisor_theta_ratio(
+                    h_values=_h_list,
+                    galaxy_catalog=galaxy_catalog,
+                    completeness=completeness,
+                    phi_survival_table=_phi_survival_table,
+                    theta_b=self._theta_b,
+                    theta_s=self._theta_s,
+                )
+                for _h_r in _h_list:
+                    _global_cat_selection_phi_theta[_h_r] = (
+                        _global_cat_selection_phi[_h_r] * _phi_divisor_ratio_table[_h_r]["rho"]
+                    )
+            elif self._theta_phi_divisor == "on":
+                _LOGGER.info(
+                    "site 2.3phi armed, identity theta, divisor = point table "
+                    "(theta=(0,1), GATE T-ID literal skip)."
+                )
             for _h_phi in _h_list:
                 _log_path_a_selection_objects(
                     _h_phi,
@@ -4259,12 +4724,35 @@ class BayesianStatistics:
                 # scored from files, not log-line scraping. Always written
                 # whenever the phi-selection objects above are computed
                 # (independent of --sigma4d_mass_kernel/--eddington_m).
+                # [HIER] site 2.3phi instrumentation (section 2.2): so the
+                # T1.2 gates are scored from files, not log-line scraping.
+                _ratio_h = _phi_divisor_ratio_table.get(_h_phi)
+                _kappa_h: float | None = None
+                if _ratio_h is not None and _global_cat_selection_phi[_h_phi] > 0.0:
+                    _kappa_h = _ratio_h["sigma_phi_smear_truth"] / _global_cat_selection_phi[_h_phi]
                 write_selection_table_json(
                     _h_phi,
                     beta_G_phi=_beta_G_phi_table[_h_phi],
                     beta_Gbar_phi=_beta_Gbar_phi_table[_h_phi],
                     sigma_phi=_global_cat_selection_phi[_h_phi],
                     sigma_4d=_global_cat_denom_with_bh[_h_phi],
+                    sigma_phi_theta=_global_cat_selection_phi_theta.get(_h_phi),
+                    sigma_phi_smear_truth=(
+                        _ratio_h["sigma_phi_smear_truth"] if _ratio_h is not None else None
+                    ),
+                    rho_theta=(_ratio_h["rho"] if _ratio_h is not None else None),
+                    kappa_smear_over_point=_kappa_h,
+                    n_degenerate_rows=(
+                        _ratio_h["n_degenerate_rows"] if _ratio_h is not None else None
+                    ),
+                    w_share_degenerate=(
+                        _ratio_h["w_share_degenerate"] if _ratio_h is not None else None
+                    ),
+                    theta_b=(self._theta_b if self._theta_phi_divisor == "on" else None),
+                    theta_s=(self._theta_s if self._theta_phi_divisor == "on" else None),
+                    theta_phi_divisor=(
+                        self._theta_phi_divisor if self._theta_phi_divisor == "on" else None
+                    ),
                 )
 
         # generator_marginal precomputes: the draw-side calibration pair
@@ -4536,6 +5024,10 @@ class BayesianStatistics:
         self._beta_G_phi_table = _beta_G_phi_table
         self._beta_Gbar_phi_table = _beta_Gbar_phi_table
         self._global_cat_selection_phi = _global_cat_selection_phi
+        # [HIER] site 2.3phi (row #255 tree 2 node T1.1): the registered
+        # theta-consistent divisor Sigma_phi_reg(theta;h) = Sigma_phi_point(h)
+        # * rho(theta;h); empty unless armed AND theta != (0,1) (see above).
+        self._global_cat_selection_phi_theta = _global_cat_selection_phi_theta
         # The S_bar_phi(z;h) table itself (h -> (z_grid, S_bar_phi)). Read by
         # the N-2 counterfactual in p_Di through the SAME np.interp accessor
         # precompute_global_catalog_selection uses for Sigma^phi — one object,
@@ -4639,6 +5131,9 @@ class BayesianStatistics:
                     self.posterior_data = {}
                     self.posterior_data_with_bh_mass = {}
                     self._diagnostic_rows = []
+                    if self._candidate_dump_dir is not None:
+                        self._candidate_dump_rows = []
+                        self._candidate_dump_event_rows = []
 
                 self.p_D(
                     galaxy_catalog=galaxy_catalog,
@@ -4700,6 +5195,13 @@ class BayesianStatistics:
                 if self._diagnostic_rows:
                     diagnostic_csv_path = "simulations/diagnostics/event_likelihoods.csv"
                     self._write_diagnostic_csv(diagnostic_csv_path)
+
+                # T2.2 (row #255 A10) candidate-dump instrumentation: OFF by
+                # default (self._candidate_dump_dir is None), byte-identical.
+                if self._candidate_dump_dir is not None and (
+                    self._candidate_dump_rows or self._candidate_dump_event_rows
+                ):
+                    self._write_candidate_dump_csvs(self._candidate_dump_dir)
 
         # Write Fisher quality CSV (per D-12) — h-invariant, once per run
         self._write_fisher_quality_csv()
@@ -4800,6 +5302,202 @@ class BayesianStatistics:
 
         _LOGGER.info("Wrote %d diagnostic rows to %s", len(self._diagnostic_rows), csv_path)
 
+    def _collect_candidate_dump_rows(
+        self,
+        *,
+        detection_index: int,
+        candidate_hosts: list[HostGalaxy],
+        candidate_hosts_with_bh_mass: list[HostGalaxy],
+        detection_row: pd.Series,
+        galaxy_catalog: GalaxyCatalogueHandler,
+        completeness: CompletenessModel,
+        detection_probability_obj: SimulationDetectionProbability,
+    ) -> None:
+        """T2.2 (row #255 A10) read-only per-candidate diagnostic serialiser.
+
+        Builds the per-(event, candidate) and per-event dump rows of
+        B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md section 6.2, called AFTER
+        ``p_Di`` returns for this event. Reads only already-computed state
+        (``self.posterior_data_with_bh_mass``, ``self._phi_survival_table``,
+        ``self._diagnostic_rows``) — it never writes into anything the
+        likelihood consumes (GATE BI). Never raises: any failure is caught,
+        logged once, and the run proceeds with whatever rows were collected
+        before the failure (diagnostic-only, never affects the posterior).
+
+        Args:
+            detection_index: CRB row index of the detection (event_idx).
+            candidate_hosts: The 1D (no-BH) candidate ball for this event.
+            candidate_hosts_with_bh_mass: The 2D (with-BH mass filter) ball.
+            detection_row: The raw CRB row (for the ``z_true`` truth column
+                when present; NaN otherwise).
+            galaxy_catalog: Handler used to translate the true host position
+                for the ``is_true_host`` flag.
+            completeness: Completeness model for ``f_bar``/``f_k``.
+            detection_probability_obj: Survival-estimator object for the
+                per-candidate ``S_4D(z_g, M_g; h)`` diagnostic read.
+        """
+        try:
+            h = float(self.h)
+            det = self.detection
+            d_hat = float(det.d_L)
+            sigma_dL = float(det.d_L_uncertainty)
+
+            cand_by_idx: dict[int, HostGalaxy] = {
+                host.catalog_index: host for host in candidate_hosts
+            }
+            cand_by_idx.update({host.catalog_index: host for host in candidate_hosts_with_bh_mass})
+
+            _phi_table = getattr(self, "_phi_survival_table", {})
+            if h in _phi_table:
+                _z_phi_grid, _s_phi_grid = _phi_table[h]
+            else:
+                _z_phi_grid, _s_phi_grid = None, None
+
+            _translated: int | None = None
+            if det.host_galaxy_index >= 0:
+                _translated = galaxy_catalog.resolve_host_recovery_position(det.host_galaxy_index)
+
+            galaxy_likelihoods = self.posterior_data_with_bh_mass.get(GALAXY_LIKELIHOODS, {}).get(
+                detection_index, []
+            )
+            additional_likelihoods = self.posterior_data_with_bh_mass.get(
+                ADDITIONAL_GALAXIES_WITHOUT_BH_MASS, {}
+            ).get(detection_index, [])
+
+            def _emit(catalog_index: int, result_row: Sequence[float], batch: str) -> None:
+                host = cand_by_idx.get(catalog_index)
+                if host is None:
+                    return
+                z_g = float(host.z)
+                M_g = float(host.M)
+                N_g_used = float(result_row[0])
+                D_g = float(result_row[1])
+                w_g = float(_rate_weight(host))
+                if _z_phi_grid is not None and _s_phi_grid is not None:
+                    s_bar_phi_zg = float(np.interp(z_g, _z_phi_grid, _s_phi_grid))
+                else:
+                    s_bar_phi_zg = float("nan")
+                try:
+                    d_L_g = float(dist(z_g, h=h))
+                    s_4d_zg_mg = float(
+                        detection_probability_obj.detection_probability_with_bh_mass_interpolated(
+                            d_L_g, M_g * (1.0 + z_g), 0.0, 0.0, h=h
+                        )
+                    )
+                    u_g = (d_L_g - d_hat) / sigma_dL if sigma_dL > 0.0 else float("nan")
+                except Exception:
+                    s_4d_zg_mg = float("nan")
+                    u_g = float("nan")
+                self._candidate_dump_rows.append(
+                    {
+                        "event_idx": detection_index,
+                        "h": h,
+                        "catalog_index": int(catalog_index),
+                        "batch": batch,
+                        "z_g": z_g,
+                        "z_err_g": float(host.z_error),
+                        "M_g": M_g,
+                        "M_err_g": float(host.M_error),
+                        "phiS_g": float(host.phiS),
+                        "qS_g": float(host.qS),
+                        "w_g": w_g,
+                        "N_g_used": N_g_used,
+                        "D_g": D_g,
+                        "s_bar_phi_zg": s_bar_phi_zg,
+                        "s_4d_zg_mg": s_4d_zg_mg,
+                        "u_g": u_g,
+                        # Optional per section 6.2 (sky Fisher block Mahalanobis
+                        # distance) -- not computed by this hook; column kept
+                        # for schema stability (T2_2 schema test).
+                        "sky_mahalanobis": float("nan"),
+                        "is_true_host": bool(
+                            _translated is not None and catalog_index == _translated
+                        ),
+                    }
+                )
+
+            for catalog_index, result_row in galaxy_likelihoods:
+                _emit(catalog_index, result_row, "with_bh")
+            for catalog_index, result_row in additional_likelihoods:
+                _emit(catalog_index, result_row, "no_bh_only")
+
+            _diag = self._diagnostic_rows[-1] if self._diagnostic_rows else {}
+            z_true = float("nan")
+            try:
+                if "z_true" in detection_row.index:
+                    _zt = detection_row["z_true"]
+                    if _zt is not None and not (isinstance(_zt, float) and math.isnan(_zt)):
+                        z_true = float(_zt)
+            except Exception:
+                z_true = float("nan")
+
+            f_bar_z_true = float("nan")
+            f_k_z_true = float("nan")
+            if np.isfinite(z_true):
+                try:
+                    f_bar_z_true = float(completeness.f_bar(z_true, h=h))
+                    _pix = completeness.ang2pix(det.phi, det.theta)
+                    f_k_z_true = float(completeness.f_k(z_true, _pix, h=h))
+                except Exception:
+                    pass
+
+            self._candidate_dump_event_rows.append(
+                {
+                    "event_idx": detection_index,
+                    "h": h,
+                    "d_hat": d_hat,
+                    "sigma_dL": sigma_dL,
+                    "z_true": z_true,
+                    "host_galaxy_index": int(det.host_galaxy_index),
+                    "n_cand_no_bh": len(candidate_hosts),
+                    "n_cand_with_bh": len(candidate_hosts_with_bh_mass),
+                    "f_bar_z_true": f_bar_z_true,
+                    "f_k_z_true": f_k_z_true,
+                    "L_cat_no_bh": _diag.get("L_cat_no_bh", float("nan")),
+                    "B_num": _diag.get("B_num", float("nan")),
+                    "D_tilde_phi": _diag.get("D_tilde_phi", float("nan")),
+                }
+            )
+        except Exception:
+            if not self._candidate_dump_warned:
+                _LOGGER.warning(
+                    "candidate_dump_dir instrumentation raised for detection "
+                    "%d; further dump rows may be incomplete (diagnostic-only, "
+                    "never affects the posterior)",
+                    detection_index,
+                    exc_info=True,
+                )
+                self._candidate_dump_warned = True
+
+    def _write_candidate_dump_csvs(self, directory: str) -> None:
+        """Write the T2.2 per-candidate / per-event dump CSVs for the current h.
+
+        One overwrite write per h, matching the ``write_selection_table_json``
+        naming convention: ``per_candidate_h_<label>.csv`` /
+        ``per_event_h_<label>.csv``.
+
+        Args:
+            directory: Output directory (``candidate_dump_dir``).
+        """
+        h_label = str(np.round(self.h, 4)).replace(".", "_")
+        os.makedirs(directory, exist_ok=True)
+        if self._candidate_dump_rows:
+            cand_path = os.path.join(directory, f"per_candidate_h_{h_label}.csv")
+            pd.DataFrame(self._candidate_dump_rows).to_csv(cand_path, index=False)
+            _LOGGER.info(
+                "Wrote %d candidate-dump rows to %s",
+                len(self._candidate_dump_rows),
+                cand_path,
+            )
+        if self._candidate_dump_event_rows:
+            event_path = os.path.join(directory, f"per_event_h_{h_label}.csv")
+            pd.DataFrame(self._candidate_dump_event_rows).to_csv(event_path, index=False)
+            _LOGGER.info(
+                "Wrote %d event-dump rows to %s",
+                len(self._candidate_dump_event_rows),
+                event_path,
+            )
+
     def p_D(
         self,
         galaxy_catalog: GalaxyCatalogueHandler,
@@ -4866,7 +5564,7 @@ class BayesianStatistics:
                 z_max=z_max,
                 M_z=self.detection.M,
                 M_z_sigma=self.detection.M_uncertainty,
-                sigma_multiplier=1.5,  # type: ignore[arg-type]
+                sigma_multiplier=self._sky_cone_k,  # type: ignore[arg-type]
                 mass_filter_sigma=self._mass_filter_sigma,
                 mass_filter_geometry=self._mass_filter_geometry,
                 mass_filter_k=self._mass_filter_k,
@@ -4962,6 +5660,20 @@ class BayesianStatistics:
                 _n_dark_class += 1
                 _sum_ln_p_dark_no_bh += _ln_p_no_bh
                 _sum_ln_p_dark_with_bh += _ln_p_with_bh
+
+            # T2.2 (row #255 A10) candidate-dump instrumentation: OFF by
+            # default (self._candidate_dump_dir is None) -- this branch is
+            # never entered on the production path (GATE BI).
+            if self._candidate_dump_dir is not None:
+                self._collect_candidate_dump_rows(
+                    detection_index=int(index),
+                    candidate_hosts=candidate_hosts,
+                    candidate_hosts_with_bh_mass=candidate_hosts_with_bh_mass,
+                    detection_row=detection,
+                    galaxy_catalog=galaxy_catalog,
+                    completeness=completeness,
+                    detection_probability_obj=detection_probability_obj,
+                )
 
             _det_time = time.perf_counter() - _t_det
             _det_times.append(_det_time)
@@ -5212,8 +5924,19 @@ class BayesianStatistics:
             # the no-BH catalogue divisor Sigma^3D for Sigma^phi (the SAME
             # table Path A already builds for the weight chain, :3878). The
             # with-BH leg (global_denom_with_bh) is deliberately untouched.
+            # [HIER] site 2.3phi (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md
+            # §2.1-2.2, row #255 tree 2 node T1.1): when the theta-consistent
+            # divisor is armed AND engaged (theta != (0,1)),
+            # _global_cat_selection_phi_theta[h] holds the registered
+            # Sigma_phi_reg(theta;h) = Sigma_phi_point(h) * rho(theta;h); its
+            # ``.get`` falls through to the stored point-table VALUE itself
+            # (identity of object, no floating operation) whenever the dict
+            # has no entry for this h -- the "off" default and the GATE T-ID
+            # literal skip at theta=(0,1) are both this same fallback.
             global_denom_no_bh: float = (
-                self._global_cat_selection_phi.get(self.h, 0.0)
+                getattr(self, "_global_cat_selection_phi_theta", {}).get(
+                    self.h, self._global_cat_selection_phi.get(self.h, 0.0)
+                )
                 if getattr(self, "_catalogue_global_selection", "s3d") == "phi"
                 else self._global_cat_denom_no_bh.get(self.h, 0.0)
             )

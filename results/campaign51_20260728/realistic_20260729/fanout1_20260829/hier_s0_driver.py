@@ -331,6 +331,7 @@ def run_theta_node(
     theta_sites: str = "all",
     smear: str = "auto",
     config: str = "b0i",
+    candidate_dump_dir: str | None = None,
 ) -> tuple[Path, float]:
     """Evaluate one theta node (prereg §2.1 S0-A/S0-R row row; KW-Q1 reuses this
     for the FT config at h_values=(0.725, 0.735)).
@@ -349,6 +350,12 @@ def run_theta_node(
 
     ``config`` selects the venue's fixed flags (:data:`BC_*` for "b0i",
     :data:`FT_*` for "ft", B4.2 KW-Q1) -- see :data:`CONFIG_CHOICES`.
+
+    ``candidate_dump_dir`` (T2.2, row #255 tree 2 node T2.2; A10 =
+    instrumentation guard, not a physics gate) is forwarded verbatim to
+    ``run_mirror_seed_inprocess``/``BayesianStatistics.evaluate()``. ``None``
+    (default) is byte-identical (GATE BI); the CLI's ``--candidate-dump``
+    arms it with a per-node subdirectory (see :func:`main`).
     """
     theta_engaged = theta_b != 0.0 or theta_s != 1.0
     smear_flag = _resolve_smear(theta_engaged, theta_sites, smear)
@@ -367,6 +374,7 @@ def run_theta_node(
             "pass theta_sites='2.1' or '2.2' together with --smear off"
         )
     common_kwargs: dict[str, Any] = dict(
+        candidate_dump_dir=candidate_dump_dir,
         h_values=h_values,
         h_bounds=H_BOUNDS,
         theta_b=theta_b,
@@ -493,6 +501,7 @@ def run_arm_seed_s0a(
     config: str = "b0i",
     h_values: tuple[float, ...] = (H_GEN,),
     score_h: float | None = None,
+    candidate_dump_dir: str | None = None,
 ) -> list[NodeResult]:
     """S0-A: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.0 (truth-theta=(0,1)).
 
@@ -528,6 +537,13 @@ def run_arm_seed_s0a(
             theta_sites=theta_sites,
             smear=smear,
             config=config,
+            # T2.2 (row #255 A10): per-(seed, node) subdirectory so parallel
+            # cells never overwrite each other's per_candidate_h_*.csv.
+            candidate_dump_dir=(
+                str(Path(candidate_dump_dir) / f"seed{seed}_node{node}")
+                if candidate_dump_dir
+                else None
+            ),
         )
         wall = time.time() - t0
         ln_l = read_event_ln_l(diag_csv, read_h)
@@ -562,6 +578,7 @@ def run_arm_seed_s0r(
     config: str = "b0i",
     h_values: tuple[float, ...] = (H_GEN,),
     score_h: float | None = None,
+    candidate_dump_dir: str | None = None,
 ) -> list[NodeResult]:
     """S0-R: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.5 (DISCLOSED NULL, see module docstring).
 
@@ -592,6 +609,13 @@ def run_arm_seed_s0r(
             theta_sites=theta_sites,
             smear=smear,
             config=config,
+            # T2.2 (row #255 A10): per-(seed, node) subdirectory so parallel
+            # cells never overwrite each other's per_candidate_h_*.csv.
+            candidate_dump_dir=(
+                str(Path(candidate_dump_dir) / f"seed{seed}_node{node}")
+                if candidate_dump_dir
+                else None
+            ),
         )
         wall = time.time() - t0
         ln_l = read_event_ln_l(diag_csv, read_h)
@@ -1000,6 +1024,7 @@ def _run_one_seed_worker(
         str,
         tuple[float, ...],
         float | None,
+        str | None,
     ],
 ) -> Any:
     """Top-level (picklable) worker: run one seed's cells for the given arm.
@@ -1017,6 +1042,9 @@ def _run_one_seed_worker(
     h_values=(H_GEN,), score_h=None) with ``theta_sites``, ``smear``,
     ``config``, ``h_values``, ``score_h`` -- forwarded verbatim to
     run_arm_seed_s0a/s0r (S0-C ignores them, per its own "stays as is" scope).
+    Extended again (T2.2, row #255 A10, byte-identical at the trailing
+    ``None`` default) with ``candidate_dump_dir``, forwarded verbatim to
+    run_arm_seed_s0a/s0r (S0-C ignores it, same scope note as above).
     """
     (
         arm,
@@ -1030,6 +1058,7 @@ def _run_one_seed_worker(
         config,
         h_values,
         score_h,
+        candidate_dump_dir,
     ) = args
     if not mp.current_process()._identity:  # noqa: SLF001 -- see docstring above
         _pin_worker_affinity(cpu_budget)
@@ -1045,6 +1074,7 @@ def _run_one_seed_worker(
                 config=config,
                 h_values=h_values,
                 score_h=score_h,
+                candidate_dump_dir=candidate_dump_dir,
             )
         elif arm == "S0-R":
             results = run_arm_seed_s0r(
@@ -1057,6 +1087,7 @@ def _run_one_seed_worker(
                 config=config,
                 h_values=h_values,
                 score_h=score_h,
+                candidate_dump_dir=candidate_dump_dir,
             )
         elif arm == "S0-C":
             return {"seed": seed, "s0c": run_seed_s0c(seed, out_root, event_cap)}
@@ -1116,6 +1147,7 @@ def run_arm(
     config: str = "b0i",
     h_values: tuple[float, ...] = (H_GEN,),
     score_h: float | None = None,
+    candidate_dump_dir: str | None = None,
 ) -> dict[str, Any]:
     out_root.mkdir(parents=True, exist_ok=True)
     jobs = max(1, min(jobs, len(seeds)))
@@ -1133,6 +1165,7 @@ def run_arm(
             config,
             h_values,
             score_h,
+            candidate_dump_dir,
         )
         for seed in seeds
     ]
@@ -1542,6 +1575,18 @@ def main() -> int:
         "--h-nodes (single H_GEN node).",
     )
     ap.add_argument(
+        "--candidate-dump",
+        type=str,
+        default=None,
+        dest="candidate_dump",
+        help="T2.2 (row #255 tree 2 node T2.2; A10 = instrumentation guard, not a physics "
+        "gate; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md sec 6). Directory root for the "
+        "per-(event, candidate) diagnostic dump, forwarded to BayesianStatistics.evaluate()'s "
+        "candidate_dump_dir kwarg (per-seed-per-node subdirectories are created underneath). "
+        "Default (unset) is None -- BYTE-IDENTICAL, no dump files written (GATE BI). S0-C "
+        "ignores this flag (out of T2.2's registered scope).",
+    )
+    ap.add_argument(
         "--score-only",
         action="store_true",
         help="P0 completion (SYNTHESIS_DOCKET_1_20260829.md sec 2 B1 P0): compute the pooled "
@@ -1639,6 +1684,7 @@ def main() -> int:
         config=args.config,
         h_values=h_values,
         score_h=args.score_h,
+        candidate_dump_dir=args.candidate_dump,
     )
     result["smoke"] = bool(args.smoke)
     result["event_cap"] = event_cap

@@ -2787,6 +2787,20 @@ def run_mirror_seed_inprocess(
     theta_s: float = 1.0,
     theta_sites: str = "all",
     smear_global_selection: bool = False,
+    # [HIER] site 2.3phi theta-consistent no-BH divisor instrument
+    # (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2; row #255 tree 2 node
+    # T1.1). "off" (default) is byte-identical, forwarded verbatim to
+    # BayesianStatistics.evaluate(). INDEPENDENT of theta_sites -- composes
+    # with theta_sites="2.2" for the registered CoR-P/CoR-M-faithful form.
+    theta_phi_divisor: str = "off",
+    # Sky-cone-radius instrument flag (same reference, §2.5). 1.5 (default)
+    # is byte-identical to the pre-flag sigma_multiplier literal.
+    sky_cone_k: float = 1.5,
+    # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
+    # guard, not a physics gate; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md
+    # §6). Forwarded verbatim to BayesianStatistics.evaluate(). None
+    # (default) is byte-identical (GATE BI) -- pattern 0b308828.
+    candidate_dump_dir: str | None = None,
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
 
@@ -2895,6 +2909,22 @@ def run_mirror_seed_inprocess(
             (GATE PARITY) while off-truth nodes engage the smeared kernel
             (GATE ENG). Default ``False`` is byte-identical to every
             pre-existing call site.
+        theta_phi_divisor, sky_cone_k: Forwarded verbatim to
+            ``BayesianStatistics.evaluate()`` ([HIER] site 2.3phi,
+            PHYSICS_CHANGE_THETA_DIVISOR_20260830.md, row #255 tree 2 node
+            T1.1). Defaults ("off", 1.5) are byte-identical to every
+            pre-existing call site. NOTE: this function does not itself
+            derive a driver CLI surface for these two flags -- a caller
+            (e.g. ``hier_s0_driver.py``) wanting to arm the divisor from the
+            command line must add its own ``--theta_phi_divisor``/
+            ``--sky_cone_k`` arguments and thread them through to this call
+            (see the T1.1 implementation record's "driver gap" note).
+        candidate_dump_dir: Forwarded verbatim to
+            ``BayesianStatistics.evaluate()`` (T2.2, row #255 tree 2 node
+            T2.2; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md §6). ``None``
+            (default) is byte-identical to every pre-existing call site
+            (GATE BI). ``hier_s0_driver.py`` exposes this as
+            ``--candidate_dump_dir``.
     """
     import darksiren_emri.bayesian_inference.bayesian_statistics as _bs_mod
 
@@ -2963,6 +2993,12 @@ def run_mirror_seed_inprocess(
             theta_s=theta_s,
             theta_sites=theta_sites,
             smear_global_selection=smear_global_selection,
+            # [HIER] site 2.3phi passthrough (identity default => no-op).
+            theta_phi_divisor=theta_phi_divisor,
+            sky_cone_k=sky_cone_k,
+            # T2.2 (row #255 A10) candidate-dump instrumentation passthrough
+            # (identity default None => no-op, GATE BI).
+            candidate_dump_dir=candidate_dump_dir,
         )
         elapsed = time.time() - start
     finally:

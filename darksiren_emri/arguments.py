@@ -449,6 +449,51 @@ class Arguments:
         """
         return str(self._parsed_arguments.theta_sites)
 
+    @property
+    def theta_phi_divisor(self) -> str:
+        """[HIER] site 2.3phi theta-consistent no-BH divisor instrument
+        (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2; row #255 tree 2 node
+        T1.1). 'off' (default, PRODUCTION, byte-identical): the no-BH
+        catalogue divisor stays Sigma_phi_point (or Sigma^3D under
+        --catalogue_global_selection s3d). 'on' arms the theta-consistent
+        ratio rho(theta) at the divisor -- INDEPENDENT of --theta_sites (so
+        it composes with --theta_sites 2.2); at theta=(0,1) the literal skip
+        applies (GATE T-ID). Forwarded to
+        ``BayesianStatistics.evaluate()``'s ``theta_phi_divisor`` kwarg,
+        which raises if ``--catalogue_global_selection`` does not resolve to
+        'phi' or ``--normalization_mode`` is not 'absolute_marginal'.
+        """
+        return str(self._parsed_arguments.theta_phi_divisor)
+
+    @property
+    def sky_cone_k(self) -> float:
+        """Sky-cone-radius instrument flag (PHYSICS_CHANGE_THETA_DIVISOR_
+        20260830.md §2.5, same reference as ``theta_phi_divisor``). Decouples
+        the sky search radius from ``mass_filter_k`` (which after B5.1
+        already governs ONLY the mass window). Default 1.5 matches the
+        pre-flag ``sigma_multiplier`` literal at the
+        ``get_possible_hosts_from_ball_tree`` call site -- byte-identical
+        candidate list and every downstream value.
+        """
+        return float(self._parsed_arguments.sky_cone_k)
+
+    @property
+    def candidate_dump_dir(self) -> str | None:
+        """T2.2 (row #255 tree 2 node T2.2, A10) candidate-dump instrumentation.
+
+        None (default) is the production path and is BYTE-IDENTICAL to
+        pre-flag behaviour (GATE BI) -- nothing is read or written
+        differently. When set to a directory path, a READ-ONLY per-(event,
+        candidate) diagnostic serialiser writes
+        ``per_candidate_h_<label>.csv`` and ``per_event_h_<label>.csv``
+        there, built entirely from state ``p_Di`` already computes for a
+        normal run. See
+        results/campaign51_20260728/realistic_20260729/tree2_20260830/
+        B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md section 6.
+        """
+        val: str | None = self._parsed_arguments.candidate_dump_dir
+        return val
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -1183,6 +1228,52 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "(the registered site is the smeared global-selection kernel); "
             "evaluate() raises ValueError otherwise. Default 'all' matches "
             "the estimator's own default."
+        ),
+    )
+    parser.add_argument(
+        "--theta_phi_divisor",
+        type=str,
+        choices=["off", "on"],
+        default="off",
+        help=(
+            "[HIER] site 2.3phi theta-consistent no-BH divisor instrument "
+            "(PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2; row #255 tree "
+            "2 node T1.1). 'off' (default, PRODUCTION) is byte-identical -- "
+            "no code path change. 'on' arms the ratio rho(theta) at the "
+            "no-BH catalogue divisor; INDEPENDENT of --theta_sites (composes "
+            "with --theta_sites 2.2 for the registered form). At theta=(0,1) "
+            "the literal skip applies (GATE T-ID). Requires "
+            "--catalogue_global_selection to resolve to 'phi' and "
+            "--normalization_mode absolute_marginal; evaluate() raises "
+            "ValueError otherwise."
+        ),
+    )
+    parser.add_argument(
+        "--sky_cone_k",
+        type=float,
+        default=1.5,
+        help=(
+            "Sky-cone-radius instrument flag (PHYSICS_CHANGE_THETA_DIVISOR_"
+            "20260830.md §2.5, same reference as --theta_phi_divisor). "
+            "Decouples the sky search radius from --mass_filter_k (which "
+            "after B5.1 governs ONLY the mass window). Default 1.5 matches "
+            "the pre-flag sigma_multiplier literal, so the default pairing "
+            "is byte-identical to the pre-flag path. Must be finite and > 0."
+        ),
+    )
+    parser.add_argument(
+        "--candidate_dump_dir",
+        type=str,
+        default=None,
+        help=(
+            "INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = "
+            "instrumentation guard, not a physics gate). Default None = OFF, "
+            "byte-identical production path (GATE BI). When set to a "
+            "directory path, a READ-ONLY per-(event, candidate) diagnostic "
+            "serialiser writes per_candidate_h_<label>.csv and "
+            "per_event_h_<label>.csv there (see "
+            "B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md §6). Diagnostic "
+            "only -- never a production posterior."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)
