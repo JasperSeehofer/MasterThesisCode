@@ -2796,6 +2796,11 @@ def run_mirror_seed_inprocess(
     # Sky-cone-radius instrument flag (same reference, §2.5). 1.5 (default)
     # is byte-identical to the pre-flag sigma_multiplier literal.
     sky_cone_k: float = 1.5,
+    # [HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree 2
+    # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). Forwarded
+    # verbatim to ``BayesianStatistics.evaluate()``. "off" (default) is
+    # byte-identical to every pre-existing call site.
+    catalogue_leg_1d_mass_aware: str = "off",
     # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
     # guard, not a physics gate; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md
     # §6). Forwarded verbatim to BayesianStatistics.evaluate(). None
@@ -2925,6 +2930,12 @@ def run_mirror_seed_inprocess(
             (default) is byte-identical to every pre-existing call site
             (GATE BI). ``hier_s0_driver.py`` exposes this as
             ``--candidate_dump_dir``.
+        catalogue_leg_1d_mass_aware: Forwarded verbatim to
+            ``BayesianStatistics.evaluate()`` ([HIER T2.3], row #255 tree 2
+            node T2.3; PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2).
+            ``"off"`` (default) is byte-identical to every pre-existing call
+            site. ``hier_s0_driver.py`` exposes this as
+            ``--catalogue-leg-1d-mass-aware``.
     """
     import darksiren_emri.bayesian_inference.bayesian_statistics as _bs_mod
 
@@ -2996,6 +3007,9 @@ def run_mirror_seed_inprocess(
             # [HIER] site 2.3phi passthrough (identity default => no-op).
             theta_phi_divisor=theta_phi_divisor,
             sky_cone_k=sky_cone_k,
+            # [HIER T2.3] mass-aware 1D catalogue leg instrument passthrough
+            # (identity default "off" => no-op).
+            catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
             # T2.2 (row #255 A10) candidate-dump instrumentation passthrough
             # (identity default None => no-op, GATE BI).
             candidate_dump_dir=candidate_dump_dir,

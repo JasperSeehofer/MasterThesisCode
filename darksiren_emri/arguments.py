@@ -478,6 +478,22 @@ class Arguments:
         return float(self._parsed_arguments.sky_cone_k)
 
     @property
+    def catalogue_leg_1d_mass_aware(self) -> str:
+        """[HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree
+        2 node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). 'off'
+        (default, PRODUCTION, byte-identical): sites N1/D1/W1 in
+        ``bayesian_statistics.py`` are unchanged. 'on' replaces the
+        WITHOUT-BH catalogue numerator's per-candidate survival by
+        S_4D(d_L(z;h), M_g(1+z)), Sigma_4D as the global divisor and
+        alpha_G_phi as the mixture weight. Forwarded to
+        ``BayesianStatistics.evaluate()``'s ``catalogue_leg_1d_mass_aware``
+        kwarg, which raises unless ``--catalogue_numerator_survival`` and
+        ``--catalogue_global_selection`` both resolve to 'phi' and
+        ``--theta_phi_divisor`` is 'off'.
+        """
+        return str(self._parsed_arguments.catalogue_leg_1d_mass_aware)
+
+    @property
     def candidate_dump_dir(self) -> str | None:
         """T2.2 (row #255 tree 2 node T2.2, A10) candidate-dump instrumentation.
 
@@ -1259,6 +1275,24 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "after B5.1 governs ONLY the mass window). Default 1.5 matches "
             "the pre-flag sigma_multiplier literal, so the default pairing "
             "is byte-identical to the pre-flag path. Must be finite and > 0."
+        ),
+    )
+    parser.add_argument(
+        "--catalogue_leg_1d_mass_aware",
+        type=str,
+        choices=["off", "on"],
+        default="off",
+        help=(
+            "[HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 "
+            "tree 2 node T2.3; PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md "
+            "§2). 'off' (default, PRODUCTION) is byte-identical -- no code "
+            "path change. 'on' replaces the WITHOUT-BH catalogue numerator's "
+            "per-candidate survival S_bar_phi(z;h) by S_4D(d_L(z;h), "
+            "M_g(1+z)), Sigma_4D as the global divisor and alpha_G_phi as "
+            "the mixture weight. Requires --catalogue_numerator_survival and "
+            "--catalogue_global_selection to both resolve to 'phi' and "
+            "--theta_phi_divisor='off'; evaluate() raises ValueError "
+            "otherwise. Not a production posterior."
         ),
     )
     parser.add_argument(

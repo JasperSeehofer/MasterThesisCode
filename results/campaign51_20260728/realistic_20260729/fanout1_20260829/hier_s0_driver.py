@@ -309,19 +309,23 @@ def _node_dir_suffix(
     config: str,
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
+    catalogue_leg_1d_mass_aware: str = "off",
 ) -> str:
-    """Node output-directory suffix encoding the P1/KW-Q1/T1.1 variant, so a
-    non-default run never overwrites another variant's (or the default's)
-    banked node outputs. Byte-identical default (``theta_sites="all"``,
-    ``smear="auto"``, ``config="b0i"``, ``theta_phi_divisor="off"``,
-    ``sky_cone_k=1.5``) -> empty suffix -> the ORIGINAL ``node_<name>``
-    paths, unchanged.
+    """Node output-directory suffix encoding the P1/KW-Q1/T1.1/T2.3 variant,
+    so a non-default run never overwrites another variant's (or the
+    default's) banked node outputs. Byte-identical default (``theta_sites=
+    "all"``, ``smear="auto"``, ``config="b0i"``, ``theta_phi_divisor="off"``,
+    ``sky_cone_k=1.5``, ``catalogue_leg_1d_mass_aware="off"``) -> empty
+    suffix -> the ORIGINAL ``node_<name>`` paths, unchanged.
 
     T1.2 (row #255 tree 2 node T1.2, driver-gap fix for T1.1's site 2.3phi
     instrument, PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2/§2.5):
     ``theta_phi_divisor="on"`` appends ``_divisor``; a non-default
     ``sky_cone_k`` (anything != 1.5) appends ``_conek<value>`` (``:g``
     formatted, so ``2.0`` -> ``conek2``, ``2.25`` -> ``conek2.25``).
+
+    T2.3 (row #255 tree 2 node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_
+    20260830.md §2): ``catalogue_leg_1d_mass_aware="on"`` appends ``_ma1d``.
     """
     parts: list[str] = []
     if config != "b0i":
@@ -334,6 +338,8 @@ def _node_dir_suffix(
         parts.append("divisor")
     if sky_cone_k != 1.5:
         parts.append(f"conek{sky_cone_k:g}")
+    if catalogue_leg_1d_mass_aware != "off":
+        parts.append("ma1d")
     return ("_" + "_".join(parts)) if parts else ""
 
 
@@ -351,6 +357,7 @@ def run_theta_node(
     candidate_dump_dir: str | None = None,
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
+    catalogue_leg_1d_mass_aware: str = "off",
 ) -> tuple[Path, float]:
     """Evaluate one theta node (prereg §2.1 S0-A/S0-R row row; KW-Q1 reuses this
     for the FT config at h_values=(0.725, 0.735)).
@@ -385,6 +392,14 @@ def run_theta_node(
     under the divisor per GATE T-ID (the transform is theta-consistent, so
     it is the identity at theta=(0,1)), so unconditional forwarding does not
     disturb GATE PARITY.
+
+    ``catalogue_leg_1d_mass_aware`` (T2.3, row #255 tree 2 node T2.3;
+    PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2) is forwarded verbatim
+    to ``run_mirror_seed_inprocess``/``BayesianStatistics.evaluate()``.
+    Default ``"off"`` is byte-identical (GATE BI). Forwarded unconditionally
+    to every node -- ``evaluate()``'s own setup guard raises if the
+    resolved ``catalogue_numerator_survival``/``catalogue_global_selection``
+    are not both ``"phi"`` or if ``theta_phi_divisor`` is engaged.
     """
     theta_engaged = theta_b != 0.0 or theta_s != 1.0
     smear_flag = _resolve_smear(theta_engaged, theta_sites, smear)
@@ -412,6 +427,7 @@ def run_theta_node(
         smear_global_selection=smear_flag,
         theta_phi_divisor=theta_phi_divisor,
         sky_cone_k=sky_cone_k,
+        catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
     )
     # [P3-2D] the with-BH catalogue-leg twin flipped to production default
     # "mz_sel"/"eff" (row #223 standing grant, charter node B7.3;
@@ -535,6 +551,7 @@ def run_arm_seed_s0a(
     candidate_dump_dir: str | None = None,
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
+    catalogue_leg_1d_mass_aware: str = "off",
 ) -> list[NodeResult]:
     """S0-A: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.0 (truth-theta=(0,1)).
 
@@ -552,7 +569,9 @@ def run_arm_seed_s0a(
     events, handler = _build_venue(config, work_root, seed, sigma_z_scale=1.0)
     if event_cap is not None:
         events = events.head(event_cap).reset_index(drop=True)
-    suffix = _node_dir_suffix(theta_sites, smear, config, theta_phi_divisor, sky_cone_k)
+    suffix = _node_dir_suffix(
+        theta_sites, smear, config, theta_phi_divisor, sky_cone_k, catalogue_leg_1d_mass_aware
+    )
     read_h = _resolve_score_h(h_values, score_h)
     results: list[NodeResult] = []
     for node in nodes:
@@ -580,6 +599,7 @@ def run_arm_seed_s0a(
             ),
             theta_phi_divisor=theta_phi_divisor,
             sky_cone_k=sky_cone_k,
+            catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
         )
         wall = time.time() - t0
         ln_l = read_event_ln_l(diag_csv, read_h)
@@ -618,6 +638,7 @@ def run_arm_seed_s0r(
     candidate_dump_dir: str | None = None,
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
+    catalogue_leg_1d_mass_aware: str = "off",
 ) -> list[NodeResult]:
     """S0-R: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.5 (DISCLOSED NULL, see module docstring).
 
@@ -629,7 +650,9 @@ def run_arm_seed_s0r(
     events, handler = _build_venue(config, work_root, seed, sigma_z_scale=S0_R_SIGMA_SCALE)
     if event_cap is not None:
         events = events.head(event_cap).reset_index(drop=True)
-    suffix = _node_dir_suffix(theta_sites, smear, config, theta_phi_divisor, sky_cone_k)
+    suffix = _node_dir_suffix(
+        theta_sites, smear, config, theta_phi_divisor, sky_cone_k, catalogue_leg_1d_mass_aware
+    )
     read_h = _resolve_score_h(h_values, score_h)
     results: list[NodeResult] = []
     for node in nodes:
@@ -657,6 +680,7 @@ def run_arm_seed_s0r(
             ),
             theta_phi_divisor=theta_phi_divisor,
             sky_cone_k=sky_cone_k,
+            catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
         )
         wall = time.time() - t0
         ln_l = read_event_ln_l(diag_csv, read_h)
@@ -688,6 +712,7 @@ def run_seed_s0c(
     event_cap: int | None,
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
+    catalogue_leg_1d_mass_aware: str = "off",
 ) -> dict[str, Any]:
     """S0-C: one seed, theta=(0,1), the full 41-node H_GRID_41 (costing probe, prereg §2.1).
 
@@ -729,6 +754,7 @@ def run_seed_s0c(
         smear_global_selection=False,
         theta_phi_divisor=theta_phi_divisor,
         sky_cone_k=sky_cone_k,
+        catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
     )
     wall = time.time() - t0
     # Per-h marginal cost: posterior JSONs are written progressively as each
@@ -1083,6 +1109,9 @@ def _run_one_seed_worker(
         tuple[float, ...],
         float | None,
         str | None,
+        str,
+        float,
+        str,
     ],
 ) -> Any:
     """Top-level (picklable) worker: run one seed's cells for the given arm.
@@ -1109,6 +1138,11 @@ def _run_one_seed_worker(
     (all three, unlike the two extensions above -- GATE T-ID makes the
     divisor a no-op at S0-C's truth-only theta, so unconditional forwarding
     is correct there too).
+    Extended again (T2.3, row #255 tree 2 node T2.3, byte-identical at the
+    trailing ``"off"`` default) with ``catalogue_leg_1d_mass_aware``,
+    forwarded verbatim to run_arm_seed_s0a/s0r/run_seed_s0c (all three, same
+    unconditional-forwarding rationale as ``theta_phi_divisor`` above --
+    evaluate()'s own setup guard is the backstop).
     """
     (
         arm,
@@ -1125,6 +1159,7 @@ def _run_one_seed_worker(
         candidate_dump_dir,
         theta_phi_divisor,
         sky_cone_k,
+        catalogue_leg_1d_mass_aware,
     ) = args
     if not mp.current_process()._identity:  # noqa: SLF001 -- see docstring above
         _pin_worker_affinity(cpu_budget)
@@ -1143,6 +1178,7 @@ def _run_one_seed_worker(
                 candidate_dump_dir=candidate_dump_dir,
                 theta_phi_divisor=theta_phi_divisor,
                 sky_cone_k=sky_cone_k,
+                catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
             )
         elif arm == "S0-R":
             results = run_arm_seed_s0r(
@@ -1158,6 +1194,7 @@ def _run_one_seed_worker(
                 candidate_dump_dir=candidate_dump_dir,
                 theta_phi_divisor=theta_phi_divisor,
                 sky_cone_k=sky_cone_k,
+                catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
             )
         elif arm == "S0-C":
             return {
@@ -1168,6 +1205,7 @@ def _run_one_seed_worker(
                     event_cap,
                     theta_phi_divisor=theta_phi_divisor,
                     sky_cone_k=sky_cone_k,
+                    catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
                 ),
             }
         else:
@@ -1229,6 +1267,7 @@ def run_arm(
     candidate_dump_dir: str | None = None,
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
+    catalogue_leg_1d_mass_aware: str = "off",
 ) -> dict[str, Any]:
     out_root.mkdir(parents=True, exist_ok=True)
     jobs = max(1, min(jobs, len(seeds)))
@@ -1249,6 +1288,7 @@ def run_arm(
             candidate_dump_dir,
             theta_phi_divisor,
             sky_cone_k,
+            catalogue_leg_1d_mass_aware,
         )
         for seed in seeds
     ]
@@ -1299,8 +1339,9 @@ def run_arm(
         "score_h": score_h,
         "theta_phi_divisor": theta_phi_divisor,
         "sky_cone_k": sky_cone_k,
+        "catalogue_leg_1d_mass_aware": catalogue_leg_1d_mass_aware,
         "node_dir_suffix": _node_dir_suffix(
-            theta_sites, smear, config, theta_phi_divisor, sky_cone_k
+            theta_sites, smear, config, theta_phi_divisor, sky_cone_k, catalogue_leg_1d_mass_aware
         ),
     }
 
@@ -1404,6 +1445,7 @@ def gather_node_results_from_disk(
     score_h: float,
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
+    catalogue_leg_1d_mass_aware: str = "off",
 ) -> tuple[dict[str, list[NodeResult]], list[str]]:
     """Read ``event_likelihoods.csv`` for every requested (seed, node) pair
     directly off disk -- NO ``evaluate()`` call, NO venue construction. Used
@@ -1425,7 +1467,9 @@ def gather_node_results_from_disk(
         raise ValueError(
             f"--score-only supports S0-A/S0-R only (no node cross to pool for {arm!r})"
         )
-    suffix = _node_dir_suffix(theta_sites, smear, config, theta_phi_divisor, sky_cone_k)
+    suffix = _node_dir_suffix(
+        theta_sites, smear, config, theta_phi_divisor, sky_cone_k, catalogue_leg_1d_mass_aware
+    )
     all_nodes: dict[str, list[NodeResult]] = {n: [] for n in nodes}
     missing: list[str] = []
     for seed in seeds:
@@ -1700,6 +1744,25 @@ def main() -> int:
         "BYTE-IDENTICAL to the pre-flag sigma_multiplier literal.",
     )
     ap.add_argument(
+        "--catalogue-leg-1d-mass-aware",
+        type=str,
+        default="off",
+        choices=("off", "on"),
+        dest="catalogue_leg_1d_mass_aware",
+        help="T2.3 (row #255 tree 2 node T2.3; "
+        "PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md sec 2). Forwarded to run_mirror_seed_"
+        "inprocess's catalogue_leg_1d_mass_aware kwarg (mass-aware 1D catalogue leg instrument: "
+        "S_4D(d_L(z;h), M_g(1+z)) replaces S_bar_phi(z;h) in the WITHOUT-BH catalogue numerator, "
+        "Sigma_4D replaces Sigma^phi as the global divisor, alpha_G_phi replaces beta_G_phi as "
+        "the mixture weight). Default 'off' is BYTE-IDENTICAL to every pre-T2.3 invocation of "
+        "this driver. 'on' requires evaluate()'s own resolved catalogue_numerator_survival AND "
+        "catalogue_global_selection to both be 'phi' and theta_phi_divisor='off' -- true for "
+        "--config ft (FT_CATALOGUE_NUMERATOR_SURVIVAL='phi'), NOT true for the default --config "
+        "b0i (BC_CATALOGUE_NUMERATOR_SURVIVAL='off'; evaluate() raises there). Forwarded "
+        "unconditionally to every node/arm, including the truth node and S0-C (not a production "
+        "posterior).",
+    )
+    ap.add_argument(
         "--score-only",
         action="store_true",
         help="P0 completion (SYNTHESIS_DOCKET_1_20260829.md sec 2 B1 P0): compute the pooled "
@@ -1765,6 +1828,7 @@ def main() -> int:
             score_h=score_h,
             theta_phi_divisor=args.theta_phi_divisor,
             sky_cone_k=args.sky_cone_k,
+            catalogue_leg_1d_mass_aware=args.catalogue_leg_1d_mass_aware,
         )
         result = score_only_payload(args.arm, seeds, nodes, all_nodes, missing)
         result["theta_sites"] = args.theta_sites
@@ -1774,6 +1838,7 @@ def main() -> int:
         result["score_h"] = score_h
         result["theta_phi_divisor"] = args.theta_phi_divisor
         result["sky_cone_k"] = args.sky_cone_k
+        result["catalogue_leg_1d_mass_aware"] = args.catalogue_leg_1d_mass_aware
         result["registration"] = str(REGISTRATION)
         out_root.mkdir(parents=True, exist_ok=True)
         out_json = out_root / f"{args.arm.lower().replace('-', '')}_score_output.json"
@@ -1805,6 +1870,7 @@ def main() -> int:
         candidate_dump_dir=args.candidate_dump,
         theta_phi_divisor=args.theta_phi_divisor,
         sky_cone_k=args.sky_cone_k,
+        catalogue_leg_1d_mass_aware=args.catalogue_leg_1d_mass_aware,
     )
     result["smoke"] = bool(args.smoke)
     result["event_cap"] = event_cap

@@ -218,6 +218,7 @@ def main() -> None:
             theta_s=arguments.theta_s,
             theta_sites=arguments.theta_sites,
             theta_phi_divisor=arguments.theta_phi_divisor,
+            catalogue_leg_1d_mass_aware=arguments.catalogue_leg_1d_mass_aware,
             candidate_dump_dir=arguments.candidate_dump_dir,
         )
 
@@ -1448,6 +1449,10 @@ def evaluate(
     # [HIER] site 2.3phi (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2;
     # row #255 tree 2 node T1.1): "off" (default) is byte-identical.
     theta_phi_divisor: str = "off",
+    # [HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree 2
+    # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2): "off"
+    # (default) is byte-identical.
+    catalogue_leg_1d_mass_aware: str = "off",
     # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
     # guard, not a physics gate; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md
     # §6): None (default) is byte-identical -- GATE BI.
@@ -1493,6 +1498,7 @@ def evaluate(
         theta_s=theta_s,
         theta_sites=theta_sites,
         theta_phi_divisor=theta_phi_divisor,
+        catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
         candidate_dump_dir=candidate_dump_dir,
     )
 

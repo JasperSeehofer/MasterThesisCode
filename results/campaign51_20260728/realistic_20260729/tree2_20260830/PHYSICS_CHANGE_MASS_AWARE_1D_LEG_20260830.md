@@ -1003,3 +1003,199 @@ as an append-only, zero-compute, no-code, no-git correction (tree 2 node T2.3).
 
 launched under row #255 — tree 2 node T2.3 — third presentation, panel must_fix reconciliation complete, zero
 compute, no code, no git.
+
+---
+
+## 20. IMPLEMENTATION RECORD 2026-08-30 (builder node; append-only, sections 1-19 untouched)
+
+Builder: a different agent from the presenter of sections 0/15/17/19 (builder != presenter, per
+section 0's standing requirement). Authorized under row #255 (standing grant, tree 2 node T2.3 --
+instrument only); this node writes code (the presentation nodes above did not). No git by this
+node (the orchestrator commits).
+
+### 20.1 What was built (working-tree line numbers as of this commit; re-grep at any future date)
+
+catalogue_leg_1d_mass_aware in {"off", "on"}, default "off", implemented exactly as registered in
+section 2, with the following current line anchors in bayesian_statistics.py (all shifted from the
+presentation's working-tree numbers by the intervening edits themselves; the presentation's own
+standing caveat -- "builder re-verifies at build time" -- applied):
+
+- New helper "catalogue_leg_1d_mass_aware_factor" (module-level, public name, no leading
+  underscore so it is reachable from tests and from the derivation's own future consumers) at
+  line 6961: implements both the "point" sub-form (the SAME accessor call Sigma_4D's own
+  with-BH point branch and the T2.2 hook use -- detection_probability_with_bh_mass_interpolated
+  at d_L(z;h), M_g(1+z), isotropic sky, the _wbh_z_kwargs z-rider) and the "kernel" sub-form
+  (mirrors self._sigma4d_mass_kernel via _sigma4d_mass_kernel_expectation, the SAME erf-sum
+  machinery production's own per-host D_g uses), per the registered coupling rule of section 2.2.
+- Class default and __init__ default: line 3678 (_catalogue_leg_1d_mass_aware: str = "off") and
+  line 3763 (the __init__ assignment), following the T1.1/T2.2 class-attribute-plus-init-default
+  convention exactly.
+- evaluate() kwarg + guard block: the flag is validated immediately after the sigma4d_mass_kernel
+  block (the position in evaluate() where self._catalogue_numerator_survival,
+  self._catalogue_global_selection, self._theta_phi_divisor, self._sigma4d_mass_kernel, and
+  self._eddington_m are already resolved, so the three guards of section 2.1 can read them
+  directly). "on" raises ValueError unless catalogue_numerator_survival resolves to "phi",
+  catalogue_global_selection resolves to "phi", and theta_phi_divisor is "off"; logs a
+  COUNTERFACTUAL warning (never [PHYSICS] ACTIVE, per section 2.1's stated convention -- this is
+  an instrument, not a production posterior).
+- Site D1 (the no-BH catalogue global divisor): global_denom_with_bh moved ahead of
+  global_denom_no_bh (line 6019) so it is in scope for the "on" branch; global_denom_no_bh (line
+  6027) now reads global_denom_with_bh directly under "on" -- Sigma_4D, already in hand, no new
+  computation -- and falls through to the pre-existing ternary (Sigma_phi_theta / Sigma_phi_point
+  / Sigma_3D) under "off", byte-identical.
+- Site W1 (the 1D mixture class weight): the combined_without_bh_mass assembly (line 6626) now
+  selects alpha_G_phi in place of beta_G_phi under "on" (alpha_G_phi is the IDENTICAL float the
+  2D assembly on the very next lines already consumes, :6501 in the presentation's own citation);
+  under "off" the weight is beta_G_phi, byte-identical to the pre-flag tree.
+- Site N1 (the no-BH catalogue numerator's per-candidate survival), both the batch kernel
+  (single_host_likelihood_batch) and its scalar twin (single_host_likelihood): each function
+  gained two trailing keyword parameters, catalogue_leg_1d_mass_aware (default "off") and
+  sigma4d_mass_kernel (default "point", mirrored from self._sigma4d_mass_kernel by the caller,
+  never chosen independently by the worker); a validated _cat_leg_1d_ma_on flag; and, in BOTH the
+  point-evaluation branch and the z-quadrature branch, an "on" branch that calls
+  catalogue_leg_1d_mass_aware_factor at the candidate's own z-nodes and (raw catalogue) BH mass
+  in place of the np.interp against catalogue_survival_table. The dispatch chain
+  (_starmap_host_batches, and the two call sites in p_Di that invoke it for the with-BH and
+  without-BH host batches) forwards self._catalogue_leg_1d_mass_aware and
+  self._sigma4d_mass_kernel unconditionally to BOTH batches, matching the A13 note in section 1(1b)
+  of this document (the with-BH batch's r[0] no-BH numerator also feeds L_cat_no_bh).
+
+### 20.2 Where the presentation's registered form was AMBIGUOUS and the reading chosen (disclosed per the launch instruction)
+
+1. The registered coupling rule (section 2.2) states the 1D flag "has no mass-form knob of its
+   own" and must mirror self._sigma4d_mass_kernel. The presentation does not say explicitly
+   whether the worker-level plumbing (single_host_likelihood/_batch, previously with no
+   sigma4d_mass_kernel parameter at all) should gain a NEW parameter or read the flag some other
+   way. Reading chosen: add sigma4d_mass_kernel as a new trailing keyword parameter to both
+   worker functions (mirroring how eddington_m already reaches them), threaded from
+   self._sigma4d_mass_kernel at the two _starmap_host_batches call sites -- this makes the 1D
+   leg structurally identical to the 2D assembly's own parameter-threading pattern and keeps the
+   coupling automatic (a caller cannot pass a sigma4d_mass_kernel value inconsistent with
+   Sigma_4D's own, since production only ever passes self._sigma4d_mass_kernel).
+2. Section 2.2's guard list (site D1) states "on" with theta_phi_divisor="on" raises; section 2.1
+   lists the THREE evaluate()-level guards (normalization_mode absolute_marginal via the two "phi"
+   resolutions, catalogue_numerator_survival "phi", catalogue_global_selection "phi") but the
+   fourth (theta_phi_divisor="off") is stated only in section 2.2's prose, not repeated in
+   section 2.1's guard paragraph. Reading chosen: implement all four guards together in one block
+   (the three from section 2.1 plus theta_phi_divisor="off" from section 2.2), since section 2.2
+   is unambiguous that theta_phi_divisor="on" composing with catalogue_leg_1d_mass_aware="on" has
+   no valid target (no theta-consistent Sigma_4D exists) and the launch instruction's own
+   worked example already lists this as one of the required regression items (R12).
+3. Section 2.1 says "off" is byte-identical via "a single boolean check at each of the three read
+   sites, no new table, no new object." The as-built form checks the boolean at FOUR read
+   expressions (N1 has two branches, point and quadrature, in each of two functions -- 4 total
+   call sites of catalogue_leg_1d_mass_aware_factor under "on", each guarded by the SAME
+   _cat_leg_1d_ma_on boolean computed once per function call) plus the D1/W1 ternaries (one each).
+   This is a reading of "three read sites" as the three SITES named (N1, D1, W1), not a literal
+   count of boolean evaluations; disclosed here since N1 alone has two syntactic branches.
+4. The T2.2 driver precedent (hier_s0_driver.py) threads theta_phi_divisor/sky_cone_k through
+   EVERY function in the S0-A/S0-R/S0-C dispatch chain, including --score-only's
+   gather_node_results_from_disk (which needs the node-dir suffix to locate banked runs, not to
+   re-evaluate anything). The launch instruction says "forwarded to every run_mirror_seed_inprocess
+   call" -- read as the SAME full-chain threading precedent set by T1.2 (row #266/T1.2's own
+   0b308828-pattern commit), since gather_node_results_from_disk's suffix computation would
+   silently mismatch a "_ma1d" node directory otherwise. Implemented: the flag reaches
+   _node_dir_suffix, run_theta_node, run_arm_seed_s0a, run_arm_seed_s0r, run_seed_s0c,
+   _run_one_seed_worker (tuple extended, byte-identical when omitted), run_arm, and
+   gather_node_results_from_disk, plus the --catalogue-leg-1d-mass-aware CLI flag in main().
+
+### 20.3 Kernel form's overhead and cost -- NOT measured by this node
+
+Per section 9 item 1's own scope ("the kernel form... is not launched by this gate"), no cost
+measurement of the "kernel" sub-form was performed here; the R9 regression test (below) exercises
+it at unit-test scale (3 synthetic candidates) only, to pin the section 5 limiting case (L7), not
+to characterise production cost.
+
+### 20.4 Regression plan coverage (section 10 items R1-R14) -- what was implemented, what was descoped
+
+New file: darksiren_emri_test/bayesian_inference/test_catalogue_leg_1d_mass_aware.py (26 tests, all
+passing). Coverage against the registered plan:
+
+- R1 (byte-identity at "off"): IMPLEMENTED, scalar and batch, kwarg-omitted vs explicit "off".
+- R2 (the Z = 1 identity, the decisive pin): IMPLEMENTED as a self-contained synthetic fixture (200
+  galaxies, an analytic mass-dependent survival stub, r_Malm = 0.850 measured -- an informative,
+  can-fail-control value under the plan's own r_Malm <= 0.9 bound) that calls the REAL
+  catalogue_leg_1d_mass_aware_factor and the REAL path_a_mixture_objects and confirms integral p_i
+  dd = 1.0 to atol 1e-10 under "on" and equals D_phi/D_tilde_phi (!= 1, verified) under "off." This
+  is a somewhat lighter-weight construction than the plan's literal "integrate the assembled p_i
+  over the data on a fine grid" (it uses the analytic fact that a normalised Gaussian data-density
+  integrates to 1 rather than numerically integrating one), disclosed as a deliberate scope choice
+  under this node's time budget -- the ALGEBRAIC content the plan's own F-Z falsifier cares about
+  (an unpaired build returning r_Malm or 1/r_Malm instead of 1) is exercised identically either way,
+  since the Gaussian-integrates-to-1 step is a property of _mvn_pdf normalisation, not of this flag.
+- R3 (the n_hat_w identity): IMPLEMENTED, 3 parametrisations including the r_Malm = 1 (L2) limit.
+- R4 (scalar/batch parity under "on"): IMPLEMENTED, both host-z-kernel modes, rtol 1e-9.
+- R5 (limit L1, mass-flat survival): IMPLEMENTED, rtol 1e-6 (the table's own interpolation floor).
+- R6 (limit L3, the Malmquist sign): IMPLEMENTED, a direct unit test of the site-N1 factor.
+- R7 (limit L4, the C-C identity): PARTIAL -- implemented as "the with-BH channel columns are
+  bit-identical between on/off" (both scalar and batch, both host-z-kernel modes), which is the
+  worker-level half of R7; the full p_Di-level empty-ball check (n_cand_no_bh = 0 on a live
+  catalogue cell) was NOT run by this node (out of unit-test scope; R13's live-catalogue engagement
+  gate is the natural home for it and is also descoped here, below).
+- R8 (limit L5, global rescale invariance): NOT IMPLEMENTED -- the claim is about the FULL p_i
+  assembly (numerator divided by its own global sum), which is invariant to a global survival
+  rescale only once the division is performed; testing it meaningfully requires a p_Di-level
+  fixture (or an equivalent hand-assembly), not a worker-level unit test of the raw per-host
+  numerator alone (which trivially scales by the same constant, not usefully "invariant"). Disclosed
+  as a genuine gap, not silently skipped.
+- R9 (limit L7, kernel to point as sigma_g to 0): IMPLEMENTED as a direct unit test of
+  catalogue_leg_1d_mass_aware_factor (rtol 1e-6, using a 4000-knot log-spaced M-grid in the test's
+  own stub interpolator to keep the erf-sum's piecewise-linear-in-M discretisation error below the
+  bound -- at the plan's originally-tried 40-knot grid the residual discretisation error was
+  ~1.6e-4 relative, disclosed as an interpolation-density effect of the TEST STUB's coarse grid,
+  not a defect in the "kernel" implementation itself, which reuses production's own
+  _bh_mass_denominator_inner_m_integral_batch verbatim).
+- R10 (the 1D/2D symmetry test): PARTIAL -- implemented as a lightweight "same accessor, same
+  arguments" pin (catalogue_leg_1d_mass_aware_factor's point-form output compared bit-for-bit
+  against a direct call to detection_probability_with_bh_mass_interpolated with the same d_L, M_z,
+  isotropic-sky arguments), rather than the plan's full 2D-twin Gauss-Hermite-collapse test
+  (sigma_cond -> 0 and sigma_gal -> 0 in _mz_sel_2d_expectation, center "raw"). The full symmetry
+  test was judged out of this node's time budget; the lighter pin still catches a builder error
+  that queries a DIFFERENT accessor, a different mass convention, or a non-isotropic sky term.
+- R11 (2D bit-identity): covered by the same tests as R7's with-BH-channel check (identical
+  columns, both flag values) -- IMPLEMENTED.
+- R12 (guards): IMPLEMENTED -- all four evaluate()-level guards (each of the three "phi"
+  resolutions, plus theta_phi_divisor), the worker-level defence-in-depth guard (catalogue_leg_1d_
+  mass_aware="on" without catalogue_numerator_survival="phi" raises at both single_host_likelihood
+  and its batch twin), an unknown-token rejection at both levels, and the "off is unaffected by the
+  other three flags' values" confirmation.
+- R13 (the >= 99 percent engagement gate on a live smoke cell): NOT RUN -- requires a real
+  GalaxyCatalogueHandler and BallTree, i.e. a live-catalogue cell, out of this node's unit-test
+  scope (the T1.1/T2.2 precedent's own smoke_run pattern); left for the tree-2 verifier pass or
+  for arm (a)/(b) below, both of which will exercise it as a side effect.
+- R14 (log lines): IMPLEMENTED -- "on" logs COUNTERFACTUAL and never [PHYSICS] ACTIVE; the "off"
+  default logs nothing naming this flag.
+
+### 20.5 Test run log (this node, foreground, 2026-08-30)
+
+- New file alone: 26 passed.
+- darksiren_emri_test/bayesian_inference (all files): 617 passed, 6 skipped.
+- darksiren_emri_test/validation (all files): 402 passed, 1 skipped.
+- darksiren_emri_test/test_arguments.py: 27 passed.
+- Full tree, two directory halves (per the launch instruction): half A (analysis, bayesian_
+  inference, datamodels, fixtures, integration, parameter_estimation, plotting) = 845 passed, 6
+  skipped, 15 deselected; half B (validation, scripts, and every top-level darksiren_emri_test/*.py
+  file) = 1096 passed, 9 skipped, 15 deselected. Combined: 1941 passed / 15 skipped / 30 deselected
+  -- exactly the T2.2 baseline (1915 passed / 15 skipped / 30 deselected, section 10's own stated
+  baseline) plus this node's 26 new tests, zero regressions.
+- ruff check --fix darksiren_emri/: all checks passed (no fixes needed beyond formatting).
+- ruff format darksiren_emri/ (+ the new test file): bayesian_statistics.py reformatted (cosmetic
+  only, re-verified by AST parse and a second full-suite pass); the new test file needed one
+  formatting pass too.
+- mypy darksiren_emri/: one round of findings (catalogue_leg_1d_mass_aware_factor's M_g/M_g_error
+  parameters were typed as bare ndarray but the scalar kernel passes Python floats) -- fixed by
+  widening the annotations to float or ndarray[float64]; clean on the second run (70 source files).
+
+### 20.6 Files touched (for the commit list; the orchestrator commits)
+
+darksiren_emri/bayesian_inference/bayesian_statistics.py; darksiren_emri/arguments.py;
+darksiren_emri/main.py; darksiren_emri/validation/correspondence_1d.py;
+results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py;
+darksiren_emri_test/bayesian_inference/test_catalogue_leg_1d_mass_aware.py (new file);
+docs/gates/PHYSICS-GATE-LEDGER.md (two rows appended); this file (section 20, append-only).
+
+No production file's DEFAULT behaviour changes: every new parameter defaults to "off"/"point" and
+every new read site is guarded by that default, matching every prior instrument in this file
+family (T1.1, T2.2, the P3-IMP/P3-2D/P3-RPHI twins). No git operation performed by this node.
+
+launched under row #255 -- tree 2 node T2.3 -- implementation record complete.
