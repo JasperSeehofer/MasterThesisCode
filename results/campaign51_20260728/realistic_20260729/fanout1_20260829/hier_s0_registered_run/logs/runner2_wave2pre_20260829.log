@@ -1,0 +1,456 @@
+=== 2026-08-29T21:39:52+02:00 runner-1 (S0-C) finished; starting P0
+=== 2026-08-29T21:39:52+02:00 START P0 S0-A 4 seeds 5 nodes sites2.2 nosmear jobs2 (fixed driver)
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
+Event -1: 171 host(s) have f_k == 0 across the whole host-z window (empty/ZoA pixel) — host-z kernel falls back to the w_pop-only form for those hosts (further occurrences in this worker are suppressed).
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
+Event -1: 171 host(s) have f_k == 0 across the whole host-z window (empty/ZoA pixel) — host-z kernel falls back to the w_pop-only form for those hosts (further occurrences in this worker are suppressed).
+COUNTERFACTUAL: catalogue_numerator_survival="off" under absolute_marginal — the pre-adoption WITHOUT-BH catalogue numerator (no per-candidate survival factor). Not a production posterior.
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
+COUNTERFACTUAL: catalogue_numerator_survival="off" under absolute_marginal — the pre-adoption WITHOUT-BH catalogue numerator (no per-candidate survival factor). Not a production posterior.
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
+COUNTERFACTUAL: catalogue_numerator_survival="off" under absolute_marginal — the pre-adoption WITHOUT-BH catalogue numerator (no per-candidate survival factor). Not a production posterior.
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
+COUNTERFACTUAL: catalogue_numerator_survival="off" under absolute_marginal — the pre-adoption WITHOUT-BH catalogue numerator (no per-candidate survival factor). Not a production posterior.
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
+[S0-A seed=900101] WORKER ERROR: AssertionError: daemonic processes are not allowed to have children
+Traceback (most recent call last):
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 942, in _run_one_seed_worker
+    results = run_arm_seed_s0a(
+        seed, out_root, nodes, event_cap,
+        theta_sites=theta_sites, smear=smear, config=config, h_values=h_values, score_h=score_h,
+    )
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 497, in run_arm_seed_s0a
+    diag_csv, elapsed = run_theta_node(
+                        ~~~~~~~~~~~~~~^
+        node_root, events, seed, handler, theta_b, theta_s,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        h_values=h_values, theta_sites=theta_sites, smear=smear, config=config,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 374, in run_theta_node
+    diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        work_root,
+        ^^^^^^^^^^
+    ...<7 lines>...
+        **common_kwargs,
+        ^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/darksiren_emri/validation/correspondence_1d.py", line 2929, in run_mirror_seed_inprocess
+    bs.evaluate(
+    ~~~~~~~~~~~^
+        galaxy_catalog,
+        ^^^^^^^^^^^^^^^
+    ...<32 lines>...
+        smear_global_selection=smear_global_selection,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/darksiren_emri/bayesian_inference/bayesian_statistics.py", line 4562, in evaluate
+    with _ctx.Pool(
+         ~~~~~~~~~^
+        num_workers,
+        ^^^^^^^^^^^^
+    ...<25 lines>...
+        ),
+        ^^
+    ) as pool:
+    ^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/context.py", line 119, in Pool
+    return Pool(processes, initializer, initargs, maxtasksperchild,
+                context=self.get_context())
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 215, in __init__
+    self._repopulate_pool()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 306, in _repopulate_pool
+    return self._repopulate_pool_static(self._ctx, self.Process,
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+                                        self._processes,
+                                        ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+                                        self._maxtasksperchild,
+                                        ^^^^^^^^^^^^^^^^^^^^^^^
+                                        self._wrap_exception)
+                                        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 329, in _repopulate_pool_static
+    w.start()
+    ~~~~~~~^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/process.py", line 118, in start
+    assert not _current_process._config.get('daemon'), \
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: daemonic processes are not allowed to have children
+
+[S0-A seed=900102] WORKER ERROR: AssertionError: daemonic processes are not allowed to have children
+Traceback (most recent call last):
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 942, in _run_one_seed_worker
+    results = run_arm_seed_s0a(
+        seed, out_root, nodes, event_cap,
+        theta_sites=theta_sites, smear=smear, config=config, h_values=h_values, score_h=score_h,
+    )
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 497, in run_arm_seed_s0a
+    diag_csv, elapsed = run_theta_node(
+                        ~~~~~~~~~~~~~~^
+        node_root, events, seed, handler, theta_b, theta_s,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        h_values=h_values, theta_sites=theta_sites, smear=smear, config=config,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 374, in run_theta_node
+    diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        work_root,
+        ^^^^^^^^^^
+    ...<7 lines>...
+        **common_kwargs,
+        ^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/darksiren_emri/validation/correspondence_1d.py", line 2929, in run_mirror_seed_inprocess
+    bs.evaluate(
+    ~~~~~~~~~~~^
+        galaxy_catalog,
+        ^^^^^^^^^^^^^^^
+    ...<32 lines>...
+        smear_global_selection=smear_global_selection,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/darksiren_emri/bayesian_inference/bayesian_statistics.py", line 4562, in evaluate
+    with _ctx.Pool(
+         ~~~~~~~~~^
+        num_workers,
+        ^^^^^^^^^^^^
+    ...<25 lines>...
+        ),
+        ^^
+    ) as pool:
+    ^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/context.py", line 119, in Pool
+    return Pool(processes, initializer, initargs, maxtasksperchild,
+                context=self.get_context())
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 215, in __init__
+    self._repopulate_pool()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 306, in _repopulate_pool
+    return self._repopulate_pool_static(self._ctx, self.Process,
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+                                        self._processes,
+                                        ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+                                        self._maxtasksperchild,
+                                        ^^^^^^^^^^^^^^^^^^^^^^^
+                                        self._wrap_exception)
+                                        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 329, in _repopulate_pool_static
+    w.start()
+    ~~~~~~~^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/process.py", line 118, in start
+    assert not _current_process._config.get('daemon'), \
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: daemonic processes are not allowed to have children
+
+[S0-A seed=900103] WORKER ERROR: AssertionError: daemonic processes are not allowed to have children
+Traceback (most recent call last):
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 942, in _run_one_seed_worker
+    results = run_arm_seed_s0a(
+        seed, out_root, nodes, event_cap,
+        theta_sites=theta_sites, smear=smear, config=config, h_values=h_values, score_h=score_h,
+    )
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 497, in run_arm_seed_s0a
+    diag_csv, elapsed = run_theta_node(
+                        ~~~~~~~~~~~~~~^
+        node_root, events, seed, handler, theta_b, theta_s,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        h_values=h_values, theta_sites=theta_sites, smear=smear, config=config,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 374, in run_theta_node
+    diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        work_root,
+        ^^^^^^^^^^
+    ...<7 lines>...
+        **common_kwargs,
+        ^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/darksiren_emri/validation/correspondence_1d.py", line 2929, in run_mirror_seed_inprocess
+    bs.evaluate(
+    ~~~~~~~~~~~^
+        galaxy_catalog,
+        ^^^^^^^^^^^^^^^
+    ...<32 lines>...
+        smear_global_selection=smear_global_selection,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/darksiren_emri/bayesian_inference/bayesian_statistics.py", line 4562, in evaluate
+    with _ctx.Pool(
+         ~~~~~~~~~^
+        num_workers,
+        ^^^^^^^^^^^^
+    ...<25 lines>...
+        ),
+        ^^
+    ) as pool:
+    ^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/context.py", line 119, in Pool
+    return Pool(processes, initializer, initargs, maxtasksperchild,
+                context=self.get_context())
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 215, in __init__
+    self._repopulate_pool()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 306, in _repopulate_pool
+    return self._repopulate_pool_static(self._ctx, self.Process,
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+                                        self._processes,
+                                        ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+                                        self._maxtasksperchild,
+                                        ^^^^^^^^^^^^^^^^^^^^^^^
+                                        self._wrap_exception)
+                                        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 329, in _repopulate_pool_static
+    w.start()
+    ~~~~~~~^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/process.py", line 118, in start
+    assert not _current_process._config.get('daemon'), \
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: daemonic processes are not allowed to have children
+
+[S0-A seed=900104] WORKER ERROR: AssertionError: daemonic processes are not allowed to have children
+Traceback (most recent call last):
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 942, in _run_one_seed_worker
+    results = run_arm_seed_s0a(
+        seed, out_root, nodes, event_cap,
+        theta_sites=theta_sites, smear=smear, config=config, h_values=h_values, score_h=score_h,
+    )
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 497, in run_arm_seed_s0a
+    diag_csv, elapsed = run_theta_node(
+                        ~~~~~~~~~~~~~~^
+        node_root, events, seed, handler, theta_b, theta_s,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        h_values=h_values, theta_sites=theta_sites, smear=smear, config=config,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py", line 374, in run_theta_node
+    diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        work_root,
+        ^^^^^^^^^^
+    ...<7 lines>...
+        **common_kwargs,
+        ^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/darksiren_emri/validation/correspondence_1d.py", line 2929, in run_mirror_seed_inprocess
+    bs.evaluate(
+    ~~~~~~~~~~~^
+        galaxy_catalog,
+        ^^^^^^^^^^^^^^^
+    ...<32 lines>...
+        smear_global_selection=smear_global_selection,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/jasper/Repositories/darksiren-emri/darksiren_emri/bayesian_inference/bayesian_statistics.py", line 4562, in evaluate
+    with _ctx.Pool(
+         ~~~~~~~~~^
+        num_workers,
+        ^^^^^^^^^^^^
+    ...<25 lines>...
+        ),
+        ^^
+    ) as pool:
+    ^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/context.py", line 119, in Pool
+    return Pool(processes, initializer, initargs, maxtasksperchild,
+                context=self.get_context())
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 215, in __init__
+    self._repopulate_pool()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 306, in _repopulate_pool
+    return self._repopulate_pool_static(self._ctx, self.Process,
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+                                        self._processes,
+                                        ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+                                        self._maxtasksperchild,
+                                        ^^^^^^^^^^^^^^^^^^^^^^^
+                                        self._wrap_exception)
+                                        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 329, in _repopulate_pool_static
+    w.start()
+    ~~~~~~~^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/process.py", line 118, in start
+    assert not _current_process._config.get('daemon'), \
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: daemonic processes are not allowed to have children
+
+wrote results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/s0a_full_output.json
+{
+  "arm": "S0-A",
+  "seeds_requested": [
+    900101,
+    900102,
+    900103,
+    900104
+  ],
+  "jobs": 2,
+  "cpu_per_job": 7,
+  "wall_s": 1106.1325104236603,
+  "n_seeds_ok": 0,
+  "n_seeds_error": 4,
+  "errors": [
+    {
+      "seed": 900101,
+      "error": "AssertionError: daemonic processes are not allowed to have children",
+      "traceback": "Traceback (most recent call last):\n  File \"/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py\", line 942, in _run_one_seed_worker\n    results = run_arm_seed_s0a(\n        seed, out_root, nodes, event_cap,\n        theta_sites=theta_sites, smear=smear, config=config, h_values=h_values, score_h=score_h,\n    )\n  File \"/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py\", line 497, in run_arm_seed_s0a\n    diag_csv, elapsed = run_theta_node(\n                        ~~~~~~~~~~~~~~^\n        node_root, events, seed, handler, theta_b, theta_s,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        h_values=h_values, theta_sites=theta_sites, smear=smear, config=config,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py\", line 374, in run_theta_node\n    diag_csv, elapsed = c1d.run_mirror_seed_inprocess(\n                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^\n        work_root,\n        ^^^^^^^^^^\n    ...<7 lines>...\n        **common_kwargs,\n        ^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/home/jasper/Repositories/darksiren-emri/darksiren_emri/validation/correspondence_1d.py\", line 2929, in run_mirror_seed_inprocess\n    bs.evaluate(\n    ~~~~~~~~~~~^\n        galaxy_catalog,\n        ^^^^^^^^^^^^^^^\n    ...<32 lines>...\n        smear_global_selection=smear_global_selection,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/home/jasper/Repositories/darksiren-emri/darksiren_emri/bayesian_inference/bayesian_statistics.py\", line 4562, in evaluate\n    with _ctx.Pool(\n         ~~~~~~~~~^\n        num_workers,\n        ^^^^^^^^^^^^\n    ...<25 lines>...\n        ),\n        ^^\n    ) as pool:\n    ^\n  File \"/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/context.py\", line 119, in Pool\n    return Pool(processes, initializer, initargs, maxtasksperchild,\n                context=self.get_context())\n  File \"/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py\", line 215, in __init__\n    self._repopulate_pool()\n    ~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py\", line 306, in _repopulate_pool\n    return self._repopulate_pool_static(self._ctx, self.Process,\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\n                                        self._processes,\n                                        ^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n                                        self._maxtasksperchild,\n                                        ^^^^^^^^^^^^^^^^^^^^^^^\n                                        self._wrap_exception)\n                                        ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py\", line 329, in _repopulate_pool_static\n    w.start()\n    ~~~~~~~^^\n  File \"/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/process.py\", line 118, in start\n    assert not _current_process._config.get('daemon'), \\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: daemonic processes are not allowed to have children\n"
+   
+=== 2026-08-29T21:58:20+02:00 END rc=1
+=== 2026-08-29T21:58:20+02:00 START P0 score-only
+wrote results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/s0a_score_output.json
+wrote results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/s0a_score.md
+{
+  "arm": "S0-A",
+  "seeds_requested": [
+    900101,
+    900102,
+    900103,
+    900104
+  ],
+  "nodes_requested": [
+    "truth",
+    "b_plus",
+    "b_minus",
+    "s_plus",
+    "s_minus"
+  ],
+  "score_only": true,
+  "n_present_by_node": {
+    "truth": 0,
+    "b_plus": 1,
+    "b_minus": 0,
+    "s_plus": 0,
+    "s_minus": 0
+  },
+  "seeds_present_by_node": {
+    "truth": [],
+    "b_plus": [
+      900101
+    ],
+    "b_minus": [],
+    "s_plus": [],
+    "s_minus": []
+  },
+  "n_missing_csv": 19,
+  "note": "on-disk node set is INCOMPLETE for pooling -- scores/gate_eng/verdict require >=1 seed present for EACH of b_plus/b_minus/s_plus/s_minus; have {'b_plus': 1, 'b_minus': 0, 's_plus': 0, 's_minus': 0}. This is not an error: run the remaining (seed, node) combinations, then re-invoke --score-only.",
+  "theta_sites": "2.2",
+  "smear": "off",
+  "config": "b0i",
+  "h_values": [
+    0.73
+  ],
+  "score_h": 0.73,
+  "registration": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/PREREGISTRATION_HIER_HTHETA_20260826.md"
+}
+=== 2026-08-29T21:58:21+02:00 END rc=1
+=== 2026-08-29T21:58:21+02:00 START KW-Q1 ft 4 seeds s-nodes h0.725/0.735 sites2.2 nosmear jobs2
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
+INSTRUMENTATION ACTIVE: theta=(b=0, s=0.707107), sites=2.2 — the host-z kernel is reparametrized ([HIER] θ-hook). This run is a COUNTERFACTUAL/profile point, not a production posterior.
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
+INSTRUMENTATION ACTIVE: theta=(b=0, s=0.707107), sites=2.2 — the host-z kernel is reparametrized ([HIER] θ-hook). This run is a COUNTERFACTUAL/profile point, not a production posterior.
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
+runner-2 killed by the orchestrator at 2026-08-29T21:59:44+02:00: --jobs>1 is structurally impossible (daemonic pool workers cannot spawn evaluate()'s pool); superseded by runner-3 with --jobs 1
+Process SpawnPoolWorker-1:
+Traceback (most recent call last):
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 131, in worker
+    put((job, i, result))
+    ~~~^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/queues.py", line 397, in put
+    self._writer.send_bytes(obj)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 201, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 428, in _send_bytes
+    self._send(header + buf)
+    ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 385, in _send
+    n = write(self._handle, buf)
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 136, in worker
+    put((job, i, (False, wrapped)))
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/queues.py", line 397, in put
+    self._writer.send_bytes(obj)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 201, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 428, in _send_bytes
+    self._send(header + buf)
+    ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 385, in _send
+    n = write(self._handle, buf)
+BrokenPipeError: [Errno 32] Broken pipe
+Process SpawnPoolWorker-2:
+Traceback (most recent call last):
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 131, in worker
+    put((job, i, result))
+    ~~~^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/queues.py", line 397, in put
+    self._writer.send_bytes(obj)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 201, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 428, in _send_bytes
+    self._send(header + buf)
+    ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 385, in _send
+    n = write(self._handle, buf)
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/pool.py", line 136, in worker
+    put((job, i, (False, wrapped)))
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/queues.py", line 397, in put
+    self._writer.send_bytes(obj)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 201, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 428, in _send_bytes
+    self._send(header + buf)
+    ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/connection.py", line 385, in _send
+    n = write(self._handle, buf)
+BrokenPipeError: [Errno 32] Broken pipe
+/home/jasper/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib/python3.13/multiprocessing/resource_tracker.py:400: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown: {'/loky-545141-o2y4qpqs', '/loky-545141-f_nasdc8', '/loky-545141-bw3wrt87', '/loky-545141-0a0r6evu', '/loky-545141-s8in2ezh', '/loky-545141-ajv5pzww'}
+  warnings.warn(

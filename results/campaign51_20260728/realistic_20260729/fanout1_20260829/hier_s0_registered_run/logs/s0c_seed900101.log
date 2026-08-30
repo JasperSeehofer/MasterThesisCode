@@ -1,0 +1,4 @@
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
+Event -1: 171 host(s) have f_k == 0 across the whole host-z window (empty/ZoA pixel) — host-z kernel falls back to the w_pop-only form for those hosts (further occurrences in this worker are suppressed).
+COUNTERFACTUAL: catalogue_numerator_survival="off" under absolute_marginal — the pre-adoption WITHOUT-BH catalogue numerator (no per-candidate survival factor). Not a production posterior.
+Injection pool spans 2 code revisions (a9f29e82, f6449051) — legitimate for straggler resubmits after a non-physics fix, but verify none of them changed SNR semantics.
