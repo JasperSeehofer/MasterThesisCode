@@ -744,3 +744,38 @@ author with section 5.2 as its input. Author-facing items produced by this node,
 designed (covered by row #255); [DO] T2.3 enlarged-ball falsifier (covered).
 
 launched under row #255 — tree 2 node T2.1 — derivation complete, zero compute, no code.
+
+---
+
+## 13. Revision note (2026-08-30d; panel must_fix; append-only)
+
+**What the panel asked (must_fix, minor):** the "production dark-only full mixture" event count used in
+section 7's table is 1514 — Sigma calc (line 633), table header (line 636), table row (d) column 2 (line 642,
+scoped by the line-636 header) — and again in section 4.4 (line 424, "+0.133 x 1514 = +201"), against the
+VALIDATED dark-only count 1588 − 76 = 1512 (the host_galaxy_index join, the same join section 6.2 of the gate
+doc names as authoritative over "the CRB row-order assumption-join"). 1514 = 1590 − 76 instead, where
+crb_rows = 1590 is read from fanout1_20260829/b4_imp_stage1_production_o2.json — i.e. 1514 is itself an
+instance of the assumption-join the derivation and gate doc elsewhere warn against, carried through this
+derivation's own section 7 uncaught.
+
+**Reconciliation (ARITH, this note, 2026-08-30).** Validated count: 1512. Recomputing section 7's "Current"
+Sigma with 1512 in place of 1514, holding the per-event dark score −0.193 fixed: Delta Sigma =
+2 x (−0.193) = −0.386 nats (<= 0.4 nats) against Sigma = −264 (about 0.15 percent) — invisible at the
+whole-nat precision the document reports throughout. The remedy-(d) dark-only-full-mixture prediction (table
+row (d), column 2: dark term −292 x rho, unaffected because 1512 x 0.193 = 291.8 and 1514 x 0.193 = 292.2 both
+round to 292) recomputes at rho = 0.383 to MAP = 0.6273 versus the stated 0.6272 — both "about 0.63" — so the
+registered band **[0.60, 0.67]** and point value **about 0.63** are UNCHANGED.
+
+**Affected lines (SUPERSEDED-by-this-note pointer only; the text at these lines is NOT edited and stands as
+originally written):**
+- Line 424 (section 4.4): "+0.133 x 1514 = +201"
+- Line 633 (section 7): "Sigma = 1514 x (−0.193) + 76 x (−1.707) + 158 = −264"
+- Line 636 (section 7, table header): "production dark-only full mixture (1514)"
+- Line 642 (section 7, table row (d), column 2): scoped by the line-636 header, unedited
+
+**Disposition.** Instrument-only correction; does not touch the registered band/point value of section 7's
+remedy (d) dark-only-full-mixture prediction (independently confirmed ARITH by the companion gate-doc note of
+the same date, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md section 19). Section 12's hand-off is otherwise
+unaffected: the production flip of remedy (d) remains a fresh [RULE] for the author.
+
+launched under row #255 — tree 2 node T2.3 — panel must_fix reconciliation, zero compute, no code, append-only.
