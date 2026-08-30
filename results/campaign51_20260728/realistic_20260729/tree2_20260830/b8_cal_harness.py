@@ -45,6 +45,8 @@ Run (smoke, matches the launch stamp's resource ceiling -- event-cap<=20, worker
 from __future__ import annotations
 
 import argparse
+import hashlib
+import inspect
 import json
 import logging
 import os
@@ -64,6 +66,13 @@ THIS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(REPO_ROOT))
 
+# Module object (not just names out of it) -- needed so the B8.2.S2b draw-weight cache (below)
+# can monkeypatch the bare module-global name ``catalogue_selected_host_draw_weights`` that
+# ``MirrorUniverseGenerator.draw_realization``'s "catalogue_selected"/"catalogue_selected_2d"/
+# "mixture_selected" branches look up at CALL time (a plain global-scope name lookup in
+# correspondence_1d's own namespace, per Python's LEGB rule) -- this is an additive change to
+# THIS driver's own caller-visible reuse strategy, not an edit to correspondence_1d.py.
+import darksiren_emri.validation.correspondence_1d as correspondence_1d  # noqa: E402
 from darksiren_emri.bayesian_inference.simulation_detection_probability import (  # noqa: E402
     SimulationDetectionProbability,
 )
@@ -88,8 +97,10 @@ from darksiren_emri.validation.correspondence_1d import (  # noqa: E402
     _load_galaxy_catalog_handler,
     assert_resolved_production_flags,
     build_b0i_2d_selection_objects,
+    catalogue_selected_host_draw_weights,
     combine_log_likelihood,
     compute_catalogue_class_weight_p_g,
+    kernel_smeared_survival,
     run_mirror_seed_inprocess,
 )
 
@@ -509,6 +520,173 @@ def build_generative_context(bin_edges: tuple[float, ...] = B3_1_BIN_EDGES) -> G
     )
 
 
+# ── host-draw-weight cache (B8.2.S2b, 2026-08-30) ─────────────────────────────
+#
+# B8_2_S2_RECORD.md §5's cost finding: ``draw_realization``'s OWN wall time for
+# ``host_mode="mixture_selected"`` is lower-bounded at >318s (isolated separately from context
+# build and from ``evaluate()``), and the mechanism is identified: the catalogue-hosted branch
+# calls ``catalogue_selected_host_draw_weights``, which runs ``kernel_smeared_survival`` over the
+# ENTIRE ~20.8M-row pinned host pool -- a cost that is a pure function of ``(host_pool, h_true)``
+# (§5's closing paragraph / §7 item 2), NOT of the realization seed or ``n_events``. Every
+# universe this driver draws recomputes it from scratch even though, within one script
+# invocation, ``ctx.host_pool``/``ctx.phi_survival_table``/``ctx.completeness`` are the SAME
+# objects every time (``build_generative_context()`` is called once in ``main()``) -- and across
+# separate invocations (e.g. one process per N-ladder point) the pinned catalogue + H_TRUE never
+# change either. This cache memoizes the call: an in-process dict (free reuse across universes
+# within one invocation) plus an on-disk ``.npz`` under ``--work-root`` (free reuse across
+# invocations), keyed by a content hash of the pool's actual z/M arrays + h + the injection pool
+# path + a source-hash of the two functions this depends on (so an edit to either one
+# self-invalidates every existing cache entry -- no version constant to remember to bump).
+#
+# This is an ADDITIVE change to THIS DRIVER's own reuse-across-universes strategy (monkeypatching
+# the bare module-global name ``correspondence_1d.catalogue_selected_host_draw_weights`` that
+# ``draw_realization``'s host-mode branches look up at call time) -- it does not edit
+# ``correspondence_1d.py``, does not change the mixture law, the RNG stream, or any band/
+# statistic definition (design §8's bounded-scope rule): the cached path returns the IDENTICAL
+# ``(normalized_weights, w_g, s_tilde_phi)`` arrays the uncached call would, so every downstream
+# RNG consumer (``rng.choice(..., p=host_w)``, ``_draw_kernel_survival_redshifts``) sees the same
+# floats either way -- proven bit-for-bit in B8_2_S2_RECORD.md §8's byte-identity check.
+
+_DRAW_WEIGHT_CACHE_IN_PROCESS: dict[
+    str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]
+] = {}
+_DRAW_WEIGHT_CACHE_DIR: Path | None = None
+_DRAW_WEIGHT_CACHE_ENABLED: bool = True
+# Side-channel: run_one_universe reads this immediately after draw_realization() returns to
+# attach {hit, compute_s, ...} to the checkpoint -- draw_realization's own return value carries
+# no cache-provenance field (correspondence_1d.py is out of this stage's edit scope).
+LAST_DRAW_WEIGHT_CACHE_INFO: dict[str, Any] = {"hit": "not_invoked_this_process_yet"}
+
+_ORIGINAL_CATALOGUE_SELECTED_HOST_DRAW_WEIGHTS = catalogue_selected_host_draw_weights
+
+
+def _reset_last_draw_weight_cache_info() -> None:
+    """Call before each ``draw_realization`` so a no-catalogue-hosted-hosts draw (n_g==0, the
+    cached function never invoked) cannot leave a PRIOR universe's cache-hit info attached."""
+    global LAST_DRAW_WEIGHT_CACHE_INFO
+    LAST_DRAW_WEIGHT_CACHE_INFO = {"hit": "not_invoked_this_draw"}
+
+
+def _draw_weight_cache_key(pool: HostPool, h: float) -> str:
+    """Content hash of the actual pool arrays + h + injection dir + a source fingerprint.
+
+    Hashing the pool's OWN ``z``/``M`` arrays (not merely its identity or shape) means a
+    genuinely different catalogue can never collide with a stale cache entry -- ``id(pool)``
+    would not survive a fresh process (the on-disk leg) and a shape-only key would not catch a
+    same-shape, different-content pool.
+    """
+    hasher = hashlib.sha256()
+    hasher.update(str(REDUCED_CATALOGUE_PATH).encode())
+    hasher.update(str(INJECTION_POOL_DIR).encode())
+    hasher.update(np.ascontiguousarray(pool.z, dtype=np.float64).tobytes())
+    if pool.M is not None:
+        hasher.update(np.ascontiguousarray(pool.M, dtype=np.float64).tobytes())
+    hasher.update(repr(float(h)).encode())
+    hasher.update(inspect.getsource(_ORIGINAL_CATALOGUE_SELECTED_HOST_DRAW_WEIGHTS).encode())
+    hasher.update(inspect.getsource(kernel_smeared_survival).encode())
+    return hasher.hexdigest()[:32]
+
+
+def configure_draw_weight_cache(work_root: Path, enabled: bool) -> None:
+    """Point the process-global cache at ``work_root`` and enable/disable it.
+
+    Must be called once, before the first ``draw_realization(host_mode="mixture_selected", ...)``
+    of a script invocation -- ``main()`` calls this right after parsing args. ``enabled=False``
+    (``--no-draw-weight-cache``) bypasses the cache entirely (recomputes every call, exactly the
+    pre-B8.2.S2b behaviour) -- used only for the §8 byte-identity comparison against a cached run.
+    """
+    global _DRAW_WEIGHT_CACHE_DIR, _DRAW_WEIGHT_CACHE_ENABLED
+    _DRAW_WEIGHT_CACHE_DIR = work_root / "draw_weight_cache"
+    _DRAW_WEIGHT_CACHE_ENABLED = enabled
+    if enabled:
+        _DRAW_WEIGHT_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _cached_catalogue_selected_host_draw_weights(
+    pool: HostPool,
+    phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    completeness: CompletenessModel,
+    h: float = H_TRUE,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Drop-in replacement for ``catalogue_selected_host_draw_weights`` (same signature and
+    return contract) -- monkeypatched onto ``correspondence_1d``'s module namespace so every
+    ``draw_realization`` call site that looks up the bare name at call time (``"catalogue_
+    selected"``/``"catalogue_selected_2d"``/``"mixture_selected"``) gets the cached path. This
+    harness only ever exercises ``"mixture_selected"``, but the wrapper is correct for all three.
+    """
+    global LAST_DRAW_WEIGHT_CACHE_INFO
+    if not _DRAW_WEIGHT_CACHE_ENABLED:
+        t0 = time.time()
+        result = _ORIGINAL_CATALOGUE_SELECTED_HOST_DRAW_WEIGHTS(
+            pool, phi_survival_table, completeness, h=h
+        )
+        LAST_DRAW_WEIGHT_CACHE_INFO = {
+            "cache_enabled": False,
+            "hit": "disabled",
+            "compute_s": time.time() - t0,
+        }
+        return result
+
+    key = _draw_weight_cache_key(pool, h)
+    cached = _DRAW_WEIGHT_CACHE_IN_PROCESS.get(key)
+    if cached is not None:
+        LAST_DRAW_WEIGHT_CACHE_INFO = {"cache_enabled": True, "hit": "in_process", "key": key}
+        return cached
+
+    if _DRAW_WEIGHT_CACHE_DIR is None:
+        raise RuntimeError(
+            "draw-weight cache used before configure_draw_weight_cache() was called -- "
+            "main() must call it once, right after parsing args"
+        )
+    npz_path = _DRAW_WEIGHT_CACHE_DIR / f"draw_weights_{key}.npz"
+    if npz_path.is_file():
+        with np.load(npz_path) as z:
+            result = (
+                np.asarray(z["normalized"], dtype=np.float64),
+                np.asarray(z["w_g"], dtype=np.float64),
+                np.asarray(z["s_tilde_phi"], dtype=np.float64),
+            )
+        _DRAW_WEIGHT_CACHE_IN_PROCESS[key] = result
+        LAST_DRAW_WEIGHT_CACHE_INFO = {
+            "cache_enabled": True,
+            "hit": "on_disk",
+            "key": key,
+            "path": str(npz_path),
+        }
+        return result
+
+    t0 = time.time()
+    result = _ORIGINAL_CATALOGUE_SELECTED_HOST_DRAW_WEIGHTS(
+        pool, phi_survival_table, completeness, h=h
+    )
+    compute_s = time.time() - t0
+    normalized, w_g, s_tilde_phi = result
+    # Write-then-rename so a killed/interrupted process (this repo's own convention for
+    # long-running local jobs) can never leave a reader-visible partial .npz.
+    # np.savez APPENDS ".npz" to the filename if it doesn't already end in ".npz" -- a tmp name
+    # ending in ".tmp" (e.g. "<key>.npz.tmp") therefore gets written as "<key>.npz.tmp.npz", not
+    # "<key>.npz.tmp", so a plain tmp_path.replace(npz_path) then raises FileNotFoundError
+    # (caught live in the first B8.2.S2b timing run). Use a tmp name that ALREADY ends in ".npz"
+    # so numpy writes exactly that path, no silent extra suffix.
+    tmp_path = npz_path.with_name(npz_path.stem + ".tmp.npz")
+    np.savez(tmp_path, normalized=normalized, w_g=w_g, s_tilde_phi=s_tilde_phi)
+    tmp_path.replace(npz_path)
+    _DRAW_WEIGHT_CACHE_IN_PROCESS[key] = result
+    LAST_DRAW_WEIGHT_CACHE_INFO = {
+        "cache_enabled": True,
+        "hit": "miss",
+        "key": key,
+        "path": str(npz_path),
+        "compute_s": compute_s,
+    }
+    return result
+
+
+correspondence_1d.catalogue_selected_host_draw_weights = (
+    _cached_catalogue_selected_host_draw_weights
+)
+
+
 # ── per-universe drive + checkpoint ───────────────────────────────────────────
 
 
@@ -697,6 +875,8 @@ def run_one_universe(
     gen = MirrorUniverseGenerator(
         CorrespondenceConfig(n_events=n_draw, crb_reference_csv=CRB_CSV_PATH)
     )
+    _reset_last_draw_weight_cache_info()
+    t_draw = time.time()
     events = gen.draw_realization(
         seed,
         host_pool=ctx.host_pool,
@@ -706,6 +886,8 @@ def run_one_universe(
         class_weight_p_g=ctx.p_g_info["p_g"],
         gw_scatter=gw_scatter,
     )
+    dt_draw = time.time() - t_draw
+    draw_weight_cache_info = dict(LAST_DRAW_WEIGHT_CACHE_INFO)
     n_catalogue_hosted = int(events["n_catalogue_hosted"].iloc[0])
     n_realized_draw = int(len(events))
     if event_cap is not None and event_cap < len(events):
@@ -716,9 +898,13 @@ def run_one_universe(
     mid = max(1, len(h_values) // 2)
     calls = [h_values[:mid], h_values[mid:]] if len(h_values) > 1 else [h_values]
     calls = [c for c in calls if len(c) > 0]
-    diag_csv, elapsed, resolved, log_path = _run_with_log_capture(
+    diag_csv, elapsed_calls, resolved, log_path = _run_with_log_capture(
         universe_work, events, seed, ctx.handler, h_bounds, calls
     )
+    # draw_realization first (§5's isolated, dominant-when-cold cost), then the evaluate() call(s)
+    # (call_0/call_1) -- reported as SEPARATE fields per B8_2_S2_RECORD.md §7 item 1's instruction,
+    # not folded into one wall-clock total.
+    elapsed = {"draw_realization": dt_draw, **elapsed_calls}
     assert_resolved_production_flags(resolved)
 
     df = pd.read_csv(diag_csv)
@@ -761,6 +947,7 @@ def run_one_universe(
             "n_scored": int(event_cap) if event_cap is not None else n_realized_draw,
             "n_catalogue_hosted": n_catalogue_hosted,
             "class_weight_p_g": ctx.p_g_info["p_g"],
+            "draw_weight_cache": draw_weight_cache_info,
         },
         "grid": {
             "h_values": list(h_values),
@@ -1019,10 +1206,20 @@ def main() -> int:
         "invocation scores) -- default on; pass --no-verify-split-once to skip",
     )
     parser.add_argument("--no-verify-split-once", dest="verify_split_once", action="store_false")
+    parser.add_argument(
+        "--no-draw-weight-cache",
+        dest="draw_weight_cache",
+        action="store_false",
+        default=True,
+        help="disable the catalogue_selected_host_draw_weights cache (B8.2.S2b) -- recompute "
+        "the >318s-dominant host-draw weights fresh every universe; use only for the §8 "
+        "byte-identity comparison against a cached run (B8_2_S2_RECORD.md §8)",
+    )
     parser.add_argument("--score-only", action="store_true")
     args = parser.parse_args()
 
     args.work_root.mkdir(parents=True, exist_ok=True)
+    configure_draw_weight_cache(args.work_root, enabled=args.draw_weight_cache)
 
     if args.score_only:
         result = score_only(args.work_root, args.cell)
@@ -1080,6 +1277,15 @@ def main() -> int:
             f"seed {seed} cell {args.cell}: done in {time.time() - t_u:.1f}s -> {ckpt_file} "
             f"(n_scored no_bh={checkpoint['posterior']['no_bh']['n_events_scored']}, "
             f"n_catalogue_hosted={checkpoint['universe']['n_catalogue_hosted']})"
+        )
+        print(
+            f"  elapsed_s: draw_realization={checkpoint['elapsed_s'].get('draw_realization'):.1f}s "
+            f"(cache: {checkpoint['universe']['draw_weight_cache'].get('hit')}), "
+            + ", ".join(
+                f"{k}={v:.1f}s"
+                for k, v in checkpoint["elapsed_s"].items()
+                if k != "draw_realization"
+            )
         )
     print(f"total wall this invocation: {time.time() - t_start:.1f}s; {n_done} universe(s) scored")
     return 0

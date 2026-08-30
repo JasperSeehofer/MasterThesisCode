@@ -336,3 +336,209 @@ input.
 - No verdict of any kind (CONSISTENT-CALIBRATED / DEFECT-IN-CONSISTENT-VENUE / etc.) --
   `print_score_only_report()` prints statistics against their design §4.1 bands for the chair's
   own read and explicitly disclaims emitting one.
+
+## 9. Draw-weight cache (2026-08-30; B8.2.S2b, "§8" per the launch instruction) --
+    confirming and closing §5/§7's cost finding
+
+`launched under rows #255/#268 -- tree 2 node B8.2.S2b`. Scope: confirm §5's `draw_realization`
+cost hypothesis cheaply, implement the §7-item-2-proposed cache in the harness driver (additive,
+does not touch `correspondence_1d.py`), prove byte-identity, re-time, and re-cut the S3 commands.
+No git operation, no ssh, foreground polls only (each `timeout 590 ...` command below was run to
+completion, repeated as needed -- no Monitor/background-wait-for-notification pattern used for
+the final timings in this section, per the coordinator's correction mid-task). Every run in this
+section stayed at `--workers 2` (the launch's resource ceiling while runner-8's job was active).
+
+### 9.1 Hypothesis confirmed: `draw_realization` cost is FLAT in N, dominated by pool size
+
+Two independent cold (`draw_weight_cache` never previously populated for the touched work-root)
+single-universe runs, 3 h-nodes (0.70/0.73/0.76, for the timing only -- not the production grid),
+`--workers 2`:
+
+| N | seed | `elapsed_s.draw_realization` | cache hit | `elapsed_s.call_0` (1 h) | `elapsed_s.call_1` (2 h) | n_catalogue_hosted | universe wall |
+|---|---|---|---|---|---|---|---|
+| 20  | 900900 | **451.76s** | miss (compute_s=446.09s) | 59.86s | 83.95s | 2 | 602.3s |
+| 106 | 900901 | **461.85s** | miss (compute_s=456.22s) | 48.98s | 92.83s | 5 | 610.5s |
+
+`draw_realization` cost is flat to within ~2% across a 5.3x increase in N (451.8s -> 461.9s) while
+`evaluate()`'s own cost (call_0+call_1) is *also* flat (143.8s -> 141.8s) over this same N range --
+confirming §5's hypothesis for the draw leg (the >318s-lower-bound finding is fully explained by
+`catalogue_selected_host_draw_weights`'s pool-size-dominated `kernel_smeared_survival` pass, not
+by `n_events`) and additionally showing `evaluate()` itself is not yet N-sensitive at N<=106 (most
+likely a per-h global precompute, e.g. `beta_Gbar(h)`/`D(h)` over the full catalogue, dominates
+over the per-event term at this N -- **not** investigated further here, out of this stage's
+bounded scope: the cache built below touches only `draw_realization`'s host-draw-weight call).
+Both cold runs report the SAME cache key (`8aae9dfa6115f66ec6f173179595b658`), confirming the key
+is N-independent by construction, as designed (§7's own point: the weights depend only on
+`(host_pool, h_true)`).
+
+### 9.2 Cache implemented and confirmed effective
+
+`b8_cal_harness.py` now monkeypatches `correspondence_1d.catalogue_selected_host_draw_weights`
+(the bare module-global name `draw_realization`'s host-mode branches look up at call time) with
+`_cached_catalogue_selected_host_draw_weights` -- an in-process dict plus an on-disk `.npz` under
+`--work-root/draw_weight_cache/`, keyed by a SHA-256 hash of the pool's own `z`/`M` array bytes +
+`h` + `INJECTION_POOL_DIR` + a source-hash of `catalogue_selected_host_draw_weights` and
+`kernel_smeared_survival` (so an edit to either function self-invalidates every cache entry --
+no version constant to remember to bump). `--no-draw-weight-cache` bypasses it entirely (recomputes
+every call, byte-for-byte the pre-B8.2.S2b behaviour). Additive change to THIS driver's own
+reuse-across-universes strategy only; `correspondence_1d.py` is untouched, the mixture law is
+untouched, and (per 9.3) the RNG stream sees IDENTICAL floats either way.
+
+A second universe drawn in the SAME work-root as 9.1's N=20 cold run (seed 900910, same 3
+h-nodes, `--workers 2`) hit the on-disk cache:
+
+| leg | cold (seed 900900) | warm (seed 900910, on_disk hit) | reduction |
+|---|---|---|---|
+| `elapsed_s.draw_realization` | 451.76s | **8.59s** | 52.6x |
+| `elapsed_s.call_0`+`call_1` | 143.81s | 133.32s | (noise; evaluate() unaffected by this cache, as designed) |
+| universe wall (`done in`) | 602.3s | **151.1s** | 4.0x |
+
+One real bug was caught and fixed while building this: `np.savez` silently APPENDS `.npz` to a
+path that does not already end in `.npz` -- the first tmp-name choice (`<key>.npz.tmp`) got
+written as `<key>.npz.tmp.npz`, so the subsequent atomic `tmp_path.replace(npz_path)` raised
+`FileNotFoundError` (caught live, first cold N=20 attempt crashed on it). Fixed by using a tmp
+name that already ends in `.npz` (`<key>.tmp.npz`) so numpy writes exactly that path. Disclosed
+per the verifier-independence culture, not swept under a clean report.
+
+### 9.3 Byte-identity proof: cached vs uncached, same seed -- max_abs = 0 everywhere checked
+
+Re-ran seed 900900 (N=20, 3 h-nodes, `--workers 2`) in a FRESH work-root with `--no-draw-weight-
+cache`, and diffed every artifact against 9.1's cached run of the SAME seed:
+
+- `posterior.no_bh.ln_post` and `posterior.with_bh.ln_post` (3-element vectors): **max_abs_diff =
+  0.0** for both channels.
+- `map_h`, `sd`: bit-identical (`no_bh`: map_h=0.70, sd=0.021163003814093573 both runs; `with_bh`:
+  map_h=0.76, sd=0.021175016092939303 both runs).
+- `z_true_hist.counts`: identical, `[6, 7, 4, 1, 2]` both runs.
+- `universe.n_realized_draw`/`n_catalogue_hosted`: identical, 20/2 both runs.
+- The realized event table itself (`seed900900_S/simulations/prepared_cramer_rao_bounds.csv`,
+  20 rows x 134 columns): column set identical; **every numeric column's max_abs_diff = 0.0**;
+  every object column (`in_catalog`, `_coord_frame`, `_cov_frame`, `host_draw_mode`,
+  `event_class`) identical row-for-row.
+
+This is the exact "same RNG stream, cached weights == uncached weights" proof the launch
+instruction required: the cache changes WHEN the weights are computed, never WHAT they are.
+
+### 9.4 Re-timed N=20 with a warm cache: per-universe cost now
+
+Combining 9.1/9.2 (N=20, 3 h-nodes, `--workers 2`): **cold first universe of an invocation costs
+~602s (draw dominant, 451.8s of it); every subsequent universe against the SAME work-root's cache
+costs ~151s (draw collapses to ~9s; the remaining ~142s is `evaluate()`, unaffected by this
+cache).** At the production 41-node grid the `evaluate()` leg will be substantially larger (9.5).
+
+### 9.5 Extrapolation to the pilot (N=200, 41 nodes) and the N-ladder (41 nodes) --
+    ONE confident number, ONE uncertain one, flagged as such
+
+**Confident (direct consequence of 9.1's flat-in-N draw cost + 9.2's measured warm cost, not an
+extrapolation of `evaluate()`):** if the pilot's cell-S (n_U=100) and cell-T (n_U=25) runs share
+ONE `--work-root` (as the existing §7 commands already do -- both point at
+`b8_cal_harness_work_pilot`), the ENTIRE 125-universe pilot pays the ~455s cold draw cost **once**,
+then ~9s/universe thereafter: `455 + 124*9 ~= 1571s (~26 min) total draw time for the whole pilot`
+-- down from the pre-cache estimate of `125 * 455s ~= 15.8 hours`, a ~36x reduction on this leg.
+This number does not depend on the workers count (the cached weights are read once per universe
+from an in-process dict or a small `.npz`, not reprocessed by the worker pool).
+
+**Uncertain (extrapolated from only 2 noisy data points at 3 h-nodes/N in {20,106}/workers=2 --
+run the N=106 41-node ladder point FIRST, per §7's own standing advice, before trusting this for
+a compute-budget decision):** `evaluate()`'s own cost was FLAT in N over [20,106] at 3 h-nodes
+(143.8s -> 141.8s, §9.1), suggesting a per-h GLOBAL precompute (not the per-event, worker-
+parallelized likelihood loop) dominates in this regime -- if that holds, scaling naively linear in
+h-node count only (41/3 ~= 13.7x): `evaluate(41 nodes, N<=106, workers=2) ~= 143s * 13.7 ~= 1960s
+(~33 min)`. Whether `--workers 8` helps this number depends entirely on WHICH part dominates: the
+per-event loop parallelizes across workers (expect close to a 4x speedup, workers 2->8, i.e.
+`~490s (~8 min)`); a per-h GLOBAL catalogue precompute (`beta_Gbar(h)`/`D(h)`-type sums) does NOT
+obviously parallelize across the worker pool the same way, in which case workers=8 buys little
+and the true figure stays closer to `~1960s (~33 min)`. **This is a real, disclosed, order-of-
+magnitude-only range: `evaluate()` alone per universe at N=200/41-nodes could be anywhere from
+~8 to ~33 minutes at workers=8**, and N=400/N=1588's OWN scaling is unmeasured entirely (the
+flat-in-N behaviour at N<=106 could break down at higher N once the per-event term catches up to
+the per-h precompute term -- unknown from this stage's data). Pilot-scale (125 universes) at this
+range: `125 * [490s, 1960s] ~= [17.0h, 68.0h]` of `evaluate()` wall alone, on top of the ~26 min
+draw total above. **Recommendation: run the N=106/41-node ladder point (9.6) FIRST, read its
+REAL `elapsed_s.call_0`/`call_1` at workers=8, and re-derive the pilot's expected wall from that
+real number before committing the pilot's compute budget** -- exactly the same "confirm cheaply
+before spending the budget" discipline §7 already applied to the draw-cost hypothesis.
+
+### 9.6 Re-cut S3 commands (orchestrator runs these; not run by this node)
+
+All three N-ladder points and the pilot share ONE `--work-root` each (ladder vs pilot) so the
+draw-weight cache's ~455s cold cost is paid AT MOST ONCE per work-root, never per universe. Every
+command below can run at any point after runner-8's job (or any other resource-sharing job)
+frees the box; poll with a bounded foreground loop (`timeout 590 bash -c 'until ! pgrep -f "..."
+>/dev/null; do sleep 20; done'`, repeated), never a background-wait-for-notification pattern, per
+the coordinator's mid-task correction. `--max-wall-s` only stops the driver from STARTING a new
+universe -- for `--n-universes 1` (every N-ladder command) it has no effect on that one universe;
+it is kept here at a generous bound only so the flag's own contract stays documented.
+
+N-ladder (3 points x 1 seed, full 41-node grid = omit `--h-values`, both channels, both calls
+timed; **run N=106 first and read its REAL `elapsed_s` before deciding whether N=400/1588 need a
+much larger `--max-wall-s` or an unattended overnight background run**):
+
+```
+uv run python results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness.py \
+    --n-universes 1 --N 106 --cell S --seed-block 900300 \
+    --workers 8 --max-wall-s 7200 \
+    --work-root results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness_work_ladder
+
+# read elapsed_s.draw_realization (expect ~9s -- SAME work-root's cache is now warm from the
+# above call's own first-universe cold pay) and elapsed_s.call_0/call_1 (expect somewhere in
+# [~8 min, ~33 min] per §9.5's range) from
+# b8_cal_harness_work_ladder/universe_seed900300_S.json BEFORE running the next two.
+
+uv run python results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness.py \
+    --n-universes 1 --N 400 --cell S --seed-block 900301 \
+    --workers 8 --max-wall-s 14400 \
+    --work-root results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness_work_ladder
+
+uv run python results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness.py \
+    --n-universes 1 --N 1588 --cell S --seed-block 900302 \
+    --workers 8 --max-wall-s 28800 \
+    --work-root results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness_work_ladder
+```
+
+Pilot (cell S n_U=100, cell T n_U=25, both N=200, full 41-node grid, ONE shared work-root so the
+cold draw pay happens once across BOTH cells):
+
+```
+uv run python results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness.py \
+    --n-universes 100 --N 200 --cell S --seed-block 900400 --workers 8 --max-wall-s 3600 \
+    --work-root results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness_work_pilot
+# re-invoke identically (checkpoints skip already-done seeds) until 100 cell-S checkpoints exist.
+# Expected wall per universe after the first (warm draw ~9s + evaluate() per §9.5's
+# [~8 min, ~33 min] range): budget roughly 17-68 HOURS of wall time for the full 100-universe
+# cell-S batch alone at workers=8 -- re-derive this from the N=106 ladder point's REAL evaluate()
+# time (9.6 above) before committing to it; consider chunking via multiple --max-wall-s-bounded
+# invocations across sessions/days rather than one long foreground run.
+
+uv run python results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness.py \
+    --n-universes 25 --N 200 --cell T --seed-block 900500 --workers 8 --max-wall-s 3600 \
+    --work-root results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness_work_pilot
+
+uv run python results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness.py \
+    --score-only --cell S --work-root results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness_work_pilot
+uv run python results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness.py \
+    --score-only --cell T --work-root results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness_work_pilot
+```
+
+### 9.7 Quality gate (re-run after the cache implementation)
+
+- `uv run ruff check --fix .../b8_cal_harness.py` -- all checks passed (one auto-fix applied
+  during development, re-verified clean).
+- `uv run ruff format .../b8_cal_harness.py` -- formatted, subsequently unchanged.
+- `uv run mypy .../b8_cal_harness.py` -- Success, no issues (one `# type: ignore[attr-defined]`
+  added then removed after mypy reported it unused -- the monkeypatch assignment typechecks
+  cleanly without it).
+
+### 9.8 What this stage explicitly did NOT do
+
+- Did not touch `correspondence_1d.py` (per the launch instruction's bounded-scope rule) -- the
+  cache is entirely a harness-side monkeypatch of a module-global name, not an edit to the
+  generator's own caller-visible contract.
+- Did not investigate or cache `evaluate()`'s own flat-in-N cost (§9.1's observation) -- out of
+  scope; flagged for a future stage if the N=106 41-node ladder point confirms it matters at
+  production scale.
+- Did not run any universe at `--workers 8` (the launch's resource ceiling capped this node at
+  `--workers 2` while runner-8's job was active) -- the workers=8 figures in §9.5/§9.6 are
+  extrapolations/orchestrator-facing commands, not measurements.
+- Did not run the N-ladder or the pilot itself -- that is the orchestrator's own next step
+  (§9.6), per the original launch instruction.
