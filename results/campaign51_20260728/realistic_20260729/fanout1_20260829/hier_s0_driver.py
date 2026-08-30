@@ -155,6 +155,23 @@ THETA_NODES: dict[str, tuple[float, float]] = {
 }
 NODE_ORDER: tuple[str, ...] = ("truth", "b_plus", "b_minus", "s_plus", "s_minus")
 
+# T1.4 (row #255 tree 2 node T1.4, Richardson s-arm; T1.3-zwin
+# T1_3_ES_NULL_DET_VALIDITY_20260830.md section 5's registered falsifier):
+# the half-step s-node pair at ln s = +/-ln(sqrt2)/2, i.e. s = 2^(+/-1/4).
+# NOT merged into THETA_NODES/NODE_ORDER unconditionally -- main() only
+# registers these two entries into THETA_NODES when --s-half-step is passed
+# (mutating the module-level dict before any node-name validation or
+# lookup), so every pre-T1.4 invocation (and every T1.4 invocation that
+# omits the flag) is byte-identical: `--nodes s_plus_half` without
+# `--s-half-step` hits the SAME "unknown node" SystemExit it always did.
+# NODE_ORDER (the default 5-node cross and the GATE ENG report loop) is
+# deliberately left untouched -- these two nodes are only ever reached via
+# an explicit `--nodes ...,s_plus_half,s_minus_half`.
+THETA_NODES_HALF_STEP: dict[str, tuple[float, float]] = {
+    "s_plus_half": (0.0, 2.0**0.25),
+    "s_minus_half": (0.0, 2.0**-0.25),
+}
+
 # S0-R's registered dose (prereg §2.1; DISCLOSED NULL per PA-HIER-3/22 above).
 S0_R_SIGMA_SCALE = 1.5
 
@@ -1183,6 +1200,15 @@ def compute_scores(
     s_missing = _axis_missing(("s_plus", "s_minus"))
     has_b = not b_missing
     has_s = not s_missing
+    # T1.4 (row #255 tree 2 node T1.4, Richardson s-arm): readiness of the
+    # half-step pair (s_plus_half, s_minus_half). Deliberately NOT folded
+    # into the has_b/has_s "at least one axis ready" gate above or the
+    # broken-pair ValueError loop below -- a missing half-step node (e.g.
+    # the P1 out-root before the T1.4 run lands, or a smoke run that only
+    # ever requests one of the two) must degrade the Richardson fields to
+    # n_pooled=0/NaN, never raise (T1_3_ES_NULL_DET_VALIDITY_20260830.md
+    # section 5, "printing only; no verdict").
+    has_s_half = not _axis_missing(("s_plus_half", "s_minus_half"))
     # Check for a genuine BROKEN pair first (exactly one of an axis's two
     # nodes present -- some seed's worker for the other one raised, or the
     # caller only requested one of the pair by mistake): this is checked
@@ -1315,6 +1341,65 @@ def compute_scores(
             mean_s, sem_s, z_s, n_s = float("nan"), float("nan"), float("nan"), 0
             score_s_available = False
 
+        # T1.4 (row #255 tree 2 node T1.4, Richardson s-arm;
+        # T1_3_ES_NULL_DET_VALIDITY_20260830.md section 5's registered
+        # falsifier): S_half is score_lns's own secant form re-centred on
+        # the half-step pair (ln s = +/-ln(sqrt2)/2 = +/-ln(2)/4); the
+        # Richardson secant score_lns_R = (4*S_half - S_full)/3 (S_full =
+        # score_lns) has no O(ln s ^2) term for any smooth per-event
+        # log-likelihood. PRINTING ONLY -- feeds no verdict (verdict_s0a/
+        # verdict_s0r read only score_b/score_s above, untouched by this
+        # block). Requires BOTH the ±ln√2 pair (has_s) and the ±ln√2/2 pair
+        # (has_s_half); an inner join on (seed, event_idx) additionally
+        # drops any event present in one pair's on-disk output but not the
+        # other's -- graceful degradation on a missing pair, never a raise.
+        if has_s and has_s_half:
+            sph = pd.concat(
+                [
+                    r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                    for r in all_nodes["s_plus_half"]
+                ],
+                ignore_index=True,
+            ).rename(columns={channel: "s_plus_half"})
+            smh = pd.concat(
+                [
+                    r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                    for r in all_nodes["s_minus_half"]
+                ],
+                ignore_index=True,
+            ).rename(columns={channel: "s_minus_half"})
+            half_join = sph.merge(smh, on=["seed", "event_idx"], how="inner")
+            denom_half = math.log(2.0) / 2.0  # ln(2)/2 = ln(sqrt2), the half-step secant's own span
+            score_half = (half_join["s_plus_half"] - half_join["s_minus_half"]) / denom_half
+            richardson_join = (
+                s_join[["seed", "event_idx"]]
+                .assign(score_lns=score_lns)
+                .merge(
+                    half_join[["seed", "event_idx"]].assign(score_half=score_half),
+                    on=["seed", "event_idx"],
+                    how="inner",
+                )
+            )
+            score_lns_R = (4.0 * richardson_join["score_half"] - richardson_join["score_lns"]) / 3.0
+            richardson_join = richardson_join.assign(score_lns_R=score_lns_R)
+            mean_R, sem_R, z_R, n_R = _mean_sem(score_lns_R)
+            paired_shift = score_lns_R - richardson_join["score_lns"]
+            mean_shift, sem_shift, _z_shift, n_shift = _mean_sem(paired_shift)
+            per_seed_R: dict[str, dict[str, Any]] = {}
+            for seed_val, grp in richardson_join.groupby("seed"):
+                vals = grp["score_lns_R"].to_numpy(dtype=float)
+                vals = vals[np.isfinite(vals)]
+                per_seed_R[str(int(seed_val))] = {
+                    "mean": float(np.mean(vals)) if vals.size else float("nan"),
+                    "n": int(vals.size),
+                }
+            richardson_available = True
+        else:
+            mean_R, sem_R, z_R, n_R = float("nan"), float("nan"), float("nan"), 0
+            mean_shift, sem_shift, n_shift = float("nan"), float("nan"), 0
+            per_seed_R = {}
+            richardson_available = False
+
         out[channel] = {
             "score_b": {"mean": mean_b, "sem": sem_b, "Z": z_b, "n_pooled": n_b},
             "score_b_available": has_b,
@@ -1333,6 +1418,27 @@ def compute_scores(
                 "sem": sem_s_raw,
                 "Z": z_s_raw,
                 "n_pooled": n_s_raw,
+            },
+            # T1.4 (row #255 tree 2 node T1.4, Richardson s-arm): the
+            # Delta^2-free secant, PRINTING ONLY -- no verdict function reads
+            # these keys. n_pooled=0/NaN whenever either s-node pair
+            # (±ln√2, ±ln√2/2) is absent from ``all_nodes`` (graceful
+            # degradation, never a raise; see ``has_s_half`` above).
+            "score_lns_R": {
+                "mean": mean_R,
+                "sem": sem_R,
+                "Z": z_R,
+                "n_pooled": n_R,
+                "per_seed": per_seed_R,
+            },
+            "score_lns_R_available": richardson_available,
+            # score_lns_R - score_lns, paired per (seed, event_idx); the
+            # falsifier's decisive quantity (T1_3_ES_NULL_DET_VALIDITY_
+            # 20260830.md section 5: predicted -Es_null^{(P1)}).
+            "score_lns_R_minus_score_lns": {
+                "mean": mean_shift,
+                "sem": sem_shift,
+                "n_pooled": n_shift,
             },
         }
     return out
@@ -2094,7 +2200,7 @@ def write_score_markdown(payload: dict[str, Any], md_path: Path) -> None:
             # primary) first; "score_s_raw" (the OLD/superseded raw linear
             # secant) and "score_lns" (the intermediate ln-s-centred secant
             # before the Es_null_det correction) alongside for continuity.
-            for stat_name in ("score_b", "score_s", "score_s_raw", "score_lns"):
+            for stat_name in ("score_b", "score_s", "score_s_raw", "score_lns", "score_lns_R"):
                 if stat_name not in d:
                     continue
                 s = d[stat_name]
@@ -2108,6 +2214,23 @@ def write_score_markdown(payload: dict[str, Any], md_path: Path) -> None:
             if "score_s_available" in d:
                 lines.append(
                     f"- score_s_available (Es_null_det cache found): {d['score_s_available']}"
+                )
+            # T1.4 (row #255 tree 2 node T1.4, Richardson s-arm): printing
+            # only, no verdict -- see compute_scores' score_lns_R docstring
+            # comment. n_pooled=0/NaN (and per_seed={}) when either s-node
+            # pair (±ln√2, ±ln√2/2) is absent, by design.
+            if "score_lns_R_available" in d:
+                lines.append(
+                    "- score_lns_R_available (both ±ln√2 and ±ln√2/2 s-node "
+                    f"pairs present): {d['score_lns_R_available']}"
+                )
+            if d.get("score_lns_R", {}).get("per_seed"):
+                lines.append(f"  per-seed score_lns_R: {d['score_lns_R']['per_seed']}")
+            if "score_lns_R_minus_score_lns" in d:
+                shift = d["score_lns_R_minus_score_lns"]
+                lines.append(
+                    "- score_lns_R - score_lns (paired shift, T1.3-zwin PA-HIER-33 falsifier): "
+                    f"mean={shift['mean']!r} sem={shift['sem']!r} n_pooled={shift['n_pooled']}"
                 )
             lines.append("")
     if "verdict" in payload:
@@ -2169,8 +2292,25 @@ def main() -> int:
         "--nodes",
         type=str,
         default=None,
-        help="Comma-separated theta-node names (subset of truth,b_plus,b_minus,s_plus,s_minus); "
-        "default is all 5 for S0-A/S0-R (ignored for S0-C, which is always the truth node).",
+        help="Comma-separated theta-node names (subset of truth,b_plus,b_minus,s_plus,s_minus, "
+        "plus s_plus_half,s_minus_half when --s-half-step is also passed); default is all 5 "
+        "(NODE_ORDER) for S0-A/S0-R (ignored for S0-C, which is always the truth node).",
+    )
+    ap.add_argument(
+        "--s-half-step",
+        action="store_true",
+        dest="s_half_step",
+        help="T1.4 (row #255 tree 2 node T1.4, Richardson s-arm; "
+        "tree2_20260830/T1_3_ES_NULL_DET_VALIDITY_20260830.md section 5's registered "
+        "falsifier). Registers two additional theta nodes into THETA_NODES for this "
+        "invocation only: s_plus_half (b=0, s=2**0.25) and s_minus_half (b=0, s=2**-0.25), "
+        "at ln s = +/-ln(sqrt2)/2. Required whenever --nodes references either name -- "
+        "omitted, those names are rejected by the same 'unknown node' check as before T1.4 "
+        "(byte-identical to every pre-T1.4 invocation). Passing this flag alone (without "
+        "requesting the nodes in --nodes) changes nothing. Once evaluated and banked, "
+        "--score-only combines the half-step pair with the existing s_plus/s_minus pair "
+        "into the Richardson secant score_lns_R (printing only, no verdict; see "
+        "compute_scores).",
     )
     ap.add_argument(
         "--smoke",
@@ -2331,6 +2471,16 @@ def main() -> int:
         "<arm>_score_output.json and <arm>_score.md.",
     )
     args = ap.parse_args()
+
+    # T1.4 (row #255 tree 2 node T1.4, Richardson s-arm): mutate the
+    # module-level THETA_NODES dict BEFORE any node-name validation or
+    # THETA_NODES[node] lookup (run_theta_node, gather_node_results_from_
+    # disk, compute_scores's has_s_half, etc. all read the same global).
+    # Omitted, THETA_NODES is untouched -- byte-identical to every pre-T1.4
+    # invocation, including the "unknown node" SystemExit two nodes down if
+    # --nodes references s_plus_half/s_minus_half without this flag.
+    if args.s_half_step:
+        THETA_NODES.update(THETA_NODES_HALF_STEP)
 
     out_root = Path(args.out_root)
 

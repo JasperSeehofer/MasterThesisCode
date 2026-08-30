@@ -698,3 +698,136 @@ the fixed function returns `Es_null_det=0.03453083233123442` (ln(2) denominator)
 
 Ledger: `docs/gates/PHYSICS-GATE-LEDGER.md`, "verified (revised)" row appended for T1.3-zwin.
 No git operations, no other files touched.
+
+## §11 Richardson half-step nodes (T1.4)
+
+Row #255 standing grant, tree 2 node T1.4, registered by `tree2_20260830/
+T1_3_ES_NULL_DET_VALIDITY_20260830.md` section 5's falsifier (PA-HIER-33's registered-before-
+any-run decisive check): two new theta nodes, `s_plus_half` (b=0, s=2^(+1/4) ≈ 1.189207) and
+`s_minus_half` (b=0, s=2^(-1/4) ≈ 0.840896), at `ln s = +/-ln(sqrt2)/2` -- the half-step pair
+that, combined with the existing P1 nodes `s_plus`/`s_minus` (`ln s = +/-ln(sqrt2)`), forms a
+Delta^2-free Richardson-extrapolated secant.
+
+**Code changes** (`fanout1_20260829/hier_s0_driver.py` only):
+
+1. `THETA_NODES_HALF_STEP: dict[str, tuple[float, float]] = {"s_plus_half": (0.0, 2.0**0.25),
+   "s_minus_half": (0.0, 2.0**-0.25)}` added as a module-level constant next to `THETA_NODES`/
+   `NODE_ORDER`, NOT merged into either unconditionally.
+2. New CLI flag `--s-half-step` (`store_true`, dest `s_half_step`). In `main()`, immediately
+   after `args = ap.parse_args()` and BEFORE the existing `for n in nodes: if n not in
+   THETA_NODES: raise SystemExit(...)` validation, `if args.s_half_step: THETA_NODES.update
+   (THETA_NODES_HALF_STEP)` -- a one-time mutation of the module-level dict every downstream
+   lookup (`run_theta_node`'s `THETA_NODES[node]` call, `gather_node_results_from_disk`'s same
+   lookup, `compute_scores`'s new `has_s_half` check) reads from unchanged. Byte-identical
+   when the flag is omitted: `THETA_NODES` is never touched, so `--nodes s_plus_half` without
+   `--s-half-step` still hits the pre-existing "unknown node" `SystemExit` verbatim.
+   `NODE_ORDER` (the default 5-node cross for `--nodes`-omitted invocations, and the `gate_eng`
+   report loop) is deliberately left untouched -- the two new nodes are reachable only via an
+   explicit `--nodes ...,s_plus_half,s_minus_half`, so every default-node-list invocation
+   (registered P1's own 3-node-type `--nodes truth,s_plus,s_minus` included) is unaffected.
+3. `compute_scores`: a third axis-readiness flag `has_s_half = not _axis_missing(("s_plus_half",
+   "s_minus_half"))`, computed alongside `has_b`/`has_s` but deliberately NOT folded into the
+   "at least one axis ready" gate or the broken-pair `ValueError` loop (a missing half-step
+   node degrades to `n_pooled=0`/NaN, never raises -- the falsifier doc's "printing only, no
+   verdict" instruction). When `has_s and has_s_half`, per channel: `S_half = [lnL(s=2^{1/4}) -
+   lnL(s=2^{-1/4})] / (ln(2)/2)` per event (an inner join of `s_plus_half`/`s_minus_half` on
+   `(seed, event_idx)`, mirroring the existing `s_plus`/`s_minus` join), then `score_lns_R =
+   (4*S_half - score_lns) / 3` (`score_lns` = the existing `S_full` secant, unchanged), joined
+   to `score_lns`'s own event set (so an event on disk for one pair but not the other is simply
+   excluded, not an error). Reported per channel: `score_lns_R` (`mean`/`sem`/`Z`/`n_pooled`/
+   `per_seed`, the last a `{seed: {"mean", "n"}}` dict), `score_lns_R_available` (bool), and
+   `score_lns_R_minus_score_lns` (`mean`/`sem`/`n_pooled` of the paired shift `score_lns_R -
+   score_lns` -- PA-HIER-33's decisive falsifier quantity, predicted `-Es_null^{(P1,nb)} =
+   -0.0013 +/- 0.0008`). None of `verdict_s0a`/`verdict_s0r` read any of these three keys (both
+   read only `score_b`/`score_s`), so the new statistic is confirmed printing-only by
+   construction, not just by convention. `write_score_markdown` prints all three alongside the
+   existing `score_b`/`score_s`/`score_s_raw`/`score_lns` lines whenever `scores` is present.
+
+**Correctness check (synthetic, not from any evaluate() run).** A 50-event synthetic
+`ln L(ln s) = 0.01*idx - ln_s^2 + 0.05*ln_s^3` fixture (quadratic + a cubic term driving the
+secant's O(delta^2) bias) confirms `score_lns_R` recovers `0.0` to floating-point precision
+(`3.19e-17`) where the analytic Richardson extrapolation predicts exactly `0` (no O(delta^2)
+term survives), while `score_lns` on the same fixture carries the full analytically-predicted
+bias (`0.0060057`, matching `a3*delta^2/6` in closed form); the paired shift
+(`score_lns_R - score_lns` = `-0.0060057`) recovers the full secant bias with the opposite
+sign, exactly as PA-HIER-33 section 5's own Gaussian check states. Dropping `s_minus_half`
+from the synthetic fixture and re-running `compute_scores` confirms graceful degradation:
+`score_lns_R_available=False`, `n_pooled=0`, `mean=nan` -- no exception.
+
+**Smoke evidence** (seed 900101, `--event-cap 12`, foreground, `timeout 590`, builder-only per
+rule 2):
+
+    uv run python results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py \
+      --arm S0-A --seeds 900101 --nodes s_plus_half --s-half-step \
+      --theta-sites 2.2 --smear off --theta-phi-divisor on --theta-zwindow on --z-window-k 4.0 \
+      --event-cap 12 --jobs 1 --total-cpu-budget 4 \
+      --out-root results/campaign51_20260728/realistic_20260729/tree2_20260830/hier_s0_smoke_half
+
+Timed out at 590s (killed cleanly, `pgrep -af hier_s0_driver` confirmed no orphaned process
+afterward) -- as anticipated (the P1 arm's own per-s-cell cost is 705-844s evaluate-only, per
+`logs/runner7_tree2_20260830.log`; `--event-cap 12` shrinks the per-event loop but not the
+fixed per-seed venue/divisor-precompute cost, matching §10's own recert-run disclosure).
+**Structural checks confirmed before the kill:** `node_s_plus_half_sites2.2_nosmear_divisor_
+zwin_zk4/` was created under `s0a_seed900101/` with EXACTLY the same `_node_dir_suffix` P1's
+own `node_s_plus_sites2.2_nosmear_divisor_zwin_zk4` uses (`_node_dir_suffix` is node-name-
+agnostic, keyed only by `theta_sites`/`smear`/`theta_phi_divisor`/`theta_zwindow`/`z_window_k`
+-- confirming the new node reuses every existing suffix/config path unchanged); `THETA_NODES[
+"s_plus_half"] = (0.0, 1.189207115002721)` resolved correctly (`2**0.25` to full float
+precision) and was forwarded through to a real venue build (`prepared_cramer_rao_bounds.csv`,
+`cramer_rao_bounds.csv`, and the `injections` symlink all present and populated); `es_null_det.
+csv` was cached for the seed as a side effect, exactly as for any other node. No
+`event_likelihoods.csv` was produced (evaluate() never completed within the budget), so no
+scoring was possible from this smoke's own output.
+
+`--score-only` on the smoke dir (`--nodes s_plus,s_minus,s_plus_half,s_minus_half --s-half-step`,
+same theta/config flags, same `--out-root`) exits 0 with `n_present_by_node` all zero (no CSVs
+exist yet) and the pre-existing "on-disk node set is INCOMPLETE for pooling ... not an error"
+note -- clean graceful-degradation behaviour at the CLI level, consistent with the synthetic
+`compute_scores`-level check above (which is the one that actually exercises the new
+`score_lns_R` fields, since this smoke's single half-node never reached `event_likelihoods.
+csv`). `hier_s0_zwin_run/` (P1's own out-root, read-only per this node's scope) was inspected
+only to confirm its `s0a_seed900101/node_s_plus_sites2.2_nosmear_divisor_zwin_zk4` directory
+name matches the smoke's own suffix exactly -- NOT written to.
+
+`uv run ruff check` clean; `uv run ruff format` applied (one pre-existing-style line-length
+wrap, no semantic change) then reconfirmed clean. `uv run mypy --ignore-missing-imports`:
+the same 10 pre-existing `run_mirror_seed_inprocess` kwarg-splat errors as §10 (lines 501/517
+after this addendum's line shift; unrelated to this change, reproduced identically before it).
+
+**The T1.4 run command** (for the orchestrator/runner; NOT executed by this node -- 8 cells: 4
+seeds x 2 node types `{s_plus_half, s_minus_half}`; reuses P1's own out-root so the truth/
+s_plus/s_minus nodes already banked there are not re-run):
+
+    uv run python3 results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py \
+      --arm S0-A \
+      --nodes s_plus_half,s_minus_half \
+      --s-half-step \
+      --theta-sites 2.2 \
+      --smear off \
+      --theta-phi-divisor on \
+      --theta-zwindow on \
+      --z-window-k 4.0 \
+      --sky-cone-k 1.5 \
+      --jobs 1 \
+      --out-root results/campaign51_20260728/realistic_20260729/tree2_20260830/hier_s0_zwin_run
+
+**The score-only command** (after the run above completes; combines the new half-step pair
+with P1's already-banked `truth`/`s_plus`/`s_minus` in the SAME out-root, so
+`score_lns_R`/`score_lns_R_minus_score_lns` are populated):
+
+    uv run python3 results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py \
+      --arm S0-A \
+      --nodes truth,s_plus,s_minus,s_plus_half,s_minus_half \
+      --s-half-step \
+      --theta-sites 2.2 \
+      --smear off \
+      --theta-phi-divisor on \
+      --theta-zwindow on \
+      --z-window-k 4.0 \
+      --sky-cone-k 1.5 \
+      --score-only \
+      --out-root results/campaign51_20260728/realistic_20260729/tree2_20260830/hier_s0_zwin_run
+
+Every flag must match the run command above verbatim (same reasoning as §3/the P1 score-only
+note: `gather_node_results_from_disk` reconstructs the node-directory suffix from them). No
+git operations, no other files touched.
