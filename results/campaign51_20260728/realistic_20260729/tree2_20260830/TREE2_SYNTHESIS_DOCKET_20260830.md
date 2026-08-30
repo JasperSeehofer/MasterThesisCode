@@ -348,3 +348,13 @@ node; runner-9's work root untouched. The row #268 grant lapses in the morning w
 and the verifier pass; the registered end-of-tree-2 verifier registration
 (REGISTRATION_END_VERIFIER_PASS_TREE2.md) remains to be authored ahead of the wave-3 data per
 amendment F5 (charter section 4).
+
+## Appended correction (2026-08-30 night, orchestrator) — §5 item 0 runnability
+
+T2.2B_ARM_B_RUNSHEET.md (extraction agent, verified in code and on disk) shows §5 item 0's "LOCAL
+PREREQUISITE" label is wrong: arm (b) needs (i) a production-venue path the θ-driver does not have
+(CONFIG_CHOICES = b0i, ft only — it runs via `python -m darksiren_emri` directly) and (ii) the
+`simulations/injections` pool, which exists only on the cluster ($WS/run_20260729_seed61000; every
+local `*_iiib` symlink to it is broken while Lustre is down). The CRB CSV is local and pin-verified.
+Consequence: T2.2b moves INTO the cluster queue (before the A18 arm, same submission session); item 0's
+cost estimate stands. SUPERSEDES the "runs before or during the outage" clause only.
