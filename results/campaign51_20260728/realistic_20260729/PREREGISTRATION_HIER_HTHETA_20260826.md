@@ -3087,3 +3087,40 @@ taken under a ratified rule) — nothing in this note lifts the STOP.
 *Stamp: [FABLE-ORCH], 2026-08-30. Append-only; no git, no code, no compute; did not touch any run
 directory or the concurrently-running B8.2 harness files. PROPOSED — NOT ADOPTED; returns to the
 author as a [RULE].*
+
+### T1.4 RESULT RECORD (2026-08-30; independent reader; falsifier of PA-HIER-33 item (ii), executed)
+
+Run of record: `tree2_20260830/hier_s0_zwin_run` (8 new cells: 4 seeds x `{s_plus_half = 2^(1/4),
+s_minus_half = 2^(-1/4)}`, same flags as P1, pooled with the existing P1 s-nodes). Independently
+re-derived from the raw `event_likelihoods.csv` files (not from the driver's cache); reproduces
+`s0a_score_output.json` to the digit. No-BH primary channel, n=461: `score_lns_R = +0.00640 +/-
+0.01361` (Z +0.470); paired shift `score_lns_R - score_lns = +0.002435 +/- 0.001404` (per-event SEM)
+/ `+/- 0.001724` (seed-clustered, the PA-HIER-5-leg-(a) binding SEM here). Per-seed
+`score_lns_R` means: +0.0040 / **-0.0355** / +0.0518 / +0.0104 (seed 900102 negative, flagged not
+adjudicated). With-BH companion (REPORTED-ONLY): `score_lns_R = +0.0384 +/- 0.0179` (Z +2.145),
+paired shift `+0.00758 +/- 0.00207`.
+
+Adjudication at 3 sigma of the measured paired SEM (task-specified per-event SEM 0.0014037), applied
+literally per the registered rule: PA-HIER-32(d)'s unweighted null (-0.046) EXCLUDED at ~34.5 sigma;
+the c-weighted null (-0.025) EXCLUDED at ~19.5 sigma; the Bartlett null (-0.0013 +/- 0.0008, this
+amendment) is NOT excluded — measured residual +0.00373 = ~2.66 sigma per-event SEM (~2.17 sigma
+using the binding seed-clustered SEM), inside the registered 3-sigma threshold, with the
+derivation's own disclosed caveats (the ~19% finite-difference underestimate; the c-quartile/`z_g`
+opposite-sign cancellation inside the pooled mean) not moving it past the line.
+
+**Verdict.** The fresh-data falsifier REFUTES the PA-HIER-32(d) null and the c-weighted null; the
+Bartlett-scale null (approximately zero) is the only survivor of the three at the registered rule.
+The Delta^2-free Richardson secant itself is null at truth (no-BH Z = +0.470) — under PA-HIER-33's
+proposed rule the s-axis score at truth is **CONSISTENT WITH ZERO**. This arm adjudicates which null
+is correct, not the s-axis verdict itself (registered reading rule, item (ii)): **the P1 B0-A' (s)
+verdict stays on the record until the author ratifies PA-HIER-33** (or takes a fresh S0-A read under
+a ratified rule). With-BH channel REPORTED-ONLY (Z +2.15, inside 3), not adjudicated.
+
+Cost: measured wall 7976.4 s (log START 19:45:48 -> END 21:58:47) x 14 cores = 31.0 CPU-h (2.22 h
+wall) — ~1.5x the item (ii) estimate (~20 CPU-h / 1.5 h). Full account:
+`tree2_20260830/T1_4_RICHARDSON_READOUT_RECORD.md`, `tree2_20260830/t1_4_readout.json`; ledger row
+appended in `gate_b_20260730/BIAS_HISTORY_LEDGER.md`.
+
+*Stamp: independent reader, 2026-08-30. Foreground only (<=600 s per command), no git, no ssh,
+append-only; zero `evaluate()` calls; did not touch `b8_cal_harness*` or its work roots (runner-9 /
+B8.2 S3 concurrently running). Launched under rows #255/#268 — tree 2 node T1.4.*

@@ -1318,3 +1318,33 @@ mirror in `PREREGISTRATION_HIER_HTHETA_20260826.md`; ledger row appended in `BIA
 Foreground only (<= 600 s per command actually used; longest single command was the venue-build
 cross-check at ~498 s), no git, no ssh, append-only; did not touch source code or the concurrently
 running B8.2 harness files.*
+
+## T1.4 result (2026-08-30; independent reader; Richardson half-step falsifier, PA-HIER-33 item (ii))
+
+Run of record: `hier_s0_zwin_run`, 8 new cells (4 seeds x `s_plus_half`=2^(1/4)/`s_minus_half`=2^(-1/4),
+pooled with the P1 s-nodes above). Independently re-derived `S_half`, `S_full`, and the Richardson
+secant `score_lns_R = (4*S_half - S_full)/3` from the raw `event_likelihoods.csv` files per event per
+seed (not from the driver's cache); reproduces `s0a_score_output.json` to the digit. No-BH primary
+channel, n=461: `score_lns_R = +0.00640 +/- 0.01361` (Z +0.470); paired shift `score_lns_R -
+score_lns = +0.002435 +/- 0.001404` (per-event SEM; 0.001724 seed-clustered, the PA-HIER-5-leg-(a)
+binding one). Per-seed `score_lns_R`: +0.0040 / -0.0355 / +0.0518 / +0.0104 (900102 negative,
+flagged, not adjudicated). With-BH (REPORTED-ONLY): `score_lns_R = +0.0384 +/- 0.0179` (Z +2.145).
+
+Adjudicated at 3 sigma of the measured paired SEM against PA-HIER-33's three registered predictions:
+PA-HIER-32(d)'s unweighted null (-0.046) EXCLUDED (~34.5 sigma); the c-weighted null (-0.025)
+EXCLUDED (~19.5 sigma); the Bartlett null (-0.0013 +/- 0.0008) NOT excluded (residual +0.00373 =
+~2.66 sigma per-event SEM / ~2.17 sigma seed-clustered), inside the registered 3-sigma threshold
+even after applying the derivation's own disclosed ~19% finite-difference-underestimate caveat.
+
+**Verdict.** The Bartlett-scale null is the only one of the three registered nulls that survives;
+the Richardson secant is null at truth (no-BH Z=+0.470) under PA-HIER-33's proposed convention. Per
+the pre-registered reading rule this arm adjudicates the NULL, not the s-axis verdict: **the P1
+B0-A' (s) STOP stands until the author ratifies PA-HIER-33.** With-BH REPORTED-ONLY, not adjudicated.
+Cost: 7976.4 s wall x 14 cores = 31.0 CPU-h (2.22 h wall), ~1.5x the item (ii) estimate. Full
+account: `T1_4_RICHARDSON_READOUT_RECORD.md`, `t1_4_readout.json`; prereg mirror in
+`PREREGISTRATION_HIER_HTHETA_20260826.md` ("T1.4 RESULT RECORD"); ledger row in
+`gate_b_20260730/BIAS_HISTORY_LEDGER.md`.
+
+*Authorization: launched under rows #255/#268 -- tree 2 node T1.4 (Richardson falsifier, independent
+reader). Foreground only (<=600 s/command), no git, no ssh, append-only; zero `evaluate()` calls;
+did not touch `b8_cal_harness*` or its work roots (runner-9/B8.2 S3 concurrently running).*
