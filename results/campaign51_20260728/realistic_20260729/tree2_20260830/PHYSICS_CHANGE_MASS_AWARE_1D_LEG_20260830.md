@@ -1199,3 +1199,66 @@ every new read site is guarded by that default, matching every prior instrument 
 family (T1.1, T2.2, the P3-IMP/P3-2D/P3-RPHI twins). No git operation performed by this node.
 
 launched under row #255 -- tree 2 node T2.3 -- implementation record complete.
+
+---
+
+## Arm (a) result, 2026-08-30 (independent reader; append-only)
+
+Launched under row #255 -- tree 2 node T2.3 (independent reader; instrument built and run by other
+agents; run of record `ma1d_ft_counterfactual_run/s0a_seed900101..900104/{node_truth_ft,
+node_truth_ft_ma1d}`, log `ma1d_ft_counterfactual_run/logs/runner6_tree2_20260830.log`, off arm
+10:41:36->13:03:44, on arm 13:03:44->15:26:52, 14-core budget, `--jobs 1`). Full account:
+`tree2_20260830/T2_3_MA1D_ARM_A_READOUT_RECORD.md`, `tree2_20260830/t2_3_arm_a_readout.json`.
+
+**GATE T-ID: PASS, bit-identical.** The "off" arm reproduces `fanout1_20260829/kwq1_registered_run`'s
+truth node exactly on `combined_no_bh` and `L_cat_no_bh` at both h in {0.725, 0.735}, all 4 seeds,
+`max_abs_diff = 0.0`, no unmatched rows.
+
+**GATE ENG: PASS on the primary bar, mixed on the regression sub-bar.** `L_cat_no_bh` changes on
+100% of active (`n_cand_no_bh > 0` at h=0.73, read from the T2.2 candidate-dump `per_event_h_0_73.csv`)
+events, all 4 seeds -- clears the registered >= 99% bar (section 6.1) cleanly. `combined_no_bh`
+changes on 92.97% / 96.15% / 85.47% / 96.40% of active events (seeds 900101-900104) against R13's
+>= 90% regression bar -- PASS on 3/4 seeds, misses on seed 900103 (85.47%), disclosed not
+adjudicated. R7's dark-class invariant (n_cand_no_bh == 0 -> combined_no_bh bit-identical on/off)
+holds exactly on every dark event, every seed, over the full H_GRID_41 -- a stronger, production-
+data confirmation than the unit test alone.
+
+**Z = 1 (on arm): plausibility check only, not the decisive R2 unit test.** `r_Malm`, `D_tilde_phi`,
+`alpha_G_phi` are each exactly constant across all events at every h-node in the "on" arm (all 4
+seeds) -- consistent with, but not proof of, Z=1; the registered R2 synthetic-fixture unit test was
+not re-executed here (no code execution by this reader) and is inherited from the builder's own
+section 20.5 test-suite run.
+
+**Registered statistic (paired Delta mean_h, corrected-combine row #146 form, H_GRID_41, per seed
+then averaged):**
+
+| seed | 900101 | 900102 | 900103 | 900104 | mean +/- SEM |
+|---|---|---|---|---|---|
+| Delta mean_h | +0.09695 | +0.12936 | +0.08951 | +0.14738 | **+0.1158 +/- 0.0136** |
+
+4/4 seeds positive, per-seed SD 0.0272 (closest to the registered "drag" conservative anchor 0.0268).
+Delta MAP: +0.125 / +0.220 / +0.100 / +0.220, mean +0.1663 +/- 0.0314. Dark-class-only split (L_cat_no_bh
+== 0 at h=0.73): **exactly 0.0 movement, every seed, every h-node** -- clean confirmation the effect
+lives entirely in the matched (candidate-bearing) class. Matched-class-only Delta mean_h: +0.109 /
++0.112 / +0.123 / +0.125; its own MAP **rails at the H_GRID_41 ceiling node (0.86) in 3 of 4 seeds**
+-- a newly observed truncation caveat, the mirror image of the already-registered off-arm floor rail,
+implying the reported Delta may itself be a lower bound on the matched-class effect.
+
+**Verdict (registered bucket, section 6.1): MASS-AWARE-MATERIAL** (+0.1158 >= +0.03; not NULL; not
+negative). **Caveat: the measured mean is above the registered band's upper edge (+0.10)** by 0.016
+(1.2 SEM above it), and 2/4 individual seeds exceed +0.10 outright -- roughly 2.3x the +0.05 point
+prediction. This is a size surprise, not a bucket the registration defines; F-1 is not triggered
+(Delta is far from the NULL threshold and not negative), so the Z(h)/class-share attribution is not
+refuted, but the magnitude materially exceeds what was pre-registered.
+
+**Cost:** wall 17116 s (4.754 h) x 14 cores = **66.56 CPU-h**, roughly 8-16x the registered 4-seed
+anchor (~4-9 CPU-h, section 9 item 2/total).
+
+**Caps, as instructed.** This reading is instrument-only and REPORTED. The production-default flip
+of `catalogue_leg_1d_mass_aware` remains outside row #255's standing grant (section 11) and returns
+to the author as a fresh [RULE], now carrying: Delta mean_h = +0.1158 +/- 0.0136 (4 seeds, 4/4
+positive, ABOVE the registered band), the effect confined entirely to the matched class, and the
+matched-class MAP ceiling-rail caveat above -- alongside the row #169 fused-paired-design precedent
+for how such a flip decision has previously been framed.
+
+Ledger row: BIAS_HISTORY_LEDGER.md row #267.
