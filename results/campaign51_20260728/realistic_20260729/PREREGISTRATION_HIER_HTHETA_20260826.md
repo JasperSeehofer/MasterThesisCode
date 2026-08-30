@@ -2873,3 +2873,217 @@ unlaunched.
 PA-HIER-32 registration-amendment worker and from the run-of-record orchestrator. Append-only;
 nothing above this heading is edited; no git operations; no source edits; did not touch
 `candidate_dump_bi_run/` (owned by another reader). Foreground only, <= 600 s budget.*
+
+---
+
+### Stage-0-zwin record (2026-08-30; T1.3-zwin P1 independent readout; append-only)
+
+Launched under rows #255/#268 — tree 2 node T1.3-zwin (P1 readout). Run of record:
+`tree2_20260830/hier_s0_zwin_run` (4 seeds x {truth, s_plus, s_minus}, `theta_zwindow="on"`,
+`z_window_k=4.0`, `sky_cone_k=1.5`, `theta_phi_divisor="on"`, `theta_sites="2.2"`, smear off,
+h=0.73, wall 8248.47 s at 14 cores = 32.08 CPU-h). Full account:
+`tree2_20260830/T1_3_ZWINDOW_P1_READOUT_RECORD.md`, `tree2_20260830/t1_3_p1_readout.json`;
+gate-doc mirror: `tree2_20260830/PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md` section "P1 result,
+2026-08-30."
+
+Independently re-derived from raw `event_likelihoods.csv` + the cached `es_null_det.csv` (method
+independent of `hier_s0_driver.py`'s own `compute_scores`/`_es_null_det_closed_form`) —
+reproduces `s0a_score_output.json` to the last digit: pooled `ln_L_no_bh` score_s_raw
++0.003887 +/- 0.012639 (Z +0.3075), score_lns +0.003965 +/- 0.012894 (Z +0.3075), **score_s
+(corrected, driver's own unweighted convention) −0.042371 +/- 0.012752, Z = −3.3228**, n=461.
+The closed-form `Es_null_det_i` itself is independently confirmed to machine precision (a
+from-scratch, non-driver reimplementation, 8 hosts, seed 900101, max diff 8.3e-17 against the
+cached values).
+
+**Registered band `|Z_s| <= 3.0`: literal FAIL** at Z=−3.3228 (0.323 over, 10.8%); A15 false-fail
+rate at N=461 is 0.27% two-sided. Raw/lns form: Z=+0.3075, MET — inside the registered raw-form
+band [0,+2.5] and matching the E12 reference point (−0.5 +/- 1.0) within its own uncertainty. The
+raw statistic moved from −5.971 (T1.2, divisor-only, row #266) to +0.308 here — the z-window fix
+removed essentially all of the truncation defect the *raw* statistic sees.
+
+**Convention gap, disclosed as the decisive open item (not adjudicated by this reader).**
+`PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md` section 5.6/F1 registers the C-WEIGHTED `Es_null_det`
+convention as PRIMARY for P1, "fixed before unblinding". That document's own Implementation
+record discloses `compute_scores` never applies `c_i` weighting and explicitly instructs any
+reader of P1's output to "report both conventions, do not declare F1 CONFIRMED/REFUTED on the
+driver's score_s alone". This reader computed the c-weighted statistic directly from the same raw
+CSVs (`c_i = 1 - B_num/(combined_no_bh x D_tilde_phi)`, the forensic's own `c_nb` definition;
+`c_i` mean 0.6161/median 0.6592 here, cross-validated against the forensic's quoted 0.616/0.651):
+**score_s(c-weighted) = −0.023052 +/- 0.012906, Z = −1.7861, n=461 — PASSES the band**, close to
+the registered predicted point (−0.026 +/- 0.012, Z~−2.1, band [−0.031,+0.005]). The measured
+unweighted `Es_null_det` mean (0.0463) matches E13's unweighted figure (+0.0455); the c-weighted
+mean matches E13's c-weighted figure (+0.0265) — the driver subtracted the larger (non-primary)
+offset from an already-near-null raw mean, manufacturing most of the literal fail.
+
+**F1 applied literally, both readings:** on the driver's own unweighted score_s, F1's trigger
+condition is met — STOP reasserts, routing to (n1) the S_bar_phi table's own sigma_z dependence
+or (n2) the V2 mixture-weight covariance (A14's own next-candidates text). On the c-weighted
+reading, F1's trigger condition is NOT met — the s-axis truncation attribution (E12) stands. This
+reader does not decide between the two.
+
+Per-seed corrected (unweighted) score_s: 900101 Z=−1.647 (n=106), 900102 Z=−2.961 (n=120), 900103
+Z=−0.104 (n=105), 900104 Z=−2.046 (n=130). Class split: 0/461 events lack an `es_null_det` cache
+row this run (differs from T1.2's disclosed dark n=5/matched n=456 on an equal n=461 total, not
+chased down); exactly 2/461 events (seed 900103 idx 25, seed 900104 idx 51) show `L_cat_no_bh==0`
+at truth with `score_lns` exactly 0.0, consistent in direction with section 5.6's predicted
+z_out-class recovery (from ~8 previously to within 2). GATE ENG PASS (0.9957 mean fraction
+moved). GATE PARITY not exact on every seed (max rel diff 3.9%-44.7% across seeds) — disclosed as
+consistent in kind with, but numerically larger than, the previously-RATIFIED E19 comparand
+residual; not re-adjudicated here.
+
+**Verdict (literal, per section 4.5, not re-derived):** B0-A' (s) persists at |Z_s|=3.3228 —
+INSTRUMENT-DEFECT (s), REPORTED-ONLY (PA-HIER-28 item 9). Raw/lns observation (REPORTED):
+Z=+0.31, inside band. Disclosed alongside, not as this reader's ruling: the registered PRIMARY
+(c-weighted) statistic PASSES the same band — the convention gap, not the physics attribution, is
+the decisive open item. Licenses nothing beyond rows #255/#268 — no S0-B, no further Stage-P/F.
+
+**Cost:** measured 8248.47 s wall x 14 cpu = 32.08 CPU-h (wall 2.291 h), within ~8% of the gate
+document's own section 6 P1 anchor (~9,000 s / 2.5 h wall, ~35 CPU-h nominal).
+
+**Orchestrator path decision carried forward:** an Es_null_det-validity derivation (does the
+c-weighted convention correctly capture the combined-channel secant expectation) is dispatched
+before any re-run; S0-B stays unlaunched.
+
+*Authorization: launched under rows #255/#268 — tree 2 node T1.3-zwin (P1, independent reader),
+distinct from the builder and from the run-of-record runner (runner-7). Append-only; nothing
+above this heading is edited; no git operations; no source edits; did not touch source code or
+the concurrently-running B8.2 harness files. Foreground only, <= 600 s per command.*
+
+
+---
+
+### PA-HIER-33 (2026-08-30; PROPOSED — NOT ADOPTED; returns to the author as a [RULE]; [FABLE-ORCH])
+
+Registration-form text, copied verbatim from `tree2_20260830/T1_3_ES_NULL_DET_VALIDITY_20260830.md` section 5:
+
+## 5. PA-HIER-33 — proposed registration amendment (returns to the author as a [RULE])
+
+**Status: PROPOSAL. Not registered; not in force. The P1 verdict of record remains B0-A' under PA-HIER-32(d)
+until this amendment is ratified.** Presented in registration form so a one-word reply is unambiguous.
+
+**Supersedes (on ratification).** PA-HIER-32(d)'s "Correction, registered" block insofar as it defines the
+subtrahend as the per-host single-host closed form `Es_null_det_i`; PA-HIER-32(d)'s "Bias-free argument"
+paragraph ("E[score_s | generator kernel = estimator kernel] = 0 by construction") — shown in section 2 to hold only
+in the `pi_true -> 1, c -> 1` corner; `PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md` 5.6's PROPOSED c-weighted
+convention (Revision note 2 item 3), which becomes moot. Untouched: PA-HIER-4's `score_lns` form and nodes; `score_b`;
+every band structure of section 4.1; T1.1/T1.2's b-axis certification; T1.2's s-axis STOP.
+
+**Rule.** For an arm with s-nodes at `ln s = 0, +/-Delta` (`Delta = ln sqrt2`), define on each channel
+
+    Es_null^{(arm)} = (Delta^2/6) . [ -3 <l'_i l''_i> - <l'_i^3> ],   l'_i = score_lns_i,   l''_i = [l_i(+Delta) - 2 l_i(0) + l_i(-Delta)]/Delta^2,
+    score_s_i = score_lns_i - Es_null^{(arm)}      (a pooled scalar shift, the arm's own null; NOT a per-host table),
+    Z_s = mean(score_s) / SEM,   SEM = max(per-event SEM, seed-clustered SEM)   (PA-HIER-5 leg (a)),
+    with the bootstrap uncertainty of Es_null^{(arm)} added in quadrature to the SEM.
+
+`Es_null^{(arm)}` is computed from the arm's own three nodes at zero compute (the third Bartlett identity is the
+closed form; section 2.3), re-derived per configuration as PA-HIER-32(d)'s scope note already requires, and banked
+with its bootstrap SD before the band is read. Registered values for P1: `Es_null^{(P1,nb)} = +0.0013 +/- 0.0008`,
+`Es_null^{(P1,wb)} = +0.0004 +/- 0.0011` (section 2.3) — recorded here BEFORE any re-read is licensed.
+
+**Band (A8 two-sided, unchanged in structure).** `|Z_s| <= 3.0` on `combined_no_bh` -> B0-A; `|Z_s| > 3.0` ->
+B0-A' (INSTRUMENT-DEFECT, STOP) — the existing section 4.1/4.5 table, restated in this `score_s`. Two-sided by
+construction (the null is a point, 0 after subtraction).
+
+**A15 at N = 461 (the arm's own N, its own scatter).** Per-event SEM 0.0129 (P1 measured; `Es_null` bootstrap
+0.0008 adds nothing at this precision); false-fail under the exact null 0.27 % two-sided; 80 % power at
+`3.84 x 0.0129 = 0.0495` per unit ln s (per-event SEM) or `3.84 x 0.0159 = 0.061` (clustered SEM, the binding one
+by PA-HIER-5). The alternatives this band would have missed at P1 — a residual of the c-weighted single-host size
+(0.027) — sit at 2.1 SEM: disclosed as below the 80 %-power point (A8 band-derivation disclosure); the falsifier
+below resolves them independently at ≈ 0.001 precision.
+
+**A8 checks.** Branch referent: the band is satisfiable by the P1 arm's own nodes (truth, s+, s-) and by any
+future s-arm; two-sidedness: yes; execution-completeness: the Richardson arm below is the only registered arm
+capable of changing the count — it is run BEFORE the re-read, or withdrawn by an author [RULE].
+
+**Falsifier (registered before any run; decisive, model-free).** Add two s-nodes at `ln s = +/-Delta/2`
+(s = 2^{+/-1/4} = 1.1892 / 0.8409), same 4 seeds, same flags as P1 (8 cells; P1 s-cells cost 705-844 s evaluate
+each, `logs/runner7_tree2_20260830.log` -> ≈ 1.7 h serial, ≈ 0.5 h wall at 4-way; truth nodes reused). Per event,
+`S_i(Delta/2) = [l_i(+Delta/2) - l_i(-Delta/2)]/Delta` and the Richardson secant `S_R,i = [4 S_i(Delta/2) -
+S_i(Delta)]/3` has NO `O(Delta^2)` term for ANY smooth `l_i` (Gaussian check: `E[S_R] = -0.0005` vs
+`E[S(Delta)] = +0.0820`; the paired difference `E[S_R] - E[S(Delta)] = -0.0825` returns the full secant bias with
+the opposite sign; 400001-node grid, 2026-08-30). Prediction under this amendment:
+`mean(S_R) - mean(score_lns) = -Es_null^{(P1)} = -0.0013 +/- 0.0008` (to `-0.0017` allowing the finite-difference
+underestimate of 2.5 item 2); under PA-HIER-32(d)'s single-host null the same paired difference would be
+`-0.046`, under the c-weighted null `-0.027`. The SEM of the paired difference is set by the per-event scatter
+of `l'''` (expected `~ 0.001` at N = 461 for a mixture this flat; the single-Gaussian scatter, `SD(4u^2) = 5.7`,
+would give 0.005) and is measured, not assumed. Rule:
+PA-HIER-33 is REFUTED if `|[mean(S_R) - mean(score_lns)] + Es_null^{(P1)}| > 3 SEM_paired`; it is CONFIRMED
+otherwise; and in EITHER case `S_R` becomes the s-statistic of record for the arm (it needs no null correction at
+all — a Delta^2-free secant is the cleanest instrument, and the 5-node s-grid then also yields `l'''` directly).
+If the author prefers not to spend the 8 cells, the amendment stands on section 2 alone, with the falsifier
+recorded as UNRUN and the band's dependence on the Bartlett identity disclosed as the residual assumption.
+
+**Companion reads (REPORTED-ONLY, no band).** `score_s` by c-quartile and by `z_g` bin (conditioning on
+pre-selection quantities only, per E16); `I_hat` and `E[l''']_hat` per channel; the with-BH channel's `score_s`.
+
+**Re-read of P1 under PA-HIER-33 — disclosure of the pre-registration-violation risk.** The P1 numbers were seen
+(section 3) before this amendment was drafted; reading them under the amended null is a re-read of already-seen
+data. Mitigations, stated so the author can weigh them: (i) the amended null is derived from an identity every
+correctly specified likelihood obeys, with the single-host closed form recovered in its limit (2.4), not fitted to
+the outcome; (ii) it moves the pooled null by +0.0013, a tenth of the SEM — the raw `score_lns` band read is
+unchanged in kind by it, and the raw form was itself registered in the gate doc's 5.6 as a reported convention
+with a prediction ([0.000, +0.031]) that P1 met; (iii) the Richardson arm is a fresh, unseen measurement that can
+refute the amendment on its own. The author's options, each a [RULE]: (a) ratify PA-HIER-33 and re-read P1 under
+it, disclosed as a re-read; (b) ratify PA-HIER-33 and require the Richardson arm BEFORE any re-read (recommended —
+it converts the re-read into a read of fresh data on a Delta^2-free statistic); (c) decline, leaving PA-HIER-32(d)
+and the B0-A' verdict in force — in which case section 2's finding that the registered null is mis-scaled must be
+recorded against the verdict as a known instrument defect of the STATISTIC, and the STOP's disposition "a bug in
+the hook, the venue, or GATE PARITY" (section 4.5) is amended to name the statistic's null as the located bug.
+
+**What returns to the author.**
+- [RULE] PA-HIER-33 as written (the amendment itself is a registration change on a registered rule).
+- [RULE] the open Revision-note-2 item 3 convention question, which PA-HIER-33 answers (neither raw-unweighted nor
+  c-weighted; the arm's own Bartlett null) — ratifying PA-HIER-33 closes it.
+- [DO] the 8-cell Richardson falsifier arm (option (b)); runner != this node; scored by an independent reader.
+- [RULE] whether the P1 data are re-read under PA-HIER-33 (option (a)/(b)) or the B0-A' stands (option (c)).
+No Stage-P/F, S0-B, C1/C3 or production change is licensed by anything in this note.
+
+
+**(i) Reader's finding on the convention gap (`tree2_20260830/T1_3_ZWINDOW_P1_READOUT_RECORD.md`).**
+The `PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md` gate doc's own section 5.6/F1 registered the
+**c-weighted** `Es_null_det` convention as PRIMARY for P1 ("fixed before unblinding"), but the
+driver (`hier_s0_driver.py`'s `compute_scores`) computed the **unweighted** convention instead —
+the gate document's own Implementation record discloses this and instructs any reader to "report
+both conventions, do not declare F1 CONFIRMED/REFUTED on the driver's score_s alone." Three
+candidate nulls therefore read the same P1 data three different ways, and only one of them is the
+rule of record:
+
+- unweighted (driver's own; PA-HIER-32(d) literal): score_s = −0.042371 +/- 0.012752, **Z = −3.323 — FAILS** the registered band `|Z_s| <= 3.0`.
+- c-weighted (gate-doc 5.6's registered PRIMARY convention; independently re-derived by the reader from the raw CSVs, not run by the driver): score_s = −0.023052 +/- 0.012906, **Z = −1.79 — PASSES**.
+- raw/lns (PA-HIER-4, no `Es_null_det` correction): score_lns = +0.003965 +/- 0.012894, **Z = +0.31**, inside the registered raw-form band.
+- Bartlett-corrected (this amendment's proposed arm-own null, section 2.3): score_lns − Es_null^{(P1)} = +0.0027, **Z = +0.21**.
+
+Of these, PA-HIER-32(d)'s unweighted form is the rule of record. The P1 verdict **B0-A' (s) persists**
+under that rule of record and stands until the author rules on PA-HIER-33 (or a fresh S0-A read is
+taken under a ratified rule) — nothing in this note lifts the STOP.
+
+**(ii) T1.4 Richardson arm — registered under rows #255/#268 (instrument arm, within the standing grant).**
+
+- **Design:** 8 cells, 4 seeds x {`s_plus_half` = 2^(1/4), `s_minus_half` = 2^(-1/4)} at b = 0, h = 0.73,
+  same flags as P1 (`theta_sites` 2.2, unsmeared, `theta_phi_divisor` on, `theta_zwindow` on,
+  `z_window_k` 4.0, `sky_cone_k` 1.5); truth nodes reused from P1.
+- **Out-root:** `tree2_20260830/hier_s0_zwin_run`.
+- **Statistic:** `score_lns_R = (4*S_half - S_full)/3` (the Richardson secant; Delta^2-free by
+  construction for any smooth per-event log-likelihood).
+- **Registered predictions (F3), paired shift `score_lns_R - score_lns`:**
+  - under the Bartlett null (this amendment, PA-HIER-33): −0.0013 +/- 0.0008
+  - under PA-HIER-32(d)'s (unweighted, rule-of-record) null: −0.046
+  - under the c-weighted null (gate-doc 5.6 proposal): −0.023 to −0.027
+
+  Three mutually exclusive two-sided bands (A8); decided at 3 sigma of the paired SEM (A15: SEM
+  taken from P1's own per-event scatter, per-event 0.0129 / seed-clustered 0.0159, PA-HIER-5 leg (a)
+  the binding one).
+- **Cost:** approximately 8 x 654 s = ~1.5 h wall at 14 cores = ~20 CPU-h.
+- **A10 invariants:** same commit as P1 (currently e35f9d4e, plus the driver option this arm adds);
+  the arm must run after that commit lands.
+- **Blindness:** the Richardson arm is fresh, unseen data — it has not been run and its result is not
+  known to any reader before it is scored; the reading rule below is fixed in advance of the run.
+- **Reading rule:** the arm adjudicates **which null is right**, NOT the s-axis verdict itself — B0-A'
+  (s) is not overturned by this arm regardless of outcome. Re-adjudicating the s-axis verdict under
+  whichever null the arm favors requires the author's ratification of PA-HIER-33 (or a fresh S0-A
+  read taken under the ratified rule); until then the rule of record (PA-HIER-32(d), unweighted) and
+  the B0-A' verdict stand.
+
+*Stamp: [FABLE-ORCH], 2026-08-30. Append-only; no git, no code, no compute; did not touch any run
+directory or the concurrently-running B8.2 harness files. PROPOSED — NOT ADOPTED; returns to the
+author as a [RULE].*
