@@ -621,3 +621,80 @@ results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.p
 
 **Standing stamp: launched under rows #222/#223 -- charter nodes B1.1/B4.2; this entry is T1.2's
 own build record (row #255 tree 2 node T1.2).**
+
+---
+
+## §10 scorer denominator fix (2026-08-30; verifier MUST_FIX)
+
+Row #255 standing grant, tree 2 node T1.3-zwin. BUILDER fix in response to the independent
+verifier's item 3 MUST_FIX (`tree2_20260830/T1_3_ZWINDOW_VERIFIER_REPORT.md`): `_es_null_det_
+closed_form` computed `Es_null_det_i` using `score_s_raw`'s secant denominator (`sqrt2 -
+1/sqrt2 = 0.70711`) instead of the registered `score_lns` secant denominator (`ln(2) =
+0.69315`) that PA-HIER-32(d) (`PREREGISTRATION_HIER_HTHETA_20260826.md`, near the end of the
+block) specifies verbatim: "Es_null_det_i = the closed-form expectation of score_lns_i under
+host i's OWN generator kernel", and `score_s = score_lns - Es_null_det`. The two forms differ
+by the constant factor `(sqrt2-1/sqrt2)/ln(2) = 1.02014...`; the raw-denominator (buggy) value
+is SMALLER in magnitude than the registered ln(2)-denominator value by that same factor
+(verified both analytically -- same weighted-average numerator divided by a larger denominator
+-- and numerically on a synthetic single-host fixture, see the new test below).
+
+**Fix.** Single use site: `results/campaign51_20260728/realistic_20260729/fanout1_20260829/
+hier_s0_driver.py`, inside `_es_null_det_closed_form` (around line 587), `denom_s = _SQRT2 -
+1.0 / _SQRT2` renamed to `denom_lns = math.log(2.0)`, and its one consumer (the `secs = (...)
+/ denom_s` line) updated to divide by `denom_lns`. Confirmed via `grep -n "denom_s\b"` that
+this was the ONLY reference to that name in the file before the fix -- the window-selection
+logic (`window_minus`, built from `_SQRT2` directly for the window WIDTH, not the secant
+denominator) and `score_s_raw`'s own independent `denom_s_raw` (inside `compute_scores`,
+untouched) are unaffected. The function's docstring, which previously stated (self-
+contradicting its own registered target) "i.e. exactly what `score_s_raw` computes for a
+single host's likelihood", is corrected to state the ln(2)/`score_lns` identity instead.
+
+**Regression tests added** (`darksiren_emri_test/bayesian_inference/test_theta_zwindow.py`,
+36 tests total in the two zwindow test files after this addendum, all passing):
+- `test_es_null_det_closed_form_uses_the_ln2_secant_denominator` -- independently re-derives
+  the RAW-denominator form using the driver's own `_es_null_det_kernel` helper (same kernel/
+  window machinery, only the denominator swapped) and pins `Es_null_det(ln2 form) =
+  Es_null_det(raw form) * (sqrt2-1/sqrt2)/ln(2)` to `rel=1e-9` on a synthetic single-host
+  fixture -- exactly the MUST_FIX's own reproduction, in both directions.
+- `test_score_s_equals_score_lns_minus_es_null_det_by_construction` -- checks the pooled-
+  statistic identity `mean(score_s) == mean(score_lns) - mean(Es_null_det)` on a 3-event
+  synthetic fixture with a planted `es_null_det` column (distinct from the pre-existing
+  `test_compute_scores_score_s_corrected_subtracts_es_null_det`, which hand-derives the
+  per-event arithmetic rather than checking this pooled identity).
+
+**Quality gates.** `uv run ruff check` / `uv run ruff format --check` clean on the driver and
+the test file. `uv run mypy --ignore-missing-imports` clean on both except 8 pre-existing
+`run_mirror_seed_inprocess` kwarg-splat errors at lines 484/500 -- reproduced identically
+against the unmodified `HEAD` copy of the driver, confirming they predate this fix and are
+unrelated to `_es_null_det_closed_form` (out of this MUST_FIX's scope; not touched).
+
+**Recert re-run** (`--score-only`, seeds 900101-900104, nodes truth/b_plus/b_minus/s_plus/
+s_minus, `--theta-sites 2.2 --smear off --theta-phi-divisor on`, out-root `tree2_20260830/
+hier_s0_recert_run`): `score_b` (mean=-0.28878240960372603, sem=0.42705252094828333,
+Z=-0.6762222336551854) and `score_s_raw` (mean=-0.07195958393659582,
+sem=0.012051274307800423, Z=-5.971118248467597) are bit-identical to the banked
+`s0a_score_output.json` values (Z_b -0.676, raw Z_s -5.971) -- unaffected by this fix, as
+expected. `score_lns` now also reports explicitly (mean=-0.07340881013441411, Z=
+-5.971118248467598 -- same Z as score_s_raw, since both are the same numerator over a
+different but per-event-constant denominator). The corrected `score_s`/Z_s remain reported
+unavailable (`score_s_available: False`, NaN, n_pooled=0) for THIS SPECIFIC recert_run: it
+predates PA-HIER-32(d) and carries no `es_null_det.csv` cache in any of its four seed
+directories (confirmed: no such file exists under `hier_s0_recert_run`), and per the
+implementation's own design `score_s` is never silently substituted when the cache is
+absent. Producing a real corrected `score_s`/Z_s/`Es_null_det` requires a full P1-class arm
+(the only path that calls `compute_es_null_det_table`, needing the realized events' host
+indices plus the real GLADE handler) -- out of this node's foreground/600s budget (the
+verifier's own item 2 already found a bare 12-event smoke of the full driver exceeds 300s
+without completing one node, since the T1.1 divisor precompute is a fixed per-seed cost).
+This matches the verifier's own closing disclosure: the denominator defect "is invisible on
+this particular cross-check only because this banked run has no cache to exercise it -- it
+WILL be exercised the moment the registered P1 arm runs (which always computes+caches
+Es_null_det fresh per seed)". As a code-level sanity check (NOT a production number): on the
+synthetic single-host fixture used by the pre-existing `test_compute_es_null_det_closed_form_
+matches_delta_limit` test (flat completeness, z_g=0.10, sigma_g=0.01, h=0.73, n_grid=4001),
+the fixed function returns `Es_null_det=0.03453083233123442` (ln(2) denominator) vs.
+`0.03384912959343959` under the pre-fix raw denominator (ratio 1.0201394465967897, matching
+`(sqrt2-1/sqrt2)/ln(2)` exactly) -- illustrative only, not a registered measurement.
+
+Ledger: `docs/gates/PHYSICS-GATE-LEDGER.md`, "verified (revised)" row appended for T1.3-zwin.
+No git operations, no other files touched.

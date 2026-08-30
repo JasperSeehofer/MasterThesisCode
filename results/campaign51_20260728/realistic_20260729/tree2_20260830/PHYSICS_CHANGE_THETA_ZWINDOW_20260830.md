@@ -1158,3 +1158,106 @@ branch's standing grant (row #255) covering production/documentation changes wit
 (author-verbatim, row #223). No code, no git, foreground only; PREREGISTRATION_HIER_
 HTHETA_20260826.md, hier_s0_driver.py and B1_1_S0A_DEFECT_FORENSIC_20260829.md read-only, not
 written.
+
+## Implementation record (2026-08-30; builder, distinct from the presenter and the third-panel node above)
+
+Builder: sonnet-tier subagent, row #255 standing grant, tree 2 node T1.3-zwin, decision-table
+items 1-2 COVERED. Branch fix/p32d-classg-venue-repair; no git operations by this node (the
+orchestrator commits); no ssh; foreground only; the concurrently-written files (BIAS_HISTORY_
+LEDGER.md, the T2_3_*/tree2_20260830 files an independent reader is writing, the mass-aware gate
+doc) were not touched.
+
+Implemented exactly the registered form of sections 2.1-2.2 and the Implementation-prerequisites
+note appended above, item 1 only (the driver scorer; items 2-3, the P1 arm's node list and
+parameter pairing, are executed by the runner, not built here):
+
+1. galaxy_catalogue/handler.py: get_possible_hosts_from_ball_tree gained theta_zwindow="off",
+   z_window_k=1.0, theta_b=0.0, theta_s=1.0. The single read/validate site for z_window_k (finite
+   and > 0, else ValueError) sits alongside the existing mass_filter_k guard, per Revision note 1's
+   corrected file attribution. redshift_filter_mask now reads, under "off", the bare z_g/sigma_g at
+   +/- z_window_k sigma_g (z_window_k=1.0 reproduces the pre-flag literal bit-for-bit); under "on"
+   with theta engaged, z_g^theta = z_g + theta_b*(1+z_g) and sigma_g^theta =
+   sqrt((theta_s*sigma_g)^2 + sigma_pv^2) with sigma_pv = (1+z_g)*SIGMA_V_PEC_KM_S/
+   SPEED_OF_LIGHT_KM_S (identically zero today); at theta=(0,1) the branch is a literal skip (no
+   floating operation on theta), matching the "off" path at the same z_window_k bit-for-bit.
+2. bayesian_statistics.py: theta_zwindow/z_window_k added as class defaults, __init__ defaults,
+   evaluate() kwargs (with the theta_zwindow token guard mirroring theta_phi_divisor's; z_window_k
+   stored as an opaque cast, no guard here, per the mass_filter_k precedent) and threaded to the
+   single get_possible_hosts_from_ball_tree call site: z_window_k is passed unconditionally,
+   theta_b/theta_s are passed as self._theta_b/self._theta_s ONLY when theta_zwindow=="on" (else
+   the identity defaults 0.0/1.0), so the window never sees theta engaged elsewhere in the run when
+   the flag itself is "off". The bayesian_statistics.py:7391-7392 comment (site 2.1's "second-order"
+   remark) was reworded per Revision note 2's builder instruction, scoped to the zeroed
+   peculiar-velocity fold only.
+3. arguments.py / main.py / validation/correspondence_1d.py: --theta_zwindow {off,on} (default
+   off) and --z_window_k FLOAT (default 1.0) threaded through Arguments, both main.py evaluate()
+   call sites, and run_mirror_seed_inprocess, byte-identical at the defaults.
+4. hier_s0_driver.py: --theta-zwindow {off,on} (default off) and --z-window-k FLOAT (default 1.0)
+   added; _node_dir_suffix gained a "zwin" part (theta_zwindow="on") and a "zk<k>" part
+   (z_window_k != 1.0); both flags threaded through run_theta_node's two run_mirror_seed_inprocess
+   call sites (config="b0i"/"ft") and run_seed_s0c's one call site (the three sites the presentation
+   names), and through run_arm_seed_s0a / run_arm_seed_s0r / _run_one_seed_worker's args tuple /
+   run_arm / gather_node_results_from_disk / score_only_payload's CLI call sites / main.
+5. THE DRIVER SCORER (PA-HIER-32(d), read from PREREGISTRATION_HIER_HTHETA_20260826.md's
+   PA-HIER-32(d) block, quoted verbatim there: score_s_i = score_lns_i - Es_null_det_i, Z_s =
+   mean(score_s)/SEM(score_s) pooled per the existing A8 two-sided convention; score_lns_i =
+   [lnL_i(0,+ln sqrt2) - lnL_i(0,-ln sqrt2)]/ln 2, PA-HIER-4's ln-s-centred secant). Implemented in
+   full, not deferred:
+   - compute_scores now computes score_b (unchanged), score_lns (same numerator as the old
+     score_s, denominator ln 2 in place of sqrt2 - 1/sqrt2), score_s_raw (the old/superseded raw
+     linear secant, kept verbatim for continuity) and score_s (the corrected, now-PRIMARY
+     statistic: score_lns - Es_null_det, per event, pooled after subtraction). gate_parity/
+     verdict_s0a/verdict_s0r read the "score_s" key unchanged, so they automatically read the
+     corrected statistic once it is available -- no separate wiring needed there.
+   - Es_null_det_i's closed form (PA-HIER-32(d)'s own definition: "the closed-form expectation of
+     score_lns_i under host i's OWN generator kernel at theta=(0,1); a function only of that host's
+     window, floor and sigma_g, never of the realized z_true or observed d_L") is implemented as
+     _es_null_det_closed_form / _es_null_det_kernel, a generic (not archived-value-dependent)
+     vectorized-per-host port of the forensic instrument b1_1_forensic_work/f4_mechanism.py's
+     kern()/E() (Es_null_det column only, not the survival-weighted Es_gen_det variant), reusing
+     bayesian_statistics.py's _host_pixels/_completeness_at_host_nodes and physical_relations.py's
+     comoving_volume_element -- the SAME kernel form site 2.2 integrates.
+   - compute_es_null_det_table(events, handler) builds the per-event table directly from the
+     realization DataFrame and the SAME handler object the injection draw and the evaluation call
+     both use (no catalogue-frame repositioning needed, unlike resolve_host_recovery_position's
+     cross-run case): events.index (post any --event-cap truncation) is event_idx, and
+     events["host_galaxy_index"] indexes directly into handler.reduced_galaxy_catalog.
+   - run_arm_seed_s0a / run_arm_seed_s0r compute this table ONCE per seed (node-independent -- a
+     property of site 2.2's own kernel at theta=(0,1), never of the realized data) right after
+     venue construction, write it to <seed work_root>/es_null_det.csv
+     (_write_es_null_det_cache), and merge it into every node's ln_l via read_event_ln_l's new
+     es_null_det kwarg (so a live run's compute_scores call sees it immediately).
+   - gather_node_results_from_disk (the --score-only path) reads the SAME cache file back
+     (_read_es_null_det_cache) with NO venue reconstruction, so --score-only on a run this driver
+     itself produced emits the corrected score_s at zero extra evaluate() cost; a seed with no
+     cache (e.g. an older banked run, T1.2's own hier_s0_recert_run predates this instrument)
+     degrades gracefully -- compute_scores reports score_s_available=False for that pool with
+     n_pooled=0/NaN rather than silently substituting an uncorrected number, and score_s_raw
+     remains fully computable regardless. write_score_markdown prints score_s, score_s_raw,
+     score_lns and score_s_available side by side.
+   - The raw-vs-c-weighted Es_null_det convention Revision note 2 downgraded to PROPOSED pending an
+     author/orchestrator [RULE] is UNCHANGED by this implementation: this driver's own compute_scores
+     has never applied a catalogue-share weighting c_i to any statistic (raw pooling only, as
+     before) -- the c-weighted PRIMARY convention named in section 5.6/F1 is a DIFFERENT,
+     externally-computed statistic (the t13 instrument's ss_deb_c), not something this driver
+     builds. Whoever reads P1's output against F1 must still apply Revision note 2 item 3's process
+     constraint (report both conventions, do not declare F1 CONFIRMED/REFUTED on the driver's
+     score_s alone) -- this implementation record does not, and cannot, discharge that constraint.
+
+Tests: darksiren_emri_test/test_theta_zwindow.py (22, handler-level R1-R6 + mass-filter
+inheritance) and darksiren_emri_test/bayesian_inference/test_theta_zwindow.py (9, evaluate()/CLI
+plumbing + the driver scorer arithmetic, including an end-to-end smoke test of
+_es_null_det_closed_form's real GL/trapz numerics on a synthetic single-host fixture). Full run:
+darksiren_emri_test/bayesian_inference (626 passed / 6 skipped), then the complete tree in two
+directory halves (923 passed / 6 skipped / 21 deselected; 1106 passed / 9 skipped / 15 deselected),
+zero regressions. ruff check --fix / ruff format / mypy darksiren_emri/: all clean (one B023
+loop-variable-capture lint finding in the new scorer code, fixed by extracting the per-host kernel
+to a module-level function). Ledger rows appended (implemented/verified, PASS, row #255 standing
+grant tree 2 node T1.3-zwin).
+
+Not run by this node (builder != runner; no evaluate() call was made against the real GLADE
+catalogue; foreground/no-ssh/no-git throughout): the registered P1/P2/P1b arms; the F1/F2 falsifier
+reads; a cross-check of this implementation's Es_null_det numbers against the archived
+f4_mechanism.py/f4_out.json figures on the real production catalogue (both implement the same
+closed form independently but were not run side by side here -- see
+T1_3_ZWINDOW_IMPLEMENTATION_RECORD.md for the registered P1 command handed to the runner).

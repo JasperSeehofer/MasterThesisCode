@@ -2796,6 +2796,13 @@ def run_mirror_seed_inprocess(
     # Sky-cone-radius instrument flag (same reference, §2.5). 1.5 (default)
     # is byte-identical to the pre-flag sigma_multiplier literal.
     sky_cone_k: float = 1.5,
+    # [HIER] theta-consistent candidate z-window instrument
+    # (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2; row #255 tree 2 node
+    # T1.3-zwin). "off"/1.0 (defaults) are byte-identical, forwarded
+    # verbatim to BayesianStatistics.evaluate(). INDEPENDENT of theta_sites
+    # and theta_phi_divisor -- composes with either.
+    theta_zwindow: str = "off",
+    z_window_k: float = 1.0,
     # [HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree 2
     # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). Forwarded
     # verbatim to ``BayesianStatistics.evaluate()``. "off" (default) is
@@ -2924,6 +2931,13 @@ def run_mirror_seed_inprocess(
             command line must add its own ``--theta_phi_divisor``/
             ``--sky_cone_k`` arguments and thread them through to this call
             (see the T1.1 implementation record's "driver gap" note).
+        theta_zwindow, z_window_k: Forwarded verbatim to
+            ``BayesianStatistics.evaluate()`` ([HIER] theta-consistent
+            candidate z-window, PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md,
+            row #255 tree 2 node T1.3-zwin). Defaults ("off", 1.0) are
+            byte-identical to every pre-existing call site. ``hier_s0_
+            driver.py`` exposes these as ``--theta-zwindow``/
+            ``--z-window-k``.
         candidate_dump_dir: Forwarded verbatim to
             ``BayesianStatistics.evaluate()`` (T2.2, row #255 tree 2 node
             T2.2; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md §6). ``None``
@@ -3007,6 +3021,10 @@ def run_mirror_seed_inprocess(
             # [HIER] site 2.3phi passthrough (identity default => no-op).
             theta_phi_divisor=theta_phi_divisor,
             sky_cone_k=sky_cone_k,
+            # [HIER] theta-consistent candidate z-window passthrough
+            # (identity default => no-op).
+            theta_zwindow=theta_zwindow,
+            z_window_k=z_window_k,
             # [HIER T2.3] mass-aware 1D catalogue leg instrument passthrough
             # (identity default "off" => no-op).
             catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,

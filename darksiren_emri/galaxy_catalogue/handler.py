@@ -13,6 +13,7 @@ from sklearn.neighbors import BallTree
 
 from darksiren_emri.constants import (
     HOST_DRAW_Z_MAX,
+    SIGMA_V_PEC_KM_S,
     SIGMA_V_PV_RESIDUAL_CORRECTED_KM_S,
     SIGMA_V_PV_UNCORRECTED_KM_S,
     SPEED_OF_LIGHT_KM_S,
@@ -570,6 +571,10 @@ class GalaxyCatalogueHandler:
         mass_filter_sigma: str = "symmetric",
         mass_filter_geometry: str = "linear",
         mass_filter_k: float = 1.5,
+        theta_zwindow: str = "off",
+        z_window_k: float = 1.0,
+        theta_b: float = 0.0,
+        theta_s: float = 1.0,
     ) -> tuple[list[HostGalaxy], list[HostGalaxy]] | None:
         """Find candidate host galaxies within the sky-Fisher error ellipse + mass-redshift cuts.
 
@@ -639,6 +644,50 @@ class GalaxyCatalogueHandler:
                 under ``mass_filter_geometry="linear"`` — i.e. the default
                 pairing of both new flags is byte-identical to the pre-flag
                 path. Must be finite; a non-finite value is rejected here.
+            theta_zwindow: [HIER] theta-consistent candidate z-window
+                instrument flag (``PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md``
+                §2, row #255 tree 2 node T1.3-zwin). "off" (default,
+                PRODUCTION, byte-identical): the redshift filter below keeps
+                its bare form, ``z_min <= z_g + z_window_k*sigma_g`` and
+                ``z_max >= z_g - z_window_k*sigma_g`` (``sigma_g`` = the
+                catalogue's listed ``REDSHIFT_MEASUREMENT_ERROR``, no theta,
+                no peculiar-velocity fold) — at ``z_window_k=1.0`` this is
+                bit-for-bit the pre-flag mask. "on": the SAME interval-
+                overlap test with the galaxy-side centre and width replaced
+                by the theta-transformed site-2.2 kernel, ``z_g^theta =
+                z_g + theta_b*(1+z_g)`` and ``sigma_g^theta =
+                sqrt((theta_s*sigma_g)^2 + sigma_pv,g^2)`` with
+                ``sigma_pv,g = (1+z_g)*SIGMA_V_PEC_KM_S/SPEED_OF_LIGHT_KM_S``
+                evaluated at the UNSHIFTED ``z_g`` (mirrors
+                ``bayesian_statistics.py``'s site 2.2 exactly). At
+                theta = (0, 1) this is a LITERAL SKIP — no floating-point
+                operation on theta is performed and the result is identical
+                to "off" at the same ``z_window_k`` (GATE T-ID). The GW-side
+                envelope (``z_min``, ``z_max``) and the sky cone / mass
+                filter are untouched by this flag in every state. Single
+                read/validate site for the token: this docstring + the mask
+                branch below (the ``mass_filter_geometry`` precedent); the
+                theta validity guard (finite ``theta_b``, ``theta_s > 0``) is
+                the caller's responsibility (``bayesian_statistics.py``'s
+                ``_validate_theta``, at or before the single call site) —
+                this handler is a non-physics file and keeps no theta state
+                of its own.
+            z_window_k: candidate z-window half-width in units of
+                ``sigma_g``/``sigma_g^theta`` (same reference as
+                ``theta_zwindow``). Applies under BOTH "off" and "on" (the
+                window's half-width is decoupled from whether its centre/
+                width are theta-transformed). Default ``1.0`` exactly
+                matches today's implicit ``+/- 1 sigma_g`` literal, so the
+                default is byte-identical to the pre-flag path regardless of
+                ``theta_zwindow``. Must be finite and > 0; rejected here
+                (single read/validate site for this knob, the
+                ``mass_filter_k`` precedent).
+            theta_b: [HIER] theta = (b, s) affine photo-z systematic's shift
+                parameter (same construct as site 2.2,
+                ``bayesian_statistics.py``); read only when
+                ``theta_zwindow="on"``. Ignored (never touched) at "off".
+            theta_s: [HIER] theta = (b, s)'s scale parameter; same scope as
+                ``theta_b``.
 
         Returns:
             Tuple of (hosts_without_BH_mass_filter, hosts_with_BH_mass_filter) or None.
@@ -665,14 +714,49 @@ class GalaxyCatalogueHandler:
 
         candidate_hosts = self.reduced_galaxy_catalog.iloc[indices]
 
-        redshift_filter_mask = (
-            z_min
-            <= candidate_hosts[InternalCatalogColumns.REDSHIFT]
-            + candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR]
-        ) & (
-            z_max
-            >= candidate_hosts[InternalCatalogColumns.REDSHIFT]
-            - candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR]
+        # Single read/validate site for z_window_k (the mass_filter_k
+        # precedent, corrected file attribution per
+        # PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md Revision note 1): applies
+        # under BOTH theta_zwindow states below.
+        _z_window_k = float(z_window_k)
+        if not np.isfinite(_z_window_k) or _z_window_k <= 0.0:
+            raise ValueError(f"z_window_k must be finite and > 0, got {z_window_k!r}")
+
+        _z_g = candidate_hosts[InternalCatalogColumns.REDSHIFT]
+        _sigma_g = candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR]
+        if theta_zwindow == "off":
+            _z_g_theta = _z_g
+            _sigma_g_theta = _sigma_g
+        elif theta_zwindow == "on":
+            # [HIER] theta-consistent candidate z-window
+            # (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.1, row #255 tree 2
+            # node T1.3-zwin): the galaxy-side centre and width of the
+            # selection window are replaced by the SAME theta-transformed
+            # kernel site 2.2 integrates (bayesian_statistics.py
+            # single_host_likelihood_batch), so the window and the kernel it
+            # is meant to select for are the same object at every theta —
+            # only the theta-free GW-side envelope (z_min, z_max) and sky
+            # cone/mass filter are left untouched (§2.4/§2.5). At
+            # theta = (0, 1) this is a LITERAL SKIP: no floating operation on
+            # theta is performed and the "off" mask at the same z_window_k
+            # is reproduced bit-for-bit (GATE T-ID, R2).
+            if theta_b != 0.0 or theta_s != 1.0:
+                # sigma_pv,g mirrors bayesian_statistics.py's site-2.2
+                # sigma_z_pv term exactly (Ma, Hu & Huterer 2006,
+                # arXiv:astro-ph/0506614, Sec. 2 — the affine photo-z
+                # systematic (b, s)); SIGMA_V_PEC_KM_S = 0.0 today
+                # (constants.py), so this term is identically zero.
+                _sigma_pv_g = (1.0 + _z_g) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+                _sigma_g_theta = np.sqrt((theta_s * _sigma_g) ** 2 + _sigma_pv_g**2)
+                _z_g_theta = _z_g + theta_b * (1.0 + _z_g)
+            else:
+                _z_g_theta = _z_g
+                _sigma_g_theta = _sigma_g
+        else:
+            raise ValueError(f"theta_zwindow must be 'off' or 'on', got {theta_zwindow!r}")
+
+        redshift_filter_mask = (z_min <= _z_g_theta + _z_window_k * _sigma_g_theta) & (
+            z_max >= _z_g_theta - _z_window_k * _sigma_g_theta
         )
         candidate_hosts_without_bh_mass = candidate_hosts[redshift_filter_mask]
 

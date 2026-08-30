@@ -63,6 +63,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -71,6 +72,12 @@ BC_WORK_ROOT = REALISTIC_DIR / "p3_b0_work"
 REGISTRATION = REALISTIC_DIR / "PREREGISTRATION_HIER_HTHETA_20260826.md"
 
 import darksiren_emri.validation.correspondence_1d as c1d  # noqa: E402
+from darksiren_emri.bayesian_inference.bayesian_statistics import (  # noqa: E402
+    _completeness_at_host_nodes,
+    _host_pixels,
+)
+from darksiren_emri.galaxy_catalogue.handler import InternalCatalogColumns  # noqa: E402
+from darksiren_emri.physical_relations import comoving_volume_element  # noqa: E402
 from darksiren_emri.validation.correspondence_1d import H_GRID_41, H_TRUE  # noqa: E402
 
 # ── Registered constants ──────────────────────────────────────────────────
@@ -310,19 +317,27 @@ def _node_dir_suffix(
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
     catalogue_leg_1d_mass_aware: str = "off",
+    theta_zwindow: str = "off",
+    z_window_k: float = 1.0,
 ) -> str:
-    """Node output-directory suffix encoding the P1/KW-Q1/T1.1/T2.3 variant,
-    so a non-default run never overwrites another variant's (or the
+    """Node output-directory suffix encoding the P1/KW-Q1/T1.1/T1.3-zwin/T2.3
+    variant, so a non-default run never overwrites another variant's (or the
     default's) banked node outputs. Byte-identical default (``theta_sites=
     "all"``, ``smear="auto"``, ``config="b0i"``, ``theta_phi_divisor="off"``,
-    ``sky_cone_k=1.5``, ``catalogue_leg_1d_mass_aware="off"``) -> empty
-    suffix -> the ORIGINAL ``node_<name>`` paths, unchanged.
+    ``sky_cone_k=1.5``, ``catalogue_leg_1d_mass_aware="off"``,
+    ``theta_zwindow="off"``, ``z_window_k=1.0``) -> empty suffix -> the
+    ORIGINAL ``node_<name>`` paths, unchanged.
 
     T1.2 (row #255 tree 2 node T1.2, driver-gap fix for T1.1's site 2.3phi
     instrument, PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2/§2.5):
     ``theta_phi_divisor="on"`` appends ``_divisor``; a non-default
     ``sky_cone_k`` (anything != 1.5) appends ``_conek<value>`` (``:g``
     formatted, so ``2.0`` -> ``conek2``, ``2.25`` -> ``conek2.25``).
+
+    T1.3-zwin (row #255 tree 2 node T1.3-zwin, PHYSICS_CHANGE_THETA_ZWINDOW_
+    20260830.md §2.2): ``theta_zwindow="on"`` appends ``_zwin``; a non-default
+    ``z_window_k`` (anything != 1.0) appends ``_zk<value>`` (``:g`` formatted,
+    so ``4.0`` -> ``zk4``).
 
     T2.3 (row #255 tree 2 node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_
     20260830.md §2): ``catalogue_leg_1d_mass_aware="on"`` appends ``_ma1d``.
@@ -338,6 +353,10 @@ def _node_dir_suffix(
         parts.append("divisor")
     if sky_cone_k != 1.5:
         parts.append(f"conek{sky_cone_k:g}")
+    if theta_zwindow != "off":
+        parts.append("zwin")
+    if z_window_k != 1.0:
+        parts.append(f"zk{z_window_k:g}")
     if catalogue_leg_1d_mass_aware != "off":
         parts.append("ma1d")
     return ("_" + "_".join(parts)) if parts else ""
@@ -358,6 +377,8 @@ def run_theta_node(
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
     catalogue_leg_1d_mass_aware: str = "off",
+    theta_zwindow: str = "off",
+    z_window_k: float = 1.0,
 ) -> tuple[Path, float]:
     """Evaluate one theta node (prereg §2.1 S0-A/S0-R row row; KW-Q1 reuses this
     for the FT config at h_values=(0.725, 0.735)).
@@ -400,6 +421,14 @@ def run_theta_node(
     to every node -- ``evaluate()``'s own setup guard raises if the
     resolved ``catalogue_numerator_survival``/``catalogue_global_selection``
     are not both ``"phi"`` or if ``theta_phi_divisor`` is engaged.
+
+    ``theta_zwindow``, ``z_window_k`` (row #255 tree 2 node T1.3-zwin;
+    PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2) are forwarded verbatim to
+    ``run_mirror_seed_inprocess``/``BayesianStatistics.evaluate()``. Defaults
+    (``"off"``, ``1.0``) are byte-identical (GATE BI). Forwarded
+    unconditionally to every node, including the truth node -- the truth
+    node is a no-op under the flag per GATE T-ID (the theta-transformed
+    window is the identity at theta=(0,1)).
     """
     theta_engaged = theta_b != 0.0 or theta_s != 1.0
     smear_flag = _resolve_smear(theta_engaged, theta_sites, smear)
@@ -428,6 +457,8 @@ def run_theta_node(
         theta_phi_divisor=theta_phi_divisor,
         sky_cone_k=sky_cone_k,
         catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
+        theta_zwindow=theta_zwindow,
+        z_window_k=z_window_k,
     )
     # [P3-2D] the with-BH catalogue-leg twin flipped to production default
     # "mz_sel"/"eff" (row #223 standing grant, charter node B7.3;
@@ -474,16 +505,259 @@ def run_theta_node(
     return diag_csv, elapsed
 
 
+# ── PA-HIER-32(d): the closed-form Es_null_det_i (site-2.2 score_lns's own
+# deterministic expectation at truth, under each host's OWN generator kernel)
+# ───────────────────────────────────────────────────────────────────────────
+
+_ES_NULL_DET_FILENAME = "es_null_det.csv"
+_SQRT2 = math.sqrt(2.0)
+_ES_NULL_DET_Z_FLOOR = 1e-6  # site 2.2's own floor (bayesian_statistics.py's _z_lower_floor)
+_ES_NULL_DET_WINDOW_SIGMA = 4.0  # integration_limit_sigma_multiplier (bayesian_statistics.py)
+
+
+def _es_null_det_closed_form(
+    z_g: npt.NDArray[np.float64],
+    sigma_g: npt.NDArray[np.float64],
+    host_pixels: npt.NDArray[np.int64],
+    completeness: Any,
+    h: float,
+    n_grid: int = 4001,
+) -> npt.NDArray[np.float64]:
+    r"""Per-host closed-form ``Es_null_det_i`` (PA-HIER-32(d)):
+
+    .. math::
+
+        E_i = \frac{\int k_i(z)\, \mathrm{secs}_i(z)\, dz}{\int k_i(z)\, dz}
+              \Big|_{z \in W^-_i}
+
+    where ``k_i(z) = kern(i, b=0, s=1, z)`` is the site-2.2 host-``i`` kernel
+    at theta=(0,1) (a Gaussian in ``z`` of width ``sigma_g[i]``, weighted by
+    the comoving-volume element and the host's own pixel completeness
+    ``f_k(z)``, normalized over its own +/-4 sigma window and floored at
+    ``1e-6`` -- IDENTICAL in form to
+    ``bayesian_statistics.py``'s ``single_host_likelihood_batch`` site-2.2
+    kernel), ``secs_i(z) = [ln kern(i,0,sqrt2,z) - ln kern(i,0,1/sqrt2,z)] /
+    ln(2)`` is the (ln-``s``) secant of that SAME kernel's log evaluated
+    pointwise at the fixed observation ``z`` while varying only the kernel's
+    own width parameter ``s`` -- i.e. exactly what ``score_lns`` computes for
+    a single host's likelihood (PA-HIER-32(d): "the closed-form expectation
+    of ``score_lns_i``", NOT of ``score_s_raw``; the denominator MUST match
+    ``score_lns``'s own ``ln(2)``, not ``score_s_raw``'s ``sqrt2 - 1/sqrt2``)
+    -- and ``W^-_i`` is the (narrower) ``s=1/sqrt2`` window, the intersection
+    of the ``s=sqrt2`` and ``s=1/sqrt2`` windows (outside it one of the two
+    secant terms is ``-inf``, so the pointwise finite-difference is
+    undefined).
+
+    This is deterministic and DATA-INDEPENDENT: a function only of host
+    ``i``'s window (via ``z_g[i]``, ``sigma_g[i]``), the shared floor/width-
+    multiplier constants above, and its sky-pixel completeness -- never of a
+    realized ``z_true`` or observed ``d_L`` (PA-HIER-32(d)'s own definition).
+    Vectorized port of the forensic instrument
+    ``b1_1_forensic_work/f4_mechanism.py``'s ``kern()``/``E()`` (Es_null_det
+    column only -- the survival-weighted "gen" variant is a different,
+    non-registered statistic); the per-host loop is required because each
+    host's window/grid differs, but every array op inside it is vectorized
+    over the ``n_grid`` redshift nodes.
+
+    Args:
+        z_g, sigma_g: Per-host listed redshift and its (bare, quoted)
+            REDSHIFT_MEASUREMENT_ERROR, shape ``(n_hosts,)``.
+        host_pixels: HEALPix pixel index per host (:func:`_host_pixels`),
+            shape ``(n_hosts,)``.
+        completeness: Per-pixel completeness model (``f_k`` accessor),
+            e.g. from ``c1d.build_bsel_selection_objects``.
+        h: Dimensionless Hubble parameter (the SAME truth ``h`` the venue's
+            realization was drawn under -- ``H_TRUE``/``H_GEN`` for every
+            registered arm; the closed form is about the generator-kernel
+            identity at truth-theta, not about the estimator's evaluated h).
+        n_grid: Trapezoidal-quadrature node count per per-host integral
+            (default 4001, matching ``f4_mechanism.py``'s ``NG``; tests use a
+            smaller value for speed -- the form is exact only in the
+            ``n_grid -> infinity`` limit, same as any trapezoidal quadrature).
+
+    Returns:
+        ``Es_null_det_i`` per host, shape ``(n_hosts,)``.
+
+    References:
+        PREREGISTRATION_HIER_HTHETA_20260826.md PA-HIER-32(d) (definition,
+            the +0.0455 +/- 0.0005 per-unit-s unweighted expectation).
+        B1_1_S0A_DEFECT_FORENSIC_20260829.md E13 (independent measurement),
+            b1_1_forensic_work/f4_mechanism.py (the archived closed-form
+            instrument this function re-derives generically).
+    """
+    n_hosts = z_g.shape[0]
+    out = np.full(n_hosts, np.nan, dtype=np.float64)
+    # PA-HIER-32(d): Es_null_det_i is the closed-form expectation of
+    # score_lns_i (NOT score_s_raw) -- the secant denominator below MUST be
+    # score_lns's own ln(2), matching compute_scores' denom_lns exactly (a
+    # verifier MUST_FIX: the raw secant's sqrt2 - 1/sqrt2 denominator is
+    # 1.02014x too large and was previously used here in error).
+    denom_lns = math.log(2.0)
+    for i in range(n_hosts):
+        zg = float(z_g[i])
+        sg = float(sigma_g[i])
+        pix = host_pixels[i : i + 1]
+        if not (sg > 0.0) or not np.isfinite(zg) or not np.isfinite(sg):
+            continue
+
+        lo0 = max(zg - _ES_NULL_DET_WINDOW_SIGMA * sg, _ES_NULL_DET_Z_FLOOR)
+        hi0 = zg + _ES_NULL_DET_WINDOW_SIGMA * sg
+        zz = np.linspace(lo0, hi0, n_grid)
+        k0 = _es_null_det_kernel(0.0, 1.0, zz, zg, sg, pix, completeness, h, n_grid)
+
+        def _ln_kernel(
+            b: float,
+            s: float,
+            zg: float = zg,
+            sg: float = sg,
+            pix: npt.NDArray[np.int64] = pix,
+            zz: npt.NDArray[np.float64] = zz,
+        ) -> npt.NDArray[np.float64]:
+            return np.log(
+                np.clip(
+                    _es_null_det_kernel(b, s, zz, zg, sg, pix, completeness, h, n_grid),
+                    1e-300,
+                    None,
+                )
+            )
+
+        secs = (_ln_kernel(0.0, _SQRT2) - _ln_kernel(0.0, 1.0 / _SQRT2)) / denom_lns
+        window_minus = (
+            zz >= max(zg - _ES_NULL_DET_WINDOW_SIGMA * sg / _SQRT2, _ES_NULL_DET_Z_FLOOR)
+        ) & (zz <= zg + _ES_NULL_DET_WINDOW_SIGMA * sg / _SQRT2)
+        weight = np.where(window_minus, k0, 0.0)
+        weight_sum = np.trapezoid(weight, zz)
+        if weight_sum > 0.0:
+            out[i] = float(np.trapezoid(weight * secs, zz) / weight_sum)
+    return out
+
+
+def _es_null_det_kernel(
+    b: float,
+    s: float,
+    z_eval: npt.NDArray[np.float64],
+    zg: float,
+    sg: float,
+    pix: npt.NDArray[np.int64],
+    completeness: Any,
+    h: float,
+    n_grid: int,
+) -> npt.NDArray[np.float64]:
+    """The site-2.2 host kernel ``kern(b, s, z_eval)`` of
+    :func:`_es_null_det_closed_form` -- extracted to module level (no closure
+    over a per-host loop variable, avoiding a B023-class capture bug) so it
+    is independently callable/testable."""
+    zc = zg + b * (1.0 + zg)
+    sc = s * sg
+    lo = max(zc - _ES_NULL_DET_WINDOW_SIGMA * sc, _ES_NULL_DET_Z_FLOOR)
+    hi = zc + _ES_NULL_DET_WINDOW_SIGMA * sc
+    w_eval = _completeness_at_host_nodes(completeness, z_eval[None, :], pix, h)[0]
+    if not np.any(w_eval > 0.0):
+        w_eval = np.ones_like(z_eval)
+    z_norm = np.linspace(lo, hi, n_grid)
+    w_norm = _completeness_at_host_nodes(completeness, z_norm[None, :], pix, h)[0]
+    if not np.any(w_norm > 0.0):
+        w_norm = np.ones_like(z_norm)
+    gauss_norm = np.exp(-0.5 * ((z_norm - zc) / sc) ** 2) / (sc * math.sqrt(2.0 * math.pi))
+    vol_norm = np.asarray(comoving_volume_element(z_norm, h=h), dtype=np.float64)
+    normalization = np.trapezoid(gauss_norm * vol_norm / (1.0 + z_norm) * w_norm, z_norm)
+    gauss_eval = np.exp(-0.5 * ((z_eval - zc) / sc) ** 2) / (sc * math.sqrt(2.0 * math.pi))
+    vol_eval = np.asarray(comoving_volume_element(z_eval, h=h), dtype=np.float64)
+    kern_vals = gauss_eval * vol_eval / (1.0 + z_eval) * w_eval / normalization
+    return np.where((z_eval >= lo) & (z_eval <= hi), kern_vals, 0.0)
+
+
+def compute_es_null_det_table(
+    events: pd.DataFrame,
+    handler: Any,
+    h: float = H_TRUE,
+    n_grid: int = 4001,
+) -> pd.DataFrame:
+    """Per-event ``Es_null_det_i`` table (PA-HIER-32(d)), columns
+    ``["event_idx", "es_null_det"]``.
+
+    ``events`` is the realization DataFrame returned by :func:`_build_venue`
+    (or :func:`build_bc_venue`/:func:`build_ft_venue`) -- ``events.index``
+    (after any ``--event-cap`` truncation, which uses
+    ``reset_index(drop=True)``) IS ``event_idx`` as written to
+    ``event_likelihoods.csv`` (:func:`read_event_ln_l`'s join key), and
+    ``events["host_galaxy_index"]`` indexes DIRECTLY into ``handler.
+    reduced_galaxy_catalog`` -- ``handler`` is the SAME object both the
+    injection draw and the evaluation call use (``run_mirror_seed_inprocess``
+    receives it as ``galaxy_catalog=handler``), so no catalogue-frame
+    repositioning (cf. ``GalaxyCatalogueHandler.resolve_host_recovery_
+    position``'s docstring) is needed here.
+
+    Dark-class events (``host_galaxy_index == -1``, no in-catalogue host) are
+    OMITTED -- they carry no ``Es_null_det`` by construction (F4 in the gate
+    doc: the dark class scores exactly 0.0 on every axis).
+    """
+    host_idx = events["host_galaxy_index"].to_numpy()
+    in_catalogue = host_idx >= 0
+    if not np.any(in_catalogue):
+        return pd.DataFrame(
+            {"event_idx": pd.Series(dtype=np.int64), "es_null_det": pd.Series(dtype=np.float64)}
+        )
+    catalog = handler.reduced_galaxy_catalog
+    idx = host_idx[in_catalogue]
+    z_g = catalog[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64)[idx]
+    sigma_g = catalog[InternalCatalogColumns.REDSHIFT_ERROR].to_numpy(dtype=np.float64)[idx]
+    phi_s = catalog[InternalCatalogColumns.PHI_S].to_numpy(dtype=np.float64)[idx]
+    theta_s = catalog[InternalCatalogColumns.THETA_S].to_numpy(dtype=np.float64)[idx]
+    completeness_obj, _phi_table = c1d.build_bsel_selection_objects(h_true=h)
+    host_pixels = _host_pixels(completeness_obj, phi_s, theta_s)
+    es_null_det = _es_null_det_closed_form(
+        z_g, sigma_g, host_pixels, completeness_obj, h, n_grid=n_grid
+    )
+    return pd.DataFrame(
+        {
+            "event_idx": events.index.to_numpy()[in_catalogue],
+            "es_null_det": es_null_det,
+        }
+    )
+
+
+def _write_es_null_det_cache(work_root: Path, table: pd.DataFrame) -> None:
+    """Write :func:`compute_es_null_det_table`'s output to
+    ``work_root/es_null_det.csv`` (node-independent -- one file per seed,
+    NOT per node) so a later ``--score-only`` invocation can read it back
+    with NO venue reconstruction (:func:`_read_es_null_det_cache`)."""
+    table.to_csv(work_root / _ES_NULL_DET_FILENAME, index=False)
+
+
+def _read_es_null_det_cache(work_root: Path) -> pd.DataFrame | None:
+    """Read back :func:`_write_es_null_det_cache`'s file, or ``None`` if
+    absent (e.g. a pre-T1.3-zwin banked run) -- callers degrade gracefully
+    (:func:`compute_scores`'s ``score_s_available``)."""
+    path = work_root / _ES_NULL_DET_FILENAME
+    if not path.is_file():
+        return None
+    return pd.read_csv(path)
+
+
 # ── Diagnostics readback ───────────────────────────────────────────────────
 
 
-def read_event_ln_l(diag_csv: Path, h: float, rtol: float = 1e-9) -> pd.DataFrame:
+def read_event_ln_l(
+    diag_csv: Path,
+    h: float,
+    rtol: float = 1e-9,
+    es_null_det: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     """Read ``event_likelihoods.csv`` and return per-event ln L at ``h``.
 
     Columns returned: ``event_idx``, ``ln_L_no_bh``, ``ln_L_with_bh`` (NaN
     where the corresponding ``combined_*`` column is non-positive -- the
     same non-positivity the estimator's own ``num_log_term_*`` diagnostic
-    columns guard against, bayesian_statistics.py:5788-5794).
+    columns guard against, bayesian_statistics.py:5788-5794), plus
+    ``es_null_det`` when *es_null_det* is given (PA-HIER-32(d), row #255 tree
+    2 node T1.3-zwin): a left-merge on ``event_idx`` of *es_null_det*'s own
+    ``["event_idx", "es_null_det"]`` columns (:func:`compute_es_null_det_table`
+    / :func:`_read_es_null_det_cache`), NaN for events absent from it (e.g.
+    dark-class events, which have no in-catalogue host). ``None`` (default)
+    omits the column entirely -- :func:`compute_scores` treats its absence
+    from EVERY node's frame the same way as an all-NaN column (the corrected
+    ``score_s`` is reported unavailable, ``score_s_raw`` is unaffected).
     """
     df = pd.read_csv(diag_csv)
     mask = np.isclose(df["h"].to_numpy(dtype=float), h, rtol=rtol, atol=1e-12)
@@ -497,11 +771,11 @@ def read_event_ln_l(diag_csv: Path, h: float, rtol: float = 1e-9) -> pd.DataFram
         vals = sub[col].to_numpy(dtype=float)
         with np.errstate(divide="ignore", invalid="ignore"):
             sub[out] = np.where(vals > 0.0, np.log(vals), np.nan)
-    return (
-        sub[["event_idx", "ln_L_no_bh", "ln_L_with_bh"]]
-        .sort_values("event_idx")
-        .reset_index(drop=True)
-    )
+    out_cols = ["event_idx", "ln_L_no_bh", "ln_L_with_bh"]
+    result = sub[out_cols].sort_values("event_idx").reset_index(drop=True)
+    if es_null_det is not None:
+        result = result.merge(es_null_det[["event_idx", "es_null_det"]], on="event_idx", how="left")
+    return result
 
 
 @dataclass
@@ -552,6 +826,8 @@ def run_arm_seed_s0a(
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
     catalogue_leg_1d_mass_aware: str = "off",
+    theta_zwindow: str = "off",
+    z_window_k: float = 1.0,
 ) -> list[NodeResult]:
     """S0-A: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.0 (truth-theta=(0,1)).
 
@@ -560,17 +836,36 @@ def run_arm_seed_s0a(
     "all", smear="auto" -> smear_global_selection=theta_engaged, config=
     "b0i" -> the original bc venue/flags, h_values=(H_GEN,) -> the single
     h=0.73 node, score_h=None -> H_GEN). ``theta_phi_divisor``/``sky_cone_k``
-    (T1.2) default to exactly the pre-T1.1 behaviour ("off"/1.5). Node
+    (T1.2) and ``theta_zwindow``/``z_window_k`` (T1.3-zwin) default to
+    exactly the pre-T1.1/pre-T1.3-zwin behaviour ("off"/1.5, "off"/1.0). Node
     output directories gain a suffix (:func:`_node_dir_suffix`) that is
     EMPTY at these defaults, so default-run paths are unchanged.
+
+    PA-HIER-32(d) score_s support: this function computes and caches the
+    per-event closed-form ``Es_null_det_i`` (:func:`compute_es_null_det_table`)
+    ONCE per seed (node-independent -- a property of site 2.2's own kernel
+    at theta=(0,1), never of the realized data), writes it to
+    ``work_root/es_null_det.csv`` (so a later ``--score-only`` invocation on
+    this seed can read it back with NO venue reconstruction), and merges it
+    into every node's ``ln_l`` (:func:`read_event_ln_l`'s ``es_null_det``
+    kwarg) so :func:`compute_scores` can compute the corrected ``score_s``.
     """
     work_root = out_root / f"s0a_seed{seed}"
     work_root.mkdir(parents=True, exist_ok=True)
     events, handler = _build_venue(config, work_root, seed, sigma_z_scale=1.0)
     if event_cap is not None:
         events = events.head(event_cap).reset_index(drop=True)
+    es_null_det = compute_es_null_det_table(events, handler)
+    _write_es_null_det_cache(work_root, es_null_det)
     suffix = _node_dir_suffix(
-        theta_sites, smear, config, theta_phi_divisor, sky_cone_k, catalogue_leg_1d_mass_aware
+        theta_sites,
+        smear,
+        config,
+        theta_phi_divisor,
+        sky_cone_k,
+        catalogue_leg_1d_mass_aware,
+        theta_zwindow,
+        z_window_k,
     )
     read_h = _resolve_score_h(h_values, score_h)
     results: list[NodeResult] = []
@@ -600,9 +895,11 @@ def run_arm_seed_s0a(
             theta_phi_divisor=theta_phi_divisor,
             sky_cone_k=sky_cone_k,
             catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
+            theta_zwindow=theta_zwindow,
+            z_window_k=z_window_k,
         )
         wall = time.time() - t0
-        ln_l = read_event_ln_l(diag_csv, read_h)
+        ln_l = read_event_ln_l(diag_csv, read_h, es_null_det=es_null_det)
         results.append(
             NodeResult(
                 node=node,
@@ -618,7 +915,8 @@ def run_arm_seed_s0a(
         print(
             f"[S0-A seed={seed} node={node} theta=({theta_b},{theta_s}) "
             f"theta_sites={theta_sites} smear={smear} config={config} "
-            f"theta_phi_divisor={theta_phi_divisor} sky_cone_k={sky_cone_k}] "
+            f"theta_phi_divisor={theta_phi_divisor} sky_cone_k={sky_cone_k} "
+            f"theta_zwindow={theta_zwindow} z_window_k={z_window_k}] "
             f"n_events={len(ln_l)} evaluate_s={elapsed:.2f} wall_s={wall:.2f} -> {diag_csv}",
             flush=True,
         )
@@ -639,19 +937,32 @@ def run_arm_seed_s0r(
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
     catalogue_leg_1d_mass_aware: str = "off",
+    theta_zwindow: str = "off",
+    z_window_k: float = 1.0,
 ) -> list[NodeResult]:
     """S0-R: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.5 (DISCLOSED NULL, see module docstring).
 
     Same byte-identical-default argument as :func:`run_arm_seed_s0a` (this
-    arm's own S0_R_SIGMA_SCALE dose is orthogonal to the P1/KW-Q1/T1.2 axes).
+    arm's own S0_R_SIGMA_SCALE dose is orthogonal to the P1/KW-Q1/T1.2/
+    T1.3-zwin axes); same ``Es_null_det`` caching (:func:`compute_es_null_det_table`,
+    ``work_root/es_null_det.csv``) as :func:`run_arm_seed_s0a`.
     """
     work_root = out_root / f"s0r_seed{seed}"
     work_root.mkdir(parents=True, exist_ok=True)
     events, handler = _build_venue(config, work_root, seed, sigma_z_scale=S0_R_SIGMA_SCALE)
     if event_cap is not None:
         events = events.head(event_cap).reset_index(drop=True)
+    es_null_det = compute_es_null_det_table(events, handler)
+    _write_es_null_det_cache(work_root, es_null_det)
     suffix = _node_dir_suffix(
-        theta_sites, smear, config, theta_phi_divisor, sky_cone_k, catalogue_leg_1d_mass_aware
+        theta_sites,
+        smear,
+        config,
+        theta_phi_divisor,
+        sky_cone_k,
+        catalogue_leg_1d_mass_aware,
+        theta_zwindow,
+        z_window_k,
     )
     read_h = _resolve_score_h(h_values, score_h)
     results: list[NodeResult] = []
@@ -681,9 +992,11 @@ def run_arm_seed_s0r(
             theta_phi_divisor=theta_phi_divisor,
             sky_cone_k=sky_cone_k,
             catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
+            theta_zwindow=theta_zwindow,
+            z_window_k=z_window_k,
         )
         wall = time.time() - t0
-        ln_l = read_event_ln_l(diag_csv, read_h)
+        ln_l = read_event_ln_l(diag_csv, read_h, es_null_det=es_null_det)
         results.append(
             NodeResult(
                 node=node,
@@ -699,7 +1012,8 @@ def run_arm_seed_s0r(
         print(
             f"[S0-R seed={seed} node={node} theta=({theta_b},{theta_s}) "
             f"theta_sites={theta_sites} smear={smear} config={config} "
-            f"theta_phi_divisor={theta_phi_divisor} sky_cone_k={sky_cone_k}] "
+            f"theta_phi_divisor={theta_phi_divisor} sky_cone_k={sky_cone_k} "
+            f"theta_zwindow={theta_zwindow} z_window_k={z_window_k}] "
             f"n_events={len(ln_l)} evaluate_s={elapsed:.2f} wall_s={wall:.2f} -> {diag_csv}",
             flush=True,
         )
@@ -713,15 +1027,19 @@ def run_seed_s0c(
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
     catalogue_leg_1d_mass_aware: str = "off",
+    theta_zwindow: str = "off",
+    z_window_k: float = 1.0,
 ) -> dict[str, Any]:
     """S0-C: one seed, theta=(0,1), the full 41-node H_GRID_41 (costing probe, prereg §2.1).
 
     ``theta_phi_divisor``/``sky_cone_k`` (T1.2, row #255 tree 2 node T1.2)
-    are forwarded verbatim to ``run_mirror_seed_inprocess`` for parity with
-    S0-A/S0-R -- unconditional forwarding (GATE T-ID: the divisor is a
-    no-op at theta=(0,1), S0-C's only theta). Defaults ("off", 1.5) are
-    byte-identical; S0-C's output directory name (``node_truth_fullgrid``,
-    unparameterized by any other axis either) is unchanged regardless.
+    and ``theta_zwindow``/``z_window_k`` (T1.3-zwin, row #255 tree 2 node
+    T1.3-zwin) are forwarded verbatim to ``run_mirror_seed_inprocess`` for
+    parity with S0-A/S0-R -- unconditional forwarding (GATE T-ID: both are
+    no-ops at theta=(0,1), S0-C's only theta). Defaults ("off", 1.5, "off",
+    1.0) are byte-identical; S0-C's output directory name
+    (``node_truth_fullgrid``, unparameterized by any other axis either) is
+    unchanged regardless.
     """
     work_root = out_root / f"s0c_seed{seed}"
     work_root.mkdir(parents=True, exist_ok=True)
@@ -755,6 +1073,8 @@ def run_seed_s0c(
         theta_phi_divisor=theta_phi_divisor,
         sky_cone_k=sky_cone_k,
         catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
+        theta_zwindow=theta_zwindow,
+        z_window_k=z_window_k,
     )
     wall = time.time() - t0
     # Per-h marginal cost: posterior JSONs are written progressively as each
@@ -792,8 +1112,36 @@ def compute_scores(
     (event sets differ ACROSS seeds -- that is fine, pooling is over the
     union of (seed, event_idx) pairs, not a per-event paired comparison).
 
-    score_b = [lnL(b=+0.02,s=1) - lnL(b=-0.02,s=1)] / 0.04
-    score_s = [lnL(b=0,s=sqrt2) - lnL(b=0,s=1/sqrt2)] / (sqrt2 - 1/sqrt2)
+    score_b       = [lnL(b=+0.02,s=1) - lnL(b=-0.02,s=1)] / 0.04
+    score_s_raw   = [lnL(b=0,s=sqrt2) - lnL(b=0,s=1/sqrt2)] / (sqrt2 - 1/sqrt2)
+                    (the OLD/superseded raw linear secant, kept for
+                    continuity -- PA-HIER-4 registered this centred on the
+                    interval's ARITHMETIC midpoint, s=1.0606..., not s=1;
+                    PREREGISTRATION_HIER_HTHETA_20260826.md PA-HIER-4)
+    score_lns     = [lnL(b=0,ln s=+ln sqrt2) - lnL(b=0,ln s=-ln sqrt2)] / ln(2)
+                    (PA-HIER-4's correction: the SAME two nodes, re-centred
+                    in ln s -- exactly centred on truth ln s = 0; same
+                    numerator as score_s_raw, denominator ln(2) = 2 ln(sqrt2)
+                    in place of (sqrt2 - 1/sqrt2))
+    score_s       = score_lns - Es_null_det   (PA-HIER-32(d), the CORRECTED
+                    and now-primary s-statistic: score_lns's own deterministic
+                    expectation at truth under each host's OWN generator
+                    kernel, Es_null_det_i, is non-zero -- E[score_lns |
+                    truth]_unweighted = +0.0455 +/- 0.0005 per unit s
+                    (PREREGISTRATION_HIER_HTHETA_20260826.md PA-HIER-32(d),
+                    B1_1_S0A_DEFECT_FORENSIC_20260829.md E13) -- so
+                    subtracting the per-host Es_null_det_i, which is
+                    data-independent (a function only of that host's window,
+                    floor and sigma_g, never of the realized z_true or
+                    observed d_L; :func:`compute_es_null_det_table`'s closed
+                    form), removes exactly the deterministic part of the
+                    secant's response at truth. Available only for events
+                    whose ``es_null_det`` column both s_plus and s_minus
+                    ``NodeResult.ln_l`` frames carry (:func:`read_event_ln_l`'s
+                    ``es_null_det`` kwarg / :func:`compute_es_null_det_table`);
+                    when absent for every event, ``score_s``'s stats report
+                    ``n_pooled=0``/NaN and ``score_s_available`` is ``False``
+                    -- ``score_s_raw`` and ``score_lns`` are unaffected.
     Z_x = mean(score_x) / SEM(score_x), pooled over events and seeds.
 
     Args:
@@ -815,66 +1163,124 @@ def compute_scores(
             defensive line -- it fires only if a future caller skips that
             check.
     """
-    required_nodes = ("b_plus", "b_minus", "s_plus", "s_minus")
-    missing_nodes = [n for n in required_nodes if not all_nodes.get(n)]
-    if missing_nodes:
-        n_present_by_node = {n: len(all_nodes.get(n, [])) for n in required_nodes}
+
+    # Axis-independent gating (T1.3-zwin, row #255): the registered P1 arm's
+    # own node list is {truth, s_plus, s_minus} -- NO b-nodes (PHYSICS_CHANGE_
+    # THETA_ZWINDOW_20260830.md §5.6: "b-axis: NOT re-run under P1 ... T1.2's
+    # own b-axis certification stands unchanged"). The pre-T1.3-zwin gate
+    # unconditionally required all 4 of b_plus/b_minus/s_plus/s_minus, so it
+    # could never score ANY b-node-free arm, including this one. Relaxed
+    # here to be PER-AXIS: an axis (b, s) is "ready" only if BOTH its nodes
+    # are present (a lone b_plus with no b_minus is still an error -- a
+    # broken pair, not a deliberate omission); at least one axis must be
+    # ready or there is nothing to pool at all. A ready axis's own
+    # (seed, node) completeness is still checked below (the original
+    # crash-fix diagnostic, per axis).
+    def _axis_missing(pair: tuple[str, str]) -> list[str]:
+        return [n for n in pair if not all_nodes.get(n)]
+
+    b_missing = _axis_missing(("b_plus", "b_minus"))
+    s_missing = _axis_missing(("s_plus", "s_minus"))
+    has_b = not b_missing
+    has_s = not s_missing
+    # Check for a genuine BROKEN pair first (exactly one of an axis's two
+    # nodes present -- some seed's worker for the other one raised, or the
+    # caller only requested one of the pair by mistake): this is checked
+    # BEFORE the "nothing to score" catch-all below so its more specific,
+    # per-axis diagnostic always wins over the generic one, regardless of
+    # the OTHER axis's state.
+    for axis_name, missing, ready in (("b", b_missing, has_b), ("s", s_missing, has_s)):
+        # ready (missing == []): fully present, fine. missing == both nodes:
+        # the axis was never requested at all, ALSO fine (the relaxation
+        # this node adds -- e.g. the registered P1 arm's node list has no
+        # b_plus/b_minus at all). Only missing == exactly one of the two is
+        # a genuine broken pair -- that is still the original crash-fix
+        # error.
+        if ready or len(missing) != 1:
+            continue
+        n_present_by_node = {
+            n: len(all_nodes.get(n, [])) for n in ("b_plus", "b_minus", "s_plus", "s_minus")
+        }
         if seeds is not None:
             missing_pairs = [
                 (seed, n)
-                for n in missing_nodes
+                for n in missing
                 for seed in seeds
                 if seed not in {r.seed for r in all_nodes.get(n, [])}
             ]
             detail = f"missing (seed, node) pairs: {missing_pairs}"
         else:
-            detail = f"missing nodes (no seed list given): {missing_nodes}"
+            detail = f"missing nodes (no seed list given): {missing}"
         raise ValueError(
-            "compute_scores: cannot pool score_b/score_s -- "
-            f"{detail}. n_present_by_node={n_present_by_node}. Every one of these evaluate() "
-            "calls either was never attempted or raised inside its worker -- check the caller's "
+            f"compute_scores: the {axis_name}-axis has an incomplete node pair -- {detail}. "
+            f"n_present_by_node={n_present_by_node}. Every one of these evaluate() calls "
+            "either was never attempted or raised inside its worker -- check the caller's "
             "printed WORKER ERROR lines / payload['errors'] (run_arm) or missing_csv_paths "
             "(--score-only) for the real underlying cause."
         )
+    if not has_b and not has_s:
+        n_present_by_node = {
+            n: len(all_nodes.get(n, [])) for n in ("b_plus", "b_minus", "s_plus", "s_minus")
+        }
+        raise ValueError(
+            "compute_scores: cannot pool score_b or score_s -- both axes are incomplete "
+            f"(b_missing={b_missing}, s_missing={s_missing}). n_present_by_node="
+            f"{n_present_by_node}. Every one of these evaluate() calls either was never "
+            "attempted or raised inside its worker -- check the caller's printed WORKER "
+            "ERROR lines / payload['errors'] (run_arm) or missing_csv_paths (--score-only) "
+            "for the real underlying cause."
+        )
+
     channels = ("ln_L_no_bh", "ln_L_with_bh")
     out: dict[str, Any] = {}
     for channel in channels:
-        # Join b_plus/b_minus per (seed, event_idx).
-        bp = pd.concat(
-            [
-                r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
-                for r in all_nodes["b_plus"]
-            ],
-            ignore_index=True,
-        ).rename(columns={channel: "b_plus"})
-        bm = pd.concat(
-            [
-                r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
-                for r in all_nodes["b_minus"]
-            ],
-            ignore_index=True,
-        ).rename(columns={channel: "b_minus"})
-        sp = pd.concat(
-            [
-                r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
-                for r in all_nodes["s_plus"]
-            ],
-            ignore_index=True,
-        ).rename(columns={channel: "s_plus"})
-        sm = pd.concat(
-            [
-                r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
-                for r in all_nodes["s_minus"]
-            ],
-            ignore_index=True,
-        ).rename(columns={channel: "s_minus"})
+        if has_b:
+            # Join b_plus/b_minus per (seed, event_idx).
+            bp = pd.concat(
+                [
+                    r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                    for r in all_nodes["b_plus"]
+                ],
+                ignore_index=True,
+            ).rename(columns={channel: "b_plus"})
+            bm = pd.concat(
+                [
+                    r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                    for r in all_nodes["b_minus"]
+                ],
+                ignore_index=True,
+            ).rename(columns={channel: "b_minus"})
+            b_join = bp.merge(bm, on=["seed", "event_idx"], how="inner")
+            score_b = (b_join["b_plus"] - b_join["b_minus"]) / 0.04
 
-        b_join = bp.merge(bm, on=["seed", "event_idx"], how="inner")
-        s_join = sp.merge(sm, on=["seed", "event_idx"], how="inner")
-
-        score_b = (b_join["b_plus"] - b_join["b_minus"]) / 0.04
-        denom_s = math.sqrt(2.0) - 1.0 / math.sqrt(2.0)
-        score_s = (s_join["s_plus"] - s_join["s_minus"]) / denom_s
+        if has_s:
+            # es_null_det (PA-HIER-32(d)) is node-independent (one value per
+            # (seed, event_idx), the SAME whether read off s_plus's or
+            # s_minus's frame -- see compute_es_null_det_table); include it
+            # from s_plus ONLY, so the s_plus/s_minus merge below never
+            # produces a duplicate (es_null_det_x/es_null_det_y) column.
+            _sp_has_es = all("es_null_det" in r.ln_l.columns for r in all_nodes["s_plus"]) and bool(
+                all_nodes["s_plus"]
+            )
+            sp_cols = ["seed", "event_idx", channel, *(["es_null_det"] if _sp_has_es else [])]
+            sp = pd.concat(
+                [r.ln_l.assign(seed=r.seed)[sp_cols] for r in all_nodes["s_plus"]],
+                ignore_index=True,
+            ).rename(columns={channel: "s_plus"})
+            sm = pd.concat(
+                [
+                    r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                    for r in all_nodes["s_minus"]
+                ],
+                ignore_index=True,
+            ).rename(columns={channel: "s_minus"})
+            s_join = sp.merge(sm, on=["seed", "event_idx"], how="inner")
+            denom_s_raw = math.sqrt(2.0) - 1.0 / math.sqrt(2.0)
+            score_s_raw = (s_join["s_plus"] - s_join["s_minus"]) / denom_s_raw
+            # PA-HIER-4's ln-s-centred secant (same numerator, re-centred
+            # denominator -- see this function's docstring).
+            denom_lns = math.log(2.0)
+            score_lns = (s_join["s_plus"] - s_join["s_minus"]) / denom_lns
 
         def _mean_sem(series: pd.Series) -> tuple[float, float, float, int]:
             vals = series.to_numpy(dtype=float)
@@ -887,11 +1293,47 @@ def compute_scores(
             z = mean / sem if sem and np.isfinite(sem) and sem > 0 else float("nan")
             return mean, sem, z, n
 
-        mean_b, sem_b, z_b, n_b = _mean_sem(score_b)
-        mean_s, sem_s, z_s, n_s = _mean_sem(score_s)
+        if has_b:
+            mean_b, sem_b, z_b, n_b = _mean_sem(score_b)
+        else:
+            mean_b, sem_b, z_b, n_b = float("nan"), float("nan"), float("nan"), 0
+
+        if has_s:
+            mean_s_raw, sem_s_raw, z_s_raw, n_s_raw = _mean_sem(score_s_raw)
+            mean_lns, sem_lns, z_lns, n_lns = _mean_sem(score_lns)
+            # PA-HIER-32(d): score_s (corrected, now PRIMARY) = score_lns -
+            # Es_null_det, only for events carrying a (non-NaN) Es_null_det_i.
+            score_s_available = bool(_sp_has_es and s_join["es_null_det"].notna().any())
+            if score_s_available:
+                score_s = score_lns - s_join["es_null_det"]
+                mean_s, sem_s, z_s, n_s = _mean_sem(score_s)
+            else:
+                mean_s, sem_s, z_s, n_s = float("nan"), float("nan"), float("nan"), 0
+        else:
+            mean_s_raw, sem_s_raw, z_s_raw, n_s_raw = float("nan"), float("nan"), float("nan"), 0
+            mean_lns, sem_lns, z_lns, n_lns = float("nan"), float("nan"), float("nan"), 0
+            mean_s, sem_s, z_s, n_s = float("nan"), float("nan"), float("nan"), 0
+            score_s_available = False
+
         out[channel] = {
             "score_b": {"mean": mean_b, "sem": sem_b, "Z": z_b, "n_pooled": n_b},
+            "score_b_available": has_b,
+            # "score_s" is the CORRECTED (PA-HIER-32(d) primary) statistic --
+            # gate_parity/verdict_s0a/verdict_s0r read this key. Falls back
+            # to n_pooled=0/NaN (never a silent wrong number) when
+            # Es_null_det is unavailable, OR when the s-axis nodes were not
+            # requested at all; score_s_raw/score_lns are always computed
+            # and reported alongside for continuity/diagnosis whenever the
+            # s-axis IS present.
             "score_s": {"mean": mean_s, "sem": sem_s, "Z": z_s, "n_pooled": n_s},
+            "score_s_available": score_s_available,
+            "score_lns": {"mean": mean_lns, "sem": sem_lns, "Z": z_lns, "n_pooled": n_lns},
+            "score_s_raw": {
+                "mean": mean_s_raw,
+                "sem": sem_s_raw,
+                "Z": z_s_raw,
+                "n_pooled": n_s_raw,
+            },
         }
     return out
 
@@ -1112,6 +1554,8 @@ def _run_one_seed_worker(
         str,
         float,
         str,
+        str,
+        float,
     ],
 ) -> Any:
     """Top-level (picklable) worker: run one seed's cells for the given arm.
@@ -1143,6 +1587,12 @@ def _run_one_seed_worker(
     forwarded verbatim to run_arm_seed_s0a/s0r/run_seed_s0c (all three, same
     unconditional-forwarding rationale as ``theta_phi_divisor`` above --
     evaluate()'s own setup guard is the backstop).
+    Extended again (T1.3-zwin, row #255 tree 2 node T1.3-zwin, byte-identical
+    at the trailing ``"off"``/``1.0`` defaults) with ``theta_zwindow``,
+    ``z_window_k``, forwarded verbatim to run_arm_seed_s0a/s0r/run_seed_s0c
+    (all three -- GATE T-ID makes the theta-transformed window a no-op at
+    S0-C's truth-only theta, so unconditional forwarding is correct there
+    too).
     """
     (
         arm,
@@ -1160,6 +1610,8 @@ def _run_one_seed_worker(
         theta_phi_divisor,
         sky_cone_k,
         catalogue_leg_1d_mass_aware,
+        theta_zwindow,
+        z_window_k,
     ) = args
     if not mp.current_process()._identity:  # noqa: SLF001 -- see docstring above
         _pin_worker_affinity(cpu_budget)
@@ -1179,6 +1631,8 @@ def _run_one_seed_worker(
                 theta_phi_divisor=theta_phi_divisor,
                 sky_cone_k=sky_cone_k,
                 catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
+                theta_zwindow=theta_zwindow,
+                z_window_k=z_window_k,
             )
         elif arm == "S0-R":
             results = run_arm_seed_s0r(
@@ -1195,6 +1649,8 @@ def _run_one_seed_worker(
                 theta_phi_divisor=theta_phi_divisor,
                 sky_cone_k=sky_cone_k,
                 catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
+                theta_zwindow=theta_zwindow,
+                z_window_k=z_window_k,
             )
         elif arm == "S0-C":
             return {
@@ -1206,6 +1662,8 @@ def _run_one_seed_worker(
                     theta_phi_divisor=theta_phi_divisor,
                     sky_cone_k=sky_cone_k,
                     catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
+                    theta_zwindow=theta_zwindow,
+                    z_window_k=z_window_k,
                 ),
             }
         else:
@@ -1268,6 +1726,8 @@ def run_arm(
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
     catalogue_leg_1d_mass_aware: str = "off",
+    theta_zwindow: str = "off",
+    z_window_k: float = 1.0,
 ) -> dict[str, Any]:
     out_root.mkdir(parents=True, exist_ok=True)
     jobs = max(1, min(jobs, len(seeds)))
@@ -1289,6 +1749,8 @@ def run_arm(
             theta_phi_divisor,
             sky_cone_k,
             catalogue_leg_1d_mass_aware,
+            theta_zwindow,
+            z_window_k,
         )
         for seed in seeds
     ]
@@ -1340,8 +1802,17 @@ def run_arm(
         "theta_phi_divisor": theta_phi_divisor,
         "sky_cone_k": sky_cone_k,
         "catalogue_leg_1d_mass_aware": catalogue_leg_1d_mass_aware,
+        "theta_zwindow": theta_zwindow,
+        "z_window_k": z_window_k,
         "node_dir_suffix": _node_dir_suffix(
-            theta_sites, smear, config, theta_phi_divisor, sky_cone_k, catalogue_leg_1d_mass_aware
+            theta_sites,
+            smear,
+            config,
+            theta_phi_divisor,
+            sky_cone_k,
+            catalogue_leg_1d_mass_aware,
+            theta_zwindow,
+            z_window_k,
         ),
     }
 
@@ -1365,52 +1836,67 @@ def run_arm(
         for r in ok
     ]
 
-    requested_all_four = all(n in nodes for n in ("b_plus", "b_minus", "s_plus", "s_minus"))
-    # Requesting a node (CLI-level) is NOT the same as having produced a
-    # NodeResult for it (runner-disclosed P0 crash, B1_2_DRIVER_EXTENSION_
-    # NOTE.md "Crash fix"): the old `need_all_four = all(n in nodes ...)`
-    # check only looked at what was ASKED FOR, so when every seed's worker
-    # errored out (all_nodes left completely empty for every node)
-    # compute_scores was still called and pd.concat([]) raised an opaque
-    # "No objects to concatenate" instead of this driver ever reporting WHY.
-    produced_all_four = all(
-        len(all_nodes.get(n, [])) > 0 for n in ("b_plus", "b_minus", "s_plus", "s_minus")
-    )
-    if requested_all_four and produced_all_four:
+    # Per-axis (b, s) requested/produced check (T1.3-zwin, row #255): the
+    # registered P1 arm's own node list is {truth, s_plus, s_minus} -- NO
+    # b-nodes (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §5.6, "b-axis: NOT
+    # re-run under P1"). The pre-T1.3-zwin "all 4 or nothing" gate could
+    # never score that arm at all. Relaxed to per-axis, mirroring
+    # compute_scores' own has_b/has_s split: an axis is ready only if BOTH
+    # its nodes were requested AND both produced >=1 NodeResult (the
+    # runner-disclosed P0 crash-fix check, B1_2_DRIVER_EXTENSION_NOTE.md
+    # "Crash fix", now per axis instead of all-four).
+    def _axis_ready(pair: tuple[str, str]) -> bool:
+        return all(n in nodes for n in pair) and all(len(all_nodes.get(n, [])) > 0 for n in pair)
+
+    b_ready = _axis_ready(("b_plus", "b_minus"))
+    s_ready = _axis_ready(("s_plus", "s_minus"))
+    any_axis_requested = any(n in nodes for n in ("b_plus", "b_minus", "s_plus", "s_minus"))
+
+    if b_ready or s_ready:
         scores = compute_scores(all_nodes, seeds=seeds)
         eng = gate_eng(all_nodes)
         payload["scores"] = scores
         payload["gate_eng"] = eng
+        if not (b_ready and s_ready):
+            payload["note"] = (
+                f"nodes={nodes}: only the {'b' if b_ready else 's'}-axis is ready "
+                f"(b_ready={b_ready}, s_ready={s_ready}) -- the OTHER axis's score in "
+                "payload['scores'] is unavailable (n_pooled=0/NaN), by design, NOT a crash. "
+                "This is the registered P1 arm's own node list (T1.3-zwin gate doc §5.6, "
+                "b-axis NOT re-run) when only s_ready is True."
+            )
         if arm == "S0-A":
             parity = gate_parity(all_nodes)
             payload["gate_parity"] = parity
             payload["verdict"] = verdict_s0a(scores, eng, parity)
         elif arm == "S0-R":
             payload["verdict"] = verdict_s0r(scores, eng)
-    elif not requested_all_four:
+    elif not any_axis_requested:
         payload["note"] = (
-            f"nodes={nodes} does not include all 4 off-truth nodes -- scores/gates/verdict "
-            "require {b_plus,b_minus,s_plus,s_minus}; this is expected for a --smoke run with "
-            "1-2 nodes and is NOT a registered read."
+            f"nodes={nodes} does not include a complete b-axis (b_plus,b_minus) or s-axis "
+            "(s_plus,s_minus) pair -- scores/gates/verdict need at least one; this is expected "
+            "for a --smoke run with 1-2 nodes and is NOT a registered read."
         )
         if "truth" in nodes and arm == "S0-A":
             # Still run GATE PARITY if the truth node is present -- it needs no other node.
             payload["gate_parity"] = gate_parity(all_nodes)
     else:
-        # All 4 off-truth nodes WERE requested but at least one produced ZERO
-        # NodeResult across every seed -- every seed's worker for that node
-        # either raised (see payload["errors"] / the WORKER ERROR lines
-        # printed above) or the arm otherwise never reached it. Report
-        # exactly what's missing instead of letting compute_scores crash.
+        # At least one axis WAS fully requested but produced ZERO NodeResult
+        # for at least one of its two nodes across every seed -- every
+        # seed's worker for that node either raised (see payload["errors"] /
+        # the WORKER ERROR lines printed above) or the arm otherwise never
+        # reached it. Report exactly what's missing instead of letting
+        # compute_scores crash.
         have = {n: len(all_nodes.get(n, [])) for n in ("b_plus", "b_minus", "s_plus", "s_minus")}
         missing_pairs = [
             (seed, n)
             for n in ("b_plus", "b_minus", "s_plus", "s_minus")
+            if n in nodes
             for seed in seeds
             if seed not in {r.seed for r in all_nodes.get(n, [])}
         ]
         payload["note"] = (
-            f"all 4 off-truth nodes were REQUESTED but produced ZERO results for at least one "
+            f"a requested axis produced ZERO results for at least one of its two nodes "
             f"(n_present_by_node={have}); missing (seed, node) pairs: {missing_pairs}. This is "
             f"NOT the --smoke-subset case: n_seeds_error={len(errors)} of {len(seeds)} seeds "
             "errored (see the WORKER ERROR lines printed above and payload['errors'] for the "
@@ -1446,6 +1932,8 @@ def gather_node_results_from_disk(
     theta_phi_divisor: str = "off",
     sky_cone_k: float = 1.5,
     catalogue_leg_1d_mass_aware: str = "off",
+    theta_zwindow: str = "off",
+    z_window_k: float = 1.0,
 ) -> tuple[dict[str, list[NodeResult]], list[str]]:
     """Read ``event_likelihoods.csv`` for every requested (seed, node) pair
     directly off disk -- NO ``evaluate()`` call, NO venue construction. Used
@@ -1456,6 +1944,17 @@ def gather_node_results_from_disk(
     invocation writes fresh node dirs (``run_theta_node`` always calls
     ``evaluate()``; nothing here is a stale reuse), and this function simply
     unions whatever is present at scoring time.
+
+    PA-HIER-32(d): also reads each seed's ``es_null_det.csv`` cache (written
+    by :func:`run_arm_seed_s0a`/:func:`run_arm_seed_s0r` at
+    ``<seed work_root>/es_null_det.csv``, node-independent -- NO venue
+    reconstruction needed here either) and merges it into every node's
+    ``ln_l`` so :func:`compute_scores` can compute the corrected
+    ``score_s = score_lns - Es_null_det``. Missing for a given seed (e.g. an
+    older banked run predating this cache) degrades gracefully: that seed's
+    events simply have no ``es_null_det`` value and are excluded from the
+    corrected statistic (:func:`compute_scores` reports
+    ``score_s_available``); ``score_s_raw`` is unaffected.
 
     Returns ``(all_nodes, missing_paths)`` -- ``missing_paths`` lists every
     (seed, node) CSV that was requested but not found on disk (reported, not
@@ -1468,11 +1967,19 @@ def gather_node_results_from_disk(
             f"--score-only supports S0-A/S0-R only (no node cross to pool for {arm!r})"
         )
     suffix = _node_dir_suffix(
-        theta_sites, smear, config, theta_phi_divisor, sky_cone_k, catalogue_leg_1d_mass_aware
+        theta_sites,
+        smear,
+        config,
+        theta_phi_divisor,
+        sky_cone_k,
+        catalogue_leg_1d_mass_aware,
+        theta_zwindow,
+        z_window_k,
     )
     all_nodes: dict[str, list[NodeResult]] = {n: [] for n in nodes}
     missing: list[str] = []
     for seed in seeds:
+        es_null_det = _read_es_null_det_cache(out_root / f"{prefix}{seed}")
         for node in nodes:
             theta_b, theta_s = THETA_NODES[node]
             diag_csv = (
@@ -1486,7 +1993,7 @@ def gather_node_results_from_disk(
             if not diag_csv.is_file():
                 missing.append(str(diag_csv))
                 continue
-            ln_l = read_event_ln_l(diag_csv, score_h)
+            ln_l = read_event_ln_l(diag_csv, score_h, es_null_det=es_null_det)
             all_nodes[node].append(
                 NodeResult(
                     node=node,
@@ -1528,14 +2035,22 @@ def score_only_payload(
         "n_missing_csv": len(missing),
         "missing_csv_paths": missing,
     }
-    need_all_four = all(
-        len(all_nodes.get(n, [])) > 0 for n in ("b_plus", "b_minus", "s_plus", "s_minus")
-    )
-    if need_all_four:
+    # Per-axis ready check (T1.3-zwin, row #255) -- see run_arm's identical
+    # relaxation for the rationale (the registered P1 arm's node list has no
+    # b-nodes at all).
+    b_ready = all(len(all_nodes.get(n, [])) > 0 for n in ("b_plus", "b_minus"))
+    s_ready = all(len(all_nodes.get(n, [])) > 0 for n in ("s_plus", "s_minus"))
+    if b_ready or s_ready:
         scores = compute_scores(all_nodes, seeds=seeds)
         eng = gate_eng(all_nodes)
         payload["scores"] = scores
         payload["gate_eng"] = eng
+        if not (b_ready and s_ready):
+            payload["note"] = (
+                f"only the {'b' if b_ready else 's'}-axis is ready on disk (b_ready={b_ready}, "
+                f"s_ready={s_ready}) -- the OTHER axis's score in payload['scores'] is "
+                "unavailable (n_pooled=0/NaN), by design, NOT an error."
+            )
         if len(all_nodes.get("truth", [])) > 0:
             parity = gate_parity(all_nodes)
             payload["gate_parity"] = parity
@@ -1547,7 +2062,8 @@ def score_only_payload(
         have = {n: len(all_nodes.get(n, [])) for n in ("b_plus", "b_minus", "s_plus", "s_minus")}
         payload["note"] = (
             "on-disk node set is INCOMPLETE for pooling -- scores/gate_eng/verdict require "
-            f">=1 seed present for EACH of b_plus/b_minus/s_plus/s_minus; have {have}. "
+            f">=1 seed present for EACH node of AT LEAST ONE axis (b_plus AND b_minus, OR "
+            f"s_plus AND s_minus); have {have}. "
             "This is not an error: run the remaining (seed, node) combinations, then re-invoke "
             "--score-only."
         )
@@ -1574,10 +2090,24 @@ def write_score_markdown(payload: dict[str, Any], md_path: Path) -> None:
     if "scores" in payload:
         for channel, d in payload["scores"].items():
             lines.append(f"## {channel}")
-            for stat_name in ("score_b", "score_s"):
+            # "score_s" (PA-HIER-32(d), CORRECTED -- the band-evaluated
+            # primary) first; "score_s_raw" (the OLD/superseded raw linear
+            # secant) and "score_lns" (the intermediate ln-s-centred secant
+            # before the Es_null_det correction) alongside for continuity.
+            for stat_name in ("score_b", "score_s", "score_s_raw", "score_lns"):
+                if stat_name not in d:
+                    continue
                 s = d[stat_name]
                 lines.append(
                     f"- {stat_name}: mean={s['mean']!r} sem={s['sem']!r} Z={s['Z']!r} n_pooled={s['n_pooled']}"
+                )
+            if "score_b_available" in d:
+                lines.append(
+                    f"- score_b_available (b-axis nodes present): {d['score_b_available']}"
+                )
+            if "score_s_available" in d:
+                lines.append(
+                    f"- score_s_available (Es_null_det cache found): {d['score_s_available']}"
                 )
             lines.append("")
     if "verdict" in payload:
@@ -1744,6 +2274,31 @@ def main() -> int:
         "BYTE-IDENTICAL to the pre-flag sigma_multiplier literal.",
     )
     ap.add_argument(
+        "--theta-zwindow",
+        type=str,
+        default="off",
+        choices=("off", "on"),
+        dest="theta_zwindow",
+        help="T1.3-zwin (row #255 tree 2 node T1.3-zwin; "
+        "PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md sec 2.2). Forwarded to run_mirror_seed_"
+        "inprocess's theta_zwindow kwarg (theta-consistent candidate z-window instrument). "
+        "Default 'off' is BYTE-IDENTICAL to every pre-T1.3-zwin invocation of this driver. 'on' "
+        "replaces the galaxy-side centre/width of the candidate z-filter by the theta-"
+        "transformed site-2.2 kernel; INDEPENDENT of --theta-sites and --theta-phi-divisor. At "
+        "theta=(0,1) the literal skip applies (GATE T-ID). Forwarded unconditionally to every "
+        "node/arm, including the truth node and S0-C.",
+    )
+    ap.add_argument(
+        "--z-window-k",
+        type=float,
+        default=1.0,
+        dest="z_window_k",
+        help="T1.3-zwin (same reference, sec 2.2). Forwarded to run_mirror_seed_inprocess's "
+        "z_window_k kwarg (candidate z-window half-width, must be finite and > 0). Default 1.0 "
+        "is BYTE-IDENTICAL to today's implicit +/- 1 sigma_g literal. The registered decisive "
+        "arm (P1) uses 4.0 (= site 2.2's own integration_limit_sigma_multiplier).",
+    )
+    ap.add_argument(
         "--catalogue-leg-1d-mass-aware",
         type=str,
         default="off",
@@ -1768,8 +2323,11 @@ def main() -> int:
         help="P0 completion (SYNTHESIS_DOCKET_1_20260829.md sec 2 B1 P0): compute the pooled "
         "prereg §4.1 score_b/score_s/Z_b/Z_s/GATE ENG/GATE PARITY/verdict from event_likelihoods."
         "csv files ALREADY ON DISK under --out-root (matching --seeds/--nodes/--theta-sites/"
-        "--smear/--config/--theta-phi-divisor/--sky-cone-k, for locating the right node "
-        "directories) -- NO evaluate() call, NO venue construction. S0-A/S0-R only. Writes "
+        "--smear/--config/--theta-phi-divisor/--sky-cone-k/--theta-zwindow/--z-window-k, for "
+        "locating the right node directories) -- NO evaluate() call, NO venue construction. "
+        "Also reads each seed's es_null_det.csv cache (PA-HIER-32(d)) if present, so the "
+        "corrected score_s is emitted whenever the run that produced the CSVs also cached it; "
+        "score_s_raw is always emitted regardless. S0-A/S0-R only. Writes "
         "<arm>_score_output.json and <arm>_score.md.",
     )
     args = ap.parse_args()
@@ -1829,6 +2387,8 @@ def main() -> int:
             theta_phi_divisor=args.theta_phi_divisor,
             sky_cone_k=args.sky_cone_k,
             catalogue_leg_1d_mass_aware=args.catalogue_leg_1d_mass_aware,
+            theta_zwindow=args.theta_zwindow,
+            z_window_k=args.z_window_k,
         )
         result = score_only_payload(args.arm, seeds, nodes, all_nodes, missing)
         result["theta_sites"] = args.theta_sites
@@ -1839,6 +2399,8 @@ def main() -> int:
         result["theta_phi_divisor"] = args.theta_phi_divisor
         result["sky_cone_k"] = args.sky_cone_k
         result["catalogue_leg_1d_mass_aware"] = args.catalogue_leg_1d_mass_aware
+        result["theta_zwindow"] = args.theta_zwindow
+        result["z_window_k"] = args.z_window_k
         result["registration"] = str(REGISTRATION)
         out_root.mkdir(parents=True, exist_ok=True)
         out_json = out_root / f"{args.arm.lower().replace('-', '')}_score_output.json"
@@ -1871,6 +2433,8 @@ def main() -> int:
         theta_phi_divisor=args.theta_phi_divisor,
         sky_cone_k=args.sky_cone_k,
         catalogue_leg_1d_mass_aware=args.catalogue_leg_1d_mass_aware,
+        theta_zwindow=args.theta_zwindow,
+        z_window_k=args.z_window_k,
     )
     result["smoke"] = bool(args.smoke)
     result["event_cap"] = event_cap

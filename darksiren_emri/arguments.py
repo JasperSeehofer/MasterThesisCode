@@ -478,6 +478,28 @@ class Arguments:
         return float(self._parsed_arguments.sky_cone_k)
 
     @property
+    def theta_zwindow(self) -> str:
+        """[HIER] theta-consistent candidate z-window instrument
+        (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2; row #255 tree 2 node
+        T1.3-zwin). 'off' (default, PRODUCTION, byte-identical): the
+        candidate z-filter (get_possible_hosts_from_ball_tree) keeps its
+        bare form at z_window_k=1.0. 'on' replaces the galaxy-side centre/
+        width of that filter with the theta-transformed site-2.2 kernel.
+        Forwarded to ``BayesianStatistics.evaluate()``'s ``theta_zwindow``
+        kwarg; INDEPENDENT of ``--theta_sites``/``--theta_phi_divisor``.
+        """
+        return str(self._parsed_arguments.theta_zwindow)
+
+    @property
+    def z_window_k(self) -> float:
+        """Candidate z-window half-width in units of sigma_g/sigma_g^theta
+        (same reference as ``theta_zwindow``). Applies under BOTH
+        ``theta_zwindow`` states. Default 1.0 matches today's implicit
+        +/- 1 sigma_g literal -- byte-identical.
+        """
+        return float(self._parsed_arguments.z_window_k)
+
+    @property
     def catalogue_leg_1d_mass_aware(self) -> str:
         """[HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree
         2 node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). 'off'
@@ -1275,6 +1297,37 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "after B5.1 governs ONLY the mass window). Default 1.5 matches "
             "the pre-flag sigma_multiplier literal, so the default pairing "
             "is byte-identical to the pre-flag path. Must be finite and > 0."
+        ),
+    )
+    parser.add_argument(
+        "--theta_zwindow",
+        type=str,
+        choices=["off", "on"],
+        default="off",
+        help=(
+            "[HIER] theta-consistent candidate z-window instrument "
+            "(PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2; row #255 tree "
+            "2 node T1.3-zwin). 'off' (default, PRODUCTION) is byte-identical "
+            "-- the candidate z-filter keeps its bare form at "
+            "--z_window_k 1.0. 'on' replaces the galaxy-side centre/width "
+            "of that filter by the theta-transformed site-2.2 kernel, so "
+            "the selection window and the kernel it selects for are the "
+            "same object at every theta; INDEPENDENT of --theta_sites and "
+            "--theta_phi_divisor (composes with either). At theta=(0,1) "
+            "the literal skip applies (GATE T-ID)."
+        ),
+    )
+    parser.add_argument(
+        "--z_window_k",
+        type=float,
+        default=1.0,
+        help=(
+            "Candidate z-window half-width in units of sigma_g/"
+            "sigma_g^theta (same reference as --theta_zwindow). Applies "
+            "under BOTH --theta_zwindow states. Default 1.0 matches "
+            "today's implicit +/- 1 sigma_g literal -- byte-identical. "
+            "Must be finite and > 0 (validated in "
+            "get_possible_hosts_from_ball_tree)."
         ),
     )
     parser.add_argument(

@@ -3657,6 +3657,18 @@ class BayesianStatistics:
     # literal -- byte-identical. Single read site: the sigma_multiplier
     # argument of get_possible_hosts_from_ball_tree.
     _sky_cone_k: float = 1.5
+    # [HIER] theta-consistent candidate z-window instrument flag (row #255
+    # tree 2 node T1.3-zwin, PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2).
+    # "off" (default, PRODUCTION, byte-identical): the candidate z-filter
+    # keeps its bare +/- z_window_k*sigma_g form, no theta. "on": the
+    # galaxy-side centre/width follow the theta-transformed site-2.2 kernel.
+    # Single read site: the redshift_filter_mask branch in
+    # get_possible_hosts_from_ball_tree.
+    _theta_zwindow: str = "off"
+    # Candidate z-window half-width in units of sigma_g/sigma_g^theta (same
+    # reference). Default 1.0 matches today's implicit +/- 1 sigma_g literal
+    # -- byte-identical regardless of _theta_zwindow.
+    _z_window_k: float = 1.0
     # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
     # guard, not a physics gate). None (default) => OFF, byte-identical: no
     # computed value is read or written differently. A directory path arms a
@@ -3751,6 +3763,10 @@ class BayesianStatistics:
         # Sky-cone-radius instrument flag (same reference): default 1.5
         # matches the pre-flag sigma_multiplier literal, byte-identical.
         self._sky_cone_k: float = 1.5
+        # [HIER] theta-consistent candidate z-window instrument (row #255
+        # tree 2 node T1.3-zwin): "off"/1.0 => production, byte-identical.
+        self._theta_zwindow: str = "off"
+        self._z_window_k: float = 1.0
         # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2): None (default)
         # => production path, byte-identical (GATE BI). See evaluate()'s
         # candidate_dump_dir parameter.
@@ -3943,6 +3959,32 @@ class BayesianStatistics:
         # downstream value. Purely plumbing: validated (finite, > 0) and read
         # at exactly one site.
         sky_cone_k: float = 1.5,
+        # [HIER] theta-consistent candidate z-window instrument flag
+        # (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2, row #255 tree 2
+        # node T1.3-zwin). "off" (default, PRODUCTION, byte-identical): the
+        # candidate z-filter (get_possible_hosts_from_ball_tree) keeps its
+        # bare form at z_window_k=1.0. "on": the galaxy-side centre/width of
+        # that filter are replaced by the theta-transformed site-2.2 kernel
+        # (z_g + b(1+z_g), sqrt((s*sigma_g)^2 + sigma_pv,g^2)) so the
+        # selection window and the kernel it selects for are the same object
+        # at every theta; at theta=(0,1) this is a LITERAL SKIP (GATE T-ID).
+        # theta_b/theta_s are passed to the handler ONLY when this flag is
+        # "on" (the theta_phi_divisor precedent, :4830-4831) -- the handler
+        # is a non-physics file and keeps no theta state of its own.
+        # INDEPENDENT of theta_sites and theta_phi_divisor (composes with
+        # either). Single read/validate site for the token: here + the mask
+        # branch in get_possible_hosts_from_ball_tree (the
+        # mass_filter_geometry precedent).
+        theta_zwindow: str = "off",
+        # Candidate z-window half-width in units of sigma_g/sigma_g^theta
+        # (same reference as theta_zwindow). Applies under BOTH theta_zwindow
+        # states. Default 1.0 matches today's implicit +/- 1 sigma_g literal
+        # -- byte-identical. Guard (finite, > 0) lives in
+        # get_possible_hosts_from_ball_tree, not here (the mass_filter_k
+        # precedent, corrected file attribution per that gate doc's Revision
+        # note 1): this attribute is opaque plumbing, cast but not validated
+        # at this site.
+        z_window_k: float = 1.0,
         # [HIER] θ-hook (C1, PHYSICS_CHANGE_THETA_HOOK_20260828.md, ledger row
         # #216): affine photo-z systematic θ = (b, s) — z̃ = z + b(1+z),
         # σ̃_eff = s·σ_eff at estimator sites 2.1/2.2/2.3 (Ma, Hu & Huterer
@@ -4228,6 +4270,18 @@ class BayesianStatistics:
         self._sky_cone_k = float(sky_cone_k)
         if not (self._sky_cone_k > 0.0) or not np.isfinite(self._sky_cone_k):
             raise ValueError(f"sky_cone_k must be finite and > 0, got {sky_cone_k}")
+        # [HIER] theta-consistent candidate z-window instrument flag
+        # (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2, row #255 tree 2
+        # node T1.3-zwin): the token guard lives here (the theta_phi_divisor
+        # precedent); z_window_k is opaque plumbing cast (not validated) at
+        # this site -- its single raise site is
+        # get_possible_hosts_from_ball_tree (the mass_filter_k precedent,
+        # per that gate doc's Revision note 1).
+        _theta_zwin = str(theta_zwindow)
+        if _theta_zwin not in ("off", "on"):
+            raise ValueError(f"theta_zwindow must be 'off' or 'on', got {theta_zwindow!r}")
+        self._theta_zwindow = _theta_zwin
+        self._z_window_k = float(z_window_k)
         # [HIER] site 2.3phi theta-consistent no-BH divisor instrument
         # (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2, row #255 tree 2 node
         # T1.1). Guard pattern: "on" requires a phi table to transform
@@ -5647,6 +5701,16 @@ class BayesianStatistics:
                 mass_filter_sigma=self._mass_filter_sigma,
                 mass_filter_geometry=self._mass_filter_geometry,
                 mass_filter_k=self._mass_filter_k,
+                theta_zwindow=self._theta_zwindow,
+                z_window_k=self._z_window_k,
+                # theta reaches the handler ONLY when the flag is "on" (the
+                # theta_phi_divisor precedent, :4830-4831 below) -- the
+                # handler is a non-physics file and keeps no theta state of
+                # its own; at "off" the identity defaults are passed and the
+                # handler never reads them (bare window, R1 byte-identity
+                # independent of theta engagement elsewhere).
+                theta_b=(self._theta_b if self._theta_zwindow == "on" else 0.0),
+                theta_s=(self._theta_s if self._theta_zwindow == "on" else 1.0),
             )
 
             if possible_hosts is None:
@@ -7387,9 +7451,13 @@ def single_host_likelihood(
     # top of it. Applied ONCE here: every downstream consumer (window bounds,
     # Z_g renormalization, prior pdf, D_g, MC proposal + sampling_pdf) flows
     # through this single sigma and the one norm() object below, so the term
-    # cannot double-count inside the likelihood. The ball-tree candidate
-    # window and catalogue pruning (handler.py) intentionally keep the bare
-    # catalogue z_error — a ±1σ, second-order candidate-list effect.
+    # cannot double-count inside the likelihood. The ball-tree window keeps
+    # the bare catalogue z_error w.r.t. the (currently zero) peculiar-
+    # velocity fold — second-order at theta=(0,1); see
+    # PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md section 3 for the theta-s/b
+    # window-vs-kernel term, which is NOT second-order under theta != (0,1)
+    # (row #255 tree 2 node T1.3-zwin; the theta_zwindow="on" flag below
+    # (handler.py) removes that term).
     sigma_z_pv = (1.0 + host_z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
     host_z_error_eff = float(np.sqrt(host_z_error**2 + sigma_z_pv**2))
     if theta_b != 0.0 or theta_s != 1.0:
