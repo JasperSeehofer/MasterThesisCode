@@ -303,12 +303,25 @@ def _resolve_smear(theta_engaged: bool, theta_sites: str, smear: str) -> bool:
     raise ValueError(f"smear must be one of {SMEAR_CHOICES}, got {smear!r}")
 
 
-def _node_dir_suffix(theta_sites: str, smear: str, config: str) -> str:
-    """Node output-directory suffix encoding the P1/KW-Q1 variant, so a
+def _node_dir_suffix(
+    theta_sites: str,
+    smear: str,
+    config: str,
+    theta_phi_divisor: str = "off",
+    sky_cone_k: float = 1.5,
+) -> str:
+    """Node output-directory suffix encoding the P1/KW-Q1/T1.1 variant, so a
     non-default run never overwrites another variant's (or the default's)
     banked node outputs. Byte-identical default (``theta_sites="all"``,
-    ``smear="auto"``, ``config="b0i"``) -> empty suffix -> the ORIGINAL
-    ``node_<name>`` paths, unchanged.
+    ``smear="auto"``, ``config="b0i"``, ``theta_phi_divisor="off"``,
+    ``sky_cone_k=1.5``) -> empty suffix -> the ORIGINAL ``node_<name>``
+    paths, unchanged.
+
+    T1.2 (row #255 tree 2 node T1.2, driver-gap fix for T1.1's site 2.3phi
+    instrument, PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2/§2.5):
+    ``theta_phi_divisor="on"`` appends ``_divisor``; a non-default
+    ``sky_cone_k`` (anything != 1.5) appends ``_conek<value>`` (``:g``
+    formatted, so ``2.0`` -> ``conek2``, ``2.25`` -> ``conek2.25``).
     """
     parts: list[str] = []
     if config != "b0i":
@@ -317,6 +330,10 @@ def _node_dir_suffix(theta_sites: str, smear: str, config: str) -> str:
         parts.append(f"sites{theta_sites}")
     if smear != "auto":
         parts.append("smearon" if smear == "on" else "nosmear")
+    if theta_phi_divisor != "off":
+        parts.append("divisor")
+    if sky_cone_k != 1.5:
+        parts.append(f"conek{sky_cone_k:g}")
     return ("_" + "_".join(parts)) if parts else ""
 
 
@@ -332,6 +349,8 @@ def run_theta_node(
     smear: str = "auto",
     config: str = "b0i",
     candidate_dump_dir: str | None = None,
+    theta_phi_divisor: str = "off",
+    sky_cone_k: float = 1.5,
 ) -> tuple[Path, float]:
     """Evaluate one theta node (prereg §2.1 S0-A/S0-R row row; KW-Q1 reuses this
     for the FT config at h_values=(0.725, 0.735)).
@@ -356,6 +375,16 @@ def run_theta_node(
     ``run_mirror_seed_inprocess``/``BayesianStatistics.evaluate()``. ``None``
     (default) is byte-identical (GATE BI); the CLI's ``--candidate-dump``
     arms it with a per-node subdirectory (see :func:`main`).
+
+    ``theta_phi_divisor``, ``sky_cone_k`` (T1.2, row #255 tree 2 node T1.2,
+    the T1.1 driver-gap fix; PHYSICS_CHANGE_THETA_DIVISOR_20260830.md
+    §2.2/§2.5) are forwarded verbatim to ``run_mirror_seed_inprocess``/
+    ``BayesianStatistics.evaluate()``. Defaults (``"off"``, ``1.5``) are
+    byte-identical (GATE BI). Forwarded unconditionally to every node,
+    including the truth node (theta=(0,1)) -- the truth node is a no-op
+    under the divisor per GATE T-ID (the transform is theta-consistent, so
+    it is the identity at theta=(0,1)), so unconditional forwarding does not
+    disturb GATE PARITY.
     """
     theta_engaged = theta_b != 0.0 or theta_s != 1.0
     smear_flag = _resolve_smear(theta_engaged, theta_sites, smear)
@@ -381,6 +410,8 @@ def run_theta_node(
         theta_s=theta_s,
         theta_sites=theta_sites,
         smear_global_selection=smear_flag,
+        theta_phi_divisor=theta_phi_divisor,
+        sky_cone_k=sky_cone_k,
     )
     # [P3-2D] the with-BH catalogue-leg twin flipped to production default
     # "mz_sel"/"eff" (row #223 standing grant, charter node B7.3;
@@ -502,6 +533,8 @@ def run_arm_seed_s0a(
     h_values: tuple[float, ...] = (H_GEN,),
     score_h: float | None = None,
     candidate_dump_dir: str | None = None,
+    theta_phi_divisor: str = "off",
+    sky_cone_k: float = 1.5,
 ) -> list[NodeResult]:
     """S0-A: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.0 (truth-theta=(0,1)).
 
@@ -509,16 +542,17 @@ def run_arm_seed_s0a(
     exactly the pre-P1/pre-KW-Q1 behaviour (BYTE-IDENTICAL: theta_sites=
     "all", smear="auto" -> smear_global_selection=theta_engaged, config=
     "b0i" -> the original bc venue/flags, h_values=(H_GEN,) -> the single
-    h=0.73 node, score_h=None -> H_GEN). Node output directories gain a
-    suffix (:func:`_node_dir_suffix`) that is EMPTY at these defaults, so
-    default-run paths are unchanged.
+    h=0.73 node, score_h=None -> H_GEN). ``theta_phi_divisor``/``sky_cone_k``
+    (T1.2) default to exactly the pre-T1.1 behaviour ("off"/1.5). Node
+    output directories gain a suffix (:func:`_node_dir_suffix`) that is
+    EMPTY at these defaults, so default-run paths are unchanged.
     """
     work_root = out_root / f"s0a_seed{seed}"
     work_root.mkdir(parents=True, exist_ok=True)
     events, handler = _build_venue(config, work_root, seed, sigma_z_scale=1.0)
     if event_cap is not None:
         events = events.head(event_cap).reset_index(drop=True)
-    suffix = _node_dir_suffix(theta_sites, smear, config)
+    suffix = _node_dir_suffix(theta_sites, smear, config, theta_phi_divisor, sky_cone_k)
     read_h = _resolve_score_h(h_values, score_h)
     results: list[NodeResult] = []
     for node in nodes:
@@ -544,6 +578,8 @@ def run_arm_seed_s0a(
                 if candidate_dump_dir
                 else None
             ),
+            theta_phi_divisor=theta_phi_divisor,
+            sky_cone_k=sky_cone_k,
         )
         wall = time.time() - t0
         ln_l = read_event_ln_l(diag_csv, read_h)
@@ -561,7 +597,8 @@ def run_arm_seed_s0a(
         )
         print(
             f"[S0-A seed={seed} node={node} theta=({theta_b},{theta_s}) "
-            f"theta_sites={theta_sites} smear={smear} config={config}] "
+            f"theta_sites={theta_sites} smear={smear} config={config} "
+            f"theta_phi_divisor={theta_phi_divisor} sky_cone_k={sky_cone_k}] "
             f"n_events={len(ln_l)} evaluate_s={elapsed:.2f} wall_s={wall:.2f} -> {diag_csv}",
             flush=True,
         )
@@ -579,18 +616,20 @@ def run_arm_seed_s0r(
     h_values: tuple[float, ...] = (H_GEN,),
     score_h: float | None = None,
     candidate_dump_dir: str | None = None,
+    theta_phi_divisor: str = "off",
+    sky_cone_k: float = 1.5,
 ) -> list[NodeResult]:
     """S0-R: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.5 (DISCLOSED NULL, see module docstring).
 
     Same byte-identical-default argument as :func:`run_arm_seed_s0a` (this
-    arm's own S0_R_SIGMA_SCALE dose is orthogonal to the P1/KW-Q1 axes).
+    arm's own S0_R_SIGMA_SCALE dose is orthogonal to the P1/KW-Q1/T1.2 axes).
     """
     work_root = out_root / f"s0r_seed{seed}"
     work_root.mkdir(parents=True, exist_ok=True)
     events, handler = _build_venue(config, work_root, seed, sigma_z_scale=S0_R_SIGMA_SCALE)
     if event_cap is not None:
         events = events.head(event_cap).reset_index(drop=True)
-    suffix = _node_dir_suffix(theta_sites, smear, config)
+    suffix = _node_dir_suffix(theta_sites, smear, config, theta_phi_divisor, sky_cone_k)
     read_h = _resolve_score_h(h_values, score_h)
     results: list[NodeResult] = []
     for node in nodes:
@@ -616,6 +655,8 @@ def run_arm_seed_s0r(
                 if candidate_dump_dir
                 else None
             ),
+            theta_phi_divisor=theta_phi_divisor,
+            sky_cone_k=sky_cone_k,
         )
         wall = time.time() - t0
         ln_l = read_event_ln_l(diag_csv, read_h)
@@ -633,15 +674,30 @@ def run_arm_seed_s0r(
         )
         print(
             f"[S0-R seed={seed} node={node} theta=({theta_b},{theta_s}) "
-            f"theta_sites={theta_sites} smear={smear} config={config}] "
+            f"theta_sites={theta_sites} smear={smear} config={config} "
+            f"theta_phi_divisor={theta_phi_divisor} sky_cone_k={sky_cone_k}] "
             f"n_events={len(ln_l)} evaluate_s={elapsed:.2f} wall_s={wall:.2f} -> {diag_csv}",
             flush=True,
         )
     return results
 
 
-def run_seed_s0c(seed: int, out_root: Path, event_cap: int | None) -> dict[str, Any]:
-    """S0-C: one seed, theta=(0,1), the full 41-node H_GRID_41 (costing probe, prereg §2.1)."""
+def run_seed_s0c(
+    seed: int,
+    out_root: Path,
+    event_cap: int | None,
+    theta_phi_divisor: str = "off",
+    sky_cone_k: float = 1.5,
+) -> dict[str, Any]:
+    """S0-C: one seed, theta=(0,1), the full 41-node H_GRID_41 (costing probe, prereg §2.1).
+
+    ``theta_phi_divisor``/``sky_cone_k`` (T1.2, row #255 tree 2 node T1.2)
+    are forwarded verbatim to ``run_mirror_seed_inprocess`` for parity with
+    S0-A/S0-R -- unconditional forwarding (GATE T-ID: the divisor is a
+    no-op at theta=(0,1), S0-C's only theta). Defaults ("off", 1.5) are
+    byte-identical; S0-C's output directory name (``node_truth_fullgrid``,
+    unparameterized by any other axis either) is unchanged regardless.
+    """
     work_root = out_root / f"s0c_seed{seed}"
     work_root.mkdir(parents=True, exist_ok=True)
     events, handler = build_bc_venue(work_root, seed, sigma_z_scale=1.0)
@@ -671,6 +727,8 @@ def run_seed_s0c(seed: int, out_root: Path, event_cap: int | None) -> dict[str, 
         theta_s=1.0,
         theta_sites="all",
         smear_global_selection=False,
+        theta_phi_divisor=theta_phi_divisor,
+        sky_cone_k=sky_cone_k,
     )
     wall = time.time() - t0
     # Per-h marginal cost: posterior JSONs are written progressively as each
@@ -1045,6 +1103,12 @@ def _run_one_seed_worker(
     Extended again (T2.2, row #255 A10, byte-identical at the trailing
     ``None`` default) with ``candidate_dump_dir``, forwarded verbatim to
     run_arm_seed_s0a/s0r (S0-C ignores it, same scope note as above).
+    Extended again (T1.2, row #255 tree 2 node T1.2, byte-identical at the
+    trailing ``"off"``/``1.5`` defaults) with ``theta_phi_divisor``,
+    ``sky_cone_k``, forwarded verbatim to run_arm_seed_s0a/s0r/run_seed_s0c
+    (all three, unlike the two extensions above -- GATE T-ID makes the
+    divisor a no-op at S0-C's truth-only theta, so unconditional forwarding
+    is correct there too).
     """
     (
         arm,
@@ -1059,6 +1123,8 @@ def _run_one_seed_worker(
         h_values,
         score_h,
         candidate_dump_dir,
+        theta_phi_divisor,
+        sky_cone_k,
     ) = args
     if not mp.current_process()._identity:  # noqa: SLF001 -- see docstring above
         _pin_worker_affinity(cpu_budget)
@@ -1075,6 +1141,8 @@ def _run_one_seed_worker(
                 h_values=h_values,
                 score_h=score_h,
                 candidate_dump_dir=candidate_dump_dir,
+                theta_phi_divisor=theta_phi_divisor,
+                sky_cone_k=sky_cone_k,
             )
         elif arm == "S0-R":
             results = run_arm_seed_s0r(
@@ -1088,9 +1156,20 @@ def _run_one_seed_worker(
                 h_values=h_values,
                 score_h=score_h,
                 candidate_dump_dir=candidate_dump_dir,
+                theta_phi_divisor=theta_phi_divisor,
+                sky_cone_k=sky_cone_k,
             )
         elif arm == "S0-C":
-            return {"seed": seed, "s0c": run_seed_s0c(seed, out_root, event_cap)}
+            return {
+                "seed": seed,
+                "s0c": run_seed_s0c(
+                    seed,
+                    out_root,
+                    event_cap,
+                    theta_phi_divisor=theta_phi_divisor,
+                    sky_cone_k=sky_cone_k,
+                ),
+            }
         else:
             raise ValueError(f"unknown arm {arm!r}")
         return {
@@ -1148,6 +1227,8 @@ def run_arm(
     h_values: tuple[float, ...] = (H_GEN,),
     score_h: float | None = None,
     candidate_dump_dir: str | None = None,
+    theta_phi_divisor: str = "off",
+    sky_cone_k: float = 1.5,
 ) -> dict[str, Any]:
     out_root.mkdir(parents=True, exist_ok=True)
     jobs = max(1, min(jobs, len(seeds)))
@@ -1166,6 +1247,8 @@ def run_arm(
             h_values,
             score_h,
             candidate_dump_dir,
+            theta_phi_divisor,
+            sky_cone_k,
         )
         for seed in seeds
     ]
@@ -1214,7 +1297,11 @@ def run_arm(
         "config": config,
         "h_values": list(h_values),
         "score_h": score_h,
-        "node_dir_suffix": _node_dir_suffix(theta_sites, smear, config),
+        "theta_phi_divisor": theta_phi_divisor,
+        "sky_cone_k": sky_cone_k,
+        "node_dir_suffix": _node_dir_suffix(
+            theta_sites, smear, config, theta_phi_divisor, sky_cone_k
+        ),
     }
 
     if arm == "S0-C":
@@ -1315,6 +1402,8 @@ def gather_node_results_from_disk(
     smear: str,
     config: str,
     score_h: float,
+    theta_phi_divisor: str = "off",
+    sky_cone_k: float = 1.5,
 ) -> tuple[dict[str, list[NodeResult]], list[str]]:
     """Read ``event_likelihoods.csv`` for every requested (seed, node) pair
     directly off disk -- NO ``evaluate()`` call, NO venue construction. Used
@@ -1336,7 +1425,7 @@ def gather_node_results_from_disk(
         raise ValueError(
             f"--score-only supports S0-A/S0-R only (no node cross to pool for {arm!r})"
         )
-    suffix = _node_dir_suffix(theta_sites, smear, config)
+    suffix = _node_dir_suffix(theta_sites, smear, config, theta_phi_divisor, sky_cone_k)
     all_nodes: dict[str, list[NodeResult]] = {n: [] for n in nodes}
     missing: list[str] = []
     for seed in seeds:
@@ -1587,13 +1676,38 @@ def main() -> int:
         "ignores this flag (out of T2.2's registered scope).",
     )
     ap.add_argument(
+        "--theta-phi-divisor",
+        type=str,
+        default="off",
+        choices=("off", "on"),
+        dest="theta_phi_divisor",
+        help="T1.2 (row #255 tree 2 node T1.2, driver-gap fix for T1.1; "
+        "PHYSICS_CHANGE_THETA_DIVISOR_20260830.md sec 2.2). Forwarded to run_mirror_seed_"
+        "inprocess's theta_phi_divisor kwarg (site 2.3phi theta-consistent no-BH divisor). "
+        "Default 'off' is BYTE-IDENTICAL to every pre-T1.1 invocation of this driver. 'on' "
+        "requires catalogue_global_selection to resolve to 'phi' under normalization_mode="
+        "'absolute_marginal' (evaluate()'s own guard) -- true for both --config b0i and ft at "
+        "their defaults. Forwarded unconditionally to every node/arm, including the truth node "
+        "and S0-C (GATE T-ID: the divisor is theta-consistent, so it is a no-op at theta=(0,1)).",
+    )
+    ap.add_argument(
+        "--sky-cone-k",
+        type=float,
+        default=1.5,
+        dest="sky_cone_k",
+        help="T1.2 (same reference, sec 2.5). Forwarded to run_mirror_seed_inprocess's "
+        "sky_cone_k kwarg (sky-cone-radius instrument, must be finite and > 0). Default 1.5 is "
+        "BYTE-IDENTICAL to the pre-flag sigma_multiplier literal.",
+    )
+    ap.add_argument(
         "--score-only",
         action="store_true",
         help="P0 completion (SYNTHESIS_DOCKET_1_20260829.md sec 2 B1 P0): compute the pooled "
         "prereg §4.1 score_b/score_s/Z_b/Z_s/GATE ENG/GATE PARITY/verdict from event_likelihoods."
         "csv files ALREADY ON DISK under --out-root (matching --seeds/--nodes/--theta-sites/"
-        "--smear/--config, for locating the right node directories) -- NO evaluate() call, NO "
-        "venue construction. S0-A/S0-R only. Writes <arm>_score_output.json and <arm>_score.md.",
+        "--smear/--config/--theta-phi-divisor/--sky-cone-k, for locating the right node "
+        "directories) -- NO evaluate() call, NO venue construction. S0-A/S0-R only. Writes "
+        "<arm>_score_output.json and <arm>_score.md.",
     )
     args = ap.parse_args()
 
@@ -1649,6 +1763,8 @@ def main() -> int:
             smear=args.smear,
             config=args.config,
             score_h=score_h,
+            theta_phi_divisor=args.theta_phi_divisor,
+            sky_cone_k=args.sky_cone_k,
         )
         result = score_only_payload(args.arm, seeds, nodes, all_nodes, missing)
         result["theta_sites"] = args.theta_sites
@@ -1656,6 +1772,8 @@ def main() -> int:
         result["config"] = args.config
         result["h_values"] = list(h_values)
         result["score_h"] = score_h
+        result["theta_phi_divisor"] = args.theta_phi_divisor
+        result["sky_cone_k"] = args.sky_cone_k
         result["registration"] = str(REGISTRATION)
         out_root.mkdir(parents=True, exist_ok=True)
         out_json = out_root / f"{args.arm.lower().replace('-', '')}_score_output.json"
@@ -1685,6 +1803,8 @@ def main() -> int:
         h_values=h_values,
         score_h=args.score_h,
         candidate_dump_dir=args.candidate_dump,
+        theta_phi_divisor=args.theta_phi_divisor,
+        sky_cone_k=args.sky_cone_k,
     )
     result["smoke"] = bool(args.smoke)
     result["event_cap"] = event_cap

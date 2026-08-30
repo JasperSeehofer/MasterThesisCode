@@ -535,3 +535,89 @@ still correct/beneficial in their own right (in particular the `compute_scores`/
 error-surfacing fix is what let this AssertionError be diagnosed cleanly instead of being
 swallowed the way the original crash was) -- none of it is reverted by this correction. Only the
 "`--jobs N>1` is now safe" implication of §8 is withdrawn.
+
+## §9 driver flags for T1.2 (2026-08-30)
+
+**Record-only entry for what this build task added.** T1.1 (commit `6c6f2a63`) threaded
+`theta_phi_divisor: str = "off"` and `sky_cone_k: float = 1.5` into
+`correspondence_1d.py`'s `run_mirror_seed_inprocess` but left no driver-level CLI surface for
+them (its own docstring, ~2912-2927, said as much: "a caller ... wanting to arm the divisor
+from the command line must add its own `--theta_phi_divisor`/`--sky_cone_k` arguments" --
+confirmed missing by `T1_1_DIVISOR_IMPLEMENTATION_RECORD.md`'s "driver gap" section after the
+orchestrator's registered command failed with `unrecognized arguments: --theta_phi_divisor on`).
+
+**What was added, following the exact `--theta-sites`/`--smear` pattern:**
+
+- `--theta-phi-divisor {off,on}` (default `off`) and `--sky-cone-k FLOAT` (default `1.5`),
+  forwarded verbatim to **every** `run_mirror_seed_inprocess` call site: `run_theta_node`
+  (S0-A/S0-R's per-node call, both `config="b0i"` and `config="ft"` branches) and
+  `run_seed_s0c` (S0-C's single truth-node call) -- unconditional forwarding is correct per
+  GATE T-ID (the divisor is theta-consistent, a no-op exactly at theta=(0,1), so it disturbs
+  neither S0-C nor the truth node of S0-A/S0-R).
+- `_node_dir_suffix` extended with `theta_phi_divisor`/`sky_cone_k` parameters: `on` appends
+  `_divisor`; a non-default `sky_cone_k` (any value != 1.5) appends `_conek<value>` (`:g`
+  formatted). Byte-identical at the defaults -- empty suffix, unchanged paths.
+- Threaded through the full call chain so both live runs and `--score-only` resolve the same
+  suffix: `run_arm_seed_s0a`/`run_arm_seed_s0r`/`run_seed_s0c` -> `_run_one_seed_worker`'s args
+  tuple (2 new trailing fields, byte-identical at `"off"`/`1.5`) -> `run_arm`'s `task_args` and
+  its `node_dir_suffix`/`theta_phi_divisor`/`sky_cone_k` payload fields -> `main()`'s new
+  argparse flags, both the live-run `run_arm(...)` call and the `--score-only` branch's
+  `gather_node_results_from_disk(...)` call and result payload.
+- `write_selection_table_json`'s `theta_phi_divisor` field needs no driver-side wiring: the
+  driver never calls that function directly -- it is called internally by
+  `BayesianStatistics.evaluate()` (`bayesian_statistics.py` ~4733), which already threads its
+  own `self._theta_phi_divisor` through once `evaluate()` receives the kwarg forwarded above.
+  Confirmed by reading the call site: no driver-side change was needed or made.
+
+**Smoke evidence (`--event-cap 12`, `--jobs 1`, foreground, builder-only per rule 2):**
+
+```
+results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py --arm S0-A \
+  --seeds 900101 --nodes truth,b_plus --theta-sites 2.2 --smear off --theta-phi-divisor on \
+  --event-cap 12 --out-root results/campaign51_20260728/realistic_20260729/tree2_20260830/hier_s0_smoke_divisor \
+  --jobs 1 --total-cpu-budget 4
+```
+
+Ran clean: `n_seeds_ok=1`, `n_seeds_error=0`, `errors=[]`. `node_dir_suffix` resolved to
+`_sites2.2_nosmear_divisor`; both node output dirs on disk carry it verbatim:
+`s0a_seed900101/node_truth_sites2.2_nosmear_divisor/` and
+`s0a_seed900101/node_b_plus_sites2.2_nosmear_divisor/` (truth node: `evaluate_s=41.34`,
+`wall_s=44.12`, `n_events=9`).
+
+**Engagement check** (b_plus, divisor on vs. the banked divisor-off b_plus comparand at the same
+seed/theta_sites/smear, `fanout1_20260829/hier_s0_registered_run/s0a_seed900101/
+node_b_plus_sites2.2_nosmear/`), joined on `event_idx` at h=0.73: `combined_no_bh` (the no-BH
+catalogue leg the site-2.3phi divisor transforms) differs for all 9/9 events, relative
+differences 0.4%-4.2% (max 0.0416, event_idx 1) -- comfortably above the driver's own GATE ENG
+threshold (>=10% of events moved by >=1e-6 relative) on 100% of events. `combined_with_bh` is
+UNCHANGED (0.0 relative diff on all 9 events), exactly as expected for a "no-BH divisor"
+instrument that must not touch the with-BH channel. `ruff check` on the driver: all checks
+passed.
+
+**The registered re-certification command (T1.2, 4 seeds, 5 nodes):**
+
+```
+results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py --arm S0-A \
+  --seeds 900101,900102,900103,900104 --nodes truth,b_plus,b_minus,s_plus,s_minus \
+  --theta-sites 2.2 --smear off --theta-phi-divisor on --jobs 1 \
+  --out-root results/campaign51_20260728/realistic_20260729/tree2_20260830/hier_s0_recert_run
+```
+
+(`--sky-cone-k` left at its byte-identical default 1.5 throughout, matching
+`T1_1_DIVISOR_IMPLEMENTATION_RECORD.md`'s F1 specification exactly -- a `--sky-cone-k`
+passthrough only matters for a future F2 enlarged-ball arm, out of scope here. `--jobs 1` per
+§8.1's standing daemonic-pool constraint.)
+
+**The matching score-only command** (zero-compute pooled read once the above has banked its
+`event_likelihoods.csv` files):
+
+```
+results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py --arm S0-A \
+  --seeds 900101,900102,900103,900104 --nodes truth,b_plus,b_minus,s_plus,s_minus \
+  --theta-sites 2.2 --smear off --theta-phi-divisor on \
+  --out-root results/campaign51_20260728/realistic_20260729/tree2_20260830/hier_s0_recert_run \
+  --score-only
+```
+
+**Standing stamp: launched under rows #222/#223 -- charter nodes B1.1/B4.2; this entry is T1.2's
+own build record (row #255 tree 2 node T1.2).**
