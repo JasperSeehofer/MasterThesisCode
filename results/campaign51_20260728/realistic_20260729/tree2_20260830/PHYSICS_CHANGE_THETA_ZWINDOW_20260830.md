@@ -921,3 +921,240 @@ this note: top-tier subagent, per the branch's standing grant (row #255) coverin
 documentation changes within the tree (author-verbatim, row #223). No code written; no git
 operations; foreground only; neither concurrently-written file (BIAS_HISTORY_LEDGER.md, the
 T1_2_*/T2_2_* files, the HIER prereg) was written to by this note.
+
+---
+
+## Revision note 3 (2026-08-30; panel must_fix, documentation only; append-only)
+
+**Trigger.** A third refuter panel on this document (refuted=false; four items, all must_fix,
+none changing any registered number, band, prediction, falsifier, or plan item) flagged (1) an
+unlabelled statistic collision between section 0's summary and section 3's calibration table;
+(2) a missing item in section 8(b)'s capture-model-approximations list; (3) a missing inline
+pointer from section 3 item (ii) to the 5.6 footnote's config-dependence caveat, even though
+item (ii)'s number sets the registered band's floor; (4) a header claim ("No backtick
+characters in this record") that Revision notes 1-2 (both appended UNDER this same header)
+falsify. All four are addressed below by SUPERSEDED-by-note pointers / disclosure additions;
+no text above this note (including Revision notes 1-2) is edited in place (append-only
+discipline, the B5.1/T1.1 pattern).
+
+**Item 1 — section 0's hw_sig-quartile numbers are the RAW statistic, not section 3's debiased
+one. CONFIRMED; label added.**
+
+Section 0 (lines 45-47) reads: "...it lives ENTIRELY in the quartile of events whose window is
+narrowest in sigma_g units (half-width < 1.08 sigma_g: -0.254 +/- 0.037, Z -6.9; the other three
+quartiles: -0.042 +/- 0.019, +0.011 +/- 0.010, -0.006 +/- 0.012)..." with no statistic-convention
+label attached. Section 3's "Structure of the T1.2 residual by other covariates (all raw linear
+form, combined_no_bh...)" paragraph (line 318) independently states its own numbers are the raw
+linear form, but section 0's quartile figures are never tied to that same label — a reader
+comparing section 0's numbers to section 3's "Calibration against measurement (iii)" quartile
+table (lines 312-315: q1 **-0.290 +/- 0.038**, q2 -0.074 +/- 0.019, q3 -0.013 +/- 0.010, q4
+-0.026 +/- 0.013, the debiased c-weighted ss_deb_c convention per line 306's "PA-HIER-32's
+debiased statistic") could take section 0's four numbers as the same statistic under a different
+grouping, when they are in fact a different statistic (RAW ss_lin) computed on the same
+quartiling. Re-checked against this document's own citations: section 0's numbers match section
+3's "Structure...(all raw linear form...)" n_cand/zeta/catalogue-share quartile block's
+convention, not its "Calibration...(iii)" debiased block's convention — both are read from
+t13_out.json, but from different keys (by_hw_sig_quartile, raw ss_lin vs.
+*_model_vs_measured_by_hw_sig_quartile's "measured" column, debiased ss_deb_c).
+
+**Disclosure (added here; changes no registered number).** Section 0's quartile figures
+-0.254 +/- 0.037 (q1, hw < 1.08 sigma_g) / -0.042 +/- 0.019 (q2) / +0.011 +/- 0.010 (q3) /
+-0.006 +/- 0.012 (q4) are the **RAW ss_lin statistic** (t13_out.json by_hw_sig_quartile key,
+2026-08-30) — the same raw-linear convention as section 3's "Structure of the T1.2 residual by
+other covariates" paragraph, computed pooled across all four seeds without the PA-HIER-32(d)
+Es_null_det correction. They are **distinct from** section 3's "Calibration against measurement
+(iii)" debiased ss_deb_c quartile numbers (-0.290 +/- 0.038 / -0.074 +/- 0.019 / -0.013 +/- 0.010
+/ -0.026 +/- 0.013, t13_out.json *_model_vs_measured_by_hw_sig_quartile "measured" column,
+2026-08-30), which are what section 3's model-vs-measured comparison and this document's
+falsifier F1 (section 9, "the hw_sig-q1 class must move by >= +0.15 from -0.290") are actually
+read against. The two conventions differ by design (Es_null_det_i's per-host correction, PA-HIER-
+32(d)), not by measurement error; neither number is wrong, but section 0 as originally written
+does not say which one it is quoting, and a reader who assumed section 0's -0.254 was the same
+number as section 3's -0.290 would be reading two different statistics as one. This does not
+change section 0's summary claim (the mechanism concentrates in the narrowest-window quartile) —
+both conventions show the same ordering and the same concentration — only the labelling of which
+statistic the summary's numbers are.
+
+**Item 2 — section 8(b)'s capture-model-approximations list omits the envelope-linearity
+assumption. CONFIRMED; item added.**
+
+Section 8(b) (lines 504-506) lists the capture model's approximations as: "Gaussian kernel with
+the E15 tilt only to first order; S_bar_phi weighting inside c_bar_g ignored; the 1e-6 floor
+ignored; the b-axis registered as model-unreliable, section 3." Section 2.3's own derivation
+(lines 178-193) defines the capture fraction with f_lo = z_min/z, f_hi = z_max/z HELD FIXED at
+each event's own observed envelope ratios while treating the source redshift z_s as the varying
+quantity the kernel probability integrates over ("c_g(theta) = P_{z ~ N(z_g^theta, s sigma_g)}
+(...)"). The model's calibration section (lines 288-290) confirms the practice: "its event's ball
+bounds are E6-exact" — i.e. f_lo, f_hi are read once per event from f7_events.csv's
+z_min_ball/z_max_ball/z_GW columns and held constant across the s-sweep, not recomputed as a
+function of the drawn z_s. This is a real, load-bearing approximation of the capture model (it
+linearizes the GW-side envelope at the event's OBSERVED z_GW rather than tracking how [z_min,
+z_max] would move if the true host redshift itself varied within the kernel's support) and
+section 8(b)'s list, as originally written, does not disclose it alongside the other four.
+
+**Disclosure (added here; changes no registered number, appended to section 8(b)'s list as a
+fifth item).** (b) [continued] — the capture model additionally holds the envelope-linearity
+assumption: f_lo = z_min/z, f_hi = z_max/z (section 2.3) are evaluated once per event at that
+event's OBSERVED z_min_ball, z_max_ball and z_GW (f7_events.csv, E6-exact ball bounds) and held
+FIXED while z_s varies inside the capture-fraction integral of section 2.3 — the model does not
+re-evaluate the GW-side envelope at the varying source redshift the kernel integrates over. This
+is consistent with the GW envelope itself being a fixed, theta-independent object at the level of
+a single realized detection (section 2.4's own point: the envelope is data-side, not theta-side),
+but it means the capture-fraction model is a per-event LOCAL linearization, not a re-derivation of
+the envelope under a counterfactual host redshift; it is bounded by the same calibration evidence
+already reported (section 3's three-way check against the measured T1.2 residual, the E9/E12
+enlargement, and the hw_sig-quartile structure) and does not change the registered s-term shifts
+of the section-3 table.
+
+**Item 3 — section 3 item (ii) needs an inline pointer to the 5.6 footnote's c_i caveat, since
+item (ii)'s number sets the registered band's floor. CONFIRMED; pointer added.**
+
+Section 3's "Calibration against measurement" item (ii) (lines 308-311) reads: "...the tilted
+variant is the calibrated one on the enlargement, and its -0.026 leftover equals E12's own
+debiased residual (-0.005 - 0.0262 = -0.031 +/- 0.011), i.e. the non-capture terms (V2/V4/sky-
+intrinsic), which no window fix removes" — with no pointer to where the -0.005 c-weighted input
+to that subtraction comes from or what convention-dependence it carries. Section 5.6's own
+footnote (lines 382-384) discloses: "Per PA-HIER-32's scope note, Es_null_det_i is per host and
+configuration-free, but c_i changes with the candidate set, so the c-weighted convention needs
+the ARM's own truth node (included in P1)." E12's -0.005 c-weighted point (cited at item (ii) and
+at section 5.6's own P1 prose, line 392) was computed under the BANKED/T1.2 candidate set's c_i
+(the enlarged-ball E12 measurement predates this node's own arm and has no truth node of its
+own at the enlarged configuration), i.e. it debiases E12's own-arm raw score using a c_i drawn
+from a DIFFERENT configuration (T1.2/baseline) than the one the -0.005 itself was measured under
+— exactly the approximation section 5.6's footnote names, applied here one step earlier than
+section 5.6's own P1 discussion states it. Item (ii)'s resulting -0.031 +/- 0.011 debiased
+residual is not a free-standing number: it is quoted, unchanged, as the P1 floor in section 8(a)
+("the non-capture terms... remain in P1 and set its floor (E12's -0.031 +/- 0.011 debiased)")
+and as F1's calibration point for what a "PREDICTED, not marginal" P1 outcome looks like — so an
+approximation entering it propagates directly into the registered band's interpretation.
+
+**Disclosure (added here; changes no registered number).** Section 3 item (ii)'s -0.031 +/- 0.011
+figure (E12's own debiased residual, which section 8(a) uses to set P1's predicted floor) is
+subject to the same config-dependence caveat section 5.6's footnote states for the c-weighted
+convention generally: c_i is config-dependent, and using T1.2's/baseline c_i to debias E12's own
+(enlarged-ball) arm's raw score — because no truth node exists at E12's own configuration — is an
+approximation, not an exact debiasing. This does not change the -0.031 +/- 0.011 number or the
+section 8(a)/F1 floor it sets; it discloses that the floor itself inherits an un-quantified,
+config-dependence-sized uncertainty beyond its stated +/- 0.011 SEM, on top of (not instead of)
+the "reported, not adjudicated" convention status Revision note 2 item 3 already assigned to the
+raw-vs-c-weighted choice generally.
+
+**Item 4 — the header's "No backtick characters in this record" claim is false as of Revision
+notes 1-2. CONFIRMED; withdrawn.**
+
+The document header (line 14) states: "No backtick characters in this record." Revision notes 1
+and 2 (both appended under this header, both dated 2026-08-30, both part of "this record") quote
+code and file paths extensively in backtick-delimited spans (e.g. `mass_filter_k`, `z_window_k`,
+`handler.py`, `single_host_likelihood`). Re-counted fresh this note (python3, character-exact,
+2026-08-30) rather than taken on the panel's own say-so — the same evidentiary discipline
+Revision note 1 item 2 applied to the panel's own suggested line-number fix: **182 backtick
+characters** total in the document, ALL 182 within Revision note 1 (0 in Revision note 2, which
+uses quotation marks instead of backticks throughout); 0 backticks in sections 0-11 above
+Revision note 1. This is the actual count as re-verified against the working file; it differs
+from the figure supplied to this presenter's launch instruction (46), which this note does not
+reproduce uncorrected, on the same basis Revision note 1 corrected the panel's own imprecise
+replacement line numbers rather than applying them as given.
+
+**Disclosure (added here; withdraws the header claim; edits no earlier text).** The header's "No
+backtick characters in this record" claim (line 14) is WITHDRAWN as of this note. It was accurate
+for sections 0-11 as originally written (0-14, 2026-08-30, before any Revision note existed) and
+remains accurate for Revision note 2, but is false for the document as a whole once Revision note
+1 is included (182 backtick characters, re-counted fresh this note). Per append-only discipline,
+line 14 is not edited; this disclosure is the correction of record. No registered number, band,
+prediction, or falsifier is affected by a formatting-character count.
+
+**Scope — what is, and is not, affected.**
+
+- SUPERSEDED / disclosed (marked here, not edited in place): section 0's hw_sig-quartile numbers
+  (lines 45-47) labelled RAW ss_lin, distinguished from section 3's debiased ss_deb_c numbers
+  (lines 312-315) (item 1); section 8(b)'s capture-model-approximations list (lines 504-506)
+  gains a fifth, disclosed item (the envelope-linearity assumption) (item 2); section 3 item
+  (ii) (lines 308-311) gains an inline pointer to section 5.6's c_i config-dependence footnote
+  (lines 382-384) (item 3); the header's line 14 "no backtick characters" claim is withdrawn
+  (item 4).
+- UNAFFECTED: every registered number, band, point prediction, cost figure, regression item, A10
+  invariant, and falsifier threshold in sections 1-10 and in Revision notes 1-2; the 5-item
+  physics-change form's substance; the decision table's dispositions (items 1-9 stand); the
+  "T1.3-zwin" relabelling and the F1-convention downgrade-to-proposed from Revision note 2 are
+  unchanged by this note.
+- The t13 instrument and its outputs, the T1.2 CSVs, TREE2_CHARTER_20260830.md, and
+  BIAS_HISTORY_LEDGER.md are untouched by this note (no write to any of them).
+
+**Net effect.** Adds a statistic-convention label the summary needed to avoid a raw-vs-debiased
+number collision (i); discloses a real, previously-unlisted capture-model approximation (ii);
+threads an inline pointer from a floor-setting number to the caveat that already governs it (iii);
+and withdraws a header claim the document's own later revision notes had already falsified,
+correcting the withdrawal's own cited count (182, not 46) by fresh re-verification rather than
+by repeating the figure handed down (iv). None of the four touches this node's mechanism,
+derivation, predictions, cost, regression plan, invariants, or falsifier thresholds.
+
+Verified against t13_out.json (by_hw_sig_quartile, *_model_vs_measured_by_hw_sig_quartile keys,
+read-only), f7_events.csv (z_min_ball/z_max_ball/z_GW columns, read-only), and this document's own
+text (character-exact backtick count, python3) at 2026-08-30. Presenter for this note: top-tier
+subagent, per the branch's standing grant (row #255) covering production/documentation changes
+within the tree (author-verbatim, row #223). No code written; no git operations; foreground only;
+no concurrently-written file (BIAS_HISTORY_LEDGER.md, the T1_2_*/T2_2_* files, the HIER prereg,
+TREE2_CHARTER_20260830.md) was written to by this note.
+
+## Implementation prerequisites for T1.3-zwin (2026-08-30; moved here from docs/gates/PHYSICS-GATE-LEDGER.md by the orchestrator — the ledger stays tabular)
+
+
+Scoped to whoever builds PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md's registered theta_zwindow/
+z_window_k flag (row #255, tree 2 node T1.3-zwin; decision-table items 1-2 COVERED by the row
+above). The flag and knob alone do not make P1's registered predictions (that gate doc's section
+5.6) the numbers P1 will actually read off the driver. Three items beyond the flag itself:
+
+1. **compute_scores() must implement PA-HIER-32(d)'s corrected score_s.** The T1.2 independent
+   reader (PREREGISTRATION_HIER_HTHETA_20260826.md, Stage-0-recert record, "Disclosure on score_s
+   form") found, verbatim: "The driver's compute_scores() (hier_s0_driver.py, unedited,
+   grep-confirmed no Es_null_det term) computes the OLD/superseded raw linear secant, not this
+   PA-HIER-32(d)'s corrected score_s = score_lns - Es_null_det" (hier_s0_driver.py:394-449, commit
+   dd63fe0c per that document's own citation). PA-HIER-32(d)'s registered form
+   (PREREGISTRATION_HIER_HTHETA_20260826.md:2757-2759), quoted:
+
+       score_s_i = score_lns_i - Es_null_det_i
+       Z_s = mean(score_s) / SEM(score_s), pooled per the existing (A8) two-sided convention
+
+   with score_lns the now-superseded symmetric secant (same file, line 867):
+   score_lns = [ lnL(b=0, ln s=+ln sqrt2) - lnL(b=0, ln s=-ln sqrt2) ] / (2 ln sqrt2). The
+   T1.3-zwin flag changes the CANDIDATE SET compute_scores() sums over; it does not touch the
+   scoring formula applied to that set. Both must change together, or P1's section 5.6 numbers
+   (registered against the debiased score_s) will not be the numbers the unmodified driver
+   actually emits.
+
+2. **The s-node-only re-run form: nodes s_plus, s_minus, plus a fresh truth cell -- NOT a reuse of
+   hier_s0_recert_run's existing truth/b nodes.** The gate doc's own P1 (section 5.6) registers 12
+   cells: 4 truth + 8 s-nodes (s_plus/s_minus x 4 seeds) -- not the T1.2 recert's full 5-node
+   theta-cross, and no b-nodes. Whether the recert's existing truth/b node CSVs can be spliced in
+   byte-identically at s=1 instead of re-run: NO, at the registered z_window_k=4 -- per that
+   document's own R2/R8/5.5: the theta=(0,1) LITERAL SKIP still applies k=z_window_k to the bare
+   window (section 2.2: "'on' and theta==(0,1): LITERAL SKIP -- the 'off' path with k =
+   z_window_k"), and R8 pins byte-identity against hier_s0_recert_run's truth CSV only "at
+   k = 1.0"; at k = 4 only the intersection candidates' per-candidate values are bit-identical,
+   added rows differ, so the truth node's aggregate output is NOT byte-identical to the recert
+   run's. This is consistent with, not contradicted by, P1's own node list already including a
+   fresh truth cell rather than citing the recert CSV -- the builder must run all 12 P1 cells
+   fresh (hier_s0_recert_run/s0a_seed9001{01..04}/node_*_sites2.2_nosmear_divisor is NOT a valid
+   substitute for any P1 node at k=4). b-nodes are not part of P1 at all (deferred to the optional
+   P1b arm, section 5.6/6 item 3); T1.2's own b-axis certification (score_b, flag OFF throughout)
+   stands unchanged as a claim about the untransformed window -- it is not, and cannot be treated
+   as, a P1 node reused at k=4.
+
+3. **The enlarged-ball parameters E12 named, as the registered P1 arm -- NOT E12's own pairing.**
+   Section 5.6's P1 registers theta_zwindow="on", z_window_k=4.0, sky_cone_k=1.5 -- this is NOT
+   B1_1_S0A_DEFECT_FORENSIC_20260829.md's own E12 measurement, which paired the z-widening with
+   sky_cone_k=3.0; that combination is registered separately as the diagnostic fallback arm P3
+   (section 5.6/9), to be run only if P1 fails its band. The builder must configure
+   hier_s0_driver.py's three run_mirror_seed_inprocess call sites (the R7 plumbing item, section
+   2.2) with z_window_k=4.0 and sky_cone_k=1.5 for P1, and must not default to E12's own
+   sky_cone_k=3.0 pairing -- the two configurations test different mechanisms (section 2.1's
+   theta-consistency of the z-filter vs. section 2.5's theta-free sky-intrinsic V3 term) and are
+   registered as non-interchangeable by that document's own section 2.5 disclosure.
+
+This note registers no new number, band, prediction, or falsifier, and authorizes no code beyond
+what the row above and PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md's own decision table already
+cover; it is a cross-read disclosure, not a new gate. Presenter: top-tier subagent, per the
+branch's standing grant (row #255) covering production/documentation changes within the tree
+(author-verbatim, row #223). No code, no git, foreground only; PREREGISTRATION_HIER_
+HTHETA_20260826.md, hier_s0_driver.py and B1_1_S0A_DEFECT_FORENSIC_20260829.md read-only, not
+written.
