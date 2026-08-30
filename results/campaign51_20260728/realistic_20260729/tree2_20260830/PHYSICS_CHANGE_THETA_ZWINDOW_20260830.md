@@ -1261,3 +1261,60 @@ reads; a cross-check of this implementation's Es_null_det numbers against the ar
 f4_mechanism.py/f4_out.json figures on the real production catalogue (both implement the same
 closed form independently but were not run side by side here -- see
 T1_3_ZWINDOW_IMPLEMENTATION_RECORD.md for the registered P1 command handed to the runner).
+
+---
+
+## P1 result, 2026-08-30 (independent reader; append-only)
+
+Launched under rows #255/#268 -- tree 2 node T1.3-zwin (P1 readout). Run of record: runner-7's
+`tree2_20260830/hier_s0_zwin_run` (4 seeds x {truth, s_plus, s_minus}, z_window_k=4.0, sky_cone_k
+1.5, theta_phi_divisor on, theta_sites 2.2, smear off, h=0.73; wall 8248.47 s x 14 cores = 32.08
+CPU-h). Independently re-derived from raw `event_likelihoods.csv` + the cached `es_null_det.csv`
+(method independent of `hier_s0_driver.py`'s own `compute_scores`/`_es_null_det_closed_form`) --
+reproduces the driver's own `s0a_score_output.json` to the last digit; the closed-form
+`Es_null_det_i` itself independently confirmed to machine precision (8 hosts, seed 900101, max
+diff 8.3e-17) against a from-scratch reimplementation.
+
+**Literal read (driver's own, unweighted convention):** score_s (corrected) = -0.042371 +/-
+0.012752, **Z_s = -3.3228**, n=461 -- FAILS the registered `|Z_s| <= 3.0` band by 0.323 in Z
+(10.8% over threshold); A15 false-fail rate at this band, N=461, is 0.27% two-sided. Raw/lns form:
+Z_s = +0.3075 -- MET, inside the registered raw-form band [0,+2.5] and inside this section's own
+E12 reference point (-0.5 +/- 1.0). The raw statistic moved from -5.971 (T1.2, divisor-only,
+row #266) to +0.308 here -- the window fix removed essentially all of the truncation defect the
+raw statistic sees.
+
+**Convention gap (decisive finding).** This section's own text registers the C-WEIGHTED
+Es_null_det convention as PRIMARY for P1, "fixed before unblinding". The Implementation record
+below discloses that `compute_scores` never applies that weighting (raw/unweighted pooling only)
+and states the reader "must still apply Revision note 2 item 3's process constraint (report both
+conventions, do not declare F1 CONFIRMED/REFUTED on the driver's score_s alone)". This reader
+computed the c-weighted statistic independently (c_i = 1 - B_num/(combined_no_bh x D_tilde_phi),
+the forensic's own c_nb definition; c_i mean 0.6161/median 0.6592 here vs the forensic's quoted
+0.616/0.651 -- cross-validated): **score_s(c-weighted) = -0.023052 +/- 0.012906, Z_s = -1.7861,
+n=461 -- PASSES the band**, landing close to the registered predicted point (-0.026 +/- 0.012,
+Z~-2.1, band [-0.031,+0.005]). The unweighted Es_null_det mean measured this run (0.0463) matches
+E13's unweighted per-unit-s figure (+0.0455); the c-weighted mean matches E13's c-weighted figure
+(+0.0265) -- the driver subtracted the larger (unweighted, not-primary) offset from an
+already-near-null raw mean, manufacturing most of the literal fail.
+
+**F1, applied literally to each reading:** on the driver's own unweighted score_s (-3.32), F1's
+trigger condition is met -- STOP reasserts, routing to (n1) S_bar_phi's own sigma_z dependence or
+(n2) the V2 mixture-weight covariance, per A14's own text. On the c-weighted reading (-1.79),
+F1's trigger condition is NOT met -- the s-axis truncation attribution (E12) stands. This reader
+does not adjudicate between the two; per this document's own process constraint, that call needs
+both numbers in front of the author/orchestrator.
+
+**Verdict of record (literal, per the registered band):** B0-A' (s) persists at |Z_s|=3.3228,
+INSTRUMENT-DEFECT (s), REPORTED-ONLY (PA-HIER-28 item 9). Raw/lns observation (REPORTED): Z=+0.31,
+inside band. Disclosed alongside, not as this reader's ruling: the registered PRIMARY (c-weighted)
+statistic PASSES the same band. Licenses nothing beyond rows #255/#268 -- no S0-B, no further
+Stage-P/F. An Es_null_det-validity derivation (does the c-weighted convention correctly capture
+the combined-channel secant expectation) is dispatched before any re-run; S0-B stays unlaunched.
+
+Full account: `T1_3_ZWINDOW_P1_READOUT_RECORD.md`, `t1_3_p1_readout.json` (this directory); prereg
+mirror in `PREREGISTRATION_HIER_HTHETA_20260826.md`; ledger row appended in `BIAS_HISTORY_LEDGER.md`.
+
+*Authorization: launched under rows #255/#268 -- tree 2 node T1.3-zwin (P1, independent reader).
+Foreground only (<= 600 s per command actually used; longest single command was the venue-build
+cross-check at ~498 s), no git, no ssh, append-only; did not touch source code or the concurrently
+running B8.2 harness files.*

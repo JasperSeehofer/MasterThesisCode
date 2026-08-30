@@ -1,0 +1,351 @@
+{
+  "arm": "S0-A",
+  "seeds_requested": [
+    900101,
+    900102,
+    900103,
+    900104
+  ],
+  "nodes_requested": [
+    "truth",
+    "s_plus",
+    "s_minus"
+  ],
+  "score_only": true,
+  "n_present_by_node": {
+    "truth": 4,
+    "s_plus": 4,
+    "s_minus": 4
+  },
+  "seeds_present_by_node": {
+    "truth": [
+      900101,
+      900102,
+      900103,
+      900104
+    ],
+    "s_plus": [
+      900101,
+      900102,
+      900103,
+      900104
+    ],
+    "s_minus": [
+      900101,
+      900102,
+      900103,
+      900104
+    ]
+  },
+  "n_missing_csv": 0,
+  "missing_csv_paths": [],
+  "scores": {
+    "ln_L_no_bh": {
+      "score_b": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0
+      },
+      "score_b_available": false,
+      "score_s": {
+        "mean": -0.04237092110586195,
+        "sem": 0.012751511508574368,
+        "Z": -3.3228155797350696,
+        "n_pooled": 461
+      },
+      "score_s_available": true,
+      "score_lns": {
+        "mean": 0.0039648115580011465,
+        "sem": 0.012893573971421563,
+        "Z": 0.3075029132177858,
+        "n_pooled": 461
+      },
+      "score_s_raw": {
+        "mean": 0.0038865388170488424,
+        "sem": 0.012639030883900082,
+        "Z": 0.3075029132177859,
+        "n_pooled": 461
+      }
+    },
+    "ln_L_with_bh": {
+      "score_b": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0
+      },
+      "score_b_available": false,
+      "score_s": {
+        "mean": -0.015472730788592258,
+        "sem": 0.01654442712799539,
+        "Z": -0.9352231218940378,
+        "n_pooled": 461
+      },
+      "score_s_available": true,
+      "score_lns": {
+        "mean": 0.03086300187527085,
+        "sem": 0.016700980143334977,
+        "Z": 1.8479754846955883,
+        "n_pooled": 461
+      },
+      "score_s_raw": {
+        "mean": 0.030253708920119284,
+        "sem": 0.016371271789410613,
+        "Z": 1.847975484695588,
+        "n_pooled": 461
+      }
+    }
+  },
+  "gate_eng": {
+    "b_plus": {
+      "per_seed_fraction_moved": [],
+      "mean_fraction_moved": NaN,
+      "pass": false
+    },
+    "b_minus": {
+      "per_seed_fraction_moved": [],
+      "mean_fraction_moved": NaN,
+      "pass": false
+    },
+    "s_plus": {
+      "per_seed_fraction_moved": [
+        1.0,
+        1.0,
+        0.9904761904761905,
+        0.9923076923076923
+      ],
+      "mean_fraction_moved": 0.9956959706959707,
+      "pass": true
+    },
+    "s_minus": {
+      "per_seed_fraction_moved": [
+        1.0,
+        1.0,
+        0.9904761904761905,
+        0.9923076923076923
+      ],
+      "mean_fraction_moved": 0.9956959706959707,
+      "pass": true
+    }
+  },
+  "note": "only the s-axis is ready on disk (b_ready=False, s_ready=True) -- the OTHER axis's score in payload['scores'] is unavailable (n_pooled=0/NaN), by design, NOT an error.",
+  "gate_parity": {
+    "900101": {
+      "status": "COMPARED",
+      "n_events_compared": 106,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 106,
+          "max_abs_diff": 5.233016392753289,
+          "max_rel_diff": 0.44681982083760186,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 106,
+          "max_abs_diff": 4.7469891745486095,
+          "max_rel_diff": 0.3448498894272315,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    },
+    "900102": {
+      "status": "COMPARED",
+      "n_events_compared": 120,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 120,
+          "max_abs_diff": 0.22576974429763563,
+          "max_rel_diff": 0.038818795443948166,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 120,
+          "max_abs_diff": 0.7961770654783065,
+          "max_rel_diff": 0.09185302733118202,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    },
+    "900103": {
+      "status": "COMPARED",
+      "n_events_compared": 105,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 105,
+          "max_abs_diff": 1.355473409611931,
+          "max_rel_diff": 0.21601070640161282,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 105,
+          "max_abs_diff": 1.5419690210974055,
+          "max_rel_diff": 0.18836540229720516,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    },
+    "900104": {
+      "status": "COMPARED",
+      "n_events_compared": 130,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 130,
+          "max_abs_diff": 0.3295812819232822,
+          "max_rel_diff": 0.04347763238439784,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 130,
+          "max_abs_diff": 0.5935427823932251,
+          "max_rel_diff": 0.07426517242412521,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    }
+  },
+  "verdict": {
+    "band": "B0-A'",
+    "verdict": "INSTRUMENT-DEFECT -- STOP (prereg \u00a74.5)",
+    "Z_b": NaN,
+    "Z_s": -3.3228155797350696,
+    "threshold": 3.0,
+    "channel": "ln_L_no_bh (registered primary; ln_L_with_bh reported alongside, see scores)",
+    "gate_eng": {
+      "b_plus": {
+        "per_seed_fraction_moved": [],
+        "mean_fraction_moved": NaN,
+        "pass": false
+      },
+      "b_minus": {
+        "per_seed_fraction_moved": [],
+        "mean_fraction_moved": NaN,
+        "pass": false
+      },
+      "s_plus": {
+        "per_seed_fraction_moved": [
+          1.0,
+          1.0,
+          0.9904761904761905,
+          0.9923076923076923
+        ],
+        "mean_fraction_moved": 0.9956959706959707,
+        "pass": true
+      },
+      "s_minus": {
+        "per_seed_fraction_moved": [
+          1.0,
+          1.0,
+          0.9904761904761905,
+          0.9923076923076923
+        ],
+        "mean_fraction_moved": 0.9956959706959707,
+        "pass": true
+      }
+    },
+    "gate_parity": {
+      "900101": {
+        "status": "COMPARED",
+        "n_events_compared": 106,
+        "diffs": {
+          "ln_L_no_bh": {
+            "n": 106,
+            "max_abs_diff": 5.233016392753289,
+            "max_rel_diff": 0.44681982083760186,
+            "exact": false
+          },
+          "ln_L_with_bh": {
+            "n": 106,
+            "max_abs_diff": 4.7469891745486095,
+            "max_rel_diff": 0.3448498894272315,
+            "exact": false
+          }
+        },
+        "pass_exact": false,
+        "pass_fallback_rtol": false
+      },
+      "900102": {
+        "status": "COMPARED",
+        "n_events_compared": 120,
+        "diffs": {
+          "ln_L_no_bh": {
+            "n": 120,
+            "max_abs_diff": 0.22576974429763563,
+            "max_rel_diff": 0.038818795443948166,
+            "exact": false
+          },
+          "ln_L_with_bh": {
+            "n": 120,
+            "max_abs_diff": 0.7961770654783065,
+            "max_rel_diff": 0.09185302733118202,
+            "exact": false
+          }
+        },
+        "pass_exact": false,
+        "pass_fallback_rtol": false
+      },
+      "900103": {
+        "status": "COMPARED",
+        "n_events_compared": 105,
+        "diffs": {
+          "ln_L_no_bh": {
+            "n": 105,
+            "max_abs_diff": 1.355473409611931,
+            "max_rel_diff": 0.21601070640161282,
+            "exact": false
+          },
+          "ln_L_with_bh": {
+            "n": 105,
+            "max_abs_diff": 1.5419690210974055,
+            "max_rel_diff": 0.18836540229720516,
+            "exact": false
+          }
+        },
+        "pass_exact": false,
+        "pass_fallback_rtol": false
+      },
+      "900104": {
+        "status": "COMPARED",
+        "n_events_compared": 130,
+        "diffs": {
+          "ln_L_no_bh": {
+            "n": 130,
+            "max_abs_diff": 0.3295812819232822,
+            "max_rel_diff": 0.04347763238439784,
+            "exact": false
+          },
+          "ln_L_with_bh": {
+            "n": 130,
+            "max_abs_diff": 0.5935427823932251,
+            "max_rel_diff": 0.07426517242412521,
+            "exact": false
+          }
+        },
+        "pass_exact": false,
+        "pass_fallback_rtol": false
+      }
+    },
+    "reported_only": true
+  },
+  "theta_sites": "2.2",
+  "smear": "off",
+  "config": "b0i",
+  "h_values": [
+    0.73
+  ],
+  "score_h": 0.73,
+  "theta_phi_divisor": "on",
+  "sky_cone_k": 1.5,
+  "catalogue_leg_1d_mass_aware": "off",
+  "theta_zwindow": "on",
+  "z_window_k": 4.0,
+  "registration": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/PREREGISTRATION_HIER_HTHETA_20260826.md"
+}
