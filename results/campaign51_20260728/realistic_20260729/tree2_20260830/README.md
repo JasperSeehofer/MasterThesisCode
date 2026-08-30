@@ -45,11 +45,29 @@ identified above.
   in this directory) -- registers the debiased score_s statistic and drops the z-binned theta
   read. Cross-referenced at ledger row #263.
 
+## A11 -- completed-weight fork derivation
+
+- A11_COMPLETED_WEIGHT_FORK_DERIVATION_20260830.md -- zero-compute derivation: neither
+  COMPLETED-SMALL nor COMPLETED-MATERIAL is the estimator under the one-density-everywhere
+  consistency criterion; both are the same un-derived candidate times an un-derived global
+  prior; the T2.3 mass-aware 1D leg moots the fork by identity. Panel clean (0 mustfix, 1
+  round; a later documentation-only citation-line correction was applied append-only).
+  REPORTED-ONLY, returned to the author. Ledger row #269.
+
+## T5 -- mass-law-keyed window design / k-scan
+
+- PROPOSAL_MASS_LAW_KEYED_WINDOW_20260830.md -- T5.1 design proposal (zero compute): the
+  production mass law is a delta law on iiib and log-normal (realized-forward) on joint_r1;
+  a log-symmetric window at k = Phi^-1(1-epsilon/2) is exact-by-construction on the scattered
+  venue where the production linear window is not; registers a two-arm k-scan (~26-35 CPU-h,
+  cluster-bound). Panel REFUTED at round 2 with two must_fix items outstanding (a Section
+  1.2/2 width-drift claim to correct against the exact-width remedy already in the code, and
+  an unruled [RULE] on an out-of-scope pointer-note append). Ledger row #270.
+
 ## Not yet started (charter T3-T6, out of scope for this node)
 
 - T3 -- B8.2 harness S1-S5
 - T4 -- B7 falsifier (ii) + the tree-1 wave-3 readout (A4 pending, input does not exist yet)
-- T5 -- mass-law-keyed window design / k-scan (A1 = option (c))
 - T6 -- CMEM >=90%-power registration (A8 = parked; available)
 
 ## Open items carried forward
