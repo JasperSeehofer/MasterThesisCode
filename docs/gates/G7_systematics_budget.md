@@ -84,3 +84,14 @@ mock-calibration defect (none exists, §F).
 | 1.5 | +3.31% | +5.25% |
 
 (h′ solving d_L(z; h′, Ω_assumed) = d_L(z; 0.73, Ω_true), repo `dist()`.)
+
+## Row 16 re-grade, 2026-08-30 (launched under row #255 -- tree 2 node A5; append-only, row 16 table entry above not edited)
+
+Per ledger row #255, item A5: row 16 is re-graded exactly as ruled --
+
+mock: zero by construction (the injected dark-host law is the estimator prior, section F of
+results/campaign51_20260728/realistic_20260729/fanout1_20260829/PHYSICS_CHANGE_POPULATION_PRIOR_M1_20260829.md);
+real data: O(1) degeneracy with the population z-evolution -- hierarchical marginalisation
+required (shape sensitivity: r(z) 0.53 to 1.39 moves the dark-class score by -0.60 on bins 2-5).
+
+Rows #137/#138 are retired as citations (kept on the record, no longer the basis for row 16's grade).

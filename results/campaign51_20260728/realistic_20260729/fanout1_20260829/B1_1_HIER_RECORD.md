@@ -449,3 +449,28 @@ F-A above — inert for `L_cat_no_bh` (confirmed), NOT inert for `combined_no_bh
 P1 equivalence gate and the driver's score actually consume). This does not retract finding 4's
 `L_cat_no_bh` claim; it narrows its scope. {source: `WAVE2_REGISTRATION_CHECK_20260829.md` §0,
 §5 item 9; verified 2026-08-29}
+
+---
+
+## A14 housekeeping append (2026-08-30 -- F1 citation correction; launched under row #255 -- tree 2 node A14)
+
+F1 (END_VERIFIER_REPORT_PART1_20260830.md section 4, "new verifier-found findings", item 1):
+finding 3's own ln-transform citation is wrong. Above, finding 3 cites
+hier_s0_driver.py:242-245 for the ln-transform guard
+(sub[out] = np.where(vals > 0.0, np.log(vals), np.nan) on combined_no_bh/combined_with_bh).
+Re-checked against the file at the commit the record was written against (ff230621): the guard
+is at hier_s0_driver.py:425 at that commit, not :242-245; lines 242-245 fall inside an unrelated
+function (build_ft_venue's sigma_z_scale validation). At current tree-2 HEAD (ecd33336) the
+guard has drifted one further step, to line 452 -- a pure line-number shift from an intervening
+formatting/line-wrap change (the RuntimeError message and the return statement each gained line
+breaks between ff230621 and HEAD); the guard code itself
+(sub[out] = np.where(vals > 0.0, np.log(vals), np.nan)) is byte-identical at both commits
+(git show ff230621 vs the working tree, diffed). The substance of finding 3 (natural log, same
+base as bayesian_statistics.py:5834-5838's num_log_term_* diagnostics) is unaffected -- only the
+cited line numbers were stale. {source:
+results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py:452 (current
+HEAD ecd33336) / :425 (commit ff230621, via git show);
+results/campaign51_20260728/realistic_20260729/fanout1_20260829/END_VERIFIER_REPORT_PART1_20260830.md
+section 4 item 1; verified 2026-08-30}
+
+Launched under row #255 -- tree 2 node A14.

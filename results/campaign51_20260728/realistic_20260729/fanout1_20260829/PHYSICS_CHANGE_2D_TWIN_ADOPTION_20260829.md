@@ -820,6 +820,29 @@ Class-A call sites (§6.1(a-v), 8 sites: `p3_2d_fleet.py`, `ca_rhs_scorer.py`,
 + `rhs_inflation_alt_construction.py`, the wave2 sbatch set) re-grepped post-implementation: all
 still pass their explicit value; zero edits landed on any of them.
 
+**A14 housekeeping append (2026-08-30, row #255 -- log-text reconciliation):** the :3705-3757
+row above states the INFO branch's message as [PHYSICS] ... ACTIVE (row #249); that is the
+selection-fusion/no-BH-catalogue-selection INFO lines already present at :4042 and :4086, not
+this change's own new INFO line. The new with-BH branch this implementation added logs (source,
+darksiren_emri/bayesian_inference/bayesian_statistics.py:4126): '(center="eff") ACTIVE
+(adopted under row #223, charter B7.3): the WITH-BH catalogue ...' -- i.e. the runtime log text
+cites row #223 (the standing grant that authorized presenting this gate) as the "adopted under"
+row, while the ledger's adoption row of record for this production-default flip is **row #253**
+(gate_b_20260730/BIAS_HISTORY_LEDGER.md, 2026-08-30: "[PHYSICS] ADOPTED under row #223
+(charter B7.3): catalogue_numerator_survival_2d = mz_sel, center = eff is the production
+default"). Both citations are correct as far as they go -- row #223 is genuinely the standing
+grant this adoption was presented under, and row #253 is genuinely the ledger row that records
+the adoption -- but a reader of the runtime log alone would not find the adoption row by that
+number. No code change follows from this append (the log text is accurate, just under-specific);
+flagged so a future reader is not misdirected. {source:
+darksiren_emri/bayesian_inference/bayesian_statistics.py:4126;
+results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md Row
+#253; verifier item 12,
+results/campaign51_20260728/realistic_20260729/fanout1_20260829/END_VERIFIER_REPORT_PART1_20260830.md
+section 4; verified 2026-08-30}
+
+Launched under row #255 -- tree 2 node A14.
+
 ### 13.2 Tests re-pinned / added (§6.1(a-vi), §6.2)
 
 Re-pinned to an explicit old value (not rewritten):

@@ -268,3 +268,33 @@ script `fanout1_20260829/b7_2_readout.py`; full machine-readable output
 
 Stamped: read out 2026-08-29 by the independent reader; launched under rows #222/#223 — charter
 node B7.2.
+
+---
+
+## 7. A14 housekeeping append (2026-08-30, row #255 -- provenance extras retrieved)
+
+Provenance extras retrieved 2026-08-30 (run_metadata_*.json, logs/, 4/4
+posteriors_with_bh_mass JSONs, GIT_COMMIT_AT_RUN.txt = ff230621 -- verify) under the local
+files at results/campaign51_20260728/realistic_20260729/wave2_20260829/c4/. Confirmed on disk:
+GIT_COMMIT_AT_RUN.txt contains ff2306213e9e65abbd474f66348bc05a6f3e6547 (matches the
+pre-outage ssh cat confirmation of commit ff230621 cited in section 6's header); logs/
+holds 4 provenance JSONs + 8 SLURM task out/err files (tasks 0/1/2/3, jobs 6739000, 6739027,
+6739028, 6739001); posteriors_with_bh_mass/ holds all 4 H4-node JSONs
+(h_0_665.json, h_0_66.json, h_0_67.json, h_0_73.json) -- the "2 missing" of caveat 3
+(h=0.67/0.73) are present, so retrieval is 4/4, complete. run_metadata_7.json,
+run_metadata_8.json, run_metadata_9.json, run_metadata_21.json are present (one per task).
+
+**PROVISIONAL label dropped:** the "PROVISIONAL on provenance extras" label at the top of
+section 6, and caveat 3 in section 6.6, are resolved -- all four provenance items are now
+retrieved and verified on disk. This does NOT lift caveat 1 ("attribution provisional on
+falsifier (ii)"): the mechanistic attribution of the IMMATERIAL-PREDICTED result stays
+PROVISIONAL until falsifier (ii) (Option A', 208-286 CPU-h, row #220) runs; only the provenance
+retrieval provisionality is closed by this append. No gate or reading number in sections 6.1-6.5
+changes -- they were always diagnostics-CSV-only and complete. {source:
+results/campaign51_20260728/realistic_20260729/wave2_20260829/c4/GIT_COMMIT_AT_RUN.txt;
+results/campaign51_20260728/realistic_20260729/wave2_20260829/c4/logs/;
+results/campaign51_20260728/realistic_20260729/wave2_20260829/c4/posteriors_with_bh_mass/;
+results/campaign51_20260728/realistic_20260729/wave2_20260829/c4/run_metadata_{7,8,9,21}.json;
+verified 2026-08-30}
+
+Launched under row #255 -- tree 2 node A14.

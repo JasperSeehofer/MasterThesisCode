@@ -522,3 +522,27 @@ the stage and returns here as an appended note (A21).
 - All other numbers: cited files and lines in §0. No `evaluate()` call was made; no RNG.
 
 *Builder's self-check (rule 2): this is a design, not a measurement; nothing here is banked.*
+
+---
+
+## 10. A14 housekeeping append (2026-08-30, row #255 -- F6 correction)
+
+F6 (verifier item 14, END_VERIFIER_REPORT_PART1_20260830.md section 4): the section-8
+"mandatory total" line above ("approx 130-475 CPU-h local, 0 cluster" / "13-46 h wall") does
+not follow from its own table. Re-summed directly from the table's own row values (section 8):
+Cell S production (100-380 CPU-h) + Cell T production (25-95 CPU-h) = 125-471 CPU-h (cell S+T
+only); summing every row in the table (S1/S2 smoke + PROD-A0 + N-ladder + both pilots + both
+production cells) gives 160-513 CPU-h. Neither reproduces the stated "130-475". The
+corresponding wall-time at 14 cores is CPU-h/14 = 8.9-33.7 h (cell S+T), not the stated
+"13-46 h" (which does not equal either bracket divided by 14). The note's headline claim --
+this design costs order-10^2 CPU-h, 20-80x the docket's approx 6 CPU-h/24-arm-sweep anchor --
+is UNCHANGED by this correction (the independently reproduced correction factor is
+20.6x-77.7x, per verifier item 14); only the specific mandatory-total and wall-time NUMBERS in
+section 8 were internally inconsistent. Corrected figures for citation: mandatory total
+(cell S + cell T, production N) = 125-471 CPU-h local, 0 cluster; wall at 14 cores =
+8.9-33.7 h. {source: this file, section 8 table (Cell S / Cell T rows); verifier item 14 /
+finding F6,
+results/campaign51_20260728/realistic_20260729/fanout1_20260829/END_VERIFIER_REPORT_PART1_20260830.md
+section 4; verified 2026-08-30}
+
+Launched under row #255 -- tree 2 node A14.

@@ -137,3 +137,14 @@ in both files naming which pipeline each feeds, so a future reader does not repe
 substitution. Docs-only; no gate required.
 
 **Branch verdict of record: B3 CLOSED — PREMISE-REFUTED (provenance, zero compute).**
+
+## Addendum, 2026-08-30 (launched under row #255 -- tree 2 node A5; append-only)
+
+G7 row 16 re-graded exactly as ruled in ledger row #255 item A5:
+
+mock: zero by construction (the injected dark-host law is the estimator prior, section F of
+results/campaign51_20260728/realistic_20260729/fanout1_20260829/PHYSICS_CHANGE_POPULATION_PRIOR_M1_20260829.md);
+real data: O(1) degeneracy with the population z-evolution -- hierarchical marginalisation
+required (shape sensitivity: r(z) 0.53 to 1.39 moves the dark-class score by -0.60 on bins 2-5).
+
+Rows #137/#138 are retired as citations (kept on the record).

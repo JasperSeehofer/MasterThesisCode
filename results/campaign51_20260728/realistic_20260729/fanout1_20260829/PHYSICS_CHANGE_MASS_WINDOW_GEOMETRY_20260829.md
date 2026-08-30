@@ -15,6 +15,21 @@ pending author confirmation: production DEFAULT flips still return to the author
 
 Companion zero-compute read: `b5_window_count.json` (this directory), part (A) of this node.
 
+**A14 housekeeping append (2026-08-30, row #255 -- F2 citation correction):** the "Approval
+cited" line above labels its quote "(author, verbatim, ledger 2026-08-29)"; that quote is a
+PARAPHRASE (via runbook 37 section 5), not the author's verbatim text. The ledger's actual
+verbatim text of row #223 is: Author ruling (verbatim): "everything that is part of the tree
+can be decided including production changes. It will be checked afterwards, we want to
+maximize the scientific insights we can gather in this tree and then verify, plan the next
+tree and repeat." {source:
+results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md, Row
+#223, 2026-08-29; finding F2,
+results/campaign51_20260728/realistic_20260729/fanout1_20260829/END_VERIFIER_REPORT_PART1_20260830.md
+section 4 item 7; verified 2026-08-30}. The paraphrase's substance (production changes inside
+the tree pre-authorized; gate presentation-before-code + ledger rows still required; approval
+cites row #223) is not contradicted and this presentation's approval basis stands -- only the
+"verbatim" label was inaccurate. Launched under row #255 -- tree 2 node A14.
+
 ---
 
 ## 1. Old formula, verbatim, with lines

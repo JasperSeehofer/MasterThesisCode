@@ -1,0 +1,13 @@
+{
+  "git_commit": "ff2306213e9e65abbd474f66348bc05a6f3e6547",
+  "git_branch": "fix/p32d-classg-venue-repair",
+  "tree_dirty_file_count": "296",
+  "slurm_job_id": "6739000",
+  "slurm_array_job_id": "6739000",
+  "slurm_array_task_id": "0",
+  "seed": "777021",
+  "hostname": "uc2n609.localdomain",
+  "start_timestamp_utc": "2026-08-29T18:49:56Z",
+  "command": "/var/spool/slurmd/job6739000/slurm_script wave2-c4-twin",
+  "note": "wave2 C4 PROD-CF-2D mz_sel/eff arm T, h=0.730, launched under rows #222/#223 charter node B7.2"
+}

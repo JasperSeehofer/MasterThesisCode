@@ -2681,3 +2681,131 @@ this divider is edited. No git operations; no source edits; `hier_s0_driver.py` 
 independent-reader node's scope). Companion record:
 `fanout1_20260829/B1_1_HIER_STAGE0_RECORD.md`. Worker: inherit-tier session, independent-reader
 role, 2026-08-29.*
+
+---
+
+### PA-HIER-32 (2026-08-30; row #255 rulings A2(a)–(d) applied; [FABLE-ORCH])
+
+Launched under row #255 — tree 2 node PA-HIER-32. Append-only; nothing above this heading is
+edited. Authorization: ledger row #255 (gate_b_20260730/BIAS_HISTORY_LEDGER.md), quoted verbatim
+where load-bearing below. Context of record: fanout1_20260829/SYNTHESIS_DOCKET_2_20260829.md
+section 7; fanout1_20260829/END_VERIFIER_REPORT_PART1_20260830.md section 4, items A1–A17.
+
+**(a)/(b) Authoritative smear form, CoR-P and CoR-M/S0-A.**
+Row #255 verbatim: "A2 = (a) CoR-P: smear_global_selection=False (PA-HIER-31(b), CoR-P-faithful)
+authoritative; (b) CoR-M/S0-A: the same narrowed form is the form of record (the P0 STOP scoped
+to sites 2.1/2.2)." Effective immediately: smear_global_selection=False with theta_sites="2.2" is
+the form of record for BOTH the CoR-P production arm and the CoR-M/S0-A mirror-control arm — not
+a temporary narrowing pending a fresh [RULE], as PA-HIER-31 REVISION NOTE 2 (R1′/R2′) left it. The
+open CoR-M-scoped contradiction that this document's S0-A record above disclosed as unresolved —
+"this run 'certifies the instrument' only at theta_sites='2.2'; it does not certify site 2.3's
+behaviour under the originally-pinned CoR-M form. This STOP verdict is scoped accordingly — a
+defect finding about sites 2.1/2.2 under this run's flags, not a full 'all sites, smeared' S0-A
+finding" — is CLOSED by this ruling: the narrowed, unsmeared form is not a scope limitation on the
+S0-A STOP, it is the registered instrument, full stop. Every downstream S0-A/S0-B band in this
+document (section 4.1, section 4.5, and the wave-2 amendment items (a)–(j) above) reads
+theta_sites="2.2"/smear off as authoritative; PA-HIER-31 REVISION NOTE 2 R1′/R2′ is discharged,
+not merely deferred. This does not disturb the separate, still-open CoR-P-scoped contradiction of
+REVISION NOTE 1, which remains for the author.
+
+**(c) GATE PARITY 5.718e-4 residual — disposition RATIFIED, re-run step retired.**
+Row #255 verbatim: "(c) the forensic's E19 diagnosis of the 5.718e-4 residual (generator grid
+401→4001) RATIFIED as its disposition, the bank-re-run step retired." B1_1_S0A_DEFECT_FORENSIC_
+20260829.md E19 (section 2): the banked bc CSV (commit 71b52e9c, 2026-08-23) vs the truth node's
+CRB event table differ only in z_true (max absolute difference 1.06e-5, 200/200 rows) and
+luminosity_distance (max 6.1e-5, 198/200 rows); every Fisher entry, sky position, host index and
+s_tilde_phi_host column is identical. The cause is correspondence_1d.py line 1168,
+_B0I_ZTRUE_GRID_N raised 401 to 4001 in commit d40fe5c8 — a generator-side comparand-grid
+hardening after the bank was cut, not an estimator defect on the no-BH path (forensic section 4
+item (4): "PARITY-CODE-DELTA: RESOLVED as a comparand (generator-grid) delta; the estimator's
+no-BH path is not implicated"). This disposition is RATIFIED as the closing account of the
+residual named in this document's section (f) above ("GATE PARITY residual 5.718e-4 —
+disposition"). The P0 remediation step registered there — "one re-run of the banked
+bc_900101_work CSV at the wave-2 commit" — is RETIRED: no re-run follows from this ruling. GATE
+PARITY (section 3.3) remains PASS/vindicated as already recorded; the 5.718e-4 figure is retained
+in the record as a diagnosed, closed comparand artefact, not an open item.
+
+**(d) Secant amendment: score_s replaced by a bias-corrected form; z-binned theta read dropped.**
+
+Superseded: the score_lns definition of PA-HIER-4 above (the "Correction, registered" block — the
+ln s = +ln√2/−ln√2 symmetric secant, denominator 2 ln√2) as the FINAL registered s-statistic; and
+section 4.1's "z-resolved theta-score" as a registered next measurement (the MIXED/PARTIAL-
+ABSORPTION rows and the line-~1125 note).
+
+Found (B1_1_S0A_DEFECT_FORENSIC_20260829.md E13, section 2): PA-HIER-4's fix removed the
+s-secant's node-asymmetry bias (the even f'' term, the arithmetic-midpoint-vs-truth defect) but
+not a second, independent bias — the deterministic expectation of the symmetric ln s secant
+itself, evaluated at truth theta=(0,1) under each host's own generator kernel (GW-precise, i.e.
+a function of the host's known window/floor/sigma_g alone, with no dependence on the realized
+z_true draw), is non-zero: E[score_lns | truth]_unweighted = +0.0455 ± 0.0005 per unit s
+(catalogue-share-weighted: +0.0265 ± 0.0005), driven by the odd-order (ln√2)²/6·g''' term
+PA-HIER-4 itself flagged as the form's "leading error" but did not size. At this arm's measured N
+(461 event-instances, four seeds pooled — this document's "Band and verdict" section above), this
+bias alone predicts a spurious |Z_lns| of about 3.8 on a PERFECT venue (generator kernel identical
+to estimator kernel) — a PA-HIER-4-class mis-formed-statistic defect, now measured rather than
+only bounded.
+
+Correction, registered. Define, per event i, the deterministic null-venue secant expectation:
+
+  Es_null_det_i = the closed-form expectation of score_lns_i under host i's OWN generator kernel
+  at theta=(0,1); a function only of that host's window, floor and sigma_g (never of the realized
+  z_true or observed d_L) — computed and archived at B1_1_S0A_DEFECT_FORENSIC_20260829.md's
+  f4_mechanism.py / f4_out.json (keys Es_null_det, Es_null_det_unweighted); not re-derived here
+  (append-only, no compute this node).
+
+The registered s-statistic, replacing score_lns as the section 4.1/4.5 primary:
+
+  score_s_i = score_lns_i − Es_null_det_i
+  Z_s = mean(score_s) / SEM(score_s), pooled per the existing (A8) two-sided convention
+
+Bias-free argument: Es_null_det_i is data-independent — fixed by the injected truth and host i's
+own known kernel parameters before any event is drawn — so subtracting it removes exactly the
+deterministic part of the secant's response at truth, for any host, to all orders in the ln√2
+step (not merely the leading Taylor term PA-HIER-4 cancelled). E[score_s | generator kernel =
+estimator kernel] = 0 by construction, independent of the step size, so a non-zero Z_s isolates a
+genuine kernel mismatch (the f'(1)-type term) from the finite-secant's own arithmetic. score_b is
+unaffected — PA-HIER-4's ±0.02 nodes are already symmetric about b=0 and the forensic finds no
+analogous residual on that axis after the divisor correction (section 3, "b-axis" account, E11).
+
+Every section 4.1 band naming Z_s or Z_lns (B0-A, B0-A′, B0-B, B0-M, B0-P, B0-R, B0-R′) is hereby
+restated in terms of this Z_s; no re-costing follows — same four theta-nodes, same banked
+event_likelihoods.csv columns; Es_null_det_i is computed once per host from quantities already in
+those CSVs plus the generator-kernel closed form, not from a new run.
+
+z-binned theta read: DROPPED as a registered next measurement. B1_1_S0A_DEFECT_FORENSIC_
+20260829.md E16: the registered z_true-binned read (0–0.075: score_b −27.7 ± 3.1; 0.075–0.392:
+−0.45 ± 0.35) is "a selection artefact, not a mechanism" — binning on the data selects events
+whose z_true fell low in their own kernel (the same z_true-dependent selection E4/E6 quantify as
+the Fisher-quality exclusion, 58% of 800 draws evaluated, and the sky/z-window candidate-ball
+cut). Section 4.1's "z-resolved theta-score" (the registered next measurement for the
+MIXED/PARTIAL-ABSORPTION branch, the line-~481 and line-~1125 notes above) and the
+ERROR-MODEL-SHARE "leave-one-z-bin-out" leg (line ~552) are RETIRED as measurements that could
+discriminate mechanism from artefact. A future z-resolved read, if wanted, must condition on z_g
+(the host's catalogue-listed redshift, known before selection) or on an unselected quantity, not
+on z_true.
+
+**A8 two-sidedness, A15 at N = 461.** The band and power arithmetic of "A15 at N = 1588" above
+(Null: Z ~ N(0,1) ⇒ |Z| ≤ 3 false-fail 0.27% two-sided; 80% power at mean = 3.84·SEM) is restated
+at this arm's MEASURED per-event scatter rather than a projected N. Per
+B1_1_S0A_DEFECT_FORENSIC_20260829.md f1_out.json, N = 461 (combined_no_bh, four seeds × five
+theta-nodes; 456 of 461 are score-bearing matched-class events): score_s SEM = 0.012185 (this
+document's "Band and verdict" section, the |Z_s| = 7.079 line) carries forward effectively
+unchanged in scale under the correction — Es_null_det_i's own population SEM (0.0005123
+unweighted / 0.0004935 c-weighted) is roughly 25–40× smaller than the raw score_lns SEM and
+subtracts a fixed per-host number, not a re-scaled one, so SEM(score_s) ≈ SEM(score_lns) =
+0.012185 to first order. At N = 461, |Z_s| ≤ 3.0 still false-fails at the same A8 0.27%
+two-sided rate; 80% power at mean = 3.84·0.012185 = 0.0468 per unit s (detectable region) —
+applying A8's existing two-sided B0-B/B0-A/B0-A′ band structure verbatim to the debiased score_s,
+with no other change. Recomputing the registered S0-A pooled statistic with this correction is
+the first action of tree 2 T1.2 (S0-A re-certification), not performed by this append-only node.
+
+**Scope note.** The S0-A re-certification against this corrected score_s (tree 2 T1.2,
+TREE2_CHARTER_20260830.md) runs UNDER PA-HIER-32: it must use score_s and Z_s as defined here, not
+the superseded score_lns, and must re-derive (not assume) Es_null_det_i for any new theta-node
+configuration (a different theta_sites value, a different smear form) rather than reuse the
+"2.2"/unsmeared values banked by f4_mechanism.py.
+
+*Authorization: launched under row #255 — tree 2 node PA-HIER-32. Append-only; nothing above this
+heading is edited; no git operations; no source edits (hier_s0_driver.py, correspondence_1d.py,
+bayesian_statistics.py, kwq1_score.py all untouched — this node is a registration amendment, not
+an instrument change). Worker: [FABLE-ORCH] inherit-tier session, 2026-08-30.*
