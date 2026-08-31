@@ -296,6 +296,40 @@ def test_compute_scores_handles_the_registered_p1_node_list_with_no_b_axis(drive
     assert channel["score_s_raw"]["n_pooled"] == 2
 
 
+def test_gate_eng_handles_a_b_only_node_dict_with_no_truth_node(driver: object) -> None:
+    """runner-11's 8-cell [HIER] b-node pair (seeds 900101-900104 x
+    b_plus/b_minus, zwin-on zk4, divisor-on) is a b-only run with NO
+    "truth" node produced at all -- gate_eng previously indexed
+    ``all_nodes["truth"]`` unconditionally (hier_s0_driver.py, pre-fix)
+    and raised ``KeyError`` for exactly this node dict, crashing run_arm's
+    unconditional ``gate_eng(all_nodes)`` call at the b/s "axis ready" gate
+    (rows #280/#287; mirrors the 2026-08-30 addendum's per-axis
+    relaxation of compute_scores/run_arm/score_only_payload for the SAME
+    missing-node shape, here applied to gate_eng). It must degrade to
+    ``eng_available=False`` per off-truth node instead of raising."""
+    b_plus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [0.1, 0.2], "ln_L_with_bh": [0.1, 0.2]}
+    )
+    b_minus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [-0.1, -0.2], "ln_L_with_bh": [-0.1, -0.2]}
+    )
+    # No "truth" key at all -- exactly the dict shape a b-only
+    # --nodes b_plus,b_minus run produces.
+    all_nodes = {
+        "b_plus": [_node_result(driver, "b_plus", 0.02, 1.0, b_plus)],
+        "b_minus": [_node_result(driver, "b_minus", -0.02, 1.0, b_minus)],
+    }
+
+    eng = driver.gate_eng(all_nodes)  # type: ignore[attr-defined]
+
+    for node in ("b_plus", "b_minus", "s_plus", "s_minus"):
+        assert eng[node]["eng_available"] is False
+        assert eng[node]["per_seed_fraction_moved"] == []
+        assert math.isnan(eng[node]["mean_fraction_moved"])
+        assert eng[node]["pass"] is False
+    assert "truth" not in eng
+
+
 def test_compute_scores_raises_on_broken_axis_pair(driver: object) -> None:
     """A LONE b_plus with no b_minus (a genuinely broken pair, as opposed to
     an axis simply never requested) must still raise -- the relaxation only

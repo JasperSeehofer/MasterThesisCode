@@ -1445,11 +1445,33 @@ def compute_scores(
 
 
 def gate_eng(all_nodes: dict[str, list[NodeResult]], channel: str = "ln_L_no_bh") -> dict[str, Any]:
-    """GATE ENG (prereg §3.4): >=10% of scored events move by >=1e-6 relative vs truth, per node."""
-    truth_by_seed = {r.seed: r.ln_l.set_index("event_idx")[channel] for r in all_nodes["truth"]}
+    """GATE ENG (prereg §3.4): >=10% of scored events move by >=1e-6 relative vs truth, per node.
+
+    Degrades gracefully (row #280/#287, 2026-08-30 addendum precedent -- the
+    same per-axis relaxation :func:`compute_scores`/:func:`run_arm`/
+    :func:`score_only_payload` already carry for a b-only node list) when no
+    "truth" node was requested/produced: ENG's statistic is a per-node
+    comparand AGAINST the truth node, so with no truth node there is nothing
+    to compare against. Every off-truth node then reports
+    ``eng_available=False`` (mirroring ``score_b_available``/
+    ``score_s_available``'s naming) with ``mean_fraction_moved=nan``/
+    ``pass=False``/``per_seed_fraction_moved=[]``, instead of raising a
+    ``KeyError`` on ``all_nodes["truth"]``.
+    """
+    truth_nodes = all_nodes.get("truth", [])
+    eng_available = bool(truth_nodes)
+    truth_by_seed = {r.seed: r.ln_l.set_index("event_idx")[channel] for r in truth_nodes}
     out: dict[str, Any] = {}
     for node in NODE_ORDER:
         if node == "truth":
+            continue
+        if not eng_available:
+            out[node] = {
+                "per_seed_fraction_moved": [],
+                "mean_fraction_moved": float("nan"),
+                "pass": False,
+                "eng_available": False,
+            }
             continue
         fracs = []
         for r in all_nodes.get(node, []):
@@ -1473,6 +1495,7 @@ def gate_eng(all_nodes: dict[str, list[NodeResult]], channel: str = "ln_L_no_bh"
             "per_seed_fraction_moved": fracs,
             "mean_fraction_moved": mean_frac,
             "pass": bool(np.isfinite(mean_frac) and mean_frac >= ENG_EVENT_FRACTION),
+            "eng_available": True,
         }
     return out
 

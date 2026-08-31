@@ -1,0 +1,158 @@
+{
+  "arm": "S0-A",
+  "seeds_requested": [
+    900101,
+    900102,
+    900103,
+    900104
+  ],
+  "nodes_requested": [
+    "b_plus",
+    "b_minus"
+  ],
+  "score_only": true,
+  "n_present_by_node": {
+    "b_plus": 4,
+    "b_minus": 4
+  },
+  "seeds_present_by_node": {
+    "b_plus": [
+      900101,
+      900102,
+      900103,
+      900104
+    ],
+    "b_minus": [
+      900101,
+      900102,
+      900103,
+      900104
+    ]
+  },
+  "n_missing_csv": 0,
+  "missing_csv_paths": [],
+  "scores": {
+    "ln_L_no_bh": {
+      "score_b": {
+        "mean": -0.8623345057895397,
+        "sem": 0.47694418757541013,
+        "Z": -1.8080407063419661,
+        "n_pooled": 461
+      },
+      "score_b_available": true,
+      "score_s": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0
+      },
+      "score_s_available": false,
+      "score_lns": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0
+      },
+      "score_s_raw": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0
+      },
+      "score_lns_R": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0,
+        "per_seed": {}
+      },
+      "score_lns_R_available": false,
+      "score_lns_R_minus_score_lns": {
+        "mean": NaN,
+        "sem": NaN,
+        "n_pooled": 0
+      }
+    },
+    "ln_L_with_bh": {
+      "score_b": {
+        "mean": 0.3166507176559612,
+        "sem": 0.4097264347381919,
+        "Z": 0.772834483716667,
+        "n_pooled": 461
+      },
+      "score_b_available": true,
+      "score_s": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0
+      },
+      "score_s_available": false,
+      "score_lns": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0
+      },
+      "score_s_raw": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0
+      },
+      "score_lns_R": {
+        "mean": NaN,
+        "sem": NaN,
+        "Z": NaN,
+        "n_pooled": 0,
+        "per_seed": {}
+      },
+      "score_lns_R_available": false,
+      "score_lns_R_minus_score_lns": {
+        "mean": NaN,
+        "sem": NaN,
+        "n_pooled": 0
+      }
+    }
+  },
+  "gate_eng": {
+    "b_plus": {
+      "per_seed_fraction_moved": [],
+      "mean_fraction_moved": NaN,
+      "pass": false,
+      "eng_available": false
+    },
+    "b_minus": {
+      "per_seed_fraction_moved": [],
+      "mean_fraction_moved": NaN,
+      "pass": false,
+      "eng_available": false
+    },
+    "s_plus": {
+      "per_seed_fraction_moved": [],
+      "mean_fraction_moved": NaN,
+      "pass": false,
+      "eng_available": false
+    },
+    "s_minus": {
+      "per_seed_fraction_moved": [],
+      "mean_fraction_moved": NaN,
+      "pass": false,
+      "eng_available": false
+    }
+  },
+  "note": "only the b-axis is ready on disk (b_ready=True, s_ready=False) -- the OTHER axis's score in payload['scores'] is unavailable (n_pooled=0/NaN), by design, NOT an error.",
+  "theta_sites": "2.2",
+  "smear": "off",
+  "config": "b0i",
+  "h_values": [
+    0.73
+  ],
+  "score_h": 0.73,
+  "theta_phi_divisor": "on",
+  "sky_cone_k": 1.5,
+  "catalogue_leg_1d_mass_aware": "off",
+  "theta_zwindow": "on",
+  "z_window_k": 4.0,
+  "registration": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/PREREGISTRATION_HIER_HTHETA_20260826.md"
+}

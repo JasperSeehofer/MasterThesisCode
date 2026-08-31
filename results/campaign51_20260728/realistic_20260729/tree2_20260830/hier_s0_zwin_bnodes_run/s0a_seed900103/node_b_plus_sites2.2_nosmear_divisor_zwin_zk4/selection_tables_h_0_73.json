@@ -1,0 +1,17 @@
+{
+  "h": 0.73,
+  "beta_G_phi": 153322758.61602736,
+  "beta_Gbar_phi": 888403798.0710543,
+  "sigma_phi": 980867125.6740596,
+  "sigma_4d": 375452610.32121956,
+  "r_Malm": 0.3827762196262879,
+  "sigma_phi_theta": 935693173.8903027,
+  "sigma_phi_smear_truth": 968871839.0435634,
+  "rho_theta": 0.9539448814203931,
+  "kappa_smear_over_point": 0.9877707323280378,
+  "n_degenerate_rows": 0.0,
+  "w_share_degenerate": 0.0,
+  "theta_b": 0.02,
+  "theta_s": 1.0,
+  "theta_phi_divisor": "on"
+}
