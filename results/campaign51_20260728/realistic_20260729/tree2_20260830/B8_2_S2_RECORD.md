@@ -542,3 +542,278 @@ uv run python results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_c
   extrapolations/orchestrator-facing commands, not measurements.
 - Did not run the N-ladder or the pilot itself -- that is the orchestrator's own next step
   (§9.6), per the original launch instruction.
+
+## 10. Per-h reuse + pilot re-cut (2026-08-31; B8.2.S2c; pilot vetoed at the measured cost
+    under the argue-size rule)
+
+`launched under rows #255/#268 -- tree 2 node B8.2.S2c`. Trigger: runner-9's real N=106/41-node
+ladder point (rows #255/#268) cost **16,200s wall at 8 workers** -- draw 387s (one-time) +
+call_0 2632s + call_1 2750s + ~2x5,400s because the grid-split bit-identity check re-ran the
+full evaluation TWICE on that one universe (checkpoint `universe_seed900300_S.json`'s
+`elapsed_s`; the `_gridsplit_check_seed900300_{split,whole}` dirs). At that cost a 125-universe
+pilot is `>=10 days` wall -- vetoed by the orchestrator under the argue-size rule before this
+node was launched. Scope: (1) make the grid-split check once-per-work-root, not once-per-process;
+(2) find and, if a safe boundary exists, implement a per-h precompute cache across universes;
+(3) prove byte-identity; (4) re-cut the pilot design from measured numbers. Did not touch
+`b8_cal_harness_work_ladder` (runner-9's own work-root, running concurrently) or
+`correspondence_1d.py`/`bayesian_statistics.py`. Only `b8_cal_harness.py`, this record, and the
+ledger row are touched, per the launch instruction's bounded scope. Smokes ran in a SEPARATE
+work-root, `b8_cal_harness_smoke_s2c_{a,b}`, `--workers 2`, tiny N (10), 3 h-nodes.
+
+### 10.1 Item 1: grid-split check made once-per-work-root
+
+Before this stage, `--verify-split-once`'s "once" meant once per PROCESS invocation (`main()`'s
+local `verified_split_this_invocation` flag, reset to `False` every script start) -- correct for
+one long-lived run, wrong for the N-ladder's own `--n-universes 1`-per-invocation command shape
+(§9.6): every ladder point is a SEPARATE invocation processing exactly one NEW universe, so the
+old flag never had anything to block against and the check fired on literally every invocation
+against that work-root. Since all three N-ladder points share ONE `--work-root`
+(`b8_cal_harness_work_ladder`, §9.6's own commands), this cost would otherwise have recurred on
+the N=400 and N=1588 points too.
+
+Fix: `gridsplit_marker_path(work_root)` returns
+`work_root/_gridsplit_check_verified.json`; `main()` skips the check (and prints why) when that
+marker exists, unless `--force-gridsplit-check` is passed; the check writes the marker
+(`verified_at_seed`, `bit_identical`, `max_abs_diff`, a `git_stamp()`) immediately after it runs.
+Verified live on the smoke work-root (`b8_cal_harness_smoke_s2c_a`, already warm from §10.2's
+runs): a fresh invocation with the default `--verify-split-once` ran the check
+(`bit_identical=True`, `max_abs_diff=0.0` -- the property still holds under this stage's other
+changes) and wrote the marker; a SECOND fresh invocation against the SAME work-root printed
+`"marker ... already present ... skipping"` and completed its one universe in **19.6s total**
+(vs 155.2s for the marker-writing invocation, whose own extra cost was almost entirely the
+split-check's two additional evaluate() calls, cheap here only because §10.2's cache was already
+warm). One-time-per-work-root cost of this check at real ladder scale, from the ALREADY-MEASURED
+N=106 point: ~2x5,400s = ~10,800s -- paid AT MOST ONCE per work-root from now on, never per
+N-ladder point, never per pilot resume.
+
+### 10.2 Item 2: boundary finding -- `BayesianStatistics` instance reuse does NOT reach this
+    cost; the real boundary is five `bayesian_statistics.py` free functions + one constructor,
+    all bare-name-patchable exactly like the S2b draw-weight cache
+
+**Reusing a single `BayesianStatistics()` instance across universes (the brief's own suggested
+escape valve) was investigated and found NOT to be a safe or effective boundary:**
+
+- `self.cramer_rao_bounds` is read from `PREPARED_CRAMER_RAO_BOUNDS_PATH` exactly once, in
+  `__init__` (`bayesian_statistics.py:3699`), and is never reloaded inside `evaluate()` (only
+  filtered in place, `:4630-4640`). Reusing an instance across universes would silently re-score
+  a PRIOR universe's events unless the harness reimplemented `__init__`'s CSV-load step from
+  outside the class -- fragile, and out of this stage's edit scope (`correspondence_1d.py`,
+  which owns the fresh-`bs`-per-call construction at `run_mirror_seed_inprocess`'s
+  `bs = BayesianStatistics()`, `:3386`, is not editable here).
+- Even granting (a) reloadable events, it buys nothing for the actual cost: `evaluate()`
+  computes `D(h)` (`precompute_completion_denominator`), `beta_Gbar(h)`
+  (`precompute_missing_completion_denominator`), `S_bar_phi(z;h)`
+  (`precompute_phi_marginal_survival`), `beta_G^phi(h)`/`beta_Gbar^phi(h)`
+  (`precompute_phi_selection_integrals`), and `Sigma_global(h)`/`Sigma^phi(h)`
+  (`precompute_global_catalog_selection`, called THREE times per `evaluate()`: `with_bh_mass`
+  in `{False, True}` plus once more under the phi convention, `:4740-4810`) as **local
+  variables inside `evaluate()`'s own body**, recomputed unconditionally on every call
+  regardless of `self`. Their own docstrings say so: `precompute_global_catalog_selection` --
+  "The sum is event-INDEPENDENT, so it is precomputed once per h like D(h)";
+  `precompute_completion_denominator` -- "D(h) is event-independent; compute once per h-value."
+  None of the five takes `events` or `cramer_rao_bounds` as an argument (checked against every
+  signature). **This boundary does not exist; it is not implemented.**
+
+**The boundary that DOES exist:** all five `precompute_*` functions, and the
+`SimulationDetectionProbability(...)` constructor call that builds their shared
+`detection_probability_obj` argument, are looked up as BARE module-global names inside
+`bayesian_statistics.py`'s own `evaluate()` (confirmed by reading `:4656-4823` -- none of these
+six call sites is `self.`- or module-qualified). This is the IDENTICAL call-time LEGB lookup the
+S2b draw-weight cache above already exploits for `correspondence_1d.py`'s
+`catalogue_selected_host_draw_weights`. `b8_cal_harness.py` now monkeypatches all six names on
+the `bayesian_statistics` module object -- no line of `bayesian_statistics.py` changes.
+`evaluate()`'s worker pool uses `"forkserver"`/`"spawn"` (`:5198-5213`), never `"fork"`; workers
+never call any of these six names themselves (they receive the already-built tables via
+`initargs`), so this driver-side patch (applied only in the harness's own main process, before
+the pool exists) cannot desync from what workers see.
+
+**Cache key composition** hashes CONTENT (catalogue z/M arrays; the frozen `m_th` completeness
+cache's path+size+mtime; the `SimulationDetectionProbability` constructor's own arguments,
+stamped onto the returned instance so downstream callers read it back rather than re-derive it;
+`phi_survival_table`'s array bytes; every scalar/string flag; a source-hash of each wrapped
+function for auto-invalidation on edit) rather than object identity, for the same reason the
+draw-weight cache does: a FRESH process (the ladder's `--n-universes 1`-per-invocation shape, or
+any `--max-wall-s`-triggered resume) must still be able to hit an on-disk entry from an earlier
+one. In-process dict + on-disk pickle under `--work-root/precompute_cache/`
+(`--no-precompute-cache` disables all six wrappers, for the byte-identity comparison below).
+
+**Known limitation, stated plainly:** only the five `precompute_*` results are persisted ON
+DISK (small dicts/arrays, trivially picklable). The `SimulationDetectionProbability` instance
+itself (whose construction also reloads+regrids the injection pool) is cached IN-PROCESS ONLY --
+pickling a live estimator object across process invocations was judged out of scope for this
+smoke-bounded stage. Each NEW process invocation therefore pays that one construction once (not
+once per universe), reuses it in-process for every remaining universe that invocation scores,
+and every `precompute_*` call still hits the on-disk cache immediately regardless (its key is
+content-derived, independent of the object's identity) -- confirmed live, see 10.3.
+
+**One real bug caught while building this, fixed before it shipped:** `_PRECOMPUTE_CACHE_DIR`
+was first computed from the bare (possibly relative) `--work-root` argument. Unlike the
+draw-weight cache (only ever touched from `draw_realization()`, which runs BEFORE
+`run_mirror_seed_inprocess`'s internal `os.chdir(work_root)`), these six wrappers run INSIDE
+`bs.evaluate()`, i.e. AFTER that chdir -- the first smoke run crashed with `FileNotFoundError`
+writing the on-disk `.pkl.tmp` against the wrong (chdir'd, per-universe) cwd. Fixed by resolving
+`work_root.resolve()` once in `configure_precompute_cache()`. Disclosed per the
+verifier-independence culture, not swept under a clean report (same convention §9.2 used for its
+own `.npz`-suffix bug).
+
+### 10.3 Item 3: byte-identity proof -- max_abs_diff = 0.0 everywhere checked
+
+Two smoke invocations, SAME two seeds (900500, 900501; N=10, event-cap=10, 3 h-nodes
+`0.72/0.73/0.74`, `--workers 2`, `--no-verify-split-once` to isolate this item), separate fresh
+work-roots: `b8_cal_harness_smoke_s2c_a` (cache ON, default) vs `b8_cal_harness_smoke_s2c_b`
+(`--no-precompute-cache`).
+
+- `posterior.{no_bh,with_bh}.ln_post` (3-element vectors): **max_abs_diff = 0.0** for both
+  channels, both seeds. `map_h`/`sd`/`n_events_scored` bit-identical (e.g. seed 900501 no_bh:
+  `sd=0.007070367914487756` both runs).
+- `z_true_hist.counts` and `universe.n_realized_draw`/`n_catalogue_hosted`: identical both runs.
+- The raw diagnostics table itself (`seed{900500,900501}_S/simulations/diagnostics/
+  event_likelihoods.csv`, 30/27 rows x 19 columns): column set identical; **every numeric
+  column's max_abs_diff = 0.0** for both seeds.
+
+This is the same "cache changes WHEN, never WHAT" proof §9.3 gave the draw-weight cache, now
+given for the precompute cache: `--no-precompute-cache` and the default cached path produce
+bit-identical posteriors, event tables, and histograms.
+
+### 10.4 Measured effect and per-universe marginal cost
+
+Four smoke universes, `b8_cal_harness_smoke_s2c_a`, N=10/event-cap=10, 3 h-nodes, `--workers 2`:
+
+| seed | precompute cache state | `call_0` | `call_1` | evaluate() total | note |
+|---|---|---|---|---|---|
+| 900500 | cold (first ever, this work-root) | 72.1s | 105.6s | **177.7s** | precompute_cache all `miss` |
+| 900501 | warm, in-process (same process as 900500) | 1.7s | 2.4s | **4.1s** | all `in_process`; draw-weight cache paid its OWN cold miss here (450.5s, orthogonal -- §9's cache, invoked lazily on first catalogue-hosted draw) |
+| 900502 | warm, ON-DISK (fresh process) + grid-split check ran | 4.2s | 2.8s | **7.0s** | precompute_cache all `on_disk`; confirms cross-PROCESS reuse, not just cross-universe |
+| 900503 | warm, on-disk (fresh process), grid-split check SKIPPED (marker) | 4.1s | 2.8s | **6.9s** | draw-weight cache also warm (on_disk, 5.9s) |
+
+**Confirmed effect:** the catalogue-scale precompute cost collapses from 177.7s to 4-7s (a
+25x-43x reduction) at 3 h-nodes/N=10, and -- unlike a purely in-process cache -- persists across
+FRESH PROCESS invocations (900502/900503), which matters because the N-ladder and any
+`--max-wall-s`-bounded pilot run are exactly this shape (one-universe-per-invocation, or frequent
+resumes).
+
+**Extrapolation to N=200/41 nodes/workers=8 (explicitly bounded, not a point estimate -- same
+"confident vs. uncertain, run the real point first" discipline §9.5 used):** warm evaluate()
+baseline ~6.0s (mean of the three warm smoke measurements above) at 3 h-nodes/N=10/workers=2.
+Scaling by the h-node ratio (41/3 = 13.67x, the SAME linear-in-h assumption §9.5 used) gives
+~82s if the residual cost is fixed-overhead-dominated (pool spawn + per-h grid lookups, N-flat,
+workers do not help) -- **low bound ~80s/warm universe**. If instead the per-event loop (now
+UNMASKED, since it was previously swamped by the now-cached precompute term -- this also
+explains §9.1's own puzzling "evaluate() flat in N over [20,106]" finding, which this stage's
+result resolves: that flatness was the precompute term's N-independence showing through, not a
+property of the per-event loop) dominates and scales linearly in N (200/10=20x) with a ~4x
+parallel speedup from workers 2->8: 6.0 x 13.67 x 20 / 4 ~= 410s -- **high bound ~410s/warm
+universe**. **Range: [80s, 410s] per warm universe at N=200/41 nodes/workers=8, order-of-
+magnitude only; RECOMMENDATION (repeated from §9.5): read the REAL `elapsed_s.call_0/call_1` off
+the first TWO universes of whichever option below is chosen before trusting this range for
+anything past a go/no-go call.**
+
+The FIRST universe of a fresh work-root is UNCHANGED by this stage (cache starts empty) --
+anchored on the REAL, already-measured N=106/41-node ladder point: cold precompute+evaluate
+~5,382s (call_0 2632s + call_1 2750s), cold draw-weight-cache miss ~450-600s (§9, whenever the
+first catalogue-hosted host is drawn, independent of h-node count and N), plus the one-time
+grid-split check (~10,800s, §10.1) UNLESS `--no-verify-split-once` is passed (justified here:
+the property has now been proven bit-identical FOUR separate times across two stages, §9's S1
+verifier closure and this stage's own re-checks -- it is a fact about
+`run_mirror_seed_inprocess`/`evaluate()`, not about a work-root). One-time work-root setup cost:
+**~16,850s (~4.7h) with the grid-split check, ~6,050s (~1.7h) without it.**
+
+### 10.5 Pilot re-cut: three sized options
+
+All three share ONE `--work-root` per option (so the one-time setup above is paid AT MOST ONCE
+per option, never per universe) and assume `--workers 8`. Ranges combine §10.4's one-time
+setup with `(n_universes - 1) x [80s, 410s]`.
+
+**(a) Full registered pilot** (100 cell-S + 25 cell-T = 125 universes, N=200, all 41 h-nodes --
+the design of record, no scope reduction):
+
+- With grid-split check: `16,850 + 124 x [80,410] = [26,770s, 68,690s] ~= [7.4h, 19.1h]`.
+- Without (`--no-verify-split-once`): `6,050 + 124 x [80,410] = [15,970s, 57,890s] ~= [4.4h,
+  16.1h]`.
+- Preserves every registered statistic at full design resolution: `n_U=100` is the PIT-KS
+  band's own anchor (`pit_ks_band_informational = 0.134`, hardcoded in `score_only()` as "design
+  §4.1, n_U=100 exact critical value" -- this constant is only VALID at n_U=100; see (c) below).
+
+**(b) Reduced-node pilot** (125 universes, N=200, 15 h-nodes instead of 41 -- picked as the
+brief's own example): scales §10.4's h-dependent legs by `15/41 = 0.366`.
+
+- Cold precompute+evaluate: `~1,970s`; grid-split (if run): `~3,940s`; warm per-universe:
+  `[29s, 150s]`.
+- With grid-split: `1,970+550+3,940+124x[29,150] = [10,056s, 24,036s] ~= [2.8h, 6.7h]`.
+- Without: `2,520 + 124x[29,150] = [6,116s, 20,096s] ~= [1.7h, 5.6h]`.
+- Statistical caveat (a judgement call, not validated here): coverage/PIT/F all read off
+  `_channel_stats()`'s trapezoid integrals over the h-grid -- `n_U` (universe count), NOT
+  `n_h` (grid resolution), sets the PIT-KS/coverage-band SAMPLE SIZE the design's acceptance
+  bands are calibrated to (§4.1's `n_U=100` anchor is untouched by this option). 15 nodes
+  changes only the SHAPE-INTEGRATION fidelity of each per-universe posterior (MAP/SD/PIT/HPD),
+  not the aggregate statistics' own sample size -- a real risk for HPD/PIT accuracy on any
+  universe whose posterior is not smooth/well-sampled by 15 points, but NOT separately measured
+  or validated by this stage (no author-facing claim of "15 preserves the statistics" is made
+  here -- this option trades an UNQUANTIFIED integration-fidelity risk for the h-scaling
+  savings above; a domain sign-off on the minimum viable node count belongs to a future item,
+  not this cost-costing stage).
+
+**(c) Reduced-universe pilot** (30 cell-S + 10 cell-T = 40 universes instead of 125, full 41
+h-nodes, N=200):
+
+- With grid-split: `16,850 + 39x[80,410] = [20,070s, 32,840s] ~= [5.6h, 9.1h]`.
+- Without: `6,050 + 39x[80,410] = [9,170s, 22,040s] ~= [2.5h, 6.1h]`.
+- **A15 consequence (quantified):** the binomial coverage-band SEM scales as `1/sqrt(n_U)`; at
+  `n_U=30` it is `sqrt(100/30) ~= 1.83x` WIDER than at the registered `n_U=100` (e.g. the 90%
+  coverage band's 2-sigma half-width grows from `~0.060` to `~0.110`), i.e. this option has
+  ~1.83x less power to catch a real coverage miscalibration at the SAME nominal band. The
+  PIT-KS critical value ALSO grows (asymptotic `D_crit ~ 1.36/sqrt(n_U)`: `~0.136` at n_U=100,
+  matching the code's hardcoded constant almost exactly, vs `~0.248` at n_U=30) -- **a genuine
+  implementation gap, not just a power loss: `score_only()`'s `pit_ks_band_informational` field
+  is a FIXED `0.134` regardless of `n_U` (`bayesian_statistics.py` is not involved; this is the
+  harness's own `score_only()`), so option (c) would compare its PIT-KS statistic against the
+  WRONG (too strict, n_U=100) reference band unless whoever reads the report manually rescales
+  it -- out of this stage's edit scope to fix (the launch instruction names no code change to
+  `score_only()`), disclosed here so it is not silently misread.**
+
+### 10.6 Recommendation
+
+**(a), the full registered pilot, now that the S2c cache + S2c grid-split-once fix apply.** The
+pessimistic bound (~19.1h with the grid-split check, ~16.1h without) is a single overnight run --
+down from the pre-fix `>=10 days` that triggered the veto -- and it is the ONLY option that keeps
+every registered acceptance band (the `n_U=100` PIT-KS anchor in particular) valid as designed,
+with no statistical-power caveat and no hardcoded-constant mismatch to carry forward. Concretely:
+run with `--no-verify-split-once` (the property has now been proven bit-identical four times
+across §9 and this stage; re-verifying it a fifth time on the pilot's own fresh work-root buys
+nothing for ~10,800s), and READ THE REAL `elapsed_s.call_0`/`call_1` off the SECOND scored
+universe (the first is expected to reproduce the ~5,382s cold anchor; the second is the first
+REAL test of the [80s,410s] warm-cost extrapolation) before letting the remaining ~123 universes
+run unattended -- if the real number sits outside that range, STOP and re-derive the wall
+estimate rather than trust this stage's extrapolation for a multi-hour compute commitment. Option
+(b)/(c) remain available as fallbacks if the real warm cost lands near or above the high end of
+the range and a same-day result is required, in which case (c) is the safer of the two (its only
+cost is a disclosed, quantifiable power loss + a rescaling-band caveat; (b)'s integration-fidelity
+risk on the per-universe posterior shape is unquantified by this stage).
+
+### 10.7 Quality gate
+
+- `uv run ruff check --fix .../b8_cal_harness.py` -- all checks passed (3 auto-fixes on the
+  first pass, an import-sort/multi-line adjustment; clean on every subsequent run).
+- `uv run ruff format .../b8_cal_harness.py` -- formatted, subsequently unchanged.
+- `uv run mypy .../b8_cal_harness.py` -- Success, no issues, after two fixes: (1) the
+  `SimulationDetectionProbability`-cache-tag attribute assignments use `setattr(obj, ...)` rather
+  than `obj.foo = ...` (the object is a real `SimulationDetectionProbability` instance with no
+  such declared attribute); (2) `bayesian_statistics.SimulationDetectionProbability = ...` is
+  written as `setattr(bayesian_statistics, "SimulationDetectionProbability", ...)` (mypy flags a
+  plain assignment of a callable over an imported class name as "Cannot assign to a type",
+  `[misc]`, not suppressible via a `# type: ignore[assignment]` comment).
+
+### 10.8 What this stage explicitly did NOT do
+
+- Did not edit `correspondence_1d.py` or `bayesian_statistics.py` -- every reuse mechanism is a
+  harness-side monkeypatch of module-global names, per the launch instruction's bounded scope.
+- Did not run any universe at real production scale (N=200/41 nodes/workers=8) -- §10.4's
+  extrapolation is explicitly flagged as order-of-magnitude, and §10.6 names the exact
+  confirmation step (read the second real universe's `elapsed_s`) before trusting it further.
+- Did not persist the `SimulationDetectionProbability` instance itself across process
+  invocations (in-process only, §10.2's disclosed limitation) -- only its five downstream
+  `precompute_*` outputs are on-disk-cached.
+- Did not fix `score_only()`'s hardcoded `pit_ks_band_informational = 0.134` to scale with
+  `n_U` -- disclosed as a gap for option (c) (§10.5) but out of this stage's edit scope.
+- Did not touch `b8_cal_harness_work_ladder` (runner-9's own, concurrently-running work-root) or
+  run the pilot itself -- that is the orchestrator's own next step, per the launch instruction.
