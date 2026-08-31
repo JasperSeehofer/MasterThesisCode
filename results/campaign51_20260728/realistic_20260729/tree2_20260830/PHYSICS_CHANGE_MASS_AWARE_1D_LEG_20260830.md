@@ -1262,3 +1262,25 @@ matched-class MAP ceiling-rail caveat above -- alongside the row #169 fused-pair
 for how such a flip decision has previously been framed.
 
 Ledger row: BIAS_HISTORY_LEDGER.md row #267.
+
+---
+
+## AMENDMENT G-EXT (appended 2026-08-31, under row #284) — extended h-grid for the A18 production arm
+
+**Ratified basis:** row #284 (author cross-check ratification; the Two-Trees artifact §10 and this
+session both recommend extending before submission) + the corrected 4/4 matched-class ceiling
+rail (row #280 correction (a)).
+
+**Grid of record for arm (c)/A18:** H_GRID_41 (0.600–0.860) ∪ {0.870, 0.880, …, 1.000}
+(14 added nodes at 0.010) = **55 nodes**, low wing kept. Purpose: the on-arm matched-class read
+railed at the 0.86 ceiling in 4/4 mirror seeds; without the extension the production arm's most
+important diagnostic sub-read would be censored by construction.
+
+**Bands unchanged:** the registered flip rule (map_h AND mean_h) reads on the extended grid
+against the MEASURED band of `BAND_REDERIVATION_20260831.md` §4 (MAP 0.66 [0.65, 0.67], mean_h
+0.652–0.673) — the operative comparison per row #284; the superseded decomposition bands are not
+consulted. Scorer: the frozen T0 gradient-weighted convention (see the 2026-08-31 correction
+note in `WAVE3_A14_DELTA_READ_20260831.md`).
+
+**Cost:** 55 × ~1.7 CPU-h ≈ 94 CPU-h (vs 69.7 registered for 41 nodes) — the +24 CPU-h is the
+price of the censoring guard, inside the ratified authorization.
