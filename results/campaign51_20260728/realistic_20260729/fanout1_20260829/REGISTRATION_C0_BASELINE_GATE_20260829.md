@@ -311,3 +311,33 @@ bounds, not just orders of magnitude.
 by this record.
 
 Stamped: launched under rows #222/#223 — charter node C0, 2026-08-29.
+
+---
+
+## 14. RESULT RECORD — wave-3 C0′ off-gate, appended 2026-08-31 (~11:30)
+
+**Launched under rows #278/#279 — wave-3 submission set, `wave3_c0prime_off_gate.sbatch`.**
+Append-only; nothing above is edited.
+
+**Run.** SLURM job `6746274` (array 0–1) COMPLETED (Elapsed 00:06:26 / 00:06:35, ExitCode 0:0)
+at commit `1e092e82` (`GIT_COMMIT_AT_RUN.txt`; includes the `d4765539` adoption + all tree-2
+[PHYSICS] commits). Dataset-pin STOP-gates: OK on both tasks — CRB md5
+`9a1f2a14384a9281c97ca3be312ddaab`, catalogue md5 `c52c13b5cab61f6b3f04bbe202550969`, joint_r1
+observed-catalogue sha256 `e8f7ab310e…b01b4f6751`. Outputs retrieved to
+`wave3_20260830/c0prime_off_{iiib,joint_r1}/`.
+
+**Gate verdict (§3 band, both venues): PASS — bit-identical.** At h = 0.730, 1588 events each
+venue, explicit `--catalogue_numerator_survival_2d off --catalogue_numerator_survival_2d_center
+unset` at the wave-3 commit vs the banked `headreadout_20260827/{iiib,joint_r1}` rows: max_abs
+= 0.000 on all 14 non-trivial numeric columns (max_rel 0.0e+00), and all four posterior JSONs
+(`posteriors/h_0_73.json`, `posteriors_with_bh_mass/h_0_73.json`, both venues) **md5-identical**
+to the banked files. Far inside the ≤ 1e-12 band; the PROD-A0-style exact-zero precedent holds
+through five additional commits of flag plumbing.
+
+**Consequence (per §3 and checklist item 9):** the banked 2026-08-27 readouts ARE the
+pre-adoption baseline for the A14 delta read (T_mat = 0.008, both venues) — the full 82-task
+off-array is NOT needed. The blind HEAD readout (jobs 6746275/6746276, in flight) will be read
+against them; A4 then returns to the author per row #280's restated form.
+
+Comparison executed by the orchestrator (builder ≠ runner separation n/a — zero-compute read of
+two on-disk CSV/JSON sets; script inline in the session record).
