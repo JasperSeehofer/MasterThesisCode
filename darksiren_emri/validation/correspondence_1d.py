@@ -3198,9 +3198,10 @@ def run_mirror_seed_inprocess(
     z_window_k: float = 1.0,
     # [HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree 2
     # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). Forwarded
-    # verbatim to ``BayesianStatistics.evaluate()``. "off" (default) is
-    # byte-identical to every pre-existing call site.
-    catalogue_leg_1d_mass_aware: str = "off",
+    # verbatim to ``BayesianStatistics.evaluate()``. "auto" (default) matches
+    # the 2026-08-31 production flip (rows #284-#286: engages under the
+    # absolute_marginal phi stack); "off" = the pre-flip counterfactual.
+    catalogue_leg_1d_mass_aware: str = "auto",
     # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
     # guard, not a physics gate; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md
     # §6). Forwarded verbatim to BayesianStatistics.evaluate(). None

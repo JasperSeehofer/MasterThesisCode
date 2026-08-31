@@ -7,6 +7,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed ([PHYSICS] mass-aware 1D catalogue leg — production default, 2026-08-31)
+- **`darksiren_emri/bayesian_inference/bayesian_statistics.py` — `catalogue_leg_1d_mass_aware`
+  flag default flipped to `auto`** (the auto-to-engaged pattern established by
+  `--selection_in_completion_numerator`): resolves `on` under the `absolute_marginal` φ stack,
+  `off` silently everywhere else. Explicit `off` now stays available as the pre-flip mass-blind
+  counterfactual but is warned `COUNTERFACTUAL` at run time.
+- Why: the 1D catalogue leg paired a mass-blind numerator/weight with a mass-aware divisor,
+  producing an undeclared h-sloped prior — `Z(h) = 1.0999` with `d ln Z/dh = -0.189`/event. The
+  mass-aware form restores `Z` identical to 1.
+- Measured verdict: production iiib 55-node arm (job 6747032) — 1D MAP `0.600 -> 0.665`, mean
+  `0.6053 -> 0.66699`, floor mass `0.617 -> 1.8e-4` — Z-CONFIRMED inside the registered and
+  measured bands.
+- References: `PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md` §6.3 + AMENDMENT G-EXT + ARM (c)
+  RESULT RECORD; `BIAS_HISTORY_LEDGER.md` rows #282, #284–#286.
+- Sites touched: `bayesian_statistics.py`, `main.py`, `arguments.py`,
+  `validation/correspondence_1d.py`; worker fallbacks stay `off`; R14 test semantics amended +
+  3 new auto-resolution tests added.
+
 ### Added (validation harness — catalogue-leg selection cells, 2026-08-18)
 - **`darksiren_emri/validation/pp_coverage.py` — `selection_cell` extended with `cat1d` and
   `symmetric`** (instrumentation, [C-SYM]/[P3] front; prereg

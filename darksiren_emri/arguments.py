@@ -1333,19 +1333,21 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--catalogue_leg_1d_mass_aware",
         type=str,
-        choices=["off", "on"],
-        default="off",
+        choices=["auto", "off", "on"],
+        default="auto",
         help=(
-            "[HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 "
-            "tree 2 node T2.3; PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md "
-            "§2). 'off' (default, PRODUCTION) is byte-identical -- no code "
-            "path change. 'on' replaces the WITHOUT-BH catalogue numerator's "
+            "[HIER T2.3] mass-aware 1D catalogue leg (row #255 tree 2 node "
+            "T2.3; PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). 'auto' "
+            "(default, PRODUCTION since the 2026-08-31 Z-CONFIRMED flip, "
+            "rows #284-#286) engages 'on' under the absolute_marginal phi "
+            "stack and resolves 'off' elsewhere. 'on' "
+            "replaces the WITHOUT-BH catalogue numerator's "
             "per-candidate survival S_bar_phi(z;h) by S_4D(d_L(z;h), "
             "M_g(1+z)), Sigma_4D as the global divisor and alpha_G_phi as "
             "the mixture weight. Requires --catalogue_numerator_survival and "
             "--catalogue_global_selection to both resolve to 'phi' and "
             "--theta_phi_divisor='off'; evaluate() raises ValueError "
-            "otherwise. Not a production posterior."
+            "otherwise. 'off' = the pre-flip mass-blind counterfactual."
         ),
     )
     parser.add_argument(

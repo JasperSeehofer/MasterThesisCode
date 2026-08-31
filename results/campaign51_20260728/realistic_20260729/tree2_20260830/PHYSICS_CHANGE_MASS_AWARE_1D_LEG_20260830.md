@@ -1284,3 +1284,33 @@ note in `WAVE3_A14_DELTA_READ_20260831.md`).
 
 **Cost:** 55 × ~1.7 CPU-h ≈ 94 CPU-h (vs 69.7 registered for 41 nodes) — the +24 CPU-h is the
 price of the censoring guard, inside the ratified authorization.
+
+---
+
+## ARM (c) RESULT RECORD + FLIP EXECUTED (appended 2026-08-31, rows #282–#286)
+
+**Arm (c) run:** job 6747032 (55-node G-EXT grid), commit `38cc0f58`; tasks 0–40 (H_GRID_41) all
+COMPLETED; tasks 41–54 (h ≥ 0.87) FAILED on the h-prior upper-bound guard
+(`cosmological_model.h.upper_limit`; `bayesian_statistics.py` evaluate() bounds check) —
+disclosed; verdict-irrelevant (posterior tail at h ≥ 0.85 is 5e-13). Retrieved to
+`t2_2b_arm_b_run/../a18_prod_arm/`. C-C pin PASS (B_num/D̃φ/L_comp exact-zero vs banked).
+
+**§6.3 verdict (frozen T0 gradient-weighted scorer): Z-CONFIRMED.** 1D map_h = **0.665**, mean_h
+= **0.66699** — inside the registered band [0.64, 0.72] AND the measured band of
+`BAND_REDERIVATION_20260831.md` §4 (MAP [0.65, 0.67]; mean 0.652–0.673); off comparand map 0.600
+/ mean 0.60531 / floor mass 0.617 → on floor mass 1.8e-4. The 2D channel shows exactly the known
++0.0025 adoption delta vs the pre-adoption baseline (consistency cross-check). NOT claimed:
+truth (mean − 0.73 = −0.063 residual = the dark-class completion-leg object, B8 [CAL], §12).
+
+**FLIP EXECUTED (the §11 fresh [RULE], discharged via rows #278(3) → #284 → #286):** production
+default `catalogue_leg_1d_mass_aware = "auto"` — the row #197/#253 auto→engaged pattern: "auto"
+resolves to **"on"** iff `catalogue_numerator_survival` and `catalogue_global_selection` both
+resolve to "phi" and `theta_phi_divisor="off"` (the absolute_marginal production stack), and to
+"off" silently elsewhere (legacy modes untouched — a blind default "on" would have made every
+non-phi-stack evaluate() raise on the §2 guard). Explicit "off" = the pre-flip counterfactual
+(COUNTERFACTUAL warning); explicit "on" keeps the hard guards and now logs [PHYSICS] ACTIVE.
+Worker-level fallbacks stay "off" (evaluate() threads its resolved token; R1 byte-identity tests
+unchanged). Sites: `bayesian_statistics.py` (class attr, __init__, evaluate kwarg + resolution
+block; 3 worker fallbacks documented), `main.py`, `validation/correspondence_1d.py`,
+`arguments.py` (choices auto/off/on, default auto). The row #169 (i)/(ii) pairing is hereby
+amended to (α_G^φ, S_4D, Σ_4D, D̃_φ) on the production stack.

@@ -4,7 +4,11 @@ tree 2 node T2.3).
 Spec: ``results/campaign51_20260728/realistic_20260729/tree2_20260830/
 PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md`` §2 ("NEW formula") and §10
 (the regression plan, items R1-R14). ``catalogue_leg_1d_mass_aware`` in
-``{"off", "on"}``, default "off" (byte-identical). Under "on" (guarded:
+``{"auto", "off", "on"}``, default "auto" — PRODUCTION since the 2026-08-31
+Z-CONFIRMED flip (rows #284-#286): "auto" engages "on" under the
+absolute_marginal phi stack and resolves "off" silently elsewhere; the
+worker-level fallback stays "off" (evaluate() threads its resolved token).
+Under "on" (guarded:
 ``normalization_mode="absolute_marginal"``, ``catalogue_numerator_survival``
 and ``catalogue_global_selection`` both resolving to "phi",
 ``theta_phi_divisor="off"``) the WITHOUT-BH catalogue numerator's
@@ -626,8 +630,9 @@ def test_r10_same_accessor_same_convention_as_a_direct_call() -> None:
 
 
 # ===========================================================================
-# R14: log line -- "on" emits a COUNTERFACTUAL warning, never a [PHYSICS]
-#     ACTIVE line (evaluate()-level).
+# R14 (amended 2026-08-31, rows #284-#286): resolved "on" emits the
+#     [PHYSICS] ACTIVE info line, never a COUNTERFACTUAL warning; explicit
+#     "off" warns COUNTERFACTUAL; "auto" resolves per the phi stack.
 # ===========================================================================
 def _reach_catalogue_leg_1d_mass_aware(instance: BayesianStatistics, **kwargs: Any) -> None:
     """Reach (and pass) the ``catalogue_leg_1d_mass_aware`` validation block,
@@ -648,7 +653,7 @@ def _reach_catalogue_leg_1d_mass_aware(instance: BayesianStatistics, **kwargs: A
         )
 
 
-def test_r14_on_logs_counterfactual_never_physics_active(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_r14_on_logs_physics_active_never_counterfactual(monkeypatch: pytest.MonkeyPatch) -> None:
     warnings: list[str] = []
     infos: list[str] = []
     monkeypatch.setattr(
@@ -667,10 +672,66 @@ def test_r14_on_logs_counterfactual_never_physics_active(monkeypatch: pytest.Mon
         catalogue_leg_1d_mass_aware="on",
     )
     assert instance._catalogue_leg_1d_mass_aware == "on"
-    assert any("COUNTERFACTUAL" in m and "catalogue_leg_1d_mass_aware" in m for m in warnings)
-    assert not any(
+    assert any(
         "[PHYSICS]" in m and "catalogue_leg_1d_mass_aware" in m and "ACTIVE" in m for m in infos
     )
+    assert not any("COUNTERFACTUAL" in m and "catalogue_leg_1d_mass_aware" in m for m in warnings)
+
+
+def test_r14_auto_engages_on_under_the_phi_stack(monkeypatch: pytest.MonkeyPatch) -> None:
+    infos: list[str] = []
+    monkeypatch.setattr(
+        bs._LOGGER, "info", lambda msg, *a, **k: infos.append(msg % a if a else msg)
+    )
+    instance = object.__new__(BayesianStatistics)
+    _reach_catalogue_leg_1d_mass_aware(
+        instance,
+        normalization_mode="absolute_marginal",
+        catalogue_numerator_survival="phi",
+        catalogue_global_selection="phi",
+        theta_phi_divisor="off",
+    )
+    assert instance._catalogue_leg_1d_mass_aware == "on"
+    assert any(
+        "[PHYSICS]" in m and "catalogue_leg_1d_mass_aware" in m and "ACTIVE" in m for m in infos
+    )
+
+
+def test_r14_auto_resolves_off_silently_when_the_stack_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    warnings: list[str] = []
+    monkeypatch.setattr(
+        bs._LOGGER, "warning", lambda msg, *a, **k: warnings.append(msg % a if a else msg)
+    )
+    instance = object.__new__(BayesianStatistics)
+    _reach_catalogue_leg_1d_mass_aware(
+        instance,
+        normalization_mode="absolute_marginal",
+        catalogue_numerator_survival="phi",
+        catalogue_global_selection="phi",
+        theta_phi_divisor="on",
+    )
+    assert instance._catalogue_leg_1d_mass_aware == "off"
+    assert not any("catalogue_leg_1d_mass_aware" in m for m in warnings)
+
+
+def test_r14_explicit_off_warns_counterfactual(monkeypatch: pytest.MonkeyPatch) -> None:
+    warnings: list[str] = []
+    monkeypatch.setattr(
+        bs._LOGGER, "warning", lambda msg, *a, **k: warnings.append(msg % a if a else msg)
+    )
+    instance = object.__new__(BayesianStatistics)
+    _reach_catalogue_leg_1d_mass_aware(
+        instance,
+        normalization_mode="absolute_marginal",
+        catalogue_numerator_survival="phi",
+        catalogue_global_selection="phi",
+        theta_phi_divisor="off",
+        catalogue_leg_1d_mass_aware="off",
+    )
+    assert instance._catalogue_leg_1d_mass_aware == "off"
+    assert any("COUNTERFACTUAL" in m and "catalogue_leg_1d_mass_aware" in m for m in warnings)
 
 
 def test_off_default_omitted_logs_nothing_about_the_flag(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -689,7 +750,9 @@ def test_off_default_omitted_logs_nothing_about_the_flag(monkeypatch: pytest.Mon
 # ===========================================================================
 def test_r12_evaluate_rejects_an_unknown_value() -> None:
     instance = object.__new__(BayesianStatistics)
-    with pytest.raises(ValueError, match="catalogue_leg_1d_mass_aware must be 'off' or 'on'"):
+    with pytest.raises(
+        ValueError, match="catalogue_leg_1d_mass_aware must be 'auto', 'off' or 'on'"
+    ):
         BayesianStatistics.evaluate(
             instance,
             galaxy_catalog=MagicMock(),

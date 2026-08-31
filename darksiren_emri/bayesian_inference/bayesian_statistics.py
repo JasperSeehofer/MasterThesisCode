@@ -3685,9 +3685,14 @@ class BayesianStatistics:
     # S_4D(d_L(z;h), M_g(1+z)) (the with-BH object Sigma_4D already
     # evaluates), Sigma_4D as the global divisor (ALREADY IN HAND) and
     # alpha_G_phi as the mixture weight -- the no-mass-likelihood image of
-    # the 2D assembly. Not a production posterior; the production-default
-    # flip is a fresh [RULE] (row #169's Appendix B pairing).
-    _catalogue_leg_1d_mass_aware: str = "off"
+    # the 2D assembly. PRODUCTION DEFAULT "on" since 2026-08-31: the arm (c)
+    # readout was Z-CONFIRMED (1D map_h 0.665, mean_h 0.66699, both inside the
+    # measured band; PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §6.3 +
+    # AMENDMENT G-EXT; ledger rows #282/#284-#286). Default "auto" (the row
+    # #197/#253 auto->engaged pattern): resolves to "on" under the
+    # absolute_marginal phi stack, "off" elsewhere; explicit "off" = the
+    # pre-flip mass-blind counterfactual.
+    _catalogue_leg_1d_mass_aware: str = "auto"
 
     def __init__(self) -> None:
         self.h_values = []
@@ -3774,9 +3779,11 @@ class BayesianStatistics:
         self._candidate_dump_rows: list[dict[str, object]] = []
         self._candidate_dump_event_rows: list[dict[str, object]] = []
         self._candidate_dump_warned: bool = False
-        # [HIER] mass-aware 1D catalogue leg instrument (row #255 tree 2 node
-        # T2.3): "off" (default) = production, byte-identical.
-        self._catalogue_leg_1d_mass_aware: str = "off"
+        # [HIER] mass-aware 1D catalogue leg (row #255 tree 2 node T2.3):
+        # "auto" (default) resolves to "on" under the absolute_marginal phi
+        # stack = PRODUCTION since the 2026-08-31 Z-CONFIRMED flip (rows
+        # #284-#286); "off" = the pre-flip counterfactual.
+        self._catalogue_leg_1d_mass_aware: str = "auto"
 
     def evaluate(
         self,
@@ -4019,9 +4026,14 @@ class BayesianStatistics:
         # catalogue_numerator_survival resolving to "phi",
         # catalogue_global_selection resolving to "phi" and
         # theta_phi_divisor="off" (no theta-consistent Sigma_4D exists).
-        # COUNTERFACTUAL, never a production posterior; the production
-        # default flip is a fresh [RULE] (section 11 of the gate doc).
-        catalogue_leg_1d_mass_aware: str = "off",
+        # PRODUCTION DEFAULT "auto" since 2026-08-31 (Z-CONFIRMED flip, gate
+        # doc §6.3 + §11's fresh-[RULE] discharged via rows #278(3)/#284/#286;
+        # the row #197/#253 auto->engaged pattern): "auto" resolves to "on"
+        # iff catalogue_numerator_survival and catalogue_global_selection both
+        # resolve to "phi" and theta_phi_divisor="off" (the absolute_marginal
+        # production stack), else "off". Explicit "off" = the pre-flip
+        # mass-blind counterfactual; explicit "on" keeps its hard guards.
+        catalogue_leg_1d_mass_aware: str = "auto",
         # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
         # guard, not a physics gate; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md
         # §6). None (default) is byte-identical -- no code path change, no
@@ -4396,10 +4408,33 @@ class BayesianStatistics:
         # Sigma_4D is theta-inert under the registered form, T1.1 invariant
         # 9; no theta-consistent Sigma_4D exists).
         _cat_leg_1d_ma = str(catalogue_leg_1d_mass_aware)
-        if _cat_leg_1d_ma not in ("off", "on"):
+        if _cat_leg_1d_ma not in ("auto", "off", "on"):
             raise ValueError(
-                "catalogue_leg_1d_mass_aware must be 'off' or 'on', got "
+                "catalogue_leg_1d_mass_aware must be 'auto', 'off' or 'on', got "
                 f"{catalogue_leg_1d_mass_aware!r}"
+            )
+        if _cat_leg_1d_ma == "auto":
+            # PRODUCTION DEFAULT since 2026-08-31 (rows #284-#286, gate doc
+            # §6.3 Z-CONFIRMED: 1D map_h 0.665 / mean_h 0.66699 in band):
+            # engage the mass-aware leg exactly where its guard stack holds
+            # (the row #197/#253 auto->engaged pattern); resolve "off"
+            # silently elsewhere (legacy/other normalization modes).
+            _cat_leg_1d_ma = (
+                "on"
+                if (
+                    self._catalogue_numerator_survival == "phi"
+                    and self._catalogue_global_selection == "phi"
+                    and self._theta_phi_divisor == "off"
+                )
+                else "off"
+            )
+        elif _cat_leg_1d_ma == "off":
+            _LOGGER.warning(
+                "COUNTERFACTUAL: catalogue_leg_1d_mass_aware='off' (explicit) "
+                "— the pre-2026-08-31 mass-blind 1D catalogue leg "
+                "(S_bar_phi numerator, beta_G_phi weight, Sigma^phi divisor; "
+                "Z(h)=1.0999 defect, rows #261/#282). Not the production "
+                "default since the rows #284-#286 flip."
             )
         if _cat_leg_1d_ma == "on":
             if self._catalogue_numerator_survival != "phi":
@@ -4423,15 +4458,14 @@ class BayesianStatistics:
                     "the registered form; no theta-consistent Sigma_4D "
                     f"exists); got theta_phi_divisor={self._theta_phi_divisor!r}"
                 )
-            _LOGGER.warning(
-                "COUNTERFACTUAL: catalogue_leg_1d_mass_aware='on' (row #255 "
-                "tree 2 node T2.3) — the WITHOUT-BH catalogue numerator "
-                "carries S_4D(d_L(z;h), M_g(1+z)) in place of S_bar_phi(z;h), "
+            _LOGGER.info(
+                "[PHYSICS] catalogue_leg_1d_mass_aware ACTIVE (production "
+                "default since 2026-08-31, rows #284-#286; Z-CONFIRMED, gate "
+                "doc §6.3) — the WITHOUT-BH catalogue numerator carries "
+                "S_4D(d_L(z;h), M_g(1+z)) in place of S_bar_phi(z;h), "
                 "Sigma_4D replaces Sigma^phi as the global divisor and "
                 "alpha_G_phi replaces beta_G_phi as the mixture weight "
-                "(PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). Not a "
-                "production posterior; the production-default flip returns "
-                "to the author as a fresh [RULE]."
+                "(PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2)."
             )
         self._catalogue_leg_1d_mass_aware = _cat_leg_1d_ma
         # B-DEN falsifier instrument (docs/derivations/
@@ -7306,7 +7340,9 @@ def single_host_likelihood(
     theta_s: float = 1.0,
     # [HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree 2
     # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2); scalar
-    # twin of the batch flag — same semantics.
+    # twin of the batch flag — same semantics. Worker-level fallback stays
+    # "off": evaluate() always threads its RESOLVED token explicitly (the
+    # 2026-08-31 production flip lives in evaluate()'s "auto" resolution).
     catalogue_leg_1d_mass_aware: str = "off",
     sigma4d_mass_kernel: str = "point",
 ) -> list[float]:
@@ -8084,11 +8120,13 @@ def single_host_likelihood_batch(
     theta_b: float = 0.0,
     theta_s: float = 1.0,
     # [HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree 2
-    # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). "off"
-    # (default) is byte-identical to the pre-flag path; "on" replaces site
-    # N1's per-candidate S_bar_phi factor by S_4D(d_L(z;h), M_g(1+z))
-    # (mirroring sigma4d_mass_kernel). Requires catalogue_numerator_survival
-    # to resolve to "phi" (validated by the caller, evaluate()'s setup guard).
+    # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). Worker
+    # fallback stays "off" — evaluate() threads its RESOLVED token (the
+    # 2026-08-31 production flip lives in evaluate()'s "auto" resolution).
+    # "on" replaces site N1's per-candidate S_bar_phi factor by
+    # S_4D(d_L(z;h), M_g(1+z)) (mirroring sigma4d_mass_kernel). Requires
+    # catalogue_numerator_survival to resolve to "phi" (validated by the
+    # caller, evaluate()'s setup guard).
     catalogue_leg_1d_mass_aware: str = "off",
     sigma4d_mass_kernel: str = "point",
 ) -> npt.NDArray[np.float64]:
@@ -8771,6 +8809,8 @@ def _starmap_host_batches(
     catalogue_numerator_survival_2d_center: str = "unset",
     theta_b: float = 0.0,
     theta_s: float = 1.0,
+    # Worker fallback "off"; evaluate() threads its resolved token (rows
+    # #284-#286 flip lives in evaluate()'s "auto" resolution).
     catalogue_leg_1d_mass_aware: str = "off",
     sigma4d_mass_kernel: str = "point",
 ) -> list[list[float]]:
