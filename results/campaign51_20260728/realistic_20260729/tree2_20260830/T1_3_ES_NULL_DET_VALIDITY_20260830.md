@@ -403,3 +403,16 @@ No Stage-P/F, S0-B, C1/C3 or production change is licensed by anything in this n
   digits.
 - Gaussian reference values: analytic (1.2), cross-checked numerically on a 200001-node grid.
 - Worker: [FABLE-ORCH] inherit-tier derivation node, 2026-08-30; no git operations; no source edits; foreground only.
+
+---
+
+## ADOPTED STAMP — 2026-08-31
+
+**PA-HIER-33 RATIFIED by the author, ledger row #278 item (1)** (verbatim ruling "I approve all
+decisions and suggestions for the next steps", itemization orchestrator-derived per the
+approval-scope convention). The corrected null — the arm's own likelihood at its own drawn
+parameters, not the mis-scaled single-host `Es_null_det` offset — is the rule of record for the
+[HIER] s-score. Consequences of record: the [HIER] instrument is CERTIFIED on both axes at the
+T1.3 configuration; the P1 B0-A′ row re-adjudicates under this rule by appended note (not edit);
+S0-B is unblocked (docket §5 item 3 precondition "ONLY AFTER PA-HIER-33 IS RULED" is now met),
+pending the scorer-side implementation of the amended rule before any S0-B read.
