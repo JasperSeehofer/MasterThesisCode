@@ -82,6 +82,20 @@ identified above.
   LADDER at filing) was running throughout and its work root was not touched. Information only --
   no approval, default change, STOP lift, or arm launch. Ledger row #276.
 
+## Full verification (author-ordered, 2026-08-31)
+
+- FULL_VERIFICATION_TREE1_20260831.md -- tree-1 items 1-19 re-adjudicated via OPUS verifiers in
+  parallel (author's explicit model instruction, row #278(6)): 19 confirmed, 0 refuted, 0
+  undetermined; one verdict changed vs the earlier sonnet pass (item 19, compute ledger:
+  undetermined -> confirmed by independent reconstruction). Item 20 (wave-3 blind HEAD readout)
+  still DEFERRED pending its own readout. Ledger row #280.
+- FULL_VERIFICATION_TREE2_DECISIONS_20260831.md -- tree-2 items T2-1..T2-17 adjudicated (15
+  confirmed, 2 REFUTED-DETAIL with headline standing, 0 headline verdicts refuted) plus a
+  decisions audit of 8 orchestrator-derived itemization/path-choice lines (5 faithful, 3
+  deviation, row #277 faithful with arithmetic slips). 2 items left undetermined (the A18 band
+  pure input; the changed-verdict/in-flight-exclusions bookkeeping). Standing grant of rows
+  #255/#268/#278 continues per the author's approval. Ledger row #280.
+
 ## Open items carried forward
 
 - T1.2 needs the hier_s0_driver.py --theta_phi_divisor CLI flag (regression item R13) before it
