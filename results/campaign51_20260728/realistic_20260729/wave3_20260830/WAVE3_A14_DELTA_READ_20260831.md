@@ -32,3 +32,25 @@ channel is bit-stable. MAP moves: iiib 0.665→0.665 (none), joint_r1 0.660→0.
 **pending falsifier (ii)** (class-G fleet Option A′ rung 1, not yet run). A4 therefore RETURNS
 to the author with these numbers rather than auto-ratifying. Tree-1 verifier item 20's input now
 exists; the part-2 verifier append can run.
+
+---
+
+## CORRECTION NOTE (append-only, 2026-08-31 ~13:00) — scorer weights
+
+The item-20 end verifier (opus; PART 2 appended to `END_VERIFIER_REPORT_PART1_20260830.md`)
+found the table above used UNIT grid weights, not the frozen T0 scorer's `np.gradient`
+trapezoid weights (H_GRID_41 is non-uniform: 0.010 wings / 0.005 peak), and the "banked mean_h"
+column therefore does not equal the row #213 published numbers. Orchestrator re-derived with the
+reference implementation (`bscale_counterfactual_exploratory.py:23-30`) and reproduces the
+verifier exactly. **Corrected numbers of record:**
+
+| venue | banked 2D mean_h | wave-3 2D mean_h | Δmean_h | verdict |
+|---|---|---|---|---|
+| iiib | 0.663347 | 0.665854 | **+0.002507** | **A14 PASS** (31.3 % of T_mat) |
+| joint_r1 | 0.663013 | 0.667127 | **+0.004114** | **A14 PASS** (51.4 % of T_mat) |
+
+1D: bit-identical at all 41 nodes, both venues (stronger than the rounding-identity reported
+above). MAP moves are weighting-independent (iiib none; joint_r1 0.660→0.665). The corrected
+iiib delta lands on the §8 registered point prediction (≈ +0.0025). **The A14 PASS verdict
+stands; only the numbers change.** Verifier [DO] adopted: the T0 scorer is to be frozen as an
+importable helper with the §C.1 numbers as a regression test before the next readout.

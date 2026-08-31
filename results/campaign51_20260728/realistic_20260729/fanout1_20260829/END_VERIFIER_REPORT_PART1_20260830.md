@@ -311,3 +311,256 @@ readout itself (item 20, SSH). Seventeen decisions return to the author; none wa
 inherit-tier, `xhigh`; inputs: 11 sonnet verifier verdicts + item-12 fragment, the dedup memo,
 registration §1/§3/§5, dockets 1–2, ledger rows #221–#253, and the eight orphaned verifier
 scripts executed in foreground (`verifier_pass/item1{2..9}_rederive*.py`). Append-only.*
+
+---
+
+# PART 2 — ITEM 20 (deferred): the wave-3 blind HEAD readout and its A14 delta read
+
+*Appended 2026-08-31. Append-only: nothing above this line is edited. Verifier: opus, foreground,
+read-only (no ssh, no commit, no code edit); ordered by the author, ledger row #278 item 6;
+falsification brief A20 (re-derive every decisive number from source; refuted and undetermined are
+valued verdicts). Subject: wave3_20260830/WAVE3_A14_DELTA_READ_20260831.md and ledger rows
+#281/#283. Scratch and scripts: tree2_20260830/full_verification_20260831/work/item20_*.py.*
+
+## P2.1 Verdict table
+
+| # | claim | verdict |
+|---|---|---|
+| 1 | C0-prime off-gate PASS, bit-identical, both venues (row #281) | **CONFIRMED** |
+| 2a | A14 verdict: NOT MATERIAL, both venues inside T_mat = 0.008 | **CONFIRMED** |
+| 2b | the specific numbers in the record (banked mean_h, wave-3 mean_h, Delta) | **REFUTED** — computed with unweighted grid nodes, not the frozen T0 gradient-trapezoid weights |
+| 2c | 1D channel exact-zero, both venues | **CONFIRMED** (bit-identical, not merely rounding-identical) |
+| 2d | MAP moves: iiib 0.665 to 0.665; joint_r1 0.660 to 0.665 | **CONFIRMED** |
+| 3 | STOP-checks: 41 h x 1588 events, zero non-positive, commit 1e092e82, pins OK | **CONFIRMED** |
+| 4 | scorer cross-check vs compute_canonical_combined_posterior, tol 1e-6 on discrete_map | **CONFIRMED** (1D channel; see P2.5 for what was and was not run) |
+| 5 | registration conformance with PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md section 8 | **CONFIRMED WITH TWO CAVEATS** (P2.6) |
+| 20a | F2: the mz_sel/eff flip is the only production-default change riding the readout | **CONFIRMED** |
+| 20b | delta compared to the same T_mat = 0.008; no per-change attribution from a blind multi-change delta | **CONFIRMED** (the A14 arm is itself the registered per-change arm) |
+| 20c | falsifier (ii) unrun status disclosed as still provisional | **CONFIRMED** |
+
+**Net: the record's A14 PASS STANDS.** The verdict is robust to the scorer error found in P2.3 —
+under the frozen convention the deltas grow but stay at 31 and 51 percent of T_mat. The published
+numbers, however, are wrong and the record mislabels its own scorer.
+
+## P2.2 Claim 1 — the C0-prime gate (row #281): CONFIRMED
+
+Re-run independently (item20_c0prime.py). Comparison of
+wave3_20260830/c0prime_off_{venue}/simulations/diagnostics/event_likelihoods.csv against
+headreadout_20260827/{venue}/event_likelihoods.csv, restricted to h = 0.73, 1588 rows each,
+event_idx sets element-wise equal after sort:
+
+- **max_abs = 0.000000e+00 on every one of the 14 numeric columns** (w_G, w_G_legacy, w_tilde_G,
+  alpha_G_phi, r_Malm, D_tilde_phi, L_cat_no_bh, L_cat_with_bh, B_num, B_num_wbh, g_frac, L_comp,
+  combined_no_bh, combined_with_bh), both venues. Claimed max_abs 0.000; re-derived 0.000e+00.
+- md5 of the four posterior JSON pairs, all identical:
+  iiib/posteriors/h_0_73.json 563ef45b0598dcfc8f5c9ba19efbf9fd;
+  iiib/posteriors_with_bh_mass/h_0_73.json 2b4fb3e0d055e08fe7a905b8d3c4d817;
+  joint_r1/posteriors/h_0_73.json 681364526966e835696946c4733456bb;
+  joint_r1/posteriors_with_bh_mass/h_0_73.json ee0ecb5cb7ad0c9d0bfbf22b9551ca98.
+
+The wave-3 CSV carries three extra columns (den_log_term, num_log_term_no_bh,
+num_log_term_with_bh) absent from the banked CSV; these are new diagnostics, outside the
+registered 14-column band, and correctly excluded from the comparison.
+
+## P2.3 Claim 2 — the A14 delta: verdict CONFIRMED, numbers REFUTED
+
+The frozen T0 convention is stated at MEASUREMENT_HEAD_READOUT_20260827.md:58-78 and points at
+results/prod2d_closure_20260818/bscale_counterfactual_exploratory.py:23-30. I read that reference
+implementation directly. It is: ln P(h_k) = sum_i ln L_i(h_k) over events (uniform prior, raw sum
+log L); **w_k = np.gradient(h)_k**; p_k proportional to exp(ln P - max ln P) times w_k, normalised;
+mean_h = sum p_k h_k; MAP = discrete grid argmax. No floor, no clipping.
+
+H_GRID_41 is **non-uniform** (0.010 step in the wings, 0.005 across the peak 0.655 to 0.785), so
+np.gradient weights are NOT constant: 0.010 on nodes 0-4, 0.0075 at node 5, 0.005 on nodes 6-32,
+0.0075 at node 33, 0.010 on nodes 34-40. Dropping the weights therefore changes mean_h at the
+third decimal. That is exactly what happened.
+
+Re-derived under the frozen convention (item20_a14.py, item20_1d.py):
+
+| venue | channel | banked mean_h | wave-3 mean_h | Delta |
+|---|---|---|---|---|
+| iiib | 2D | **0.663347** | **0.665854** | **+0.002507** |
+| iiib | 1D | 0.605309 | 0.605309 | +0.000000 |
+| joint_r1 | 2D | **0.663013** | **0.667127** | **+0.004114** |
+| joint_r1 | 1D | 0.611683 | 0.611683 | +0.000000 |
+
+Decisive pairs, claimed vs re-derived: iiib 2D Delta **+0.002127 claimed vs +0.002507
+re-derived**; joint_r1 2D Delta **+0.003519 claimed vs +0.004114 re-derived**.
+
+**The mechanism is identified, not merely asserted.** Scoring the same four CSVs with UNIFORM
+(all-ones) node weights reproduces every published figure to the digit:
+iiib banked 0.666425 (published 0.66643), wave-3 0.668552 (published 0.66855), Delta +0.002127
+(published +0.002127); joint_r1 banked 0.666218 (published 0.66622), wave-3 0.669737 (published
+0.66974), Delta +0.003519 (published +0.003519); 1D unweighted 0.605322 (published 0.60532) and
+0.611888 (published 0.61189). All six 2D figures and both 1D figures match the unweighted variant
+exactly and the weighted variant not at all. The record's own phrase "discrete posterior on the
+41-grid" is the tell: the grid was treated as if uniform.
+
+**Two independent corroborations that the gradient-weighted numbers are the correct ones.**
+(i) The banked column is checkable against the banked record: MEASUREMENT_HEAD_READOUT_20260827.md
+section C.1/C.2 (lines 706-707, 723-724) publishes mean_h 0.663347 (iiib 2D), 0.663013 (joint_r1
+2D), 0.605309 (iiib 1D), 0.611683 (joint_r1 1D) — identical to my re-derivation to all six
+decimals, and NOT equal to the delta read's 0.66643/0.66622/0.60532/0.61189. The delta read's
+"banked mean_h" column therefore does not contain the banked row #213 numbers at all, despite the
+document asserting "same scorer as the banked row #213 readout" and row #283 asserting "Frozen T0
+scorer". (ii) Section 8's own registered REPORTED-ONLY point prediction for iiib is
+Delta-mean_h approximately +0.0025. The gradient-weighted re-derivation gives **+0.002507**; the
+published unweighted figure gives +0.002127. The registered prediction lands on the corrected
+number, not the published one.
+
+**Consequence for the verdict.** T_mat = 0.008. Corrected deltas +0.002507 and +0.004114 are 31.3
+and 51.4 percent of T_mat (the record claimed 26.6 and 44.0 percent). Both remain strictly inside
+the band and the sign is unchanged (upward, toward truth), so **A14 PASS is unaffected** and no
+part of section 8's falsification map is triggered. The finding is a numerical-accuracy and
+record-integrity defect, not a verdict reversal. The record's narrative phrase "a quarter to a
+half of T_mat" happens to survive the correction ("a third to a half" would be exact).
+
+**1D exact-zero is stronger than reported.** The per-node summed log-likelihood vectors are
+bit-identical between arms: max over the 41 nodes of |sum_i ln L_i(wave3) - sum_i ln L_i(banked)|
+= **0.000e+00** for combined_no_bh on both venues (for combined_with_bh it is 3.536 on iiib and
+4.593 on joint_r1). So the 1D exact-zero is not an artifact of rounding at 5 decimals and is
+independent of the weighting bug — it holds under both conventions.
+
+**MAP: CONFIRMED.** Discrete grid argmax, 2D channel: iiib banked 0.665 to wave-3 0.665 (no move);
+joint_r1 banked 0.660 to wave-3 0.665 (one grid step, 0.005). Matches the record. 1D MAP 0.600 in
+all four cells. MAP is weighting-independent, so this claim is untouched by P2.3's defect.
+
+## P2.4 Claim 3 — STOP-checks: CONFIRMED
+
+Re-derived from the wave-3 CSVs (item20_stop.py), both venues:
+
+- 41 distinct h, matching H_GRID_41 (imported from darksiren_emri.validation.correspondence_1d)
+  element-wise; 1588 distinct event_idx; 65108 rows = 41 x 1588 exactly.
+- Zero duplicate (event_idx, h) pairs.
+- Event-id set equals the banked headreadout set exactly, both venues.
+- **Zero non-positive values in combined_no_bh and in combined_with_bh**, both venues, both
+  channels (also zero in the banked CSVs). No sentinel signal.
+- 41 h_*.json in posteriors/ and 41 in posteriors_with_bh_mass/, both venues. (joint_r1 carries
+  one additional file, realization_provenance.json, in each directory — provenance, not a grid
+  node; not a defect.)
+- Provenance: all 41 run_metadata_*.json per venue carry
+  git_commit = 1e092e82a7fea45fd20c23dfdbc2b96e562be322, i.e. **1e092e82**, unanimous, 82/82.
+  The key is spelled git_commit, not GIT_COMMIT_AT_RUN as the dispatch put it; same field.
+- Dataset pins: 41 of 41 logs per venue carry a "dataset pins OK" line —
+  CRB=9a1f2a14384a9281c97ca3be312ddaab, catalogue=c52c13b5cab61f6b3f04bbe202550969, and for
+  joint_r1 additionally observed_catalogue=e8f7ab310ea70ddfdd3b81970dc99ad943808e6b6c128777bb085db01b4f6751.
+  These match the hashes quoted in row #281.
+
+## P2.5 Claim 4 — scorer cross-check: CONFIRMED (1D channel)
+
+**What I ran:** compute_canonical_combined_posterior on
+wave3_20260830/iiib/simulations/posteriors/ (the 1D / no-BH channel, 2.0 MB) against the section
+1.3 CSV scorer on combined_no_bh from the same run (item20_xcheck.py). **What I did not run:** the
+with-BH channel — wave3_20260830/iiib/simulations/posteriors_with_bh_mass/ is 5.1 GB, above what
+this foreground pass should load, and the dispatch explicitly permitted the 1D-only substitution.
+The 2D cross-check therefore remains **unverified by me** and rests on the run's own section 5
+STOP-check.
+
+Result, 1D channel, iiib: combine path n_events_used = 1588, discrete_map = 0.600,
+continuous_map = 0.600, mean_h = 0.605309; CSV scorer mean_h = 0.605309, MAP = 0.600.
+**|delta discrete_map| = 0.0** (tolerance 1e-6, passes with margin); |delta mean_h| = 2.10e-14;
+max absolute difference of the peak-aligned log-posterior shape across the 41 nodes = 1.82e-11.
+Both floating-point noise. The two independent code paths agree.
+
+Note that this cross-check is itself evidence for P2.3: the production combine path, run over the
+posterior JSONs, yields mean_h 0.605309 — the gradient-weighted value — not the delta read's
+0.60532.
+
+## P2.6 Claim 5 — registration conformance: CONFIRMED WITH TWO CAVEATS
+
+Against PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md section 8:
+
+| section 8 requirement | as read | conformance |
+|---|---|---|
+| threshold: two-sided, band = ratified T_mat = 0.008 | 0.008 cited and applied two-sided | conforms |
+| channel: 2D (with-BH) posterior mean_h | combined_with_bh | conforms |
+| venues: BOTH iiib and joint_r1 | both read, both inside | conforms |
+| grid: H_GRID_41 | 41 nodes, element-wise match | conforms |
+| baseline: HEAD default vs HEAD + explicit off | banked 2026-08-27 readout, substituted for the HEAD off-arm under the row #281 C0-prime certification | conforms, with caveat A |
+| A22-stamped | stamp set registered at the adoption doc line 519 | not re-verified here (out of the dispatch's five claims) |
+| scorer | frozen T0 convention | **MISMATCH — see P2.3** |
+
+**Caveat A (scope of the baseline certification).** Section 8 registers a per-change arm at HEAD.
+The C0-prime gate that licenses using the banked readout in place of that arm was run at
+**h = 0.73 only** — I confirmed the c0prime_off CSVs contain exactly 1 distinct h value (0.730),
+1588 events. The A14 delta, by contrast, is a functional of all 41 nodes. The substitution is
+therefore certified at one node out of forty-one. This is the C0-prime gate's registered design
+(REGISTRATION_C0_BASELINE_GATE_20260829.md section 14), not a deviation from it, and the 1D
+channel's bit-identical sum-log-L across all 41 nodes (P2.3) is strong corroboration that the
+off-arm is unchanged grid-wide; but the record should say "certified at h = 0.73, corroborated
+grid-wide by the 1D leg" rather than "baseline certified" unqualified. **Undetermined, disclosed —
+not refuted.**
+
+**Caveat B (the scorer mismatch of P2.3).** The read does not follow the frozen T0 convention the
+registration names. Quoting the mismatch: the record says *"the frozen T0 CSV convention (Sigma ln
+combined over events per h; discrete posterior on the 41-grid) — same scorer as the banked row
+#213 readout"* (WAVE3_A14_DELTA_READ_20260831.md), and row #283 says *"Frozen T0 scorer vs the
+C0-prime-certified banked baseline"*. The frozen convention is *"w_k = np.gradient(h)_k
+(gradient-trapezoid weights, P7-2a)"* (MEASUREMENT_HEAD_READOUT_20260827.md:71-ish, section 1.3).
+The read used unit weights. Because the delta read's "banked" column was recomputed with the same
+wrong weights rather than copied from the banked record, the error is partially self-cancelling
+and the verdict survives; had the read instead differenced its wave-3 unweighted 0.66855 against
+the banked record's published 0.663347, it would have reported a spurious +0.005 delta.
+
+## P2.7 Item 20's own three checks (a), (b), (c)
+
+**(a) F2 — serialized adoption. CONFIRMED.** Diffing the source tree between the banked readout's
+commit (d04d9dc9, from headreadout_20260827/iiib/run_metadata_21.json) and the wave-3 commit
+(1e092e82): in darksiren_emri/arguments.py exactly **two** default values are *changed*, and they
+are the B7.3 pair — catalogue_numerator_survival_2d from "off" to "mz_sel", and its center from
+"unset" to "eff". Every other default appearing in that diff is on a *newly added* flag
+(mass_filter_geometry="linear", mass_filter_k=1.5, theta_b=0.0, theta_s=1.0, theta_sites="all",
+theta_phi_divisor="off", sky_cone_k=1.5, theta_zwindow="off", z_window_k=1.0,
+catalogue_leg_1d_mass_aware="off", candidate_dump_dir=None) — identity-or-off defaults, each
+introduced by a [PHYSICS] commit that declared itself byte-identical at its default. That
+declaration is not merely trusted here: the C0-prime gate is the empirical proof, since running
+HEAD with the one flag forced back to "off" reproduces the pre-adoption readout **bit-exactly**
+across all 14 columns and all four posterior JSONs. No second production-default change rides this
+readout. **No F2 violation found.**
+
+**(b) T_mat and the attribution prohibition. CONFIRMED.** The same T_mat = 0.008 of items 8/11/12
+is used, sourced to MEASUREMENT_HEAD_READOUT_20260827.md:268-285 and row #213. On the F3/F2
+prohibition ("any per-change attribution comes only from registered arms, never from the readout's
+delta"): the delta read *does* attribute its delta to the single production change, but this is
+**not** the prohibited move, because section 8 registers the A14 arm as itself the per-change arm
+(HEAD default vs HEAD-plus-explicit-off) and the C0-prime PASS makes the banked readout a valid
+stand-in for that arm's off leg. The readout is a one-change delta by construction, not a blind
+multi-change delta being retro-attributed. The strength of that construction is exactly caveat A's
+one-node certification, which is where a future challenge would land.
+
+**(c) Falsifier (ii). CONFIRMED as disclosed.** The record states, unprompted, that ratification
+*"remains pending falsifier (ii) (class-G fleet Option A-prime rung 1, not yet run)"* and that A4
+therefore *"RETURNS to the author with these numbers rather than auto-ratifying"*. Row #283 repeats
+it. Still-unrun status is explicitly disclosed as provisional; not discharged, and not claimed to
+be.
+
+## P2.8 Findings returned to the author
+
+1. **[RULE] Correct the published A14 numbers.** WAVE3_A14_DELTA_READ_20260831.md and ledger row
+   #283 carry mean_h and Delta figures computed with unit grid weights instead of the registered
+   np.gradient weights on a non-uniform grid. Corrected: iiib 2D 0.663347 to 0.665854,
+   Delta +0.002507; joint_r1 2D 0.663013 to 0.667127, Delta +0.004114; 1D 0.605309 and 0.611683,
+   Delta exactly 0. **A14 PASS is unchanged.** An append-only correction note is the appropriate
+   repair; the verdict does not need re-adjudication.
+2. **[RULE] The "banked mean_h" column is mislabelled.** It is not the banked row #213 readout's
+   published mean_h (0.663347 / 0.663013 / 0.605309 / 0.611683, MEASUREMENT_HEAD_READOUT
+   section C.1-C.2) but a re-score of the banked CSV under the wrong weights. Any downstream reader
+   diffing the two documents will see an unexplained 0.003 discrepancy in the *baseline*.
+3. **[DO, cheap] Freeze the scorer as code, not as prose.** Three independent readouts have now
+   restated the T0 convention in English and one has drifted from it. A single importable
+   score_t0(csv, channel) helper, with the banked section C.1 numbers as a regression test, removes
+   this failure mode permanently. Cost: under an hour, no physics change.
+4. **[Disclosure] Baseline certification is one-node.** Caveat A. Recommend the record's wording be
+   qualified; optionally, a cheap grid-wide corroboration already exists (the 1D bit-identity) and
+   should be cited in place of a new 82-task off-array.
+5. **[Not verified here] The 2D scorer-vs-combine cross-check** (5.1 GB posteriors_with_bh_mass)
+   was not re-run. The 1D leg passes at 0.0 on discrete_map; the 2D leg rests on the run's own
+   STOP-check.
+
+---
+
+*Item 20 discharged. 10 confirmed, 1 confirmed-with-caveats, 1 refuted (the delta read's published
+numbers), 0 verdict reversals. **The record's A14 PASS stands.** Read-only pass; no file above the
+Part 2 divider was edited, no commit made, no code changed. Scripts: item20_c0prime.py,
+item20_a14.py, item20_variants.py, item20_1d.py, item20_stop.py, item20_xcheck.py under
+tree2_20260830/full_verification_20260831/work/.*
