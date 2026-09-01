@@ -25,6 +25,7 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -479,3 +480,264 @@ def test_score_s_equals_score_lns_minus_es_null_det_by_construction(driver: obje
     assert channel["score_s"]["mean"] == pytest.approx(
         channel["score_lns"]["mean"] - mean_es_null_det
     )
+
+
+# ===========================================================================
+# PA-HIER-33 (ratified rows #278/#280 via the T1.4 Richardson falsifier,
+# row #275; row #290 "b-pahier33-scorer" build task): the arm's-own-null
+# Bartlett-identity scorer, `driver.compute_es_null_arm` /
+# `compute_scores`'s `score_pahier33` key. Registration-form rule:
+# PREREGISTRATION_HIER_HTHETA_20260826.md section 5 ("Rule"), reproduced
+# verbatim in this module's docstring comment above `compute_es_null_arm`.
+# ===========================================================================
+
+
+def test_compute_es_null_arm_matches_hand_derivation(driver: object) -> None:
+    """Hand-derive Es_null^{(arm)} = (Delta^2/6)*(-3<l'l''> - <l'^3>) for a
+    tiny 3-event toy and compare against the driver's implementation
+    (bootstrap disabled, n_bootstrap=0, for a pure point-estimate check)."""
+    delta = math.log(2.0) / 2.0
+    l0 = np.array([0.0, 0.1, -0.2])
+    l_plus = np.array([0.30, 0.55, 0.10])
+    l_minus = np.array([0.10, 0.20, -0.05])
+
+    lprime = (l_plus - l_minus) / (2.0 * delta)
+    ldbl = (l_plus - 2.0 * l0 + l_minus) / (delta**2)
+    expected = (delta**2 / 6.0) * (-3.0 * np.mean(lprime * ldbl) - np.mean(lprime**3))
+
+    es_null, bootstrap_sd = driver.compute_es_null_arm(  # type: ignore[attr-defined]
+        l_plus, l0, l_minus, delta=delta, n_bootstrap=0
+    )
+    assert es_null == pytest.approx(expected)
+    assert bootstrap_sd == 0.0
+
+
+def test_compute_es_null_arm_default_delta_is_ln_sqrt2(driver: object) -> None:
+    """Default delta = ln(sqrt(2)) -- PA-HIER-4's registered s-node grid
+    (s = sqrt(2), 1/sqrt(2)), so 2*delta == ln(2) and l' is IDENTICALLY
+    score_lns's own denominator."""
+    assert driver._DELTA == pytest.approx(math.log(2.0) / 2.0)  # type: ignore[attr-defined]
+    assert 2.0 * driver._DELTA == pytest.approx(math.log(2.0))  # type: ignore[attr-defined]
+
+
+def test_compute_es_null_arm_bootstrap_sd_is_finite_and_nonnegative(driver: object) -> None:
+    rng = np.random.default_rng(42)
+    n = 50
+    l0 = rng.normal(size=n)
+    l_plus = l0 + rng.normal(scale=0.1, size=n) + 0.05
+    l_minus = l0 - rng.normal(scale=0.1, size=n) - 0.05
+    es_null, bootstrap_sd = driver.compute_es_null_arm(  # type: ignore[attr-defined]
+        l_plus, l0, l_minus, n_bootstrap=200, bootstrap_seed=1
+    )
+    assert math.isfinite(es_null)
+    assert math.isfinite(bootstrap_sd)
+    assert bootstrap_sd >= 0.0
+
+
+def test_compute_es_null_arm_requires_matching_shapes(driver: object) -> None:
+    with pytest.raises(ValueError, match="must share one shape"):
+        driver.compute_es_null_arm(  # type: ignore[attr-defined]
+            np.array([0.1, 0.2]), np.array([0.0]), np.array([-0.1, -0.2])
+        )
+
+
+def test_compute_es_null_arm_returns_nan_below_two_finite_events(driver: object) -> None:
+    es_null, bootstrap_sd = driver.compute_es_null_arm(  # type: ignore[attr-defined]
+        np.array([0.1]), np.array([0.0]), np.array([-0.1]), n_bootstrap=10
+    )
+    assert math.isnan(es_null)
+    assert math.isnan(bootstrap_sd)
+
+
+def test_seed_clustered_sem_matches_hand_derivation(driver: object) -> None:
+    values = pd.Series([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+    seeds = pd.Series([1, 1, 2, 2, 3, 3])
+    sem, n_seeds = driver._seed_clustered_sem(values, seeds)  # type: ignore[attr-defined]
+    per_seed_means = np.array([1.5, 3.5, 5.5])
+    expected_sem = float(np.std(per_seed_means, ddof=1) / math.sqrt(3))
+    assert n_seeds == 3
+    assert sem == pytest.approx(expected_sem)
+
+
+def test_seed_clustered_sem_nan_below_two_seeds(driver: object) -> None:
+    sem, n_seeds = driver._seed_clustered_sem(  # type: ignore[attr-defined]
+        pd.Series([1.0, 2.0]), pd.Series([1, 1])
+    )
+    assert n_seeds == 1
+    assert math.isnan(sem)
+
+
+def test_compute_scores_score_pahier33_requires_truth_and_s_axis(driver: object) -> None:
+    """score_pahier33 is available only when BOTH the s-axis (s_plus/
+    s_minus) AND the truth node are present -- neither has_s alone (as
+    score_lns/score_s already require) nor has_truth alone is sufficient."""
+    truth = pd.DataFrame(
+        {"event_idx": [0, 1, 2], "ln_L_no_bh": [0.0, 0.1, -0.2], "ln_L_with_bh": [0.0, 0.1, -0.2]}
+    )
+    s_plus = pd.DataFrame(
+        {
+            "event_idx": [0, 1, 2],
+            "ln_L_no_bh": [0.30, 0.55, 0.10],
+            "ln_L_with_bh": [0.30, 0.55, 0.10],
+        }
+    )
+    s_minus = pd.DataFrame(
+        {
+            "event_idx": [0, 1, 2],
+            "ln_L_no_bh": [0.10, 0.20, -0.05],
+            "ln_L_with_bh": [0.10, 0.20, -0.05],
+        }
+    )
+    all_nodes = {
+        "truth": [_node_result(driver, "truth", 0.0, 1.0, truth)],
+        "s_plus": [_node_result(driver, "s_plus", 0.0, math.sqrt(2.0), s_plus)],
+        "s_minus": [_node_result(driver, "s_minus", 0.0, 1.0 / math.sqrt(2.0), s_minus)],
+    }
+    scores = driver.compute_scores(all_nodes, seeds=(1,))  # type: ignore[attr-defined]
+    channel = scores["ln_L_no_bh"]
+
+    assert channel["score_pahier33_available"] is True
+    assert channel["score_pahier33"]["n_pooled"] == 3
+
+    delta = math.log(2.0) / 2.0
+    l0 = np.array([0.0, 0.1, -0.2])
+    l_plus = np.array([0.30, 0.55, 0.10])
+    l_minus = np.array([0.10, 0.20, -0.05])
+    es_null_expected, _ = driver.compute_es_null_arm(  # type: ignore[attr-defined]
+        l_plus, l0, l_minus, delta=delta, n_bootstrap=0
+    )
+    mean_lns_expected = float(np.mean((l_plus - l_minus) / math.log(2.0)))
+    assert channel["es_null_arm"]["value"] == pytest.approx(es_null_expected)
+    assert channel["score_pahier33"]["mean"] == pytest.approx(mean_lns_expected - es_null_expected)
+
+
+def test_compute_scores_score_pahier33_unavailable_without_truth(driver: object) -> None:
+    """The s-axis alone (score_lns/score_s's own requirement) is NOT
+    sufficient for score_pahier33 -- it additionally needs the truth node's
+    l_i(0), which score_lns/score_s never require."""
+    s_plus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [0.30, 0.40], "ln_L_with_bh": [0.30, 0.40]}
+    )
+    s_minus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [0.10, 0.20], "ln_L_with_bh": [0.10, 0.20]}
+    )
+    all_nodes = {
+        "truth": [],
+        "s_plus": [_node_result(driver, "s_plus", 0.0, math.sqrt(2.0), s_plus)],
+        "s_minus": [_node_result(driver, "s_minus", 0.0, 1.0 / math.sqrt(2.0), s_minus)],
+    }
+    scores = driver.compute_scores(all_nodes, seeds=(1,))  # type: ignore[attr-defined]
+    channel = scores["ln_L_no_bh"]
+    assert channel["score_pahier33_available"] is False
+    assert channel["score_pahier33"]["n_pooled"] == 0
+    assert math.isnan(channel["score_pahier33"]["mean"])
+
+
+def test_compute_scores_score_pahier33_unavailable_on_b_only_node_dict(driver: object) -> None:
+    """runner-11's own 8-cell b-node pair shape (row #287): neither the
+    s-axis nor truth is present -- score_pahier33 must degrade, never
+    raise, exactly like score_b_available/score_s_available/gate_eng
+    already do for this node-dict shape."""
+    b_plus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [0.1, 0.2], "ln_L_with_bh": [0.1, 0.2]}
+    )
+    b_minus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [-0.1, -0.2], "ln_L_with_bh": [-0.1, -0.2]}
+    )
+    all_nodes = {
+        "b_plus": [_node_result(driver, "b_plus", 0.02, 1.0, b_plus)],
+        "b_minus": [_node_result(driver, "b_minus", -0.02, 1.0, b_minus)],
+    }
+    scores = driver.compute_scores(all_nodes, seeds=(1,))  # type: ignore[attr-defined]
+    channel = scores["ln_L_no_bh"]
+    assert channel["score_pahier33_available"] is False
+    assert channel["score_pahier33"]["n_pooled"] == 0
+
+
+# ===========================================================================
+# iiib (CoR-P production) venue path -- S0-B's precondition (row #290
+# "b-pahier33-scorer" build task; PA-HIER-31 sec 1/(d)/(g)).
+# ===========================================================================
+
+
+def test_config_choices_includes_iiib(driver: object) -> None:
+    assert driver.CONFIG_CHOICES == ("b0i", "ft", "iiib")  # type: ignore[attr-defined]
+
+
+def test_build_iiib_venue_rejects_non_identity_sigma_z_scale(
+    driver: object, tmp_path: Path
+) -> None:
+    with pytest.raises(ValueError, match="sigma_z_scale must be 1.0"):
+        driver.build_iiib_venue(tmp_path, 900101, sigma_z_scale=1.5)  # type: ignore[attr-defined]
+
+
+def test_build_iiib_venue_stops_on_crb_pin_mismatch(
+    driver: object, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(driver.c1d, "check_crb_pin", lambda: False)  # type: ignore[attr-defined]
+    with pytest.raises(RuntimeError, match="CRB CSV pin mismatch"):
+        driver.build_iiib_venue(tmp_path, 900101)  # type: ignore[attr-defined]
+
+
+def test_build_iiib_venue_stops_on_reduced_catalogue_pin_mismatch(
+    driver: object, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(driver.c1d, "check_crb_pin", lambda: True)  # type: ignore[attr-defined]
+    monkeypatch.setattr(driver.c1d, "check_reduced_catalogue_pin", lambda: False)  # type: ignore[attr-defined]
+    with pytest.raises(RuntimeError, match="reduced-catalogue pin mismatch"):
+        driver.build_iiib_venue(tmp_path, 900101)  # type: ignore[attr-defined]
+
+
+def test_build_iiib_venue_loads_the_real_pinned_inputs_when_pins_pass(
+    driver: object, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No mirror realization is drawn -- events/handler come from the two
+    pinned loaders, called with the pinned paths, verbatim (dataset
+    pinning discipline: this test never touches the REAL multi-GB files,
+    it substitutes a tiny fixture CSV and a sentinel handler and checks
+    the wiring, not the real data)."""
+    fake_crb_path = tmp_path / "fake_crb.csv"
+    fake_events = pd.DataFrame({"event_idx": [0, 1], "some_col": [1.0, 2.0]})
+    fake_events.to_csv(fake_crb_path, index=False)
+
+    sentinel_handler = object()
+    calls: list[str] = []
+
+    def _fake_loader(catalogue_path: str) -> object:
+        calls.append(catalogue_path)
+        assert catalogue_path == driver.c1d.REDUCED_CATALOGUE_PATH  # type: ignore[attr-defined]
+        return sentinel_handler
+
+    monkeypatch.setattr(driver.c1d, "check_crb_pin", lambda: True)  # type: ignore[attr-defined]
+    monkeypatch.setattr(driver.c1d, "check_reduced_catalogue_pin", lambda: True)  # type: ignore[attr-defined]
+    monkeypatch.setattr(driver.c1d, "CRB_CSV_PATH", str(fake_crb_path))  # type: ignore[attr-defined]
+    monkeypatch.setattr(driver.c1d, "_load_galaxy_catalog_handler", _fake_loader)  # type: ignore[attr-defined]
+
+    events, handler = driver.build_iiib_venue(tmp_path, 900101)  # type: ignore[attr-defined]
+
+    pd.testing.assert_frame_equal(events, fake_events)
+    assert handler is sentinel_handler
+    assert calls == [driver.c1d.REDUCED_CATALOGUE_PATH]  # type: ignore[attr-defined]
+
+
+def test_build_venue_dispatches_iiib(
+    driver: object, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sentinel = (pd.DataFrame({"event_idx": [0]}), object())
+    called_with: dict[str, object] = {}
+
+    def _fake_build_iiib_venue(work_root: Path, seed: int, sigma_z_scale: float = 1.0) -> object:
+        called_with["work_root"] = work_root
+        called_with["seed"] = seed
+        called_with["sigma_z_scale"] = sigma_z_scale
+        return sentinel
+
+    monkeypatch.setattr(driver, "build_iiib_venue", _fake_build_iiib_venue)
+    result = driver._build_venue("iiib", tmp_path, 900101, 1.0)  # type: ignore[attr-defined]
+    assert result is sentinel
+    assert called_with == {"work_root": tmp_path, "seed": 900101, "sigma_z_scale": 1.0}
+
+
+def test_build_venue_rejects_unknown_config(driver: object, tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="config must be one of"):
+        driver._build_venue("bogus", tmp_path, 900101, 1.0)  # type: ignore[attr-defined]

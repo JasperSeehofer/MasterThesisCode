@@ -132,9 +132,40 @@ FT_EVENT_MEASURE = "ratio"  # c1d.ARM_EVENT_MEASURE["bsel"]
 FT_SIGMA_Z_SCALE: float = 1.0  # c1d.ARM_SPECS["bsel"][0]
 FT_AREA_SCALE: float = 1.0  # c1d.ARM_SPECS["bsel"][1]
 
+# iiib (CoR-P production) venue flags -- PA-HIER-31(g), CLI flags verbatim
+# from `headreadout_20260827/iiib/run_metadata_21.json:cli_args`: fused
+# completion cell, "phi" global selection (the JSON has no explicit
+# `catalogue_numerator_survival` key -- it is left at run_mirror_seed_
+# inprocess's own "auto" default, which resolves to "phi" under
+# normalization_mode="absolute_marginal", the SAME resolution the ft config
+# above already documents as implicit -- pinned EXPLICITLY here instead,
+# since PA-HIER-31(g) names "phi" by value, not by mechanism).
+# normalization_mode="absolute_marginal"/host_z_kernel="volume_deconv" are
+# NOT config-specific -- run_mirror_seed_inprocess's PRODUCTION_FLAGS
+# hardcodes both unconditionally for b0i/ft/iiib alike (module docstring
+# above, "Venue (bc / b0i" note; PA-HIER-31 §2.4's CoR-P bullet). The
+# CoR-P-faithful `theta_sites="2.2"` + `smear_global_selection=False` pair
+# (PA-HIER-31(b)) is a CALLER responsibility (run_theta_node's own
+# theta_sites/smear kwargs), not a venue-construction concern -- exactly
+# like theta_sites/smear are for b0i/ft.
+IIIB_CATALOGUE_NUMERATOR_SURVIVAL = "phi"
+IIIB_CATALOGUE_GLOBAL_SELECTION = "phi"
+IIIB_COMPLETION_CELL = "fused"
+IIIB_EVENT_MEASURE = "ratio"
+# mass_filter_geometry/mass_filter_k -- PA-HIER-31(g): "plus explicit
+# --mass_filter_geometry linear --mass_filter_k 1.5" (the banked
+# run_metadata_21.json predates the geometry flag's existence; these two
+# values are run_mirror_seed_inprocess's own defaults, so passing them
+# explicitly for "iiib" is a documentation pin, not a behaviour change).
+IIIB_MASS_FILTER_GEOMETRY = "linear"
+IIIB_MASS_FILTER_K = 1.5
+
 # --config choices (b0i = pre-existing hardcoded bc venue, unchanged default;
-# ft = KW-Q1's B-SEL/phi/fused venue, new).
-CONFIG_CHOICES: tuple[str, ...] = ("b0i", "ft")
+# ft = KW-Q1's B-SEL/phi/fused venue; iiib = CoR-P production venue -- S0-B's
+# precondition, PA-HIER-31 §1/(d)/(g), row #287 "S0-B's remaining
+# precondition is the PA-HIER-33 scorer implementation + the driver's
+# missing iiib venue path").
+CONFIG_CHOICES: tuple[str, ...] = ("b0i", "ft", "iiib")
 # --theta-sites choices: exactly evaluate()'s own validated set
 # (bayesian_statistics.py's theta_sites guard, "all"/"2.1"/"2.2"/"2.3" only --
 # no other string is accepted by the estimator).
@@ -291,15 +322,97 @@ def build_ft_venue(
     return events, handler
 
 
+def build_iiib_venue(
+    work_root: Path, seed: int, sigma_z_scale: float = 1.0
+) -> tuple[pd.DataFrame, Any]:
+    """Build the CoR-P production venue -- the REAL banked/observed
+    scattered catalogue, NOT a mirror realization (S0-B's precondition,
+    PA-HIER-31 §1/(d)/(g); row #287, "the driver's missing iiib venue
+    path").
+
+    Unlike :func:`build_bc_venue`/:func:`build_ft_venue` (which DRAW a
+    synthetic mirror realization via ``MirrorUniverseGenerator``), this
+    function LOADS the real production inputs already on disk and pinned by
+    md5 (dataset pinning, CLAUDE.md 2026-08-20 rule): the seed61000 event
+    realization's prepared CRB rows (``c1d.CRB_CSV_PATH``, pinned
+    ``c1d.CRB_CSV_MD5``, verified via ``c1d.check_crb_pin()``) and the
+    reduced GLADE catalogue (``c1d.REDUCED_CATALOGUE_PATH``, pinned
+    ``c1d.REDUCED_CATALOGUE_MD5``, verified via
+    ``c1d.check_reduced_catalogue_pin()``) -- the SAME two files, same
+    loader functions (``_load_galaxy_catalog_handler``), that production's
+    own ``--evaluate`` reads. No new physics: both loaders and both pins
+    already exist in ``correspondence_1d.py`` (not a physics-trigger file);
+    this function only assembles them into the ``(events, handler)``
+    interface :func:`_build_venue`'s other two branches already return, so
+    the iiib venue can flow through the SAME
+    :func:`run_theta_node`/``run_mirror_seed_inprocess`` pipeline as b0i/ft.
+
+    ``seed`` is threaded through unused here (the real catalogue carries no
+    seed-dependent draw -- there IS no realization step) but kept in the
+    signature for parity with :func:`build_bc_venue`/:func:`build_ft_venue`
+    (``_build_venue``'s shared dispatch signature) and because the caller
+    (:func:`run_theta_node`) still forwards it to ``evaluate()``'s
+    ``base_seed`` (structural only, matching production's own ``main.py``
+    construction -- ``run_mirror_seed_inprocess``'s own docstring).
+
+    ``sigma_z_scale`` has no iiib-venue analogue (the real catalogue's own
+    ``z_error`` column is used as-is, never re-realized at a dosed scale --
+    S0-R's sigma_z_scale=1.5 fork is a CoR-M-only, disclosed-null
+    instrument, PA-HIER-3/22). Anything other than the identity 1.0 is a
+    build error, raised here rather than silently ignored (mirrors
+    :func:`build_ft_venue`'s own ``FT_SIGMA_Z_SCALE`` guard).
+
+    Raises:
+        ValueError: non-identity ``sigma_z_scale``.
+        RuntimeError: either pinned input's md5 does not match (dataset
+            pinning STOP-gate, CLAUDE.md 2026-08-20 rule -- a machine-to-
+            machine copy of "the same" file is not the same file).
+
+    Returns:
+        ``(events, handler)`` -- ``events`` is the REAL production CRB rows
+        (``pd.read_csv(c1d.CRB_CSV_PATH)``, the exact schema
+        :func:`c1d.write_mirror_crb_csv` round-trips); ``handler`` is the
+        REAL ``GalaxyCatalogueHandler`` built from the reduced GLADE
+        catalogue (cached by :func:`c1d._load_galaxy_catalog_handler` --
+        the SAME instance production's own candidate-structure builder
+        would produce over the same file, D-A fidelity).
+    """
+    if sigma_z_scale != 1.0:
+        raise ValueError(
+            f"build_iiib_venue: sigma_z_scale must be 1.0 (no CoR-P dosed-scale analogue), "
+            f"got {sigma_z_scale!r} -- S0-R's dosing is a CoR-M-only disclosed-null instrument "
+            "(PA-HIER-3/22)."
+        )
+    if not c1d.check_crb_pin():
+        raise RuntimeError(
+            f"build_iiib_venue: CRB CSV pin mismatch at {c1d.CRB_CSV_PATH!r} -- expected md5 "
+            f"{c1d.CRB_CSV_MD5!r}. Dataset pinning STOP-gate (CLAUDE.md 2026-08-20 rule): a "
+            "machine-to-machine copy of 'the same' file is not the same file. Do not proceed."
+        )
+    if not c1d.check_reduced_catalogue_pin():
+        raise RuntimeError(
+            f"build_iiib_venue: reduced-catalogue pin mismatch at {c1d.REDUCED_CATALOGUE_PATH!r} "
+            f"-- expected md5 {c1d.REDUCED_CATALOGUE_MD5!r}. Dataset pinning STOP-gate "
+            "(CLAUDE.md 2026-08-20 rule). Do not proceed."
+        )
+    events = pd.read_csv(c1d.CRB_CSV_PATH)
+    handler = c1d._load_galaxy_catalog_handler(c1d.REDUCED_CATALOGUE_PATH)
+    return events, handler
+
+
 def _build_venue(
     config: str, work_root: Path, seed: int, sigma_z_scale: float
 ) -> tuple[pd.DataFrame, Any]:
-    """Dispatch to :func:`build_bc_venue` (``config="b0i"``, unchanged default)
-    or :func:`build_ft_venue` (``config="ft"``, KW-Q1/B4.2, new)."""
+    """Dispatch to :func:`build_bc_venue` (``config="b0i"``, unchanged default),
+    :func:`build_ft_venue` (``config="ft"``, KW-Q1/B4.2), or
+    :func:`build_iiib_venue` (``config="iiib"``, CoR-P production, S0-B's
+    precondition)."""
     if config == "b0i":
         return build_bc_venue(work_root, seed, sigma_z_scale=sigma_z_scale)
     if config == "ft":
         return build_ft_venue(work_root, seed, sigma_z_scale=sigma_z_scale)
+    if config == "iiib":
+        return build_iiib_venue(work_root, seed, sigma_z_scale=sigma_z_scale)
     raise ValueError(f"config must be one of {CONFIG_CHOICES}, got {config!r}")
 
 
@@ -514,6 +627,29 @@ def run_theta_node(
             # resolves to "phi" under absolute_marginal, matching
             # p3_twin_test.py's _run_bsel_seed call site exactly (see
             # FT_CATALOGUE_NUMERATOR_SURVIVAL's docstring comment above).
+            **cat_num_surv_2d_kwargs,
+            **common_kwargs,
+        )
+    elif config == "iiib":
+        # CoR-P production venue (PA-HIER-31 §1/(d)/(g)). normalization_mode
+        # /host_z_kernel are NOT passed here -- run_mirror_seed_inprocess's
+        # own PRODUCTION_FLAGS hardcodes absolute_marginal/volume_deconv
+        # unconditionally, same as b0i/ft. The caller (this function's own
+        # theta_sites/smear_flag kwargs, already in common_kwargs) is
+        # responsible for the CoR-P-faithful theta_sites="2.2" +
+        # smear_global_selection=False pair (PA-HIER-31(b)) -- venue
+        # construction does not force either.
+        diag_csv, elapsed = c1d.run_mirror_seed_inprocess(
+            work_root,
+            events,
+            seed,
+            galaxy_catalog=handler,
+            selection_in_completion_numerator=IIIB_COMPLETION_CELL,
+            completion_event_measure=IIIB_EVENT_MEASURE,
+            catalogue_numerator_survival=IIIB_CATALOGUE_NUMERATOR_SURVIVAL,
+            catalogue_global_selection=IIIB_CATALOGUE_GLOBAL_SELECTION,
+            mass_filter_geometry=IIIB_MASS_FILTER_GEOMETRY,
+            mass_filter_k=IIIB_MASS_FILTER_K,
             **cat_num_surv_2d_kwargs,
             **common_kwargs,
         )
@@ -1115,6 +1251,121 @@ def run_seed_s0c(
     }
 
 
+# ── PA-HIER-33 (ratified rows #278/#280 via the T1.4 Richardson falsifier,
+# row #275): the arm's own null, replacing PA-HIER-32(d)'s single-host
+# closed form. Registration-form text, PREREGISTRATION_HIER_HTHETA_20260826.md
+# section 5 (T1_3_ES_NULL_DET_VALIDITY_20260830.md section 5, "PA-HIER-33 --
+# proposed registration amendment", verbatim rule) ───────────────────────────
+
+_LN2: float = math.log(2.0)
+_DELTA: float = _LN2 / 2.0  # ln(sqrt(2)) -- the s-node half-span, PA-HIER-4's grid
+
+
+def compute_es_null_arm(
+    l_plus: npt.NDArray[np.float64],
+    l0: npt.NDArray[np.float64],
+    l_minus: npt.NDArray[np.float64],
+    delta: float = _DELTA,
+    n_bootstrap: int = 4000,
+    bootstrap_seed: int = 0,
+) -> tuple[float, float]:
+    r"""PA-HIER-33's zero-compute Bartlett-identity null estimate.
+
+    Any correctly specified likelihood satisfies the third Bartlett identity
+    ``E_0[l''' + 3 l' l'' + l'^3] = 0`` (differentiate ``INTEGRAL P^t = 1``
+    three times). PA-HIER-33's registered rule (section 5, "Rule"):
+
+        Es_null^{(arm)} = (Delta^2/6) . [ -3 <l'_i l''_i> - <l'_i^3> ],
+        l'_i  = score_lns_i = (l_i(+Delta) - l_i(-Delta)) / (2 Delta),
+        l''_i = [l_i(+Delta) - 2 l_i(0) + l_i(-Delta)] / Delta^2,
+
+    a POOLED scalar shift (not a per-host table, unlike PA-HIER-32(d)'s
+    ``Es_null_det_i``) -- both moments estimable from the arm's own three
+    s-nodes (truth, s_plus, s_minus) already on disk, at zero extra compute
+    (T1_3_ES_NULL_DET_VALIDITY_20260830.md section 2.3). ``2 Delta = ln(2)``,
+    so ``l'_i`` is IDENTICALLY ``score_lns_i`` as already computed elsewhere
+    in this module -- callers should pass the same array, not recompute it.
+
+    Bootstrap SD (registered: "banked with its bootstrap SD before the band
+    is read"): ``n_bootstrap`` event resamples WITH replacement, same n as
+    the input arrays (T1_3_ES_NULL_DET_VALIDITY_20260830.md section 2.3
+    table caption, "bootstrap SD from 4000 event resamples").
+
+    Args:
+        l_plus: Per-event ``ln L_i(0, +Delta)`` (the s_plus node), shape (n,).
+        l0: Per-event ``ln L_i(0, 0)`` (the truth node), shape (n,), SAME
+            (seed, event_idx) ordering as ``l_plus``/``l_minus``.
+        l_minus: Per-event ``ln L_i(0, -Delta)`` (the s_minus node), shape (n,).
+        delta: The s-node half-span in ln s. Default PA-HIER-4's grid
+            (``ln sqrt(2)``); the T1.4 falsifier's own half-step nodes use a
+            DIFFERENT delta and would need a separate call with that value
+            (not implemented here -- T1.4 is scored by its own Richardson
+            machinery, ``score_lns_R``, which needs no null correction at
+            all per the falsifier's own reading rule).
+        n_bootstrap: Bootstrap resample count. 0 disables bootstrapping
+            (returns bootstrap_sd = 0.0) -- used by unit tests that only
+            check the point estimate.
+        bootstrap_seed: RNG seed for the bootstrap resampling (reproducible).
+
+    Returns:
+        ``(es_null_arm, bootstrap_sd)`` -- the pooled point estimate and its
+        bootstrap standard deviation, both ``nan`` if fewer than 2 finite
+        events are available.
+    """
+    l_plus = np.asarray(l_plus, dtype=np.float64)
+    l0 = np.asarray(l0, dtype=np.float64)
+    l_minus = np.asarray(l_minus, dtype=np.float64)
+    if not (l_plus.shape == l0.shape == l_minus.shape):
+        raise ValueError(
+            "compute_es_null_arm: l_plus/l0/l_minus must share one shape, got "
+            f"{l_plus.shape}, {l0.shape}, {l_minus.shape}"
+        )
+    finite = np.isfinite(l_plus) & np.isfinite(l0) & np.isfinite(l_minus)
+    l_plus, l0, l_minus = l_plus[finite], l0[finite], l_minus[finite]
+    n = l_plus.size
+    if n < 2:
+        return float("nan"), float("nan")
+
+    def _es_null(
+        lp: npt.NDArray[np.float64], lz: npt.NDArray[np.float64], lm: npt.NDArray[np.float64]
+    ) -> float:
+        lprime = (lp - lm) / (2.0 * delta)
+        ldbl = (lp - 2.0 * lz + lm) / (delta**2)
+        return float((delta**2 / 6.0) * (-3.0 * np.mean(lprime * ldbl) - np.mean(lprime**3)))
+
+    es_null = _es_null(l_plus, l0, l_minus)
+
+    bootstrap_sd = 0.0
+    if n_bootstrap > 0:
+        rng = np.random.default_rng(bootstrap_seed)
+        idx = rng.integers(0, n, size=(n_bootstrap, n))
+        boot_vals = np.empty(n_bootstrap, dtype=np.float64)
+        for i in range(n_bootstrap):
+            resample = idx[i]
+            boot_vals[i] = _es_null(l_plus[resample], l0[resample], l_minus[resample])
+        bootstrap_sd = float(np.std(boot_vals, ddof=1))
+    return es_null, bootstrap_sd
+
+
+def _seed_clustered_sem(values: pd.Series, seed_col: pd.Series) -> tuple[float, int]:
+    """SEM from per-seed means (PA-HIER-5 leg (a): the binding SEM choice
+    whenever it exceeds the per-event SEM). ``std(per-seed means, ddof=1) /
+    sqrt(n_seeds)``.
+
+    Returns:
+        ``(sem, n_seeds)`` -- ``(nan, n)`` if fewer than 2 seeds carry a
+        finite mean.
+    """
+    df = pd.DataFrame({"seed": seed_col.to_numpy(), "value": values.to_numpy(dtype=float)})
+    df = df[np.isfinite(df["value"])]
+    per_seed_means = df.groupby("seed")["value"].mean()
+    n_seeds = per_seed_means.size
+    if n_seeds < 2:
+        return float("nan"), int(n_seeds)
+    sem = float(per_seed_means.std(ddof=1) / math.sqrt(n_seeds))
+    return sem, int(n_seeds)
+
+
 # ── Registered statistics (prereg §4.1) ─────────────────────────────────────
 
 
@@ -1159,6 +1410,16 @@ def compute_scores(
                     when absent for every event, ``score_s``'s stats report
                     ``n_pooled=0``/NaN and ``score_s_available`` is ``False``
                     -- ``score_s_raw`` and ``score_lns`` are unaffected.
+    score_pahier33 = mean(score_lns) - Es_null^{(arm)}   (PA-HIER-33, ratified
+                    rows #278/#280 via the T1.4 Richardson falsifier, row
+                    #275: "the corrected null -- the arm's own likelihood --
+                    is the rule of record for the [HIER] s-score". Supersedes
+                    PA-HIER-32(d)'s per-host Es_null_det for the s-axis null;
+                    see :func:`compute_es_null_arm`. A pooled scalar shift,
+                    NOT a per-host correction; requires BOTH s-axis nodes
+                    (has_s) AND the truth node -- degrades to n_pooled=0/NaN
+                    (score_pahier33_available=False) when either is absent,
+                    same discipline as score_s above.
     Z_x = mean(score_x) / SEM(score_x), pooled over events and seeds.
 
     Args:
@@ -1400,6 +1661,81 @@ def compute_scores(
             per_seed_R = {}
             richardson_available = False
 
+        # PA-HIER-33 (ratified rows #278/#280 via the T1.4 Richardson
+        # falsifier, row #275; PREREGISTRATION_HIER_HTHETA_20260826.md
+        # section 5): the s-axis's null of record. Supersedes PA-HIER-32(d)'s
+        # per-host closed-form Es_null_det for score_s -- the ratified rule
+        # is "the corrected null -- the arm's own likelihood -- is the rule
+        # of record for the [HIER] s-score" (row #278 item 1). Needs the
+        # arm's own three s-nodes: s_plus, s_minus (already joined as
+        # s_join, has_s) AND truth (l_i(0) -- NOT required by score_lns/
+        # score_s above, so this degrades independently of has_s alone:
+        # available only when has_s AND a truth node was actually run --
+        # e.g. runner-11's 8-cell b-only pair has NEITHER s-axis NOR truth,
+        # so this is n_pooled=0/NaN there for two independent reasons).
+        has_truth = bool(all_nodes.get("truth"))
+        if has_s and has_truth:
+            truth_frames = pd.concat(
+                [
+                    r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                    for r in all_nodes["truth"]
+                ],
+                ignore_index=True,
+            ).rename(columns={channel: "truth"})
+            pahier33_join = s_join[["seed", "event_idx", "s_plus", "s_minus"]].merge(
+                truth_frames, on=["seed", "event_idx"], how="inner"
+            )
+            if len(pahier33_join) > 0:
+                es_null_arm, es_null_arm_bootstrap_sd = compute_es_null_arm(
+                    pahier33_join["s_plus"].to_numpy(dtype=float),
+                    pahier33_join["truth"].to_numpy(dtype=float),
+                    pahier33_join["s_minus"].to_numpy(dtype=float),
+                )
+                # score_lns restricted to the SAME (seed, event_idx) set the
+                # null estimate itself was computed over (the truth-node
+                # inner join may drop events score_lns's own s_join has but
+                # truth does not) -- both the pooled mean and the two SEM
+                # candidates (A15 rule: SEM = max(per-event, seed-clustered))
+                # are read off this restricted set, never the unrestricted
+                # score_lns above, so the point estimate and its SEM are
+                # always computed over identical events.
+                score_lns_pahier33 = (pahier33_join["s_plus"] - pahier33_join["s_minus"]) / _LN2
+                mean_lns_p33, sem_event_p33, _z_unused, n_p33 = _mean_sem(score_lns_pahier33)
+                sem_seed_p33, _n_seeds_p33 = _seed_clustered_sem(
+                    score_lns_pahier33, pahier33_join["seed"]
+                )
+                sem_binding_p33 = (
+                    max(sem_event_p33, sem_seed_p33) if np.isfinite(sem_seed_p33) else sem_event_p33
+                )
+                sem_total_p33 = math.sqrt(sem_binding_p33**2 + es_null_arm_bootstrap_sd**2)
+                mean_p33 = mean_lns_p33 - es_null_arm
+                z_p33 = (
+                    mean_p33 / sem_total_p33
+                    if sem_total_p33 and np.isfinite(sem_total_p33) and sem_total_p33 > 0
+                    else float("nan")
+                )
+                pahier33_available = True
+            else:
+                (
+                    es_null_arm,
+                    es_null_arm_bootstrap_sd,
+                    mean_p33,
+                    sem_total_p33,
+                    z_p33,
+                    n_p33,
+                ) = (float("nan"),) * 5 + (0,)
+                pahier33_available = False
+        else:
+            (
+                es_null_arm,
+                es_null_arm_bootstrap_sd,
+                mean_p33,
+                sem_total_p33,
+                z_p33,
+                n_p33,
+            ) = (float("nan"),) * 5 + (0,)
+            pahier33_available = False
+
         out[channel] = {
             "score_b": {"mean": mean_b, "sem": sem_b, "Z": z_b, "n_pooled": n_b},
             "score_b_available": has_b,
@@ -1439,6 +1775,27 @@ def compute_scores(
                 "mean": mean_shift,
                 "sem": sem_shift,
                 "n_pooled": n_shift,
+            },
+            # PA-HIER-33 (ratified rows #278/#280): the arm's own Bartlett-
+            # identity null, score_pahier33 = mean(score_lns) -
+            # Es_null^{(arm)}, SEM = max(per-event, seed-clustered) with the
+            # null's own bootstrap SD added in quadrature (section 5, "Rule").
+            # This is the s-axis statistic of record going forward per row
+            # #278 item 1 -- gate_parity/verdict functions do NOT read this
+            # key yet (no verdict function in this driver has been
+            # re-pointed at it; that re-pointing is a re-adjudication of the
+            # P1 verdict, an author-scoped act per PA-HIER-33's own "what
+            # returns to the author" list, out of this build's scope).
+            "score_pahier33": {
+                "mean": mean_p33,
+                "sem": sem_total_p33,
+                "Z": z_p33,
+                "n_pooled": n_p33,
+            },
+            "score_pahier33_available": pahier33_available,
+            "es_null_arm": {
+                "value": es_null_arm,
+                "bootstrap_sd": es_null_arm_bootstrap_sd,
             },
         }
     return out
@@ -2223,7 +2580,14 @@ def write_score_markdown(payload: dict[str, Any], md_path: Path) -> None:
             # primary) first; "score_s_raw" (the OLD/superseded raw linear
             # secant) and "score_lns" (the intermediate ln-s-centred secant
             # before the Es_null_det correction) alongside for continuity.
-            for stat_name in ("score_b", "score_s", "score_s_raw", "score_lns", "score_lns_R"):
+            for stat_name in (
+                "score_b",
+                "score_s",
+                "score_s_raw",
+                "score_lns",
+                "score_lns_R",
+                "score_pahier33",
+            ):
                 if stat_name not in d:
                     continue
                 s = d[stat_name]
@@ -2254,6 +2618,17 @@ def write_score_markdown(payload: dict[str, Any], md_path: Path) -> None:
                 lines.append(
                     "- score_lns_R - score_lns (paired shift, T1.3-zwin PA-HIER-33 falsifier): "
                     f"mean={shift['mean']!r} sem={shift['sem']!r} n_pooled={shift['n_pooled']}"
+                )
+            if "score_pahier33_available" in d:
+                lines.append(
+                    "- score_pahier33_available (s-axis AND truth nodes both present): "
+                    f"{d['score_pahier33_available']}"
+                )
+            if "es_null_arm" in d:
+                en = d["es_null_arm"]
+                lines.append(
+                    "- es_null_arm (PA-HIER-33 Bartlett-identity null, ratified rows #278/#280): "
+                    f"value={en['value']!r} bootstrap_sd={en['bootstrap_sd']!r}"
                 )
             lines.append("")
     if "verdict" in payload:
@@ -2379,8 +2754,11 @@ def main() -> int:
         help="'b0i' (default, BYTE-IDENTICAL) is this driver's original hardcoded bc/b0i venue "
         "(hier_s0_driver.py:94-97-era flags). 'ft' is the KW-Q1/B4.2 venue (catalogue_numerator_"
         "survival='phi', fused, HEAD Sigma^phi, host_mode='population_selected' -- copied "
-        "EXACTLY from p3_twin_test.py's fusedarm/--survival phi stage). Applies to S0-A/S0-R "
-        "only (S0-C stays 'b0i', per its own registered costing-probe scope).",
+        "EXACTLY from p3_twin_test.py's fusedarm/--survival phi stage). 'iiib' is the CoR-P "
+        "production venue (PA-HIER-31 sec 1/(d)/(g)) -- the REAL banked/observed scattered "
+        "catalogue (pinned CRB CSV + reduced GLADE catalogue), not a mirror realization; S0-B's "
+        "precondition. Applies to S0-A/S0-R only (S0-C stays 'b0i', per its own registered "
+        "costing-probe scope).",
     )
     ap.add_argument(
         "--h-nodes",

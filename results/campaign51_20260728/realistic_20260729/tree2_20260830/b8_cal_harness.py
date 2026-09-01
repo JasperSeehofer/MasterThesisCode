@@ -1128,6 +1128,20 @@ def checkpoint_path(work_root: Path, cell: str, seed: int) -> Path:
     return work_root / f"universe_seed{seed}_{cell}.json"
 
 
+def run_status_path(work_root: Path, cell: str) -> Path:
+    """Per-cell driver-invocation status file (row #288 S4 defect (c) repair).
+
+    Overwritten (not append-only, unlike the per-universe checkpoints) at the end of every
+    non-``--score-only`` invocation for this ``cell``, so ``score_only`` can report, per cell,
+    whether the LATEST invocation stopped because it exhausted ``--n-universes`` (completion-
+    limited) or because it hit ``--max-wall-s`` (wall-limited) -- see :func:`main`'s driver loop
+    and B8_2_S3_PILOT_READOUT_RECORD.md caveat 4.2. This file records the FACT of the stop
+    reason only; it does not define or apply a stop RULE (that is r-b82-s4 registration content,
+    row #290 decisions-table row 3 scope note).
+    """
+    return work_root / f"_run_status_{cell}.json"
+
+
 def gridsplit_marker_path(work_root: Path) -> Path:
     """Once-per-work-root marker for :func:`verify_grid_split_bit_identity` (B8.2.S2c item 1).
 
@@ -1437,19 +1451,87 @@ def run_one_universe(
 # ── score-only aggregator (design §8 S2 deliverable; rule 2: no verdict) ─────
 
 
-def score_only(work_root: Path, cell: str) -> dict[str, Any]:
-    """Aggregate every checkpoint JSON under ``work_root`` for ``cell`` (design §4.1)."""
+class PopulationMixError(ValueError):
+    """Raised by :func:`score_only` when a cell's checkpoints span >1 declared population.
+
+    g-population lint (row #290 decisions-table row 3 / row #288 S4 defect (a)): the aggregator
+    must refuse to silently pool rows whose N/population tag (``n_draw_requested``) differs --
+    the row #288 contamination pooled 3 N-ladder timing seeds (N=106/400/1588) with 63 N=200
+    pilot seeds into one n_universes=66 aggregate. Pass ``population=`` explicitly to select one
+    population and exclude the rest (reported in the output's ``excluded_other_population``).
+    """
+
+
+def _population_tag(checkpoint: dict[str, Any]) -> int:
+    """The population/N tag of one checkpoint: ``n_draw_requested`` (design §2.1 population unit)."""
+    return int(checkpoint["universe"]["n_draw_requested"])
+
+
+def score_only(work_root: Path, cell: str, population: int | None = None) -> dict[str, Any]:
+    """Aggregate every checkpoint JSON under ``work_root`` for ``cell`` (design §4.1).
+
+    ``population`` is the N/population tag (``n_draw_requested``) to aggregate. If omitted and
+    the matched checkpoints span more than one population, this function REFUSES (raises
+    :class:`PopulationMixError`) rather than silently pooling them -- the g-population lint
+    (row #290 decisions-table row 3, repairing row #288 S4 defect (a)). If omitted and exactly
+    one population is present, that population is used (the common single-population case is
+    unaffected -- g-byte-id).
+    """
     files = sorted(work_root.glob(f"universe_seed*_{cell}.json"))
     if not files:
         return {
             "n_universes": 0,
             "cell": cell,
+            "population": population,
             "reason": f"no checkpoints found for cell={cell!r} under {work_root}",
         }
-    checkpoints = [json.loads(f.read_text()) for f in files]
-    n_u = len(checkpoints)
+    all_checkpoints = [json.loads(f.read_text()) for f in files]
+    populations_present = sorted({_population_tag(c) for c in all_checkpoints})
 
-    out: dict[str, Any] = {"n_universes": n_u, "cell": cell, "files": [str(f) for f in files]}
+    if population is None:
+        if len(populations_present) > 1:
+            counts = {
+                p: sum(1 for c in all_checkpoints if _population_tag(c) == p)
+                for p in populations_present
+            }
+            raise PopulationMixError(
+                f"cell={cell!r} under {work_root} spans {len(populations_present)} populations "
+                f"(n_draw_requested -> count: {counts}); pass population=<one of "
+                f"{populations_present}> explicitly -- refusing to pool mixed-N rows "
+                "(g-population lint, row #288 S4 defect (a))"
+            )
+        population = populations_present[0] if populations_present else None
+
+    checkpoints = [c for c in all_checkpoints if _population_tag(c) == population]
+    excluded = [
+        {"file": str(f), "n_draw_requested": _population_tag(c)}
+        for f, c in zip(files, all_checkpoints, strict=True)
+        if _population_tag(c) != population
+    ]
+    n_u = len(checkpoints)
+    if n_u == 0:
+        return {
+            "n_universes": 0,
+            "cell": cell,
+            "population": population,
+            "reason": (
+                f"no checkpoints for cell={cell!r} population={population!r} under {work_root} "
+                f"(populations present: {populations_present})"
+            ),
+        }
+
+    out: dict[str, Any] = {
+        "n_universes": n_u,
+        "cell": cell,
+        "population": population,
+        "populations_present_before_filter": populations_present,
+        "excluded_other_population": excluded,
+        "files": [
+            str(f)
+            for f, c in zip(files, all_checkpoints, strict=True)
+            if _population_tag(c) == population
+        ],
+    }
     for channel, key in (("no_bh", "no_bh"), ("with_bh", "with_bh")):
         sds = [c["posterior"][key]["sd"] for c in checkpoints]
         pits = [c["posterior"][key]["pit"] for c in checkpoints]
@@ -1588,6 +1670,65 @@ def score_only(work_root: Path, cell: str) -> dict[str, Any]:
         "n_pred_self_check": self_check,
         "per_bin": count_audit,
     }
+
+    # Row #288 S4 defect (c): report wall-limited-vs-completion-limited status explicitly, per
+    # cell, from the driver's own run_status sidecar (written by main(), not invented here). No
+    # stop RULE is applied -- that is r-b82-s4 registration content (row #290 scope note).
+    status_file = run_status_path(work_root, cell)
+    if status_file.is_file():
+        status = json.loads(status_file.read_text())
+        out["run_status"] = {
+            "available": True,
+            "stopped_reason": status.get("stopped_reason"),
+            "wall_limited": status.get("stopped_reason") == "wall_limited",
+            "n_universes_requested_this_invocation": status.get(
+                "n_universes_requested_this_invocation"
+            ),
+            "n_done_this_invocation": status.get("n_done_this_invocation"),
+            "n_checkpoints_total_under_work_root": status.get(
+                "n_checkpoints_total_under_work_root"
+            ),
+            "max_wall_s": status.get("max_wall_s"),
+            "wall_elapsed_s_this_invocation": status.get("wall_elapsed_s_this_invocation"),
+            "source_file": str(status_file),
+        }
+    else:
+        out["run_status"] = {
+            "available": False,
+            "reason": (
+                f"no {status_file.name} sidecar found under {work_root} -- either the driver "
+                "was never invoked for this cell under this work-root, or these checkpoints "
+                "predate the row #288 S4 defect (c) repair"
+            ),
+        }
+    return out
+
+
+def score_ratio_t_over_s(work_root: Path, population: int | None = None) -> dict[str, Any]:
+    """Cell-T / cell-S ratio of ``sigma_h_harness_median_sd``, per channel (row #288 S4 defect
+    (b): B8_2_HARNESS_DESIGN_20260829.md line 233 registers this ratio as the S4 input that lets
+    the production width comparison (design §4 width branch) be read on the matching (truth-
+    centred vs scattered) convention. Cell T carries NO coverage/PIT claim (design §2.3: its PIT
+    is degenerate by construction) -- only the SD ratio is registered here; this function does
+    not compute or imply a coverage verdict for cell T.
+    """
+    s = score_only(work_root, "S", population=population)
+    t = score_only(work_root, "T", population=population)
+    out: dict[str, Any] = {"population": population, "cell_s": s, "cell_t": t, "ratio": {}}
+    if s.get("n_universes", 0) == 0 or t.get("n_universes", 0) == 0:
+        out["ratio"]["reason"] = (
+            f"cannot form T/S ratio: n_universes S={s.get('n_universes', 0)} "
+            f"T={t.get('n_universes', 0)} (need > 0 in both)"
+        )
+        return out
+    for channel in ("no_bh", "with_bh"):
+        sd_s = s[channel]["sigma_h_harness_median_sd"]
+        sd_t = t[channel]["sigma_h_harness_median_sd"]
+        out["ratio"][channel] = {
+            "sigma_h_harness_median_sd_S": sd_s,
+            "sigma_h_harness_median_sd_T": sd_t,
+            "T_over_S": sd_t / sd_s if sd_s else float("nan"),
+        }
     return out
 
 
@@ -1595,10 +1736,29 @@ def print_score_only_report(result: dict[str, Any]) -> None:
     """Print band outcomes for information ONLY -- no verdict is written (design rule 2)."""
     print("=" * 78)
     print(f"B8.2 [CAL] harness -- score-only aggregate (INFORMATIONAL, no verdict; {LAUNCH_STAMP})")
-    print(f"n_universes = {result.get('n_universes')}  cell = {result.get('cell')}")
+    print(
+        f"n_universes = {result.get('n_universes')}  cell = {result.get('cell')}  "
+        f"population = {result.get('population')}"
+    )
+    if result.get("excluded_other_population"):
+        print(
+            f"  ({len(result['excluded_other_population'])} checkpoint(s) EXCLUDED as a "
+            f"different population -- g-population lint, row #288 S4 defect (a))"
+        )
     if result.get("n_universes", 0) == 0:
         print(result.get("reason"))
         return
+    rs = result.get("run_status")
+    if rs is not None:
+        if rs.get("available"):
+            print(
+                f"  run_status: stopped_reason={rs.get('stopped_reason')} "
+                f"wall_limited={rs.get('wall_limited')} "
+                f"n_done_this_invocation={rs.get('n_done_this_invocation')}/"
+                f"{rs.get('n_universes_requested_this_invocation')}"
+            )
+        else:
+            print(f"  run_status: UNAVAILABLE ({rs.get('reason')})")
     for channel in ("no_bh", "with_bh"):
         c = result[channel]
         print("-" * 78)
@@ -1686,6 +1846,21 @@ def main() -> int:
         "only for the §10 byte-identity comparison against a cached run",
     )
     parser.add_argument("--score-only", action="store_true")
+    parser.add_argument(
+        "--population",
+        type=int,
+        default=None,
+        help="N/population tag (n_draw_requested) to aggregate in --score-only mode; required "
+        "if the matched checkpoints span more than one population (g-population lint, row #288 "
+        "S4 defect (a)) -- omit when exactly one population is present under --work-root.",
+    )
+    parser.add_argument(
+        "--score-only-ratio-t-s",
+        action="store_true",
+        help="in --score-only mode, also compute+print the cell-T / cell-S SD ratio (row #288 "
+        "S4 defect (b), the T0/T-vs-S control read registered by "
+        "B8_2_HARNESS_DESIGN_20260829.md line 233) instead of a single-cell report.",
+    )
     args = parser.parse_args()
 
     args.work_root.mkdir(parents=True, exist_ok=True)
@@ -1693,7 +1868,26 @@ def main() -> int:
     configure_precompute_cache(args.work_root, enabled=args.precompute_cache)
 
     if args.score_only:
-        result = score_only(args.work_root, args.cell)
+        if args.score_only_ratio_t_s:
+            ratio_result = score_ratio_t_over_s(args.work_root, population=args.population)
+            print_score_only_report(ratio_result["cell_s"])
+            print_score_only_report(ratio_result["cell_t"])
+            print("=" * 78)
+            print("T / S sigma_h,harness (median SD) ratio (design line 233 control read):")
+            for channel, r in ratio_result["ratio"].items():
+                if channel == "reason":
+                    print(f"  {ratio_result['ratio']['reason']}")
+                    break
+                print(
+                    f"  {channel}: S={r['sigma_h_harness_median_sd_S']:.6g} "
+                    f"T={r['sigma_h_harness_median_sd_T']:.6g} T/S={r['T_over_S']:.4g}"
+                )
+            return 0
+        try:
+            result = score_only(args.work_root, args.cell, population=args.population)
+        except PopulationMixError as exc:
+            print(f"g-population lint REFUSAL: {exc}")
+            return 1
         print_score_only_report(result)
         return 0
 
@@ -1720,8 +1914,10 @@ def main() -> int:
             "--force-gridsplit-check to re-run"
         )
     n_done = 0
+    stopped_reason = "exhausted_n_universes"  # overwritten below if the wall-limit fires first
     for i in range(args.n_universes):
         if time.time() - t_start > args.max_wall_s:
+            stopped_reason = "wall_limited"
             print(
                 f"--max-wall-s ({args.max_wall_s}s) reached after {n_done} universe(s) this "
                 "invocation; re-run the same command to resume (checkpoints already written "
@@ -1787,7 +1983,31 @@ def main() -> int:
             for name, calls in checkpoint["universe"]["precompute_cache"].items()
         }
         print(f"  precompute_cache hits: {pc_hits}")
-    print(f"total wall this invocation: {time.time() - t_start:.1f}s; {n_done} universe(s) scored")
+    wall_elapsed = time.time() - t_start
+    print(f"total wall this invocation: {wall_elapsed:.1f}s; {n_done} universe(s) scored")
+
+    n_checkpoints_total = len(list(args.work_root.glob(f"universe_seed*_{args.cell}.json")))
+    run_status_path(args.work_root, args.cell).write_text(
+        json.dumps(
+            {
+                "cell": args.cell,
+                "stamp": git_stamp(),
+                "seed_block": args.seed_block,
+                "n_universes_requested_this_invocation": args.n_universes,
+                "n_done_this_invocation": n_done,
+                "n_checkpoints_total_under_work_root": n_checkpoints_total,
+                "max_wall_s": args.max_wall_s,
+                "wall_elapsed_s_this_invocation": wall_elapsed,
+                "stopped_reason": stopped_reason,
+                "note": (
+                    "FACT only, not a stop RULE (row #290 decisions-table row 3 scope note: "
+                    "the stop rule itself is r-b82-s4 registration content). Overwritten by "
+                    "every non-score-only invocation for this cell under this --work-root."
+                ),
+            },
+            indent=1,
+        )
+    )
     return 0
 
 

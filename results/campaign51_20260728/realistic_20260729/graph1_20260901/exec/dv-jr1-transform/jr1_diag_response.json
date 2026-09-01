@@ -1,0 +1,44 @@
+{
+ "determinism": {
+  "n_multi_cells": 16067,
+  "std_median": 0.0030790992949990474,
+  "std_p95": 0.02533681483405468,
+  "std_max": 1.1885897996880248
+ },
+ "grad_lnS_dlnM_median": 0.6549321646547799,
+ "grad_lnS_dz_median": 12.010420298921613,
+ "pure_invariance": {
+  "max_rel_B": 0.0,
+  "max_rel_D": 0.0
+ },
+ "rebooking": {
+  "n": 982,
+  "sigma_phi_implied_rel_spread": 9.838261392980578e-14,
+  "sigma_4d_implied_rel_spread": 7.231443071633515e-14,
+  "sigma_phi_implied": 980867125.6740876,
+  "sigma_4d_implied": 375452610.32122225,
+  "ratio_alpha": 0.38277621962627967
+ },
+ "jr1_grid": {
+  "n_nodes": 41,
+  "h_min": 0.6,
+  "h_max": 0.86
+ },
+ "jr1_off_posterior": {
+  "MAP": 0.6,
+  "mean": 0.6142623983270348,
+  "floor_mass": 0.22077264438693697,
+  "lnL_073_secant": -255.03391824595383
+ },
+ "jr1_scores": {
+  "n": 1588,
+  "n_dark": 1512,
+  "n_incat": 76,
+  "sum_pure": 196.77952629271223,
+  "dark_simp_sum": -272.3120082722653,
+  "dark_simp_mean": -0.18010053457160405,
+  "incat_simp_sum": -179.50143626529305,
+  "incat_simp_mean": -2.361861003490698,
+  "pooled_simp_mean": -0.2845172824543818
+ }
+}
