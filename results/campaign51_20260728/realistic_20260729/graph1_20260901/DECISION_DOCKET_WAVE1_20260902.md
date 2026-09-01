@@ -34,7 +34,8 @@ Committed by the chair; the author rules on it via the decisions table (one-word
 | 4 | h-prior decoupling (fresh, row #293) | RULE | Choose (a), (b), or (c) | the decoupling design's own detail once chosen — that returns as its own physics-change gate item |
 | 4a | — chosen mechanism | RULE | (a) decouple [chair-recommended] / (b) drive host window off eval grid / (c) park Branch I | the chosen design itself (fresh `/physics-change` gate) |
 | 4b | — rerun cost overrun (23.8 CPU-h vs ≤20 ORCHESTRATOR-DERIVED cap) | RULE | a word — needed only if Branch I proceeds (i.e., not if (c) is chosen) | — |
-| 5 | Status annex | — | no decision asked | — |
+| 5 | g-c0-baseline re-specification | RULE | Ratified — re-stamp GREEN-AS-CORRECTED against the flag-matched `c0prime_off` comparand [(A), chair-recommended] / (B) rerun an explicit-off-pinned arm for a literal bit-identity pass / (C) hold RED, bank a fresh comparand only at d-calibration | banking m-head-rebaseline as comparand of record (stays inside d-calibration, row #290); any science read of the retrieved wave-1 outputs |
+| 6 | Status annex | — | no decision asked | — |
 
 ---
 
@@ -255,7 +256,123 @@ item once (a) or (b) is chosen, per the trigger-file rule in `CLAUDE.md`.
 
 ---
 
-## 5. Status annex — no decision asked
+## 5. g-c0-baseline re-specification — fresh [RULE] from rows #298/#299
+
+**[RULE]** — grant word: **Ratified**, choosing option (A)/(B)/(C).
+
+This item did not exist at row #290 and is not covered by that ratification. It is the panel-law
+consequence of the g-c0-baseline gate's own RED stamp on the m-head-rebaseline C0-prime check.
+
+Sources: row #298 (`BIAS_HISTORY_LEDGER.md`); row #299 is not yet present in the ledger as of this
+docket's compilation — the ADDENDUM 2 content below is sourced directly from
+`graph1_20260901/exec/m-head-rebaseline/c0prime_eval/FORENSICS_RECORD.md` ("ADDENDUM 2 (repro)"
+section), per instruction.
+
+### (i) The facts
+
+The gate (`c0prime_eval/GATE_RECORD.md`) evaluated **RED on both venues** against its instrument
+(band = `max_abs = 0` on shared columns, md5 match):
+
+> "iiib | RED ... joint_r1 | RED ... Both venues fail on `md5 match`; the fallback `max_abs = 0`
+> characterization also fails (nonzero on several columns/leaves...). `fisher_quality.csv` is the
+> sole file that is byte-identical (md5 match, max_abs 0) in both venues."
+
+Forensics (`FORENSICS_RECORD.md`, its ADDENDUM and ADDENDUM 2) traced the RED to a **comparand
+mis-selection artifact**, not a pipeline defect. The gate's comparand was
+`wave3_20260830/{iiib,joint_r1}` (the blind headreadout), which — contrary to the C0-prime sbatch
+header's own claim to reproduce it "bit-for-bit ... by passing the SAME explicit flags" — actually
+resolved `catalogue_numerator_survival_2d = mz_sel`/`eff` (the 2D-twin engaged), not the
+flag-matched `off`/`unset` that C0-prime's own CLI passes. The flag-correct comparand is a
+different banked directory, `wave3_20260830/c0prime_off_{iiib,joint_r1}` (job 6746274, row #281:
+"WAVE-3 C0′ OFF-GATE: PASS, BIT-IDENTICAL (both venues)").
+
+ADDENDUM 2's local repro (`c0prime_eval/repro/run_repro.py`, 5 iiib events, every CLI flag matched
+to C0-prime's own) and a full re-diff of the already-banked production files against the
+flag-matched comparand both confirm the same result at production scale:
+
+> "the §6b residual reported in the original FORENSICS_RECORD/Addendum 1 does not exist when the
+> comparison holds `catalogue_numerator_survival_2d` fixed. ... Once the comparand's
+> `catalogue_numerator_survival_2d` is matched to C0-prime's own (`off`/`unset`),
+> `L_cat_with_bh`/`combined_with_bh`/`num_log_term_with_bh` are exact-zero, exactly as R7/R11
+> registered."
+
+> "**H1, fully explained, no residual.**" (ADDENDUM 2, "Updated overall classification (supersedes
+> Addendum 1's MIXED verdict)")
+
+So: **with-BH columns are exact-zero against the correct comparand** — quoted as "the first
+production-scale confirmation of row #286's invariance claim" in substance (ADDENDUM's own framing:
+row #286's R7/R11 claim "was never validated ... at the scope the C0-prime gate now exercises," and
+this repro is that first validation, landing clean). The **no-BH deltas are the flip working as
+designed**, localized to exactly the candidate-bearing events — row #298: `L_cat_with_bh` ndiff
+"exactly **982**" (iiib) "= exactly the candidate-bearing event count" (dv-jr1-transform record §1);
+joint_r1's analogous `L_cat_with_bh` ndiff = 1094, the same structural pattern per venue — via the
+documented NOTE (A13) coupling
+(`bayesian_statistics.py:5990-6035`, `:8407-8410`): "the with-BH host batch's r[0] is ALSO a no-BH
+numerator that feeds L_cat_no_bh ... so gating on the channel flag would silently engage the cell
+on a host subset only" — "by design, not a defect" (row #298).
+
+### (ii) The ask
+
+The gate instrument set is charter-frozen (`RESEARCH_GRAPH_1_PROPOSAL_20260901.md` §2), so its
+correction is itself a fresh [RULE], not a self-authorized edit.
+
+**The forensics record's own option list, quoted faithfully** (`FORENSICS_RECORD.md`, "Summary for
+the author" — note this list predates ADDENDUM 2's "no residual" finding but its own "Updated
+overall classification" states the options "stand unchanged and are now more clearly motivated"):
+
+> "1. A **pre-flip-pinned C0-prime** re-run at commit `1e092e82` ... isolating the code/environment
+> axis from the flip axis entirely.
+> 2. An **explicit-`off`-pinned** C0-prime arm (`--catalogue_leg_1d_mass_aware off` at the current,
+> post-flip commit) against the wave-3 banked row ...
+> 3. A **fresh post-flip comparand** banked once (the blind HEAD arrays this same launch already
+> produced, jobs 6764461/6764462) so future g-c0-baseline gates compare like-epoch to like-epoch
+> going forward, with the flag-matching defect from §4 fixed in the sbatch header/comment.
+> 4. Independently of (1)-(3): re-run the R7/R11 registered check at the actual production
+> configuration ... to determine whether 6b's residual is real or an artifact of this forensics
+> pass's own comparison method." (item 4 is now moot — ADDENDUM 2 already did this and found no
+> residual)
+
+ADDENDUM 2 adds: "any of them [options 1–3] would additionally need to hold
+`catalogue_numerator_survival_2d` fixed to the C0-prime venue's own value, which the existing
+`c0prime_off_{iiib,joint_r1}` banked arm already does correctly — it is the comparand this gate
+should have used throughout."
+
+**Chair framing (ORCHESTRATOR-DERIVED — a synthesis of the above onto three mutually exclusive
+choices, not a substitute for the forensics list above):**
+
+- **(A) Re-stamp the C0-prime structural check GREEN-AS-CORRECTED** against the flag-matched
+  `c0prime_off_{iiib,joint_r1}` comparand (the banked arm already satisfying options 1–3's shared
+  requirement), acknowledging the no-BH delta as the registered flip. **[CHAIR-RECOMMENDED,
+  ORCHESTRATOR-DERIVED]** — no rerun needed; the comparand already exists and both ADDENDUM 2's
+  fresh repro and the full-scale re-diff against it landed exact-zero on the with-BH channel.
+- **(B) Rerun an explicitly off-pinned C0-prime arm** (forensics option 2) for a literal
+  bit-identity pass at the current commit — costs a fresh cluster submission for a result ADDENDUM
+  2's repro has already produced by other means.
+- **(C) Neither** — hold the RED stamp as-is and bank a fresh post-flip comparand only inside
+  d-calibration (§1.11), deferring any re-stamp until that later convergence node.
+
+### (iii) What granting unblocks
+
+Per the graph spec's panel law, this RED currently "STOPs every downstream delta-read" — named
+explicitly (row #298 / `GATE_RECORD.md`):
+
+> "m-s3-postflip-coverage, v-falsifier-ii-classG, m-joint-r1-mass-aware, m-t5-armS/m-t5-armR,
+> r-completion-residual" — "and specifically blocks `m-t5-armR`'s launch."
+
+Granting (A) or (B) discharges the stop for these reads and unblocks `m-t5-armR`'s
+C0-prime-equivalent launch gate; granting (C) leaves them stopped until d-calibration.
+
+### (iv) Explicitly NOT covered
+
+Banking m-head-rebaseline as the comparand of record — that stays inside d-calibration, per row
+#290 decisions-table row 4's own NOT-covered cell: "banking it as the comparand of record and any
+delta interpretation — both return inside d-calibration with numbers." Also NOT covered: any
+science read of the retrieved wave-1 outputs themselves (the delta magnitudes, band dispositions,
+etc.) — this item rules the gate's own stamp and comparand only.
+
+---
+
+## 6. Status annex — no decision asked
 
 Wave-1 execution summary, one line per row (`BIAS_HISTORY_LEDGER.md`):
 
