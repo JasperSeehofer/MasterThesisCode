@@ -160,3 +160,5 @@ memory — row #268's lesson).
   Branch A's post-flip S3 re-run happens at all.
 - **The graph-1 charter itself (row 0)** — and each branch-head row in the decisions table,
   `RESEARCH_GRAPH_1_PROPOSAL_20260901.md` §3 — is the primary open ask of this runbook.
+
+**2026-09-01 ADDENDUM: RATIFIED.** The author ratified the entire docket ("all is ratified from the graph", ledger row #290): charter frozen, STANDING granted, d-s3-rerun ruled, branch heads A-I + row 12 approved, headcount collapse to 4 accepted. Begin at the first-actions section; every NOT-covered cell still returns as a fresh [RULE].
