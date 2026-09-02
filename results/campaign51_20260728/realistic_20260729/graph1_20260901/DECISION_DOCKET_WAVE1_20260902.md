@@ -37,6 +37,7 @@ Committed by the chair; the author rules on it via the decisions table (one-word
 | 5 | g-c0-baseline re-specification | RULE | Ratified — re-stamp GREEN-AS-CORRECTED against the flag-matched `c0prime_off` comparand [(A), chair-recommended] / (B) rerun an explicit-off-pinned arm for a literal bit-identity pass / (C) hold RED, bank a fresh comparand only at d-calibration | banking m-head-rebaseline as comparand of record (stays inside d-calibration, row #290); any science read of the retrieved wave-1 outputs |
 | 6 | h_grid_admissibility_max physics-change | RULE | Ratified — decoupled admissibility ceiling (1.00) on the guard only, host-window bound at `bayesian_statistics.py:5716` untouched at 0.86 | any claim the extended grid is load-bearing for a given arm (row #290 row 11) |
 | 7 | falsifier-ii fleet cost | RULE | (A) raise the cap to 290 CPU-h, run the 33-seed fleet [chair-recommended] / (B) hold the 60 CPU-h cap, falsifier cannot run as designed, A4 stays PROVISIONAL / (C) defer to a later batch | d-a4-final-ratification (returns with the falsifier's numbers either way; A4 stays PROVISIONAL meanwhile) |
+| 8 | Option A' (class-G S̄_φ de-double-weight) ratification | RULE | Ratified | the falsifier's verdict and d-a4-final-ratification (return with numbers); any 1D-branch or trigger-file change (none is proposed) |
 | 6 | Status annex | — | no decision asked | — |
 
 ---
@@ -413,6 +414,27 @@ Items 6 and 7 below are the two fresh items this addendum's own rulings surfaced
 detail, per row #301's NOT-covered cell; and the falsifier-ii cost item first raised at row #306,
 after item 5's embargo lift unblocked wave-2 launches).
 
+**Row #308 — author wording, verbatim:**
+
+> "both approved"
+
+Ledger itemization (ORCHESTRATOR-DERIVED), against items 6 and 7 below: **Item 6 [RULE]
+RATIFIED** — the `h_grid_admissibility_max` physics change is approved at the gate (presentation
+of record `exec/b-hprior-fix/DECOUPLING_DESIGN.md`); design ratified as drafted, host-window bound
+and `upper_limit=0.86` stay byte-untouched; implementation + regression tests + byte-id evidence
+run dispatched, `[PHYSICS]` commit to follow chair verification; the 14-task G-EXT wing rerun then
+proceeds under item 4b (cap 25 CPU-h, row #304). **Item 7 [RULE] option (A) GRANTED** — the
+`k-falsifier-ii-fleet` cap raised 60→290 CPU-h; the 33-seed fleet (the design's demonstrated power
+floor) launches; the batch envelope ≈345→≈571 CPU-h accepted. The ledger notes: "The '(A)' reading
+of the author's blanket 'both approved' is ORCHESTRATOR-DERIVED (it was the chair-recommended
+option) and is flagged for veto." NOT covered by row #308 (unchanged, binding reminder):
+extended-grid load-bearing claims for any per-arm registration; `d-a4-final-ratification`, which
+returns with the falsifier's numbers once the fleet completes.
+
+Item 8 below is the fresh item surfaced when item 7's own launch attempt (under the row #308
+grant) hit a code-implementation gap rather than a cost gap — see `exec/v-falsifier-ii-classG/
+LAUNCH_RECORD.md`'s second ("LAUNCH (option A, row #308)") section.
+
 ---
 
 ## 6. h_grid_admissibility_max physics-change — the item-4(a) design detail
@@ -642,6 +664,145 @@ cost is committed in this batch either way.
 resolved and the fleet (in whatever form is chosen) actually runs; A4 stays PROVISIONAL in the
 meantime, per row #290 decisions-table row 7's own NOT-covered cell: "dropping A4's PROVISIONAL —
 d-a4-final-ratification returns with numbers, never auto-ratified."
+
+---
+
+## 8. Option A' (class-G S̄_φ de-double-weight) ratification
+
+**[RULE]** — grant word: **Ratified**.
+
+This item is the code-implementation gap surfaced when item 7's own launch attempt (option A,
+row #308) STOPPED — not on cost, but because the falsifier's registered "rung 1 repaired in the
+Option A' form" precondition does not exist in the codebase. Sources: `PHYSICS_CHANGE_SBARPHI_20260827.md`
+(read in full), `PROPOSAL_2D_TWIN_ADOPTION_20260829.md` §6.1(ii), and `exec/v-falsifier-ii-classG/LAUNCH_RECORD.md`'s
+second section ("LAUNCH (option A, row #308)"), quoted at item 7's addendum note above.
+
+### Status and grant history, quoted
+
+The presentation's own header: "**NO CODE HAS BEEN WRITTEN.** No file under `darksiren_emri/` has
+been created, edited, or staged by this pass. This document is the **presentation package only**
+... **It awaits author approval before any implementation.** No ledger row has been appended to
+`docs/gates/PHYSICS-GATE-LEDGER.md` — the row is written when the author answers (proposed row in
+§10)." And: "**Grant status:** asserted as granted at `BIAS_HISTORY_LEDGER.md:2990/2992/2994` (rows
+#209-#211) and in runbooks 34/35; **no verbatim author quote exists for this item** — see
+`sbarphi_defect_location_20260827.md` §1. Flagged, not re-litigated." This is exactly why the item
+returns to the author here rather than riding that earlier, unquoted grant.
+
+### §0 headline — why literal Option A (the original grant) fails, quoted
+
+> "**The granted fix is under-specified, and its first registered disjunct, implemented literally,
+> does not remove the defect.**" ... Option A is stated as "z-draw from k̄_g·w_pop without the S̄_φ
+> factor when the Bernoulli(S_4D) layer is active" — i.e. drop `s_i` at
+> `correspondence_1d.py:1497` for the 2D call site and change nothing else. "That is wrong, because
+> **the host-draw weight and the z-conditional are not independent**." ... "**Remove S̄_φ from the
+> z-density and the cancellation is destroyed: `S̃_φ,g` survives as an uncancelled host-level
+> survival weight.** The defect is relocated from the event's drawn `z_ev` to the host's listed
+> `z_g`, not removed (§5, check L6)."
+
+> "**Recommended corrected form: Option A'** — Option A *plus* the host-weight change it requires.
+> Stated in §2, derived in §3, and the only form that passes every check in §5."
+
+### §2.2 — the three A' changes, confined to the `catalogue_selected_2d` branch, quoted
+
+> "Three changes, all confined to the `'catalogue_selected_2d'` branch:
+> **(i)** [SUPPLIED — not in the record] Host draw uses the plain rate weight:
+> `P(g) = w_g / Σ_{g'} w_{g'}` (NOT `w_g · S̃_φ,g / Σ …`). `catalogue_selected_host_draw_weights`
+> already returns `w_g` as its **second** value (`correspondence_1d.py:1385`), so the 2D branch at
+> `:2107` can normalize `_b0i2d_w_g` itself. **No edit to `catalogue_selected_host_draw_weights` is
+> permitted** — the 1D `b0i` branch at `:2062` consumes its first return value and must keep it
+> (§5, L8).
+> **(ii)** z draw drops the survival factor: `p(z | g) = k̄_g(z)` ... Implemented **without editing
+> `_draw_kernel_survival_redshifts`'s body** — by a keyword flag on the 2D call site
+> (`:1687-1696`) or by passing a flat `S̄_φ ≡ 1` table. The function is shared with the 1D `b0i`
+> arm at `:2078` and with the live `[HIER]` blocker-A conclusion (§9).
+> **(iii)** Mass draw and Bernoulli gate unchanged (`:1704-1719`).
+> Realized law: `∝ w_g · k̄_g(z) · p_gal(M|g) · S_4D` — **exactly `q_new`.**"
+
+**Binding MUST-NOT-change list from L8, quoted:**
+
+> "**Files that MUST NOT change** (binding, from L8): `_draw_kernel_survival_redshifts`'s density
+> body (`:1490-1498`), `catalogue_selected_host_draw_weights`'s first return value
+> (`:1380-1385`), `kernel_smeared_survival` (`:1242-1338`), and **anything under
+> `darksiren_emri/bayesian_inference/`** — the production estimator is confirmed defect-free
+> (`C2_star_review.md:19-34` item 3: no `S̄_φ` in the with-BH numerator; `bayesian_statistics.py:6362-6368`
+> applies `S̄_φ` once, correctly, in the *without*-BH twin only)."
+
+> "**PASS if and only if** the fix is scoped to the 2D branch and neither
+> `_draw_kernel_survival_redshifts`'s density nor `catalogue_selected_host_draw_weights`'s first
+> return value is edited in place. ✓ *(conditional — this is a binding implementation constraint,
+> not an observation)*"
+
+### §9.1 — files table, including the not-on-trigger-list note, quoted
+
+| file | change | trigger-list status |
+|---|---|---|
+| `darksiren_emri/validation/correspondence_1d.py` | 2D branch only: host weight `:2107`, z-draw call `:1687-1696`, docstrings `:1572-1575`/`:1620-1628`/`:1946`/`:1954-1971` | **NOT** on the trigger list — see §6.3 |
+| `darksiren_emri_test/validation/test_correspondence_1d.py` | R1–R8; update `:1616`, `:1647`, `:1678`, `:1734`, `:1758` | — |
+| `docs/gates/PHYSICS-GATE-LEDGER.md` | rows per §10 | — |
+
+The document's own note: "`correspondence_1d.py` is not currently a trigger file; if the author
+declines to amend the trigger list (§6.3), the row should carry an explicit 'voluntary gate'
+marker so the ledger's evidence contract is not misread." (This docket item's grant does not itself
+amend the trigger list — that is a separate word, not asked here; the presentation's own §10
+proposed-ledger-row form is quoted below as the implementation's evidence contract regardless of
+that separate word.)
+
+### Checks table — A' PASSES L1–L4 + L8, quoted in full
+
+| check | verdict |
+|---|---|
+| L1 complete catalogue / `S_4D≡1` | **PASS** (forms identical) |
+| L2 constant survival (no gradient) | **PASS** (forms identical after normalization) |
+| L3 realistic z-dependence | **PASS** (forms differ, 13.5 %/16.0 % — not vacuous) |
+| L4 mass-marginal / is it `S²`? | **PASS** with a correction: it is `S̄_φ·S_4D`, not `S_4D²` |
+| L5 record's disjunct 2, literal | **FAIL** — destroys the 2D mass selection |
+| L6 record's disjunct 1, literal (Option A) | **FAIL** — uncancelled `S̃_φ,g` host weight survives |
+| L7 defect-doc Option B (importance weight) | algebraically **PASS**, interface **FAIL** |
+| L8 1D b0i arm non-regression | **PASS** iff scoped to the 2D branch (binding constraint) |
+| L9 acceptance efficiency / GATE-ACC | not a correctness check — **UNMEASURED operational risk** |
+| **Option A' (§2.2) against L1–L4, L8** | **PASS on every check** |
+
+> "**Not all checks pass for the fix as granted.** L5 and L6 fail. Option A' — Option A plus the
+> supplied host-weight change — passes everything."
+
+### The falsifier's own registered requirement, quoted (`PROPOSAL_2D_TWIN_ADOPTION_20260829.md` §6.1(ii))
+
+> "(ii) Identity residual is venue-side (the S̄_φ double-weight as the registered falsifier). On
+> the class-G venue with rung 1 repaired in the Option A' form (harness-only gate; fleet re-run
+> ~8.67 CPU-h/task × 24-33 tasks ≈ 208-286 CPU-h ...), the registered v2.9 conditional prediction
+> must land: **LHS2(bt) = 0.00740040 ± 0.00024951**, band ±3σ_comb (two-sided), AND the **G4
+> arm-coherence ratio must stay inside its registered interval [0.8613, 0.8675]**."
+
+The launch record's own diagnosis of why this cannot proceed unimplemented, quoted: "submitting
+`cluster/p3_2d_fleet.sbatch`'s machinery verbatim right now ... would run the **exact same
+pre-repair generative code** as jobs 6723958/6730213 already ran. It would not test the
+falsifier's registered v2.9 conditional prediction at all; it would only produce a third, larger-N
+replicate of the ALREADY-BANKED pre-repair configuration, at the full 286.0 CPU-h cost, testing
+nothing new." Confirmed by direct grep in that session: "no `rung`, `option_a_prime`, `sbarphi`,
+or S̄_φ-override flag/kwarg anywhere" in `correspondence_1d.py`, and `p3_2d_fleet.py`'s
+`stage_fleet` "calls `gen.draw_realization(...)` with the REAL survival table and no override
+hook."
+
+### Triggers on Ratified
+
+Implementation behind the full physics-change gate: A′ implementation confined to the
+`catalogue_selected_2d` branch per §2.2/§9.1 above (host weight `:2107`, z-draw call
+`:1687-1696`, docstrings), R1–R8 test updates in `test_correspondence_1d.py`, and gate-ledger rows
+"per the presentation's own §10" — proposed row form, quoted: "`| 2026-08-27 | pre-commit |
+presented | APPROVED|REJECTED | validation/correspondence_1d.py:1380,1497,1682,2107 | class-G S̄_φ
+de-double-weight (2D venue): drop S̄_φ from the 2D z-draw AND swap the 2D host weight to plain w_g
+|`". Then the 33-seed falsifier fleet, already authorized at row #308 and priced at 286 CPU-h
+against the raised 290 CPU-h cap (item 7 above) — "286 ≤ 290 CPU-h," no fresh cost word needed.
+
+### NOT covered
+
+The falsifier's verdict itself (whether LHS2(bt) and G4 land in their registered bands) and
+`d-a4-final-ratification` — both "return with numbers" once the 33-seed fleet actually runs
+against the implemented A′ code, per row #290 decisions-table row 7's own NOT-covered cell (item 7
+above). Any 1D-branch or trigger-file change — none is proposed: the L8 binding constraint keeps
+`_draw_kernel_survival_redshifts`'s density body and `catalogue_selected_host_draw_weights`'s
+first return value untouched, and `correspondence_1d.py` itself is confirmed "NOT on the trigger
+list" (§9.1) unless the author separately amends it (a different word, not asked here).
 
 ---
 
