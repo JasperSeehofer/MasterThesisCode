@@ -214,3 +214,52 @@ author, per the node's own registered gate.
 *Stamp: m-s0b-byteid, 2026-09-02. No `git commit` made (per task constraint).
 Job 6769265 submitted, not yet complete at the time of this record; the
 comparison read is a separate, later step.*
+
+## RESUBMIT (local-path fix)
+
+Job 6769265 **FAILED in 12s**. Slurm log (chair-read, `.err`), quoted:
+
+> `/var/spool/slurmd/job6769265/slurm_script: line 64:
+> /home/jasper/darksiren-emri/cluster/modules.sh: No such file or directory`
+
+**Root cause:** not the sbatch script itself — `graph1_m_s0b_byteid_precheck.sbatch` line
+`PROJECT_ROOT="${PROJECT_ROOT:-$HOME/darksiren-emri}"` is byte-identical to the working
+templates (`graph1_t5_armR.sbatch`, `graph1_c0prime_byteid_postdecouple_gate.sbatch`, both
+re-checked directly on the cluster). The bug was in how the first submission invoked `sbatch`:
+`ssh bwunicluster "... sbatch --export=ALL,PROJECT_ROOT=$HOME/darksiren-emri ..."` — the whole
+command was inside a **double-quoted** local shell string, so `$HOME` was expanded by the LOCAL
+machine's shell (`/home/jasper`) before the string ever reached the remote host, embedding the
+local dev-box path as a literal `PROJECT_ROOT` override that clobbered the script's own correct
+`${PROJECT_ROOT:-$HOME/darksiren-emri}` fallback (remote `$HOME` = the working templates'
+convention).
+
+**Audit of the rest of the script for local-path leakage:** `grep -n "jasper\|/home/jasper"
+cluster/graph1_m_s0b_byteid_precheck.sbatch` returns nothing — no hardcoded local paths anywhere
+in the file. `OUT_ROOT` (line 75) is built as `"$PROJECT_ROOT/results/..."`, a remote-side
+expansion evaluated inside the running job, not a literal — it was never itself broken; it only
+inherited the bad `PROJECT_ROOT` value from the submission-time env override. **No edit to the
+`.sbatch` file was needed or made.**
+
+**Fix:** resubmit via a **single-quoted** remote command, so no local shell expands anything
+before it reaches the remote host, and without an explicit `PROJECT_ROOT=` override at all —
+matching the working templates' documented convention ("Required env: PROJECT_ROOT (optional;
+falls back to `$HOME/darksiren-emri`)"):
+```
+ssh bwunicluster 'cd ~/darksiren-emri && sbatch cluster/graph1_m_s0b_byteid_precheck.sbatch'
+```
+Verified remote `$HOME` = `/home/st/st_us-403333/st_ac147838` (matches the preflight-reported
+repo path `/home/st/st_us-403333/st_ac147838/darksiren-emri`) before resubmitting.
+
+**Out-root state check (pre-resubmit):** confirmed the failed job wrote NOTHING — the script
+fails at line 64 (`source "$PROJECT_ROOT/cluster/modules.sh"`), before `mkdir -p "$OUT_ROOT/logs"`
+at line 76 ever runs. `ls`/`find` on the remote out-root path
+(`results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/m-s0b-byteid/`) both
+returned "No such file or directory" — no stub directory existed, nothing to clean.
+
+**Resubmitted: Job ID 6769608** (`graph1-m-s0b-byteid`, cpu_il, single task). Confirmed queued
+via `squeue -j 6769608` (state PENDING, reason Priority — same contention from the running
+33-task `p3-2d-fleet` array, job 6769177, as before). Zero compute lost (first job failed in the
+environment-setup line, before any simulation work began).
+
+*Stamp: m-s0b-byteid resubmit, 2026-09-02. No `git commit` made. Job 6769608 submitted, not yet
+complete at the time of this record; the comparison read is still a separate, later step.*
