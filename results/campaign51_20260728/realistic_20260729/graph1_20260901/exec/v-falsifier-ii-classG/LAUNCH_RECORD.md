@@ -180,3 +180,146 @@ it. Alternatively, if the author intends the fleet to run pre-repair for some ot
 as a fresh-seed cross-check of the existing 33-seed banked result, not as falsifier (ii) itself),
 that is a different task than "launch falsifier (ii) exactly per its registered design" and should
 be stated as such.
+
+---
+
+## LAUNCH 2 (post-A′, row #314)
+
+Attempted 2026-09-02, third pass, by the cluster launcher agent. **LAUNCHED — job 6769177.**
+
+### Authorization (quoted)
+
+Row #308 (docket §7 option A: raise `k-falsifier-ii-fleet` cap to 290 CPU-h, run the 33-seed
+fleet, option a′ per `RECOST_RECORD.md` §3) + row #314 (author's "both items as recommended
+please," ratifying `PHYSICS_CHANGE_SBARPHI_20260827.md` §2.2 Option A′ as the implementable form)
++ the landed `[PHYSICS]` commit `2b657255` ("Option A' — class-G S_bar_phi de-double-weight (2D
+branch only; rows #309/#314)", `A_PRIME_IMPLEMENTATION_RECORD.md`, 2032 tests pass, ruff+mypy
+clean). This satisfies the precondition the previous stop in this file identified: rung 1 (Option
+A′) is now implemented, so the falsifier's registered venue (`"catalogue_selected_2d"` with rung 1
+repaired) actually exists in the codebase.
+
+### What changed since the row #309 stop, verified directly this session
+
+- `git merge-base --is-ancestor 2b657255 HEAD` on local `7e9e1e27` → true.
+- `grep apply_survival darksiren_emri/validation/correspondence_1d.py`: the 2D call site inside
+  `_draw_2d_accepted_latents` passes `apply_survival=False` **unconditionally** (not a CLI flag on
+  `p3_2d_fleet.py` — the repair is baked into the `"catalogue_selected_2d"` branch itself; every
+  other caller, `"catalogue_selected"`/b0i and `"mixture_selected"`, omits the kwarg and defaults
+  to `True`, bit-identical per the implementation record's L8 guarantee). `draw_realization`'s
+  `"catalogue_selected_2d"` elif now normalizes the plain rate weight `w_g` (not `w_g·S̃_φ,g`) for
+  `host_w`, per item (i).
+- **Consequence for this launch:** `p3_2d_fleet.py --stage fleet` needs **no code change and no
+  new CLI flag** to run under Option A′ — it is the exact same driver invocation as jobs
+  6723958/6730213, now running against a commit where the underlying `MirrorUniverseGenerator`
+  draw law is repaired. This is what makes "reuse the prior fleet machinery verbatim" correct here
+  (it was NOT correct at the row #309 stop, when the same verbatim invocation would have run the
+  unrepaired law).
+
+### R4/fleet/GATE-ACC open item (A_PRIME_IMPLEMENTATION_RECORD.md §6.3 item 3) — checked, not designed
+
+The implementation record flags "Fleet re-run / GATE-ACC re-check... PA-2D-9's frozen numbers and
+the 24-seed b0i2d fleet remain STALE per §9.3 until the chair authorizes and runs that re-run" as
+explicitly out of scope for the implementation task. Checked what this fleet submission needs to
+emit so that re-check remains possible downstream, without designing anything new:
+- `gate_acc_extended` (GATE-ACC) lives in `p3_2d_fleet.py`'s `stage_gates`, a **separate
+  post-processing stage** (`--stage gates`) that consumes each seed's `<arm>_<seed>_meta.json` +
+  `diagnostics_csv` written by `--stage fleet`'s `_run_b0i2d_arm_seed`. Nothing in the A′
+  implementation touched `_run_b0i2d_arm_seed`'s output contract (meta dict keys, diagnostics CSV
+  path) — it only changed what upstream `draw_realization`/`_draw_kernel_survival_redshifts`
+  compute before that function's `run_mirror_seed_inprocess` call.
+- **This means the `--stage fleet` array job now submitted emits exactly what `--stage gates`
+  needs** for the R4/GATE-ACC re-check (and `--stage lhs2d` for the registered LHS2/G4 read) once
+  all 33×2 arm-seed metas land — running those two post-processing stages is a separate, cheap,
+  future step (not part of this submission; this launcher's mandate is the fleet array only, per
+  the prior stop's own scoping and the task brief).
+- Each `meta.json` stamps `git_commit` via `c1d._git_commit()` at run time, so the readout will
+  show these results were generated at (or after) `2b657255` — the provenance chain needed to
+  distinguish this run from the pre-repair banked fleet is self-recording; no extra stamp was
+  added.
+
+### Seed convention — determined, not delegated
+
+Checked `PREREGISTRATION_P3_2D_REPAIR_20260827.md:675/1014` (blindness item 6) and
+`RECOST_RECORD.md` §1.1 directly: the registered convention for a rung-repair re-run is to **reuse
+the same seed labels** (900101-900133, the 24-seed primary batch + the 9-seed PA-2DR-15
+extension) against **freshly generated draws** — the preregistration states the repair "changes
+RNG consumption... so the fresh fleet, though reusing the same seed labels, performs genuinely new
+draws," i.e. same seed value ≠ same realization once the draw law changes upstream of the RNG
+calls that consume it. This is the exact form the rung-2/3 repair itself used (fresh out-root,
+same seed labels, `PA-CA-11`'s per-`(arm,seed)`-meta reuse guard forces a genuine fresh draw at a
+fresh out-root regardless). **Not ORCHESTRATOR-DELEGATED — this is a registered convention**,
+sourced to the two file:line locations above, not an unregistered choice this launcher made.
+
+Seeds used: **900101-900133** (33 seeds, both arms `bc`+`bt` per seed → 66 arm-seed pairs), matching
+`FLEET_SEEDS = c1d.ARM_SEEDS["b0i2d"]` (24, 900101-900124) plus the PA-2DR-15-precedent 9-seed
+extension (900125-900133) — reached via `sbatch --array=0-32` (`p3_2d_fleet.sbatch`'s
+`SEED=$((900101 + TID))` convention, gotcha 4), not by editing the sbatch script.
+
+### Cost recompute (confirmed before submission)
+
+33 tasks × 8.6667 CPU-h/task (empirical anchor, `RECOST_RECORD.md` §1, twice-replicated on jobs
+6723958/6730213, re-confirmed current/not-stale this session per §1.1's reasoning — the eight
+`[PHYSICS]` commits since d04d9dc9 up through `2b657255` inclusive are all instrument-flag or
+draw-law-repair changes on the SAME driver being re-anchored, not a change invalidating the
+minutes/task figure itself, since the anchor is a wall-clock/cpu measurement of the harness, not a
+function of which draw law it happens to run) = **286.0 CPU-h ≤ 290.0 CPU-h cap (row #308).** Not
+over. No STOP triggered.
+
+### Preflight (verbatim, this launch's session)
+
+Before sync (cluster HEAD `dcb2c470`, behind local `7e9e1e27` by 6 commits, including `2b657255`):
+```
+VERDICT: READY ✓ (WARN: 1 issue(s))
+   • 75 unregistered dataset dir(s) in 'emri' — register in cluster/datasets.yaml + DATA_INVENTORY.md
+```
+Sync: **`git push origin fix/p32d-classg-venue-repair` succeeded directly this session** (the
+prior sessions' "direct push denied" finding did not reproduce here — no bundle/scp fallback was
+needed for the push leg). `ssh bwunicluster git fetch + merge --ff-only` then hit one untracked
+collision (`cluster/graph1_t5_armR.sbatch`, newly tracked upstream) — moved to
+`~/wave2_untracked_sbatch_backup/` (not deleted), then `git merge --ff-only
+origin/fix/p32d-classg-venue-repair` fast-forwarded `dcb2c470..7e9e1e27` cleanly. Confirmed
+`git merge-base --is-ancestor 2b657255 HEAD` → true on the cluster checkout. Re-run preflight
+post-sync:
+```
+VERDICT: READY ✓ (WARN: 1 issue(s))
+   • 75 unregistered dataset dir(s) in 'emri' — register in cluster/datasets.yaml + DATA_INVENTORY.md
+```
+Same pre-existing backlog (gotcha 11), not addressed by this launch, not a blocker.
+
+### Checksum pin (dataset provenance guard)
+
+`md5sum darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv` — local
+`c52c13b5cab61f6b3f04bbe202550969`, cluster `c52c13b5cab61f6b3f04bbe202550969`. **Identical.** No
+stale-copy risk for this run (CLAUDE.md's dataset-pinning mandate).
+
+### Cluster working-tree state before submission
+
+`git status --porcelain` on the cluster showed 0 tracked-file modifications (only untracked
+scratch/result directories, the same pre-existing backlog preflight already flags) — the
+repaired `correspondence_1d.py` at `HEAD=7e9e1e27` is exactly the committed `2b657255` content,
+nothing locally dirtied on top of it.
+
+### Submission
+
+```
+$ sbatch --array=0-32 --export=ALL,OUT_ROOT=$WS/p3_2d_fleet_aprime_20260902 cluster/p3_2d_fleet.sbatch
+Submitted batch job 6769177
+```
+`cluster/p3_2d_fleet.sbatch` used **verbatim** (no edits) — only the `--array` range and
+`OUT_ROOT` were overridden via `sbatch` CLI flags, per the script's own documented
+`--export=ALL,OUT_ROOT=...` override pattern (its header comment: reusing the banked default
+out-root would silently no-op against `PA-CA-11`'s per-seed reuse guard and risk contaminating the
+frozen pre-repair comparand). Fresh out-root confirmed non-colliding
+(`ls $WS/p3_2d_fleet_aprime_20260902` → does not exist) before submission.
+
+`squeue -u $USER` post-submit: `6769177_[0-32]  cpu_il  p3-2d-fl  PD` — queued, 33-task array,
+`cpu_il` partition, `--cpus-per-task=16`, `--time=02:00:00` (from the unedited sbatch pragmas).
+
+### Disposition
+
+**LAUNCHED.** Job ID **6769177** (array 0-32, 33 tasks, seeds 900101-900133, both arms/task).
+Estimated cost **286.0 CPU-h** (≤ 290 CPU-h cap, row #308). No code was edited, no commit made by
+this launcher (physics implementation was `2b657255`, already committed and reviewed before this
+session started). Readout (stage gates + stage lhs2d against the registered v2.9 conditional
+prediction: LHS2(bt) = 0.00740040 ± 0.00024951 ±3σ_comb two-sided, G4 ∈ [0.8613, 0.8675]) is a
+follow-on task once all 66 arm-seed tasks complete — not run here.
