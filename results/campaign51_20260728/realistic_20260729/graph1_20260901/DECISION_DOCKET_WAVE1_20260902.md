@@ -38,6 +38,7 @@ Committed by the chair; the author rules on it via the decisions table (one-word
 | 6 | h_grid_admissibility_max physics-change | RULE | Ratified — decoupled admissibility ceiling (1.00) on the guard only, host-window bound at `bayesian_statistics.py:5716` untouched at 0.86 | any claim the extended grid is load-bearing for a given arm (row #290 row 11) |
 | 7 | falsifier-ii fleet cost | RULE | (A) raise the cap to 290 CPU-h, run the 33-seed fleet [chair-recommended] / (B) hold the 60 CPU-h cap, falsifier cannot run as designed, A4 stays PROVISIONAL / (C) defer to a later batch | d-a4-final-ratification (returns with the falsifier's numbers either way; A4 stays PROVISIONAL meanwhile) |
 | 8 | Option A' (class-G S̄_φ de-double-weight) ratification | RULE | Ratified | the falsifier's verdict and d-a4-final-ratification (return with numbers); any 1D-branch or trigger-file change (none is proposed) |
+| 9 | d-t5-window | RULE | a word — (A) do NOT adopt the log-symmetric window in either venue [chair-recommended] / (B) adopt anyway per venue / (C) extend the scan | any cross-venue generalization beyond the two measured venues; the true-host recovery-gain sub-read (absent data, §6.2 item (i)) — disclosed gap, author may waive or require |
 | 6 | Status annex | — | no decision asked | — |
 
 ---
@@ -803,6 +804,106 @@ above). Any 1D-branch or trigger-file change — none is proposed: the L8 bindin
 `_draw_kernel_survival_redshifts`'s density body and `catalogue_selected_host_draw_weights`'s
 first return value untouched, and `correspondence_1d.py` itself is confirmed "NOT on the trigger
 list" (§9.1) unless the author separately amends it (a different word, not asked here).
+
+---
+
+## 9. d-t5-window — adopt the log-symmetric mass-filter window, per venue?
+
+**[RULE]** — grant word: (A) / (B) / (C).
+
+This is the graph's own convergence decide node (`RESEARCH_GRAPH_1_PROPOSAL_20260901.md` §1.11:
+"d-t5-window | RULE | adopt the log-symmetric window, per venue? | requires-manifest: m-t5-armS
+done; m-t5-armR done; both with band dispositions assigned"). Requires-manifest now satisfied:
+m-t5-armS done (row #302) and m-t5-armR done (verdict-free readout landed in
+`exec/m-t5-armR/READOUT_RECORD.md`; its own ledger row was still being written at the time this
+item was compiled, so the record itself is quoted directly below rather than a row number).
+
+### Arm S (iiib) — the k-scan, quoted from `exec/m-t5-armS/READOUT_RECORD.md`
+
+Per-k table (`Δmean_h,pred = Δℓ'(0.665) / I_HEAD`, `I_HEAD = 2965`):
+
+| k | Δmean_h,pred | band |
+|---|---:|---|
+| 2.0 | **+0.005073** | INTERMEDIATE (0.003 < 0.005073 < 0.008) |
+| 2.5 | **+0.003713** | INTERMEDIATE (0.003 < 0.003713 < 0.008) |
+| 3.0 (banked, C3) | **+0.003523** | INTERMEDIATE (0.003 < 0.003523 < 0.008) |
+| 3.5 | **−0.001169** | IMMATERIAL-CONSISTENT-WITH-HB (\|Δ\| ≤ 0.003) |
+| ∞ (no window) | **−0.004824** | INTERMEDIATE (0.003 < 0.004824 < 0.008) |
+
+> "**Scan-level disposition (design §6.1's own rule, applied mechanically):** no point reaches
+> `|Δmean_h,pred| ≥ T_mat = 0.008` → **ALL-SUB-MATERIAL**."
+
+> "**Shape read (REPORTED-ONLY, per design §6.1):** `Δmean_h,pred(k)` is monotone decreasing
+> across the five points in ascending k order (2.0: +0.00507 → 2.5: +0.00371 → 3.0: +0.00352 →
+> 3.5: −0.00117 → ∞: −0.00482), consistent with the design's own zero-compute prediction of a
+> monotone decreasing dark-class-collapse effect."
+
+**R5 stencil outlier, quoted:** "k=2.0's ratio (**39.1%**) is far larger than the other four
+points (≤2.3%) — reported as a plain measurement; the design's own escalation rule (G27) on an
+ambiguous R5 read is not invoked or adjudicated by this record."
+
+**R2 flip-confound disclosure, quoted:** "because the arm-S runs are post-flip and the baseline is
+pre-flip, the row #286 `catalogue_leg_1d_mass_aware` coupling ... means every candidate-bearing
+event's `L_cat_with_bh` slot moves for a reason unrelated to the mass-window geometry as well — so
+100% engagement at every k does not by itself discriminate the window effect from the flip. This
+is reported as a measurement, not adjudicated."
+
+### Arm R (joint_r1) — the decisive k=3 point, quoted from `exec/m-t5-armR/READOUT_RECORD.md`
+
+> "| I_HEAD used | Δmean_h,pred | band | | **2879.04 (joint_r1, this record's convention)** |
+> **+0.0025803** | **IMMATERIAL-CONSISTENT-WITH-HB** (\|Δ\| ≤ 0.003) |" — "**Band call is robust
+> to the venue-constant choice**: both give IMMATERIAL-CONSISTENT-WITH-HB (the design registered
+> no MATERIAL-AT-SOME-k-style scan rule for Arm R — it is a single-point arm, not a k-scan, so no
+> scan-level verdict applies)."
+
+**R6 1D bit-identity, quoted:** "**PASS** — floating-point noise only, matches the design's own
+registered prediction exactly" (max_abs diff ≤ 1.006e-16 across all 4 H4 nodes).
+
+**I_HEAD convention disclosure, quoted:** "The stencil **conversion constant** `I_HEAD = 1/σ_h²`
+... is venue-specific in the design's own cited source ... **This record uses the joint_r1-specific
+`I_HEAD = 2879.04`** ... not Arm S's iiib value of 2965 — the design's own source registers them
+as distinct per-venue quantities, and §6.2 gives no instruction to reuse Arm S's number." (Both
+constants are reported for transparency; the band call is unaffected by the choice.)
+
+**§6.2 item (i) true-host gap, quoted in full:** "§6.2's registered prediction (i) — true-host
+recovery among the 73 in-catalogue events rising by 16-22 points (expected +12 to +16 hosts) —
+requires per-event true-host identification data that is not present in
+`event_likelihoods.csv`/`cramer_rao_bounds.csv` (no host-truth column retrieved for either the
+armR run or the baseline). ... **Left unread here** — disclosed as an explicit gap, not silently
+dropped; a later record with the host-truth join is needed before item (i)'s falsifier band
+(`[+8, +20]` hosts) can be checked."
+
+### The ask — three-way word, chair recommendation marked ORCHESTRATOR-DERIVED
+
+**(A) Do NOT adopt the log-symmetric window in either venue.** **[CHAIR-RECOMMENDED,
+ORCHESTRATOR-DERIVED.]** Every measured point in both venues is sub-material or immaterial under
+the design's own mechanical rules — Arm S's k-scan is ALL-SUB-MATERIAL end to end (its most
+extreme point, k=2.0's +0.005073, still sits under the 0.008 MATERIAL threshold, and that same
+point carries the disclosed R5 stencil-validity flag), and Arm R's decisive k=3.0 point on
+joint_r1 lands IMMATERIAL-CONSISTENT-WITH-HB outright, robust to the I_HEAD convention choice. On
+this reading: the production linear k=1.5 window stands unchanged in both venues, and the
+falsifier-ii (F-ii) question this arm was built to answer moves to **SETTLED
+(bounded-immaterial, refuted-as-material)** — which, per the charter's own objective (measuring
+and bounding candidate mechanisms rather than requiring every branch to end in adoption), **pays
+like verified**, not like a null result.
+
+**(B) Adopt the log-symmetric window anyway, per venue.** No evidence in either readout supports
+this — every band call across both arms is sub-material or immaterial, and adoption against that
+evidence would need its own justification not present in either record.
+
+**(C) Extend the scan.** No registered design calls for it: Arm S's design (§6.1) specifies the
+five k-points already measured (2.0, 2.5, 3.0, 3.5, ∞) and Arm R's design (§6.2) specifies a
+single decisive k=3.0 point, already measured — "the design's own decisive points are measured,"
+per the graph spec's own framing of this node.
+
+### NOT covered
+
+Any cross-venue generalization beyond the two measured venues (iiib, joint_r1) — a third venue
+would need its own arm under this same design, not assumed from these two. The true-host
+recovery-gain sub-read (§6.2 item (i), the `[+8, +20]`-host falsifier band) — explicitly absent
+data per `exec/m-t5-armR/READOUT_RECORD.md` §7, disclosed as a gap the author may waive (accept
+the window-adoption ruling above without it) or require (demand the host-truth join before this
+item closes).
 
 ---
 
