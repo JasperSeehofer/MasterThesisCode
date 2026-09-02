@@ -39,8 +39,8 @@ Committed by the chair; the author rules on it via the decisions table (one-word
 | 7 | falsifier-ii fleet cost | RULE | (A) raise the cap to 290 CPU-h, run the 33-seed fleet [chair-recommended] / (B) hold the 60 CPU-h cap, falsifier cannot run as designed, A4 stays PROVISIONAL / (C) defer to a later batch | d-a4-final-ratification (returns with the falsifier's numbers either way; A4 stays PROVISIONAL meanwhile) |
 | 8 | Option A' (class-G S̄_φ de-double-weight) ratification **[RULED — row #314]** | RULE | Ratified | the falsifier's verdict and d-a4-final-ratification (return with numbers); any 1D-branch or trigger-file change (none is proposed) |
 | 9 | d-t5-window **[RULED — row #314]** | RULE | a word — (A) do NOT adopt the log-symmetric window in either venue [chair-recommended] / (B) adopt anyway per venue / (C) extend the scan | any cross-venue generalization beyond the two measured venues; the true-host recovery-gain sub-read (absent data, §6.2 item (i)) — disclosed gap, author may waive or require |
-| 10 | S0-B production cost | RULE | (A) adopt the prereg's sourced anchor, cap 105 CPU-h, run the registered shape [chair-recommended] / (B) descope to s-axis-only first pass (~40–46 CPU-h) / (C) hold — S0-B and d-photoz-leverage defer | d-photoz-leverage; the g-score-null run-time re-certification path |
-| 11 | d-a4-final-ratification | RULE | Ratified — drop A4's PROVISIONAL, c-a4-structural → VERIFIED, q-a4-provisional = the batch's second SETTLED | the ×1.96 venue-side residual attribution (d-residual-attribution); the GATE-ACC reporting addendum |
+| 10 | S0-B production cost **[CHAIR-DECIDED — row #325, veto reverts]** | RULE | (A) adopt the prereg's sourced anchor, cap 105 CPU-h, run the registered shape [chair-recommended] / (B) descope to s-axis-only first pass (~40–46 CPU-h) / (C) hold — S0-B and d-photoz-leverage defer | d-photoz-leverage; the g-score-null run-time re-certification path |
+| 11 | d-a4-final-ratification **[CHAIR-DECIDED — row #325, veto reverts]** | RULE | Ratified — drop A4's PROVISIONAL, c-a4-structural → VERIFIED, q-a4-provisional = the batch's second SETTLED | the ×1.96 venue-side residual attribution (d-residual-attribution); the GATE-ACC reporting addendum |
 | 6 | Status annex | — | no decision asked | — |
 
 ---
@@ -462,6 +462,29 @@ with the falsifier's numbers."
 Items 10 and 11 below opened after row #314 — the S0-B cost conflict surfaced by
 `m-s0b-production`'s own launch stop (row #320), and `d-a4-final-ratification` returning with
 numbers once the falsifier's adjudicating read landed (row #322).
+
+**Row #325 — author wording, verbatim:**
+
+> "please continue autonomous. you can make decisions but flag them."
+
+Ledger itemization (ORCHESTRATOR-DERIVED): "a **bounded autonomy grant** for this stretch — the
+chair may adopt its own stated recommendations where a decision blocks progress, each FLAGGED
+prominently for author veto; this does not silently absorb future decisions whose recommendations
+were never put to the author." Under this grant, four chair decisions were taken, all flagged
+veto-able: **(1) item 10 → option (A) [CHAIR-DECIDED-UNDER-GRANT]** — the S0-B cost cap raised to
+**105 CPU-h** per the prereg's own §7.2 anchor; the registered PA-HIER-31(d) 5-node production run
+launches, dispatch in flight. **(2) item 11 → Ratified [CHAIR-DECIDED-UNDER-GRANT]** — on the row
+#322 INSIDE-BOTH falsifier read, A4's PROVISIONAL attribution cap is dropped: **c-a4-structural
+moves to VERIFIED** and **q-a4-provisional becomes the batch's SECOND SETTLED question** (the
+×1.96 venue-side residual attribution stays with `d-residual-attribution`, not closed by this
+decision). **(3) g-byte-id gate semantics [CHAIR-DECIDED-UNDER-GRANT]** — byte-identity gates are
+**same-machine by definition**; cross-machine comparisons are **diagnostic-only** (resolves the row
+#318 open question consistent with how rows #318-#319 were actually executed). **(4) the T5 §6.2
+item (i) true-host recovery sub-read → WAIVED [CHAIR-DECIDED-UNDER-GRANT]** — both arms' primary
+reads were decisive and the window question is SETTLED-not-adopted (row #314), so the sub-read
+"informs nothing actionable"; the row #314 disclosed-open word is closed. "**Every one of these
+four decisions reverts on an author veto word** — none is presented as ratified beyond the scope
+of this grant."
 
 ---
 
