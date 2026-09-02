@@ -37,8 +37,8 @@ Committed by the chair; the author rules on it via the decisions table (one-word
 | 5 | g-c0-baseline re-specification | RULE | Ratified — re-stamp GREEN-AS-CORRECTED against the flag-matched `c0prime_off` comparand [(A), chair-recommended] / (B) rerun an explicit-off-pinned arm for a literal bit-identity pass / (C) hold RED, bank a fresh comparand only at d-calibration | banking m-head-rebaseline as comparand of record (stays inside d-calibration, row #290); any science read of the retrieved wave-1 outputs |
 | 6 | h_grid_admissibility_max physics-change | RULE | Ratified — decoupled admissibility ceiling (1.00) on the guard only, host-window bound at `bayesian_statistics.py:5716` untouched at 0.86 | any claim the extended grid is load-bearing for a given arm (row #290 row 11) |
 | 7 | falsifier-ii fleet cost | RULE | (A) raise the cap to 290 CPU-h, run the 33-seed fleet [chair-recommended] / (B) hold the 60 CPU-h cap, falsifier cannot run as designed, A4 stays PROVISIONAL / (C) defer to a later batch | d-a4-final-ratification (returns with the falsifier's numbers either way; A4 stays PROVISIONAL meanwhile) |
-| 8 | Option A' (class-G S̄_φ de-double-weight) ratification | RULE | Ratified | the falsifier's verdict and d-a4-final-ratification (return with numbers); any 1D-branch or trigger-file change (none is proposed) |
-| 9 | d-t5-window | RULE | a word — (A) do NOT adopt the log-symmetric window in either venue [chair-recommended] / (B) adopt anyway per venue / (C) extend the scan | any cross-venue generalization beyond the two measured venues; the true-host recovery-gain sub-read (absent data, §6.2 item (i)) — disclosed gap, author may waive or require |
+| 8 | Option A' (class-G S̄_φ de-double-weight) ratification **[RULED — row #314]** | RULE | Ratified | the falsifier's verdict and d-a4-final-ratification (return with numbers); any 1D-branch or trigger-file change (none is proposed) |
+| 9 | d-t5-window **[RULED — row #314]** | RULE | a word — (A) do NOT adopt the log-symmetric window in either venue [chair-recommended] / (B) adopt anyway per venue / (C) extend the scan | any cross-venue generalization beyond the two measured venues; the true-host recovery-gain sub-read (absent data, §6.2 item (i)) — disclosed gap, author may waive or require |
 | 6 | Status annex | — | no decision asked | — |
 
 ---
@@ -435,6 +435,27 @@ returns with the falsifier's numbers once the fleet completes.
 Item 8 below is the fresh item surfaced when item 7's own launch attempt (under the row #308
 grant) hit a code-implementation gap rather than a cost gap — see `exec/v-falsifier-ii-classG/
 LAUNCH_RECORD.md`'s second ("LAUNCH (option A, row #308)") section.
+
+**Row #314 — author wording, verbatim:**
+
+> "both items as recommended please"
+
+Ledger itemization (ORCHESTRATOR-DERIVED, both were chair-recommended options), against items 8
+and 9 above: **Item 8 [RULE] RATIFIED** — Option A' (class-G S̄_φ de-double-weight) approved at
+the gate; implementation dispatched per §2.2 exactly (host draw plain rate weight, z-draw drops
+the survival factor via a keyword flag/flat table with no edit to the shared
+`_draw_kernel_survival_redshifts` body, mass draw/Bernoulli gate unchanged, the §5 L8
+MUST-NOT-change list binding), R1-R8 test updates, gate-ledger rows per its §10; on green tests
+the 33-seed falsifier fleet launches under the row #308 cap (286 ≤ 290 CPU-h). **Item 9 [RULE]
+option (A) GRANTED** — the log-symmetric window is NOT adopted in either venue; the production
+linear k=1.5 window stands; the F-ii window question moves to **SETTLED (bounded-immaterial;
+refuted-as-material — pays like verified under the §0 charter objective)** on the evidence of rows
+#302/#312 — "the first registered question of the batch to reach SETTLED." **NOT covered by this
+ruling, stated plainly:** the §6.2 item (i) true-host recovery-gain sub-read "had no
+recommendation in the docket — its disposition (waive vs require a follow-up read) remains a
+disclosed-open word, NOT absorbed by this ruling"; cross-venue generalization of the window
+verdict; the falsifier's own eventual verdict; and `d-a4-final-ratification`, which still "returns
+with the falsifier's numbers."
 
 ---
 

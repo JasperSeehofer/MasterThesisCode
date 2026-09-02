@@ -1570,6 +1570,7 @@ def _draw_kernel_survival_redshifts(
     host_qS: npt.NDArray[np.float64],
     h: float = H_TRUE,
     n_grid: int = _B0I_ZTRUE_GRID_N,
+    apply_survival: bool = True,
 ) -> npt.NDArray[np.float64]:
     r"""Per-event ``z_true`` draw from ``k_g(z) S_bar_phi(z;h)`` (PA-11), one per host.
 
@@ -1600,6 +1601,21 @@ def _draw_kernel_survival_redshifts(
             as ``host_z``.
         h: Dimensionless Hubble parameter (default :data:`H_TRUE`).
         n_grid: Per-host inverse-CDF grid resolution.
+        apply_survival: If ``True`` (default -- the "catalogue_selected"/b0i
+            and "mixture_selected" callers, UNCHANGED), the density includes
+            the ``S_bar_phi(z;h)`` factor as always. If ``False`` (the
+            "catalogue_selected_2d"/b0i2d 2D call site ONLY,
+            :func:`_draw_2d_accepted_latents`), the density drops the
+            ``S_bar_phi`` factor: ``density_i = kernel_i * w_pop_eff_i``, per
+            PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(ii) -- the 2D venue
+            already applies a per-event, per-mass ``S_4D`` Bernoulli
+            acceptance downstream (:func:`_draw_2d_accepted_latents`'s
+            accept step); folding the mass-marginal ``S_bar_phi(z;h)`` into
+            this z-density as well double-counts survival. This flag changes
+            NOTHING for any caller that does not pass it explicitly, so the
+            1D "catalogue_selected" (b0i) and "mixture_selected" arms'
+            output is bit-identical to before this change (author-ratified
+            L8 non-regression constraint).
 
     Returns:
         Drawn ``z_true`` per event, shape ``(n,)``.
@@ -1616,8 +1632,11 @@ def _draw_kernel_survival_redshifts(
         w_pop_eff_i = _kernel_w_pop_eff(z_i_grid[None, :], completeness, host_pixels[i : i + 1], h)[
             0
         ]
-        s_i = np.interp(z_i_grid, z_grid, s_phi)
-        density_i = kernel_i * w_pop_eff_i * s_i
+        if apply_survival:
+            s_i = np.interp(z_i_grid, z_grid, s_phi)
+            density_i = kernel_i * w_pop_eff_i * s_i
+        else:
+            density_i = kernel_i * w_pop_eff_i
         z_true[i] = _inverse_cdf_draw(rng, 1, z_i_grid, density_i)[0]
     return z_true
 
@@ -1710,9 +1729,12 @@ class _B0i2DLatents:
     Attributes:
         host_idx: Accepted hosts' pool row index, shape ``(n,)``.
         z_true: Accepted hosts' kernel-smeared drawn true redshift, shape ``(n,)``
-            (:func:`_draw_kernel_survival_redshifts`, UNCHANGED from the 1D
-            "catalogue_selected" mode -- the mass-law extension does not
-            perturb the z-draw law).
+            (:func:`_draw_kernel_survival_redshifts` with ``apply_survival=False``
+            -- PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(ii)/Option A': the
+            ``S_bar_phi(z;h)`` factor is DROPPED here for the 2D arm only,
+            since the venue's per-event, per-mass ``S_4D`` Bernoulli
+            acceptance (below) already applies survival once; the 1D
+            "catalogue_selected" mode's density is unaffected).
         host_phiS: Accepted hosts' sky azimuth, shape ``(n,)``.
         host_qS: Accepted hosts' sky polar angle, shape ``(n,)``.
         M_true: Latent source-frame host mass ``M ~ p_gal(.|host)``, shape ``(n,)``.
@@ -1722,9 +1744,13 @@ class _B0i2DLatents:
             accept probability that produced this row).
         s_tilde_phi_host: The 1D ``S̃_φ,g`` of the accepted host (same object
             "catalogue_selected" records as ``s_tilde_phi_host`` -- carried
-            here unchanged; the b0i-2D host-DRAW weighting itself is the
-            SAME ``w_g * S̃_φ,g`` law, PREREGISTRATION_P3_2D_20260825.md §3.2's
-            venue-drift control convention), shape ``(n,)``.
+            here UNCHANGED as a diagnostic column only, per
+            PREREGISTRATION_P3_2D_20260825.md §3.2's venue-drift control
+            convention. As of PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(i)/
+            Option A' the b0i-2D host-DRAW weighting ITSELF is the PLAIN
+            rate weight ``w_g`` (normalized), NOT ``w_g * S̃_φ,g`` -- this
+            column is retained so R4-style venue-drift audits stay possible,
+            but it no longer describes the draw law), shape ``(n,)``.
         n_drawn_total: Total (accepted + rejected) candidate draws consumed
             across every round -- diagnostic only (GATE ACC-style disclosure).
         n_rounds: Number of batch rounds the rejection loop needed.
@@ -1756,16 +1782,25 @@ def _draw_2d_accepted_latents(
     r"""[P3-2D] rejection-sample ``n`` accepted class-G 2D latents.
 
     Implements the registered generative step of PREREGISTRATION_P3_2D_20260825.md §2(ii)/§3.2
-    item 2 as standard rejection sampling (algorithmically equivalent to, and cheaper to code
-    than, an explicit ``S̃_4D,g``-weighted host reweighting -- drawing host/``z_true`` from their
-    UNCHANGED "catalogue_selected" laws (``w_g*S̃_φ,g`` / kernel-smeared ``z_true``, see the module
-    docstring's "PA-2" section) and then a latent mass ``M ~ p_gal(.|host, z_true)`` (the
-    Eddington-shifted gaussian-branch prior, mirroring ``_host_M_eff``/``mu_gal_frac`` -- see the
-    section header above this function), accepting the WHOLE triple with probability
+    item 2 as standard rejection sampling: drawing host from the PLAIN rate weight ``w_g``
+    (normalized) and ``z_true`` from the ``S_bar_phi``-FREE kernel density
+    (:func:`_draw_kernel_survival_redshifts` with ``apply_survival=False`` -- see the module
+    docstring's "PA-2" section for the 1D "catalogue_selected" law this arm used to share
+    verbatim), then a latent mass ``M ~ p_gal(.|host, z_true)`` (the Eddington-shifted
+    gaussian-branch prior, mirroring ``_host_M_eff``/``mu_gal_frac`` -- see the section header
+    above this function), accepting the WHOLE triple with probability
     ``Bernoulli(S_4D(d_L(z_true;h), M_true*(1+z_true)))`` reproduces exactly the target joint law
-    up to the (unchanged) z-marginal's own existing survival weighting -- "on top of the existing
-    F-0 machinery" per the task spec, i.e. an ADDITIONAL selection layer, not a replacement of the
-    quality-based F-0 filter :func:`run_mirror_seed_inprocess`'s ``evaluate()`` call applies later.
+    ``w_g * k̄_g(z) * p_gal(M|g) * S_4D(z,M)`` -- "on top of the existing F-0 machinery" per the
+    task spec, i.e. an ADDITIONAL selection layer, not a replacement of the quality-based F-0
+    filter :func:`run_mirror_seed_inprocess`'s ``evaluate()`` call applies later.
+
+    [PHYSICS_CHANGE_SBARPHI_20260827.md §2.2, Option A', 2026-09-02] Prior to this change, the
+    host weight was ``w_g * S̃_φ,g`` and the z-density carried its own ``S_bar_phi(z;h)`` factor,
+    so this rejection step ALSO applying a per-mass ``S_4D`` Bernoulli double-counted survival
+    (the mass-marginal ``S̃_φ,g``/``S_bar_phi`` and the pointwise ``S_4D`` are the same physical
+    survival object -- see the physics-change presentation §3). The host weight and z-density
+    are corrected here (this function's caller passes the plain-``w_g`` ``host_w`` and this
+    function passes ``apply_survival=False``); the mass draw and Bernoulli gate are UNCHANGED.
 
     [DEFECT 1 repair, PA-2D-10] The latent mass draw's support is ``M > 0``: any candidate with
     ``M_true <= 0`` is REJECTED unconditionally (never floor-clipped into the accepted sample) so
@@ -1786,10 +1821,17 @@ def _draw_2d_accepted_latents(
     Args:
         rng: Seeded generator.
         pool: Host pool; :attr:`HostPool.M` and :attr:`HostPool.M_error` must both be populated.
-        host_w: Normalized host-draw weights (:func:`catalogue_selected_host_draw_weights`'s first
-            return value), shape ``(pool.n,)``.
-        s_tilde_phi: The SAME function's third return value (``S̃_φ,g`` per host), shape
-            ``(pool.n,)`` -- recorded per accepted event, not consumed by the draw itself.
+        host_w: Normalized host-draw weights. As of PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(i)/
+            Option A', callers MUST pass the normalized PLAIN rate weight (``w_g`` --
+            :func:`catalogue_selected_host_draw_weights`'s SECOND return value, renormalized by
+            the caller) here, NOT that function's first return value (``w_g * S̃_φ,g``
+            normalized, which is what the 1D "catalogue_selected"/b0i arm still uses -- see
+            L8/§9.1 of the physics-change presentation: this function is 2D-only, so the swap is
+            confined to its caller and does not touch the 1D arm), shape ``(pool.n,)``.
+        s_tilde_phi: :func:`catalogue_selected_host_draw_weights`'s third return value
+            (``S̃_φ,g`` per host), shape ``(pool.n,)`` -- recorded per accepted event as a
+            venue-drift-audit diagnostic column ONLY (:attr:`_B0i2DLatents.s_tilde_phi_host`),
+            not consumed by the draw itself either before or after this change.
         phi_survival_table: See :func:`kernel_smeared_survival`.
         completeness: Per-pixel completeness model.
         detection_probability: A constructed
@@ -1839,6 +1881,10 @@ def _draw_2d_accepted_latents(
         host_z_error_listed = pool.z_error[host_idx_batch]
         host_phiS_batch = pool.phiS[host_idx_batch]
         host_qS_batch = pool.qS[host_idx_batch]
+        # PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(ii)/Option A': apply_survival=False drops the
+        # S_bar_phi(z;h) factor from this z-density -- this is the 2D-only call site; the 1D
+        # "catalogue_selected"/b0i and "mixture_selected" call sites do not pass this flag and
+        # are therefore bit-identical to before this change (L8).
         z_true_batch = _draw_kernel_survival_redshifts(
             rng,
             host_z_listed,
@@ -1848,6 +1894,7 @@ def _draw_2d_accepted_latents(
             host_phiS_batch,
             host_qS_batch,
             h=h,
+            apply_survival=False,
         )
 
         # Latent source-frame mass: M ~ N(host_M_eff, host_M_error) (the gaussian p_gal branch,
@@ -2305,10 +2352,24 @@ class MirrorUniverseGenerator:
             host_z = z_true_col
             b0i_s_tilde_phi_host = b0i_s_tilde_phi[host_idx]
         elif host_mode == "catalogue_selected_2d":
-            # (a) [P3-2D] (b0i2d): SAME host/z_true draw law as
-            # "catalogue_selected" PLUS the venue mass-law extension -- see
-            # the module-level "[P3-2D]" section above
-            # :func:`_draw_2d_accepted_latents`.
+            # (a) [P3-2D] (b0i2d): venue mass-law extension on top of the
+            # 1D "catalogue_selected" host pool -- see the module-level
+            # "[P3-2D]" section above :func:`_draw_2d_accepted_latents`.
+            # PHYSICS_CHANGE_SBARPHI_20260827.md §2.2, Option A' (ratified,
+            # ledger row #314, 2026-09-02): the 2D branch's host/z_true draw
+            # law is NOT the same as "catalogue_selected" any more -- the
+            # host draw uses the PLAIN rate weight w_g (renormalized below,
+            # NOT catalogue_selected_host_draw_weights's first return value,
+            # which is w_g * S̃_φ,g) and the z-draw drops the S_bar_phi
+            # factor (_draw_2d_accepted_latents passes
+            # apply_survival=False to _draw_kernel_survival_redshifts) --
+            # because the 2D venue's own per-event, per-mass S_4D Bernoulli
+            # gate below already applies survival once; keeping the 1D
+            # arm's S̄_φ-weighted host/z-draw as well double-counted it
+            # (see the physics-change presentation §3). The 1D
+            # "catalogue_selected"/b0i arm and
+            # catalogue_selected_host_draw_weights's first return value are
+            # UNCHANGED (L8) -- only this branch's OWN host_w is affected.
             if phi_survival_table is None or completeness is None:
                 raise ValueError(
                     "host_mode='catalogue_selected_2d' requires completeness and "
@@ -2321,9 +2382,22 @@ class MirrorUniverseGenerator:
                     "interpolator the latent-mass acceptance step queries"
                 )
             pool = host_pool if host_pool is not None else _load_host_pool(REDUCED_CATALOGUE_PATH)
-            host_w, _b0i2d_w_g, b0i2d_s_tilde_phi = catalogue_selected_host_draw_weights(
-                pool, phi_survival_table, completeness, h=H_TRUE
+            _b0i2d_host_w_swphi, _b0i2d_w_g, b0i2d_s_tilde_phi = (
+                catalogue_selected_host_draw_weights(
+                    pool, phi_survival_table, completeness, h=H_TRUE
+                )
             )
+            # Option A'(i): plain rate-weight host draw, normalized here --
+            # do NOT use `_b0i2d_host_w_swphi` (w_g * S̃_φ,g normalized),
+            # which remains the 1D b0i arm's own weight above and is
+            # otherwise unused by this branch.
+            _b0i2d_w_g_total = float(_b0i2d_w_g.sum())
+            if not (_b0i2d_w_g_total > 0.0):
+                raise ValueError(
+                    f"catalogue_selected_2d plain rate-weight draw weights sum to <= 0 "
+                    f"({_b0i2d_w_g_total})"
+                )
+            host_w = _b0i2d_w_g / _b0i2d_w_g_total
             latents = _draw_2d_accepted_latents(
                 rng,
                 pool,
