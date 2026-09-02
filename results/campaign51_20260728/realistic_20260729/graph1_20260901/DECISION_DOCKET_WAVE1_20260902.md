@@ -39,6 +39,8 @@ Committed by the chair; the author rules on it via the decisions table (one-word
 | 7 | falsifier-ii fleet cost | RULE | (A) raise the cap to 290 CPU-h, run the 33-seed fleet [chair-recommended] / (B) hold the 60 CPU-h cap, falsifier cannot run as designed, A4 stays PROVISIONAL / (C) defer to a later batch | d-a4-final-ratification (returns with the falsifier's numbers either way; A4 stays PROVISIONAL meanwhile) |
 | 8 | Option A' (class-G S̄_φ de-double-weight) ratification **[RULED — row #314]** | RULE | Ratified | the falsifier's verdict and d-a4-final-ratification (return with numbers); any 1D-branch or trigger-file change (none is proposed) |
 | 9 | d-t5-window **[RULED — row #314]** | RULE | a word — (A) do NOT adopt the log-symmetric window in either venue [chair-recommended] / (B) adopt anyway per venue / (C) extend the scan | any cross-venue generalization beyond the two measured venues; the true-host recovery-gain sub-read (absent data, §6.2 item (i)) — disclosed gap, author may waive or require |
+| 10 | S0-B production cost | RULE | (A) adopt the prereg's sourced anchor, cap 105 CPU-h, run the registered shape [chair-recommended] / (B) descope to s-axis-only first pass (~40–46 CPU-h) / (C) hold — S0-B and d-photoz-leverage defer | d-photoz-leverage; the g-score-null run-time re-certification path |
+| 11 | d-a4-final-ratification | RULE | Ratified — drop A4's PROVISIONAL, c-a4-structural → VERIFIED, q-a4-provisional = the batch's second SETTLED | the ×1.96 venue-side residual attribution (d-residual-attribution); the GATE-ACC reporting addendum |
 | 6 | Status annex | — | no decision asked | — |
 
 ---
@@ -456,6 +458,10 @@ recommendation in the docket — its disposition (waive vs require a follow-up r
 disclosed-open word, NOT absorbed by this ruling"; cross-venue generalization of the window
 verdict; the falsifier's own eventual verdict; and `d-a4-final-ratification`, which still "returns
 with the falsifier's numbers."
+
+Items 10 and 11 below opened after row #314 — the S0-B cost conflict surfaced by
+`m-s0b-production`'s own launch stop (row #320), and `d-a4-final-ratification` returning with
+numbers once the falsifier's adjudicating read landed (row #322).
 
 ---
 
@@ -925,6 +931,151 @@ recovery-gain sub-read (§6.2 item (i), the `[+8, +20]`-host falsifier band) —
 data per `exec/m-t5-armR/READOUT_RECORD.md` §7, disclosed as a gap the author may waive (accept
 the window-adoption ruling above without it) or require (demand the host-truth join before this
 item closes).
+
+---
+
+## 10. S0-B production cost
+
+**[RULE]** — grant word: (A) / (B) / (C).
+
+Source: `graph1_20260901/exec/m-s0b-production/LAUNCH_RECORD.md`, ledger row #320
+(`BIAS_HISTORY_LEDGER.md`).
+
+### The stop, quoted
+
+> "m-s0b-production launch STOPPED (third disciplined stop of the batch): the registered
+> PA-HIER-31(d) node set is INEXPRESSIBLE in the driver as built (±0.033 re-derived b-nodes vs
+> hardcoded ±0.02, registered never-interchangeable), AND the cost anchors conflict
+> (orchestrator-derived ≤20 CPU-h vs the prereg's own §7.2 anchor 14.93-22.9 CPU-h/node → 74.7-101.4
+> CPU-h across the registered 5 nodes). Driver build dispatched; the cost word returns to the
+> author as docket item 10."
+
+**Preconditions confirmed met** (row #320): "Both preconditions read as satisfied for launch. This
+record does not dispute that; the STOP below is a separate, newly-found gap" — g-byte-id
+discharged (row #319), g-score-null evaluable at run time.
+
+**The registered 5-node shape, quoted (PA-HIER-31(d)):** "Four θ-nodes at h = 0.730 on venue
+**iiib** (production, CoR-P), plus the truth node (θ=(0,1)) which doubles as C0: `truth (0,1)=C0`,
+`b_plus_re (+0.033,1)`, `b_minus_re (−0.033,1)`, `s_plus (0,√2)`, `s_minus (0,1/√2)`."
+
+**The never-interchangeable rule, quoted (PA-HIER-31 §2.1(a)):** "The two arms (±0.02 as-built vs
+±0.033 re-derived) are never combined into one secant, one Z, or one materiality read; each is
+reported against its own registered grid."
+
+**The b-node build gap, quoted:** "`hier_s0_driver.py`'s `THETA_NODES` dict is hardcoded to ±0.02
+b-nodes only, 'no `b_plus_re`/`b_minus_re` entry ... grepping the whole file for `0.033`,
+`0.0661`, `b_half_width` ... or any CLI flag ... returns **nothing**' ... The b-node
+re-derivation from `PA-HIER-31(a)`/(d) is not mentioned anywhere in [`b-pahier33-scorer/RECORD.md`]
+— built, checked, or deferred. It is a silent gap, not a disclosed one."
+
+**Cost-anchor conflict, both sources quoted:** "the mirror-venue precursor anchor gives '5 ×
+0.2843 ≈ 1.42' CPU-h at the mirror-venue per-cell rate" but "PA-HIER-31(d)'s own registered range
+for the *production* (iiib) venue is materially higher (§7.2's own anchor: 14.93-22.9 CPU-h **per
+theta-node** on the full production set, i.e. 74.7-101.4 CPU-h across 5 nodes ... That upper
+figure alone exceeds the ≤20 CPU-h ORCHESTRATOR-DERIVED cap ... by 3.7×-5×." "Which anchor governs
+is itself a fresh question for the author, not decided here."
+
+### The ask — three-way word
+
+**(A) Adopt the prereg's own sourced anchor, cap 105 CPU-h, run the registered shape.**
+**[CHAIR-RECOMMENDED, ORCHESTRATOR-DERIVED.]** The prereg's §7.2 anchor (14.93-22.9 CPU-h/node,
+sourced) is the only figure directly tied to the registered production-venue instrument; the
+≤20 CPU-h graph figure is itself orchestrator-derived, not sourced to the same document. 105
+CPU-h covers the upper end (101.4 CPU-h) with margin.
+
+**(B) Descope to an s-axis-only first pass** (~40-46 CPU-h; b-axis theta-pull waits) — 3 of the 5
+registered nodes (s_plus, s_minus, truth/C0) are already byte-identically supported by the driver
+as built, per the launcher's own option (3): "descope S0-B's first pass to the s-axis + truth/C0
+only (3 nodes, already byte-identically supported), treating the b-axis re-derivation as a
+follow-on build item."
+
+**(C) Hold — S0-B and d-photoz-leverage defer.** No cost is committed in this batch either way;
+the theta-pull read (d-photoz-leverage) stays open.
+
+**Note, disclosed:** the ±0.033 b-node expressibility build itself is dispatched separately from
+this cost word — "the ±0.033 expressibility gap is a mechanical build of a REGISTERED value —
+dispatched as a driver build under row #290 row 6's driver-build scope, no fresh author word
+needed for that half" (row #320, chair disposition). This item rules the COST word only.
+
+### NOT covered
+
+`d-photoz-leverage` — the theta-pull interpretation this node ultimately feeds returns separately,
+per `RESEARCH_GRAPH_1_PROPOSAL_20260901.md` §1.11's own requires-manifest ("m-s0b-production done
+with g-score-null green"). The g-score-null run-time re-certification path — evaluable at launch
+per row #320, but its own pass/fail read is not decided by this cost ruling.
+
+---
+
+## 11. d-a4-final-ratification
+
+**[RULE]** — grant word: **Ratified**.
+
+Source: `graph1_20260901/exec/v-falsifier-ii-classG/ADJUDICATING_READ_RECORD.md`, ledger row #322
+(`BIAS_HISTORY_LEDGER.md`). "This document is EVIDENCE for the author's `d-a4-final-ratification`
+[RULE] — it ratifies nothing and promotes no claim."
+
+### The adjudicating read, quoted
+
+**Fleet verification:** "job 6769177 (array 0-32) **33/33 `COMPLETED 0:0`**; out-root 66/66
+`<arm>_<seed>_meta.json` present; commit stamp uniform `git_commit = c83e391d...` (66/66),
+`tree_dirty_incl_instrument = 'clean'` (66/66), `git merge-base --is-ancestor 2b657255 c83e391d →
+true` — 'the fleet ran at a commit containing the landed Option A′ repair' ... catalogue pin
+`catalogue_pin_ok: true` 66/66; retrieval bundle **134/134 md5 OK** ... fresh out-root confirmed
+(no PA-CA-11 reuse)."
+
+**Registered reads, independence discipline applied — "relative deviation 0.0 on all four
+decisive numbers":**
+
+> "**LHS2(bt) = 0.00744689 ± 0.00020559** (SEM, 33 seeds, 'below the frozen planning scale —
+> powered') vs prediction **0.00740040**, σ_comb = 0.00032330 (PA-2DR-2 band form), deviation
+> **+0.144 σ_comb → INSIDE** (band ±0.00096989, edge at 3.0σ_comb, not remotely triggered)."
+
+> "**G4 = 0.00642601/0.00744689 = 0.862911 ∈ [0.8613, 0.8675] → INSIDE** (disclosed 0.00161 above
+> the lower edge, 26% of the interval width; a paired per-seed companion, not a registered read,
+> gives 0.86090 ± 0.00472, reported-only)."
+
+**Gates, quoted:** "G5 (`pa2dr7_fraction`) **PASS**, exactly 0.0 both arms, all 33 seeds; G6/P5
+(`dead_row_identity_all_ok`) **PASS**, exact to float round-off 66/66; engagement/scope **PASS**;
+GATE M2-LINK part (ii) (Mahalanobis² fleet bound) **PASS, 66/66** — max Mahalanobis² = 21.745 vs
+threshold χ²₂(1-1e-3/200) = 24.412, zero singular covariances; part (iii) (monster-absence)
+**structurally ABSENT, zero finite sub-−50-nat live rows, 66/66** ... 'common-mode with the banked
+comparand.'"
+
+**Two disclosed hygiene items, not data defects, quoted:** "the meta-level
+`rhs_f2_provenance_bitcheck`'s strict `== 0.0` predicate reads `pass: false` at `max_rel_dev`
+1.5e-15...2.8e-13 on THIS fleet AND identically (~1e-14) on the banked pre-repair fleet that banked
+CONFIRMED — 'the strict == 0.0 predicate was already unattainable in the fleet that banked
+CONFIRMED'; GATE-ACC (F12, reporting-only) was still in its selection-object build phase (>1h16m
+CPU, healthy) at finalization ... addendum pending."
+
+**Outcome, semantics quoted from §6.1(ii):** "'inside both ⇒ the ladder model is complete to rung
+3 and the remaining ×1.96 is venue-side until shown otherwise (attribution stays provisional)' —
+for c-a4-structural this read 'does not refute the attribution and supports the ladder's
+completeness through rung 3'; neither the outside-LHS2 nor the outside-G4 branch is triggered;
+'the §v2.7 cap stands: nothing here upgrades any status beyond `supported`.'" Companion figure
+(REPORTED-ONLY, carried-over RHS₂, no fresh pass, no band): ladder-implied residual ≈1.949.
+"**Nothing here ratifies A4**" — the record's own words, why this returns to the author rather
+than closing itself.
+
+### The ask — chair recommendation, marked ORCHESTRATOR-DERIVED
+
+**Ratify: drop A4's PROVISIONAL; `c-a4-structural` → VERIFIED; `q-a4-provisional` = the batch's
+second SETTLED question** (after item 9's window verdict, the first). **[CHAIR-RECOMMENDED,
+ORCHESTRATOR-DERIVED.]** The falsifier ran at its own demonstrated power (33 seeds, the
+design's own confirmed floor per item 7 above) on the A′-repaired venue (item 8 above,
+implementation landed and green per row #314) and landed INSIDE-BOTH registered bands, with every
+gate PASS and every decisive number independently re-derived to exact agreement — the record's own
+own reading is that this "does not refute the attribution and supports the ladder's completeness
+through rung 3," which is the falsifier's full registered scope for A4.
+
+### NOT covered
+
+The ×1.96 venue-side residual attribution — `d-residual-attribution` (§1.11: "the three-way
+residual split ... illegitimate inconsistency vs floor-consistent noise vs irreducible venue
+physics"), which the record's own outcome language explicitly leaves "provisional ... until shown
+otherwise." The GATE-ACC reporting addendum — F12 was still building its selection object at
+finalization ("addendum pending"); its own eventual reporting-only read is not folded into this
+ratification.
 
 ---
 
