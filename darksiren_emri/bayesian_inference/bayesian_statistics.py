@@ -4653,9 +4653,26 @@ class BayesianStatistics:
         _LOGGER.info(
             f"Computing posteriors for h = {_h_list[0] if len(_h_list) == 1 else _h_list}..."
         )
+        # Admissibility guard ONLY (row #301 item 4(a) decoupling): the ceiling is
+        # max(host-window bound, grid-admissibility ceiling) so (i) the ratified
+        # G-EXT wing (h <= 1.00) is admissible, (ii) the mirror harness's runtime
+        # widening of h.upper_limit (correspondence_1d.py:3398-3399, [P3-HGRID])
+        # keeps working, and (iii) setting h_grid_admissibility_max ==
+        # h.upper_limit reproduces the old guard exactly. The host-window call
+        # site (get_redshift_outer_bounds(h_max=h.upper_limit), :5716) is
+        # deliberately NOT changed — see DECOUPLING_DESIGN.md.
+        # Prior-support/admissibility decoupling — DECOUPLING_DESIGN.md (graph1), rows #293/#301/#304/#308; G-EXT wing rows #284/#286.
+        _h_admissible_max = max(
+            self.cosmological_model.h.upper_limit,
+            getattr(
+                self.cosmological_model,
+                "h_grid_admissibility_max",
+                self.cosmological_model.h.upper_limit,
+            ),
+        )
         for _h_check in _h_list:
             if (_h_check < self.cosmological_model.h.lower_limit) or (
-                _h_check > self.cosmological_model.h.upper_limit
+                _h_check > _h_admissible_max
             ):
                 raise ValueError("Hubble constant out of bounds.")
 
