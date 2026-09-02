@@ -177,3 +177,65 @@ comparand (m-s3-postflip-coverage, v-falsifier-ii-classG, m-joint-r1-mass-aware,
 m-t5-armS/m-t5-armR, r-completion-residual) and specifically blocks `m-t5-armR`'s launch. No
 interpretation of the mismatch is offered here — the numbers above are banked as evidence for the
 author's next [RULE].
+
+## RE-STAMP (author ruling, docket item 5(A))
+
+**Authorization.** Ledger row #301 — author ruling (verbatim): *"all ratified, + 4a and 5a, did i
+miss some decisions?"* — against `DECISION_DOCKET_WAVE1_20260902.md` item 5, option (A)
+(chair-recommended): *"g-c0-baseline re-stamped GREEN-AS-CORRECTED against the flag-matched
+`c0prime_off` comparand, the no-BH delta acknowledged as the registered flip; the wave-1 read
+embargo LIFTS."* The docket's own itemization of option (A), quoted: *"Ratified — re-stamp
+GREEN-AS-CORRECTED against the flag-matched `c0prime_off` comparand."*
+
+**Basis.** The RED stamp above was evaluated against the wrong comparand: `wave3_20260830/
+{iiib,joint_r1}` (the blind HEAD readout, which resolves `catalogue_numerator_survival_2d =
+mz_sel`/`eff`), not the flag-matched `wave3_20260830/c0prime_off_{iiib,joint_r1}` (job 6746274,
+row #281: *"WAVE-3 C0′ OFF-GATE: PASS, BIT-IDENTICAL (both venues)... all four posterior JSONs
+md5-identical to headreadout_20260827/{iiib,joint_r1}"*), which C0-prime's own CLI flags actually
+match (`off`/unset).
+
+Re-diffing the banked production files against the flag-matched comparand (`FORENSICS_RECORD.md`
+ADDENDUM 2, §6b, confirmed by the chair's independent re-verification, row #299):
+
+| venue | column | vs flag-matched `c0prime_off` | vs mismatched `wave3_20260830` (original RED table) |
+|---|---|---|---|
+| iiib | `L_cat_with_bh` | ndiff 0/1588, max_abs 0.0 | max_abs 0.0047554377123987 |
+| iiib | `num_log_term_with_bh` | ndiff 0/1588, max_abs 0.0 | max_abs 0.17719762362510494 |
+| iiib | `combined_with_bh` | ndiff 0/1588, max_abs 0.0 | max_abs 0.00029467945313679995 |
+| joint_r1 | `L_cat_with_bh` | ndiff 0/1588, max_abs 0.0 | max_abs 0.0035793250588652004 |
+| joint_r1 | `num_log_term_with_bh` | ndiff 0/1588, max_abs 0.0 | max_abs 0.17342658274017353 |
+| joint_r1 | `combined_with_bh` | ndiff 0/1588, max_abs 0.0 | max_abs 0.0002534242715218 |
+| iiib | `L_cat_no_bh` | ndiff 982/1588 (candidate-bearing events) | ndiff 982/1588 (same) |
+| joint_r1 | `L_cat_no_bh` | ndiff 1095/1588 (candidate-bearing events) | ndiff 982/1588* |
+
+(*the mismatched-comparand table above reported joint_r1 `L_cat_no_bh` differently because that
+comparison was itself against the wrong file; the flag-matched re-diff's 1095 is the number of
+record for joint_r1 — "exactly the candidate-bearing event counts," row #299.)
+
+With-BH columns are exact-zero against the flag-matched comparand — no residual (row #299:
+*"There is no longer an unexplained with-BH residual to attribute to any mechanism... row #286's
+invariance claim (§10, R7's tested scope) is confirmed to hold, without qualification, at
+C0-prime's own production configuration"*). The remaining no-BH deltas are the row #286
+`catalogue_leg_1d_mass_aware` flip (`off`→`auto`→`on`), acting only on candidate-bearing events,
+exactly as registered (R7/R11) — not a pipeline defect, not a residual.
+
+## STAMP (re-issued)
+
+| venue | stamp |
+|---|---|
+| iiib | **GREEN-AS-CORRECTED** |
+| joint_r1 | **GREEN-AS-CORRECTED** |
+
+The instrument itself (band = `max_abs = 0`/md5 match) is unchanged; what changed is the
+comparand it is evaluated against — an instrument re-specification, not a re-measurement, per
+row #299's own framing (*"the C0-prime run itself is healthy... its correction is an instrument
+re-specification, charter-frozen"*). The original RED stamp stands **as-evaluated** against its
+original (wrong) comparand above; it is superseded for all downstream purposes by this
+GREEN-AS-CORRECTED stamp against the flag-matched comparand.
+
+**Consequence.** The wave-1 read embargo on downstream delta-reads (m-s3-postflip-coverage,
+v-falsifier-ii-classG, m-joint-r1-mass-aware, m-t5-armS/m-t5-armR, r-completion-residual) is
+**LIFTED** by this re-stamp. **Not covered by this ruling:** banking m-head-rebaseline itself as
+the comparand of record for future gates — that stays inside `d-calibration` (row #290) — and any
+science read (verdict, band call) of the retrieved wave-1 outputs, which returns as its own fresh
+[RULE] per the approval-scope convention. This record performs neither.

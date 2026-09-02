@@ -35,6 +35,8 @@ Committed by the chair; the author rules on it via the decisions table (one-word
 | 4a | — chosen mechanism | RULE | (a) decouple [chair-recommended] / (b) drive host window off eval grid / (c) park Branch I | the chosen design itself (fresh `/physics-change` gate) |
 | 4b | — rerun cost overrun (23.8 CPU-h vs ≤20 ORCHESTRATOR-DERIVED cap) | RULE | a word — needed only if Branch I proceeds (i.e., not if (c) is chosen) | — |
 | 5 | g-c0-baseline re-specification | RULE | Ratified — re-stamp GREEN-AS-CORRECTED against the flag-matched `c0prime_off` comparand [(A), chair-recommended] / (B) rerun an explicit-off-pinned arm for a literal bit-identity pass / (C) hold RED, bank a fresh comparand only at d-calibration | banking m-head-rebaseline as comparand of record (stays inside d-calibration, row #290); any science read of the retrieved wave-1 outputs |
+| 6 | h_grid_admissibility_max physics-change | RULE | Ratified — decoupled admissibility ceiling (1.00) on the guard only, host-window bound at `bayesian_statistics.py:5716` untouched at 0.86 | any claim the extended grid is load-bearing for a given arm (row #290 row 11) |
+| 7 | falsifier-ii fleet cost | RULE | returning with numbers — full fleet at the empirical anchor (208.1–286 CPU-h) / max subset ≤60 CPU-h per the design's own power statement / a design-sanctioned cheaper equivalent | d-a4-final-ratification (returns with the falsifier's numbers either way; A4 stays PROVISIONAL meanwhile) |
 | 6 | Status annex | — | no decision asked | — |
 
 ---
@@ -372,7 +374,214 @@ etc.) — this item rules the gate's own stamp and comparand only.
 
 ---
 
+
+## Post-ruling addendum (2026-09-02)
+
+Items 1–5 above were RULED by the author before items 6–7 were authored. Both rulings are quoted
+verbatim from `BIAS_HISTORY_LEDGER.md`; the itemization under each is ORCHESTRATOR-DERIVED per the
+approval-scope convention, as flagged in the ledger rows themselves.
+
+**Row #301 — author wording, verbatim:**
+
+> "all ratified, + 4a and 5a, did i miss some decisions?"
+
+Ledger itemization (ORCHESTRATOR-DERIVED): Item 1 (d-rphi-retire) RATIFIED. Item 2 (d-s4-review)
+RATIFIED with 2a–2f frozen as drafted. Item 3 (d-jr1-band) RATIFIED with 3a–3d frozen as drafted.
+Item 4 [RULE] option (a) — the h-prior decoupling mechanism, host-window bound left untouched;
+design detail returns as its own `/physics-change` gate. Item 5 [RULE] option (A) — g-c0-baseline
+re-stamped GREEN-AS-CORRECTED against the flag-matched `c0prime_off` comparand; wave-1 read embargo
+LIFTS. The ledger notes: "The '4a and 5a' reading as options (a)/(A) is ORCHESTRATOR-DERIVED (both
+were the chair-recommended letters) and is flagged back to the author for veto." Left open by this
+row, in answer to the author's own question: item **4b** (the ≤20 CPU-h rerun cap vs the 23.8
+CPU-h estimate) and **the Appendix-B scope word**.
+
+**Row #304 — author wording, verbatim:**
+
+> "4b and appendix b also approved"
+
+Ledger itemization (ORCHESTRATOR-DERIVED): (1) 4b [RULE] GRANTED — the G-EXT wing rerun (SLURM
+array 41-54, ≈23.8 CPU-h) authorized; the ≤20 CPU-h cap **raised to 25** per the chair
+recommendation the author approved; the rerun still sequences strictly behind the h-prior
+decoupling design's own `/physics-change` gate landing on the cluster HEAD. (2) The Appendix-B
+scope word [RULE] GRANTED, quoted verbatim from `PROPOSAL_MASS_LAW_KEYED_WINDOW_20260830.md`
+Appendix B item 2: "Does the rows #255/#268 standing grant's scope cover launching the
+already-registered joint_r1 arm (section 6.2) inside tree 2 alongside the k-scan, or does it wait
+for a separate word?" — answered affirmatively (practically superseded by row #290 decisions row 8,
+which already gated Arm R behind its own C0-prime-equivalent check).
+
+Items 6 and 7 below are the two fresh items this addendum's own rulings surfaced (item 4's design
+detail, per row #301's NOT-covered cell; and the falsifier-ii cost item first raised at row #306,
+after item 5's embargo lift unblocked wave-2 launches).
+
+---
+
+## 6. h_grid_admissibility_max physics-change — the item-4(a) design detail
+
+**[RULE]** — grant word: **Ratified**.
+
+This item is the design detail explicitly reserved by row #301 item 4's own NOT-covered cell ("the
+design detail returns as its own `/physics-change` gate"). Source:
+`graph1_20260901/exec/b-hprior-fix/DECOUPLING_DESIGN.md` (read in full). No code edit is applied by
+the design node itself — "No code edit is applied by this node. No commit. No cluster submission.
+The diffs below are DRAFT for the chair's `/physics-change` gate run and the author's
+ratification."
+
+### The mechanism, quoted
+
+**Consumer map (§1)** — `h.upper_limit` (0.86, `cosmological_model.py:388`) does two jobs today:
+
+> "`bayesian_statistics.py:4655-4659` (evaluate() entry guard) | **grid ADMISSIBILITY**: pure gate
+> ... feeds no computation | must admit the ratified G-EXT wing (h ≤ 1.00, AMENDMENT G-EXT, row
+> #284)" — vs — "`bayesian_statistics.py:5712-5722` (`get_redshift_outer_bounds(...
+> h_max=self.cosmological_model.h.upper_limit)`) | **HOST-WINDOW bound**: `z_max =
+> dist_to_redshift(d_L + 3σ, h_max)` ... monotone increasing in h_max; sets every detection's
+> candidate-host z-window ... | must continue to receive **EXACTLY 0.86** — any change breaks
+> byte-identity below 0.86 for every in-bound evaluation."
+
+**Chosen design (§2):** "A separate, explicitly-named admissibility ceiling on the scenario
+object, consumed by the guard only; the host-window call site is not touched at all." Concretely:
+new attribute `LamCDMScenario.h_grid_admissibility_max: float = 1.00`; the guard compares against
+`max(h.upper_limit, h_grid_admissibility_max)`; `bayesian_statistics.py:5716` is "byte-for-byte
+unchanged: `get_redshift_outer_bounds` continues to receive exactly `h.upper_limit` = 0.86."
+
+**The mirror-harness `max()` rationale, chair-verified** — the `max()` form is not incidental; a
+third consumer already relies on runtime-widening `h.upper_limit` itself:
+
+> "`validation/correspondence_1d.py:3398-3399` (mirror harness) | runtime widening
+> `h.upper_limit = max(h.upper_limit, eff_hi)` to cover the mirror's h-list ([P3-HGRID], rows
+> #182-#184); its own comment states the widened bound 'feed[s] the per-event candidate-ball
+> z-window' and is proven bit-exact against banked b0i CSVs | must keep working unchanged — it is
+> deliberate window-widening, not admissibility-only, and is out of this design's scope."
+
+The design states plainly: "The mirror site is the decisive design constraint the one-liner missed
+twice over: the window-coupling is not only real (row #293), it is *relied upon* by an existing,
+bit-exact-tested harness path." The guard's own `max(h.upper_limit, h_grid_admissibility_max)`
+form is chosen specifically so this runtime widening "keeps admitting that value through the
+guard" (§7 test 6) rather than being silently overridden by a fixed ceiling.
+
+**Wing-truncation caveat, quoted in full (§5, "Honest physics note"):**
+
+> "a wing-node evaluation at h ∈ (0.86, 1.00] will use a candidate-host window computed for
+> h_max = 0.86, i.e. `z_max = dist_to_redshift(d_L + 3σ, 0.86)` — SMALLER than the z_max a
+> h_max = h window would give ... so the wing nodes' catalogue legs are potentially truncated on
+> the high-z side: hosts in (z_max(0.86), z_max(h)] are structurally excluded for those
+> hypotheses." Accepted because "(i) the wing is disclosed-irrelevant where it has ever been read
+> — posterior tail at h ≥ 0.85 is 5e-13 (row #286) ... (ii) freezing the window is precisely what
+> preserves the banked 41-node grid byte-for-byte ... (iii) the alternative (windowing the wing at
+> its own h) is the row #293 red path." Standing rule invoked: "**Any future measurement that makes
+> the wing load-bearing must revisit this truncation first** — that is already the standing rule
+> (row #290 row 11 NOT-covered cell...)."
+
+**Byte-identity evidence-run plan (§6, §8, carried from `RECORD.md` §2.6):**
+
+> "Check plan carried over verbatim from `RECORD.md` §2.6: re-run the 41 banked H_GRID_41 nodes of
+> job 6747032 after the edit, diff posteriors + event_likelihoods byte-for-byte, **gate: 0
+> mismatches** (including at least one multi-node batch evaluate() call, since the window is
+> computed once per instance). Under this design that gate is expected green by construction;
+> running it anyway is the evidence, not the hope."
+
+**Regression tests for both bounds (§7):** "1. `LamCDMScenario().h.upper_limit == 0.86` — the
+host-window bound is FROZEN ... 2. `LamCDMScenario().h_grid_admissibility_max == 1.00`. 3. Guard
+admits the wing ... 4. Window unchanged: `get_redshift_outer_bounds(..., h_max=0.86)` output for a
+fixture detection equals its pre-change golden ... 5. Degenerate ceiling ... 6. Mirror path:
+`correspondence_1d`-style widening of `h.upper_limit` past a value keeps admitting that value
+through the guard (the max() clause)."
+
+### Triggers on Ratified
+
+Implementation behind the full physics-change gate: "`[PHYSICS]` commit line (draft): `[PHYSICS]
+decouple h grid-admissibility (<=1.00, G-EXT row #284) from the host-window bound (0.86 untouched)
+— rows #293/#301 item 4(a); g-byte-id 0 mismatches below 0.86`" plus a `PHYSICS-GATE-LEDGER` row
+(per `CLAUDE.md`'s ledger requirement). Then the 14-task wing rerun under item 4b (cap raised to 25
+CPU-h, row #304): "scoped re-submission `sbatch --array=41-54
+cluster/a18_ma1d_headreadout_iiib.sbatch` against the same RUN_DIR (banked 41 + fresh 14 = 55),
+seeds 777041-777054, expected **≈ 23.8 CPU-h**" — sequenced "only after: (i) this design passes its
+`/physics-change` gate, lands, and the cluster checkout's HEAD carries it ... and (ii) 4b is
+granted" (already granted, row #304).
+
+### NOT covered
+
+Any claim the extended grid is load-bearing for a given arm — per row #290 decisions-table row 11's
+own NOT-covered cell, restated by this design's own §5: "decided at that arm's registration."
+
+---
+
+## 7. falsifier-ii fleet cost — returning with numbers
+
+**[RULE]** — grant word: choose among the option table below (returns with numbers, per row #306).
+
+Source: `graph1_20260901/exec/v-falsifier-ii-classG/LAUNCH_RECORD.md`, ledger row #306
+(`BIAS_HISTORY_LEDGER.md`).
+
+### Citation trace, quoted
+
+The launch record traces the branch's cited cost through four documents to find its registered
+source:
+
+> "Tracing the citation chain (`runbook 40` §3 item 4 → `tree2_20260830/
+> TREE2_CHARTER_20260830.md` T4 → `tree2_20260830/PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md`
+> §589-590 → the actual registering document, `fanout1_20260829/
+> PROPOSAL_2D_TWIN_ADOPTION_20260829.md` §6.1(ii)) surfaces the falsifier's own registered cost,
+> stated in the proposal's own words: 'On the class-G venue with rung 1 repaired in the Option A′
+> form (harness-only gate; fleet re-run **~8.67 CPU-h/task × 24–33 tasks ≈ 208–286 CPU-h**, from
+> the readout's ~32.5 min/task at 16 cpus — the runbook-34 '~2–4 CPU-h' figure is superseded by
+> measurement)...'"
+
+> "**24 tasks × 8.67 CPU-h/task = 208.1 CPU-h at the minimum config** — already 3.5× the 60 CPU-h
+> hard cap, using the spec's own registered per-task anchor, before any pilot or second-arm tasks
+> are added."
+
+**The 40–60 CPU-h figure the graph itself carries forward is unsourced**, per the record:
+
+> "`tree2_20260830/TREE2_CHARTER_20260830.md` (T4 row) and `TREE2_SYNTHESIS_DOCKET_20260830.md`
+> (item 5) both assert a 'chair recost from 208-286' down to 'approx 40-60 CPU-h,' and the graph
+> proposal's own §1.5 table and decision-row-7 text both carry that recost figure forward as the
+> node's stated cost. **No derivation for the recost was found anywhere in the accessible record**
+> — neither charter doc, nor the synthesis docket, nor the graph proposal itself shows the
+> arithmetic (fewer tasks? a cheaper per-task anchor? a narrowed rung scope?) that turns 208-286
+> into 40-60."
+
+**No-improvisation skip, quoted:**
+
+> "**Skipped, per the task brief's own instruction: 'If a spec cannot be found or the cost exceeds
+> its cap, do NOT improvise — skip that item and report why.'** The spec's own registered numbers
+> put the fixed configuration at ≥208 CPU-h, which exceeds the 60 CPU-h hard cap by more than 3×;
+> the only available lower figure (40-60 CPU-h) is an unsourced chair recost with no located
+> derivation, and substituting it for the registered 208-286 CPU-h figure — or shrinking the task
+> count myself to force a fit under 60 CPU-h — would be exactly the kind of improvisation the task
+> brief prohibits. No SLURM job was submitted for this item."
+
+Row #306 (`BIAS_HISTORY_LEDGER.md`) confirms the same trace and disposition and adds: "**A
+zero-compute RECOST from banked runtimes was commissioned by the chair.**"
+
+### State of the commissioned recost
+
+`graph1_20260901/exec/v-falsifier-ii-classG/RECOST_RECORD.md` does not exist in the repository as
+of this docket's compilation (checked directly: only `LAUNCH_RECORD.md` is present in that exec
+directory). **PENDING** — its option table, once it lands, folds in here without renumbering this
+item; until then the option table below is compiled from the LAUNCH_RECORD's and row #306's own
+disclosed figures only.
+
+### The ask — option table
+
+| option | description | cost | source |
+|---|---|---|---|
+| Full fleet at the empirical anchor | 24 fixed seeds (`FLEET_SEEDS`, 900101-900124), the primary registered read | 208.1 CPU-h minimum (up to 286 CPU-h across 24–33 tasks) | `PROPOSAL_2D_TWIN_ADOPTION_20260829.md` §6.1(ii), quoted above |
+| Max subset ≤60 CPU-h | a task count the launcher explicitly declined to construct itself ("shrinking the task count myself ... would be exactly the kind of improvisation the task brief prohibits"); requires the design's own power statement to certify a subset still answers the falsifier | ≤60 CPU-h by construction | not sourced in the accessible record — PENDING the commissioned RECOST or a fresh design amendment |
+| Design-sanctioned cheaper equivalent | any alternative the RECOST or a future registration surfaces (e.g. a narrower rung scope) | unknown | PENDING RECOST_RECORD.md |
+
+### NOT covered
+
+`d-a4-final-ratification` — returns with the falsifier's numbers either way once this item is
+resolved and the fleet (in whatever form is chosen) actually runs; A4 stays PROVISIONAL in the
+meantime, per row #290 decisions-table row 7's own NOT-covered cell: "dropping A4's PROVISIONAL —
+d-a4-final-ratification returns with numbers, never auto-ratified."
+
+---
+
 ## 6. Status annex — no decision asked
+
+*(Items 1–5 were RULED at rows #301/#304, and items 6–7 were appended in a later pass — see "Post-ruling addendum (2026-09-02)" above.)*
 
 Wave-1 execution summary, one line per row (`BIAS_HISTORY_LEDGER.md`):
 
