@@ -91,3 +91,92 @@ explicit task count and per-task anchor, sourced, that a launcher can verify aga
 cap — or (b) an author ruling authorizing the registered 208-286 CPU-h cost against a raised cap
 (row #290 decisions row 7 caps it at 60 hard, so this is a [RULE], not something this launcher can
 grant itself). Returning to the author rather than improvising either direction.
+
+---
+
+## LAUNCH (option A, row #308)
+
+Attempted 2026-09-02, second pass, by the cluster launcher agent. **NOT LAUNCHED — STOPPED,
+not skipped: a code-implementation gap, not a cost gap.**
+
+### Authorization (quoted)
+
+Author's "both approved" ruling on docket item 7 option (A) (ledger row #308, being written;
+docket text `graph1_20260901/DECISION_DOCKET_WAVE1_20260902.md` §7, line 620): **"(A) Raise the
+k-falsifier-ii-fleet cap to 290 CPU-h and run the 33-seed fleet (option a')."** This raises the
+`k-falsifier-ii-fleet` cap from 60 to 290 CPU-h and authorizes the 33-seed configuration (option
+a′ of `RECOST_RECORD.md` §3) — the design's own demonstrated power floor (all SEMs below
+planning at 33 seeds, per `P3_2D_REPAIR_READOUT_20260828.md` §7).
+
+### Cost recompute (confirmed, before any submission attempt)
+
+33 tasks × 8.6667 CPU-h/task (empirical anchor, `RECOST_RECORD.md` §1, twice-replicated on jobs
+6723958/6730213, confirmed not stale as of this session — see below) = **286.0 CPU-h ≤ 290 CPU-h
+cap.** Cost is NOT the blocker for this launch attempt.
+
+### The blocker: rung 1 (Option A′) is not implemented anywhere in the codebase
+
+The falsifier (ii) design (`PROPOSAL_2D_TWIN_ADOPTION_20260829.md` §6.1(ii), quoted verbatim in
+`RECOST_RECORD.md` §2) requires the fleet to run **"On the class-G venue with rung 1 repaired in
+the Option A′ form."** The registered prediction being tested — LHS2(bt) = 0.00740040 ±
+0.00024951 — is explicitly labeled, in the residual ladder table
+(`PROPOSAL_2D_TWIN_ADOPTION_20260829.md` §5, row "conditional on rung 1 (unimplemented)"), as
+**conditional on rung 1, which the same table marks "(unimplemented)."** The ×1.1585 reweight
+shown for "after rung 1" in that table (`p32d_residual_accounting_20260827.md` §1) is a **post-hoc
+analytic correction applied to already-drawn (pre-repair) data**, not a measurement from repaired
+generative code.
+
+Checked directly, not assumed, in this session:
+
+1. **`correspondence_1d.py`** — no `rung`, `option_a_prime`, `sbarphi`, or S̄_φ-override
+   flag/kwarg anywhere (`grep` over the whole file). `_draw_kernel_survival_redshifts`
+   (`:1563-1620`) takes `phi_survival_table` as a plain positional/keyword pass-through with no
+   "drop the survival factor" mode. `catalogue_selected_host_draw_weights` (`:1496-1509`) always
+   returns `host_w = normalize(w_g · S̃_φ,g)` — there is no branch that instead normalizes bare
+   `w_g` (Option A′ item (i), `PHYSICS_CHANGE_SBARPHI_20260827.md` §2.2).
+2. **`results/campaign51_20260728/realistic_20260729/p3_2d_fleet.py`** (the registered instrument,
+   `--stage fleet`) — its `stage_fleet` → `_run_b0i2d_arm_seed` (`:385-460`) calls
+   `gen.draw_realization(..., host_mode="catalogue_selected_2d", phi_survival_table=phi_survival_table,
+   ...)` with the REAL survival table and no override hook, then
+   `c1d.run_mirror_seed_inprocess(...)` with no rung/gate flag among its five threaded flags.
+   `gate_acc_extended` (a `--stage gates` reporting-only function, not `fleet`) also uses the
+   real, unmodified table.
+3. **`git log d04d9dc9..HEAD`** (§1.1 of `RECOST_RECORD.md`, re-confirmed this session) touches
+   neither file's 2D draw path — eight `[PHYSICS]` commits on `correspondence_1d.py` since are all
+   byte-identical-default instrument flags unrelated to `catalogue_selected_2d`'s host/z draw.
+
+**Consequence:** submitting `cluster/p3_2d_fleet.sbatch`'s machinery verbatim right now — even at
+a fresh out-root, fresh seeds 900134-900166, both arms — would run the **exact same pre-repair
+generative code** as jobs 6723958/6730213 already ran. It would not test the falsifier's
+registered v2.9 conditional prediction at all; it would only produce a third, larger-N replicate
+of the ALREADY-BANKED pre-repair configuration, at the full 286.0 CPU-h cost, testing nothing new.
+
+### Why this launcher does not implement the fix and proceed
+
+Implementing Option A′ — even in its "harness-only gate" form (a keyword flag or a flat
+S̄_φ≡1 table substitution at the `p3_2d_fleet.py` call site, per
+`PHYSICS_CHANGE_SBARPHI_20260827.md` §2.2) — is a **new, unreviewed change to the generative draw
+law that determines a computed physical quantity** (the accepted-event distribution feeding
+LHS2/G4). Every comparable change to this draw path in the repo's history is tagged `[PHYSICS]`
+and gated through `/physics-change` with author sign-off (`git log`, eight such commits on
+`correspondence_1d.py` alone since d04d9dc9). This launcher's mandate is submission machinery —
+"reuse the prior fleet submissions' machinery verbatim" — not authoring a physics-change-gated
+code path. Writing that code without the gate would be exactly the kind of improvisation the task
+brief prohibits ("do not improvise... if a spec cannot be found... do NOT improvise").
+
+### Disposition
+
+**STOPPED before any cluster access.** No preflight was run (moot — nothing would have been
+submitted regardless), no jobs submitted, no code edited, no commit made.
+
+### What would unblock this
+
+Someone (the author, or a subagent explicitly commissioned and `/physics-change`-gated for it)
+implements Option A′ as a harness-only instrument at the `p3_2d_fleet.py` call site — items (i)
+and (ii) of `PHYSICS_CHANGE_SBARPHI_20260827.md` §2.2, confined to the driver, not touching
+`correspondence_1d.py`'s committed defaults — and that implementation is reviewed/committed
+*before* this launcher (or a fresh instance of it) is asked to submit the 33-seed fleet against
+it. Alternatively, if the author intends the fleet to run pre-repair for some other purpose (e.g.
+as a fresh-seed cross-check of the existing 33-seed banked result, not as falsifier (ii) itself),
+that is a different task than "launch falsifier (ii) exactly per its registered design" and should
+be stated as such.
