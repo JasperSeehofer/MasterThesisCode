@@ -203,6 +203,75 @@ THETA_NODES_HALF_STEP: dict[str, tuple[float, float]] = {
     "s_minus_half": (0.0, 2.0**-0.25),
 }
 
+# PA-HIER-31(d) (results/campaign51_20260728/realistic_20260729/
+# PREREGISTRATION_HIER_HTHETA_20260826.md, S0-B row: "b_plus_re (+0.033, 1)
+# / b_minus_re (-0.033, 1)"; DRIVER_BNODE_BUILD_RECORD.md, this build task,
+# row #290 decisions row 6): the RE-DERIVED b half-width, distinct from the
+# as-built b_plus/b_minus pair above. `--b-half-width` (default
+# DEFAULT_B_HALF_WIDTH, exactly the as-built 0.02) is a WIDTH flag, not a
+# boolean like --s-half-step -- but the mechanism is the same one-line
+# precedent: main() merges the pair into the module-level THETA_NODES dict
+# for this invocation only, BEFORE any node-name validation/lookup, and
+# ONLY when the width differs from the default (so the default invocation
+# is byte-identical: THETA_NODES is untouched, and `--nodes b_plus_re`
+# without a non-default `--b-half-width` hits the same "unknown node"
+# SystemExit it always did). The pair is registered under DISTINCT names
+# (b_plus_re/b_minus_re), NEVER overwriting b_plus/b_minus -- prereg
+# §2.1(a): "The two arms (+-0.02 as-built vs +-0.033 re-derived) are never
+# combined into one secant, one Z, or one materiality read; each is
+# reported against its own registered grid." compute_scores's score_b is
+# keyed on the literal strings "b_plus"/"b_minus" only (see has_b below) --
+# b_plus_re/b_minus_re are therefore structurally invisible to it, which is
+# what keeps the two grids apart by construction rather than by convention.
+# Scope note (ROUTED, not decided here): this build registers the node
+# names/values and their run_theta_node/gather-from-disk dispatch (path
+# naming shares the SAME `node_{node}{suffix}` convention every other node
+# already uses, since it keys off the node string, not a fixed enum) --
+# it does NOT add a score_b_re/Z_b_re statistic to compute_scores. Whether
+# S0-B's decisive read needs its own pooled secant (mirroring score_half's
+# PRINTING-ONLY pattern) or is scored by a separate downstream pass is an
+# open question for the next build/analysis task, not this one; see
+# DRIVER_BNODE_BUILD_RECORD.md.
+DEFAULT_B_HALF_WIDTH: float = 0.02
+
+
+def b_re_theta_nodes(half_width: float) -> dict[str, tuple[float, float]]:
+    """The re-derived b-node pair (PA-HIER-31(d)) at the given half-width.
+
+    Pure function (no THETA_NODES mutation) so it is unit-testable in
+    isolation from main()'s CLI wiring; main() applies it via
+    :func:`apply_b_half_width`.
+    """
+    return {
+        "b_plus_re": (half_width, 1.0),
+        "b_minus_re": (-half_width, 1.0),
+    }
+
+
+def apply_b_half_width(theta_nodes: dict[str, tuple[float, float]], half_width: float) -> None:
+    """Merge the b_plus_re/b_minus_re pair into ``theta_nodes`` in place --
+    but ONLY when ``half_width`` differs from :data:`DEFAULT_B_HALF_WIDTH`.
+
+    At the default width this is a deliberate no-op: ``theta_nodes`` is
+    left byte-identical to every pre-``--b-half-width`` invocation (the
+    as-built b_plus/b_minus pair, already in THETA_NODES, is untouched
+    either way -- this function only ever ADDS the two `_re` keys, never
+    removes or overwrites b_plus/b_minus).
+    """
+    if half_width != DEFAULT_B_HALF_WIDTH:
+        theta_nodes.update(b_re_theta_nodes(half_width))
+
+
+# PA-HIER-31(d), quoted verbatim: "score_b,i = [ lnL_i(+0.033,1) - lnL_i(-0.033,1) ] / 0.066".
+# 0.066 = 2 x 0.033 (the registered re-derived half-width's own full span) -- NOT derived from
+# DEFAULT_B_HALF_WIDTH/args.b_half_width at runtime, because the prereg pins the literal 0.066
+# for THIS specific registered arm (S0-B), not "2x whatever width the caller passes." A caller
+# invoking --b-half-width at a DIFFERENT non-default value would register a b_plus_re/b_minus_re
+# pair compute_scores still divides by this SAME registered 0.066 -- deliberately: this constant
+# names the ONE registered statistic (PA-HIER-31(d)), not a generic re-derivation of score_b at
+# an arbitrary width. See DRIVER_BNODE_BUILD_RECORD.md "Follow-on: score_b_re".
+_B_RE_DENOM: float = 2.0 * 0.033
+
 # S0-R's registered dose (prereg §2.1; DISCLOSED NULL per PA-HIER-3/22 above).
 S0_R_SIGMA_SCALE = 1.5
 
@@ -1381,6 +1450,16 @@ def compute_scores(
     union of (seed, event_idx) pairs, not a per-event paired comparison).
 
     score_b       = [lnL(b=+0.02,s=1) - lnL(b=-0.02,s=1)] / 0.04
+    score_b_re    = [lnL(b=+0.033,s=1) - lnL(b=-0.033,s=1)] / 0.066   (PA-HIER-31(d), S0-B's
+                    registered production-venue read: the RE-DERIVED half-width, KEYED ON THE
+                    DISTINCT "b_plus_re"/"b_minus_re" node names -- fully independent of score_b
+                    above; the prereg's own "never combined into one secant, one Z, or one
+                    materiality read" rule (section 2.1(a)) is enforced structurally by this key
+                    separation, not by convention. n_pooled=0/NaN (score_b_re_available=False)
+                    when either _re node is absent -- same graceful-degradation discipline as
+                    score_lns_R/has_s_half. PRINTING ONLY: no verdict function reads this key
+                    (verdict_s0a/verdict_s0r are untouched -- see DRIVER_BNODE_BUILD_RECORD.md
+                    "Follow-on: score_b_re" for the routed re-adjudication question).
     score_s_raw   = [lnL(b=0,s=sqrt2) - lnL(b=0,s=1/sqrt2)] / (sqrt2 - 1/sqrt2)
                     (the OLD/superseded raw linear secant, kept for
                     continuity -- PA-HIER-4 registered this centred on the
@@ -1470,6 +1549,16 @@ def compute_scores(
     # n_pooled=0/NaN, never raise (T1_3_ES_NULL_DET_VALIDITY_20260830.md
     # section 5, "printing only; no verdict").
     has_s_half = not _axis_missing(("s_plus_half", "s_minus_half"))
+    # PA-HIER-31(d) (S0-B's registered production-venue b-node pair, +-0.033;
+    # DRIVER_BNODE_BUILD_RECORD.md "Follow-on: score_b_re"). Same discipline
+    # as has_s_half immediately above: readiness of (b_plus_re, b_minus_re)
+    # is deliberately NOT folded into has_b/the broken-pair ValueError loop
+    # below -- a missing _re node degrades score_b_re to n_pooled=0/NaN,
+    # never raises. as_built score_b (has_b, keyed "b_plus"/"b_minus") is
+    # completely untouched by this -- the two b-grids are scored by two
+    # independent blocks below, never merged (prereg section 2.1(a): "never
+    # combined into one secant, one Z, or one materiality read").
+    has_b_re = not _axis_missing(("b_plus_re", "b_minus_re"))
     # Check for a genuine BROKEN pair first (exactly one of an axis's two
     # nodes present -- some seed's worker for the other one raised, or the
     # caller only requested one of the pair by mistake): this is checked
@@ -1540,6 +1629,33 @@ def compute_scores(
             b_join = bp.merge(bm, on=["seed", "event_idx"], how="inner")
             score_b = (b_join["b_plus"] - b_join["b_minus"]) / 0.04
 
+        if has_b_re:
+            # PA-HIER-31(d), quoted verbatim (S0-B design, section (d)):
+            # "score_b,i = [ lnL_i(+0.033,1) - lnL_i(-0.033,1) ] / 0.066".
+            # SAME pairing rule as score_b above (inner join on (seed,
+            # event_idx)), SAME Z = mean/SEM machinery -- only the node
+            # names and the denominator (2 x 0.033, the registered
+            # re-derived half-width) differ. Independent b_join_re/bp_re/
+            # bm_re local names -- never reuses or overwrites b_join/
+            # score_b, so the as-built statistic is byte-for-byte
+            # unaffected by this block's presence or absence.
+            bp_re = pd.concat(
+                [
+                    r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                    for r in all_nodes["b_plus_re"]
+                ],
+                ignore_index=True,
+            ).rename(columns={channel: "b_plus_re"})
+            bm_re = pd.concat(
+                [
+                    r.ln_l.assign(seed=r.seed)[["seed", "event_idx", channel]]
+                    for r in all_nodes["b_minus_re"]
+                ],
+                ignore_index=True,
+            ).rename(columns={channel: "b_minus_re"})
+            b_join_re = bp_re.merge(bm_re, on=["seed", "event_idx"], how="inner")
+            score_b_re = (b_join_re["b_plus_re"] - b_join_re["b_minus_re"]) / _B_RE_DENOM
+
         if has_s:
             # es_null_det (PA-HIER-32(d)) is node-independent (one value per
             # (seed, event_idx), the SAME whether read off s_plus's or
@@ -1584,6 +1700,11 @@ def compute_scores(
             mean_b, sem_b, z_b, n_b = _mean_sem(score_b)
         else:
             mean_b, sem_b, z_b, n_b = float("nan"), float("nan"), float("nan"), 0
+
+        if has_b_re:
+            mean_b_re, sem_b_re, z_b_re, n_b_re = _mean_sem(score_b_re)
+        else:
+            mean_b_re, sem_b_re, z_b_re, n_b_re = float("nan"), float("nan"), float("nan"), 0
 
         if has_s:
             mean_s_raw, sem_s_raw, z_s_raw, n_s_raw = _mean_sem(score_s_raw)
@@ -1739,6 +1860,19 @@ def compute_scores(
         out[channel] = {
             "score_b": {"mean": mean_b, "sem": sem_b, "Z": z_b, "n_pooled": n_b},
             "score_b_available": has_b,
+            # PA-HIER-31(d) (S0-B's registered production-venue read, the
+            # re-derived +-0.033 pair, DENOM _B_RE_DENOM = 0.066). Fully
+            # independent of score_b/score_b_available above -- keyed on the
+            # DISTINCT "b_plus_re"/"b_minus_re" node names, never on
+            # "b_plus"/"b_minus" -- so the two grids can never be silently
+            # folded into one secant/Z/materiality read (section 2.1(a)).
+            "score_b_re": {
+                "mean": mean_b_re,
+                "sem": sem_b_re,
+                "Z": z_b_re,
+                "n_pooled": n_b_re,
+            },
+            "score_b_re_available": has_b_re,
             # "score_s" is the CORRECTED (PA-HIER-32(d) primary) statistic --
             # gate_parity/verdict_s0a/verdict_s0r read this key. Falls back
             # to n_pooled=0/NaN (never a silent wrong number) when
@@ -2582,6 +2716,7 @@ def write_score_markdown(payload: dict[str, Any], md_path: Path) -> None:
             # before the Es_null_det correction) alongside for continuity.
             for stat_name in (
                 "score_b",
+                "score_b_re",
                 "score_s",
                 "score_s_raw",
                 "score_lns",
@@ -2597,6 +2732,15 @@ def write_score_markdown(payload: dict[str, Any], md_path: Path) -> None:
             if "score_b_available" in d:
                 lines.append(
                     f"- score_b_available (b-axis nodes present): {d['score_b_available']}"
+                )
+            # PA-HIER-31(d) (S0-B's registered re-derived b-node pair): printing
+            # only here, same discipline as score_lns_R/score_pahier33 above --
+            # no verdict function reads this key (see compute_scores' score_b_re
+            # comment; DRIVER_BNODE_BUILD_RECORD.md "Follow-on: score_b_re").
+            if "score_b_re_available" in d:
+                lines.append(
+                    "- score_b_re_available (b_plus_re/b_minus_re nodes present): "
+                    f"{d['score_b_re_available']}"
                 )
             if "score_s_available" in d:
                 lines.append(
@@ -2691,7 +2835,8 @@ def main() -> int:
         type=str,
         default=None,
         help="Comma-separated theta-node names (subset of truth,b_plus,b_minus,s_plus,s_minus, "
-        "plus s_plus_half,s_minus_half when --s-half-step is also passed); default is all 5 "
+        "plus s_plus_half,s_minus_half when --s-half-step is also passed, plus b_plus_re,"
+        "b_minus_re when --b-half-width is passed with a non-default value); default is all 5 "
         "(NODE_ORDER) for S0-A/S0-R (ignored for S0-C, which is always the truth node).",
     )
     ap.add_argument(
@@ -2709,6 +2854,24 @@ def main() -> int:
         "--score-only combines the half-step pair with the existing s_plus/s_minus pair "
         "into the Richardson secant score_lns_R (printing only, no verdict; see "
         "compute_scores).",
+    )
+    ap.add_argument(
+        "--b-half-width",
+        type=float,
+        default=DEFAULT_B_HALF_WIDTH,
+        dest="b_half_width",
+        help="PA-HIER-31(d) (S0-B's registered b half-width, 0.033, vs. this driver's as-built "
+        f"{DEFAULT_B_HALF_WIDTH}). Default {DEFAULT_B_HALF_WIDTH} is BYTE-IDENTICAL -- THETA_NODES "
+        "is untouched and the as-built b_plus/b_minus pair (+-0.02) is unaffected either way. A "
+        "non-default value (e.g. 0.033) registers two ADDITIONAL theta nodes into THETA_NODES for "
+        "this invocation only: b_plus_re (+width, s=1) and b_minus_re (-width, s=1) -- never "
+        "overwriting b_plus/b_minus, per the prereg's 'never combined into one secant' rule "
+        "(section 2.1(a)). Required whenever --nodes references either _re name -- omitted (or "
+        "left at default), those names are rejected by the same 'unknown node' check as before "
+        "this flag existed. Passing this flag alone (without requesting the _re nodes in --nodes) "
+        "changes nothing. compute_scores does NOT score the _re pair (see b_re_theta_nodes' "
+        "module comment) -- this flag registers the nodes for run_theta_node/--score-only disk "
+        "gathering only.",
     )
     ap.add_argument(
         "--smoke",
@@ -2882,6 +3045,12 @@ def main() -> int:
     # --nodes references s_plus_half/s_minus_half without this flag.
     if args.s_half_step:
         THETA_NODES.update(THETA_NODES_HALF_STEP)
+
+    # PA-HIER-31(d): same mutate-before-validation mechanism as
+    # --s-half-step above, for the re-derived b-node pair. At the default
+    # width (DEFAULT_B_HALF_WIDTH == 0.02) this is a no-op -- see
+    # apply_b_half_width's docstring.
+    apply_b_half_width(THETA_NODES, args.b_half_width)
 
     out_root = Path(args.out_root)
 

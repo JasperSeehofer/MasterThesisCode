@@ -741,3 +741,229 @@ def test_build_venue_dispatches_iiib(
 def test_build_venue_rejects_unknown_config(driver: object, tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="config must be one of"):
         driver._build_venue("bogus", tmp_path, 900101, 1.0)  # type: ignore[attr-defined]
+
+
+# ===========================================================================
+# PA-HIER-31(d) (S0-B's registered re-derived b-node pair, +-0.033; row #290
+# decisions row 6; DRIVER_BNODE_BUILD_RECORD.md) -- ``--b-half-width`` /
+# ``b_re_theta_nodes`` / ``apply_b_half_width``.
+# ===========================================================================
+
+
+def test_default_b_half_width_constant_matches_the_as_built_grid(driver: object) -> None:
+    """DEFAULT_B_HALF_WIDTH must equal the as-built b_plus/b_minus half-width
+    already baked into THETA_NODES (0.02) -- that identity is what makes the
+    default CLI invocation byte-identical (see apply_b_half_width)."""
+    assert driver.DEFAULT_B_HALF_WIDTH == pytest.approx(0.02)  # type: ignore[attr-defined]
+    assert driver.THETA_NODES["b_plus"] == (0.02, 1.0)  # type: ignore[attr-defined]
+    assert driver.THETA_NODES["b_minus"] == (-0.02, 1.0)  # type: ignore[attr-defined]
+
+
+def test_b_re_theta_nodes_produces_the_registered_pair(driver: object) -> None:
+    """PA-HIER-31(d), quoted: 'b_plus_re (+0.033, 1) / b_minus_re
+    (-0.033, 1)'."""
+    nodes = driver.b_re_theta_nodes(0.033)  # type: ignore[attr-defined]
+    assert nodes == {"b_plus_re": (0.033, 1.0), "b_minus_re": (-0.033, 1.0)}
+
+
+def test_apply_b_half_width_at_default_is_a_byte_identical_no_op(driver: object) -> None:
+    """The BIT-PRESERVING default argument: calling apply_b_half_width with
+    DEFAULT_B_HALF_WIDTH must leave the dict wholly untouched -- no
+    b_plus_re/b_minus_re keys added, and the pre-existing b_plus/b_minus
+    entries unchanged -- so every pre-flag invocation of this driver (which
+    never calls this function with anything but the default) is unaffected."""
+    theta_nodes = dict(driver.THETA_NODES)  # type: ignore[attr-defined]
+    before = dict(theta_nodes)
+    driver.apply_b_half_width(theta_nodes, driver.DEFAULT_B_HALF_WIDTH)  # type: ignore[attr-defined]
+    assert theta_nodes == before
+    assert "b_plus_re" not in theta_nodes
+    assert "b_minus_re" not in theta_nodes
+
+
+def test_apply_b_half_width_nondefault_registers_distinct_re_nodes(driver: object) -> None:
+    """A non-default width (the registered 0.033) adds b_plus_re/b_minus_re
+    WITHOUT touching or overwriting the as-built b_plus/b_minus pair --
+    prereg section 2.1(a): 'never combined into one secant'."""
+    theta_nodes = dict(driver.THETA_NODES)  # type: ignore[attr-defined]
+    driver.apply_b_half_width(theta_nodes, 0.033)  # type: ignore[attr-defined]
+    assert theta_nodes["b_plus_re"] == (0.033, 1.0)
+    assert theta_nodes["b_minus_re"] == (-0.033, 1.0)
+    # As-built pair is byte-identical, unmodified by the merge.
+    assert theta_nodes["b_plus"] == (0.02, 1.0)
+    assert theta_nodes["b_minus"] == (-0.02, 1.0)
+    # The two grids are never the same node under any name -- distinct
+    # values at distinct keys, not a rename/overwrite.
+    assert theta_nodes["b_plus_re"] != theta_nodes["b_plus"]
+    assert theta_nodes["b_minus_re"] != theta_nodes["b_minus"]
+
+
+def test_compute_scores_never_folds_the_re_nodes_into_score_b(driver: object) -> None:
+    """Non-interchangeability guard: compute_scores's score_b is keyed on
+    the LITERAL strings "b_plus"/"b_minus" only (has_b/_axis_missing in the
+    driver's source) -- so an all_nodes dict carrying BOTH the as-built pair
+    AND a b_plus_re/b_minus_re pair (e.g. one --score-only pass over an
+    out-root holding both grids' CSVs) must score ONLY the as-built pair
+    at its own 0.04 denominator; the _re entries must be silently ignored,
+    never merged, averaged, or substituted into score_b -- structurally
+    enforcing the prereg's 'never combined into one secant, one Z, or one
+    materiality read' rule (section 2.1(a)) rather than relying on caller
+    discipline."""
+    b_plus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [0.1, 0.2], "ln_L_with_bh": [0.1, 0.2]}
+    )
+    b_minus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [-0.1, -0.2], "ln_L_with_bh": [-0.1, -0.2]}
+    )
+    # A deliberately WRONG-magnitude re pair: if compute_scores ever folded
+    # this in, score_b's mean/denominator would move away from the 0.04
+    # as-built value below.
+    b_plus_re = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [9.0, 9.0], "ln_L_with_bh": [9.0, 9.0]}
+    )
+    b_minus_re = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [-9.0, -9.0], "ln_L_with_bh": [-9.0, -9.0]}
+    )
+    all_nodes = {
+        "truth": [],
+        "b_plus": [_node_result(driver, "b_plus", 0.02, 1.0, b_plus)],
+        "b_minus": [_node_result(driver, "b_minus", -0.02, 1.0, b_minus)],
+        "b_plus_re": [_node_result(driver, "b_plus_re", 0.033, 1.0, b_plus_re)],
+        "b_minus_re": [_node_result(driver, "b_minus_re", -0.033, 1.0, b_minus_re)],
+    }
+    scores = driver.compute_scores(all_nodes, seeds=(1,))  # type: ignore[attr-defined]
+    channel = scores["ln_L_no_bh"]
+
+    expected_score_b_mean = ((0.1 - (-0.1)) / 0.04 + (0.2 - (-0.2)) / 0.04) / 2.0
+    assert channel["score_b"]["mean"] == pytest.approx(expected_score_b_mean)
+    assert channel["score_b"]["n_pooled"] == 2
+
+
+# ===========================================================================
+# Follow-on build (gated on registered text): PA-HIER-31(d)'s score_b_re
+# statistic. Quoted verbatim from PREREGISTRATION_HIER_HTHETA_20260826.md,
+# section "(d) S0-B design -- nodes, statistics, reads":
+#   "score_b,i   = [ lnL_i(+0.033,1) - lnL_i(-0.033,1) ] / 0.066"
+#   "Z_x = mean(score_x) / SEM(score_x)"
+# PA-HIER-33 explicitly lists "score_b" among the items its own amendment
+# leaves "Untouched" -- so this statistic's form is not in any way affected
+# by the PA-HIER-33 s-axis null revision.
+# ===========================================================================
+
+
+def test_b_re_denom_constant_matches_the_registered_span(driver: object) -> None:
+    """0.066 = 2 x 0.033, the registered re-derived half-width's own full
+    span (PA-HIER-31(d)) -- a literal pin, not derived from
+    DEFAULT_B_HALF_WIDTH/args.b_half_width at runtime (see the driver's own
+    comment above _B_RE_DENOM)."""
+    assert driver._B_RE_DENOM == pytest.approx(0.066)  # type: ignore[attr-defined]
+
+
+def test_compute_scores_score_b_re_uses_the_registered_denominator(driver: object) -> None:
+    """score_b_re,i = [lnL_i(+0.033,1) - lnL_i(-0.033,1)] / 0.066, pooled --
+    hand-verified against PA-HIER-31(d)'s own quoted form. Node dict shape:
+    the REGISTERED S0-B 5-node cross (truth, b_plus_re, b_minus_re, s_plus,
+    s_minus -- section (d)) minus the as-built b_plus/b_minus pair, which
+    S0-B never runs at all -- the s-axis presence is what satisfies
+    compute_scores' pre-existing "at least one axis ready" gate (the same
+    gate a pure-s_half-only node dict, with no s_plus/s_minus, would also
+    fail on -- not a new restriction, pre-existing driver behaviour)."""
+    truth = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [0.0, 0.0], "ln_L_with_bh": [0.0, 0.0]}
+    )
+    b_plus_re = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [0.033, 0.066], "ln_L_with_bh": [0.033, 0.066]}
+    )
+    b_minus_re = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [-0.033, -0.066], "ln_L_with_bh": [-0.033, -0.066]}
+    )
+    s_plus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [0.30, 0.40], "ln_L_with_bh": [0.30, 0.40]}
+    )
+    s_minus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [0.10, 0.20], "ln_L_with_bh": [0.10, 0.20]}
+    )
+    all_nodes = {
+        "truth": [_node_result(driver, "truth", 0.0, 1.0, truth)],
+        "b_plus_re": [_node_result(driver, "b_plus_re", 0.033, 1.0, b_plus_re)],
+        "b_minus_re": [_node_result(driver, "b_minus_re", -0.033, 1.0, b_minus_re)],
+        "s_plus": [_node_result(driver, "s_plus", 0.0, math.sqrt(2.0), s_plus)],
+        "s_minus": [_node_result(driver, "s_minus", 0.0, 1.0 / math.sqrt(2.0), s_minus)],
+    }
+    scores = driver.compute_scores(all_nodes, seeds=(1,))  # type: ignore[attr-defined]
+    channel = scores["ln_L_no_bh"]
+
+    assert channel["score_b_re_available"] is True
+    # event 0: (0.033 - (-0.033)) / 0.066 = 1.0 ; event 1: (0.066-(-0.066))/0.066 = 2.0
+    expected_mean = (1.0 + 2.0) / 2.0
+    assert channel["score_b_re"]["mean"] == pytest.approx(expected_mean)
+    assert channel["score_b_re"]["n_pooled"] == 2
+    # score_b (as-built) is untouched -- no b_plus/b_minus nodes were ever
+    # supplied, so it degrades exactly like every other b-node-free arm.
+    assert channel["score_b_available"] is False
+    assert channel["score_b"]["n_pooled"] == 0
+    assert math.isnan(channel["score_b"]["mean"])
+
+
+def test_compute_scores_score_b_re_unavailable_when_re_nodes_absent(driver: object) -> None:
+    """A node dict with NEITHER b_plus_re nor b_minus_re (e.g. every
+    pre-follow-on-build arm, or an S0-A-only run) must degrade
+    score_b_re_available to False / n_pooled=0 / NaN -- never raise, same
+    discipline as score_lns_R/has_s_half."""
+    b_plus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [0.1, 0.2], "ln_L_with_bh": [0.1, 0.2]}
+    )
+    b_minus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [-0.1, -0.2], "ln_L_with_bh": [-0.1, -0.2]}
+    )
+    all_nodes = {
+        "truth": [],
+        "b_plus": [_node_result(driver, "b_plus", 0.02, 1.0, b_plus)],
+        "b_minus": [_node_result(driver, "b_minus", -0.02, 1.0, b_minus)],
+    }
+    scores = driver.compute_scores(all_nodes, seeds=(1,))  # type: ignore[attr-defined]
+    channel = scores["ln_L_no_bh"]
+    assert channel["score_b_re_available"] is False
+    assert channel["score_b_re"]["n_pooled"] == 0
+    assert math.isnan(channel["score_b_re"]["mean"])
+    # score_b (as-built) unaffected -- still scores its own pair normally.
+    assert channel["score_b_available"] is True
+    assert channel["score_b"]["n_pooled"] == 2
+
+
+def test_compute_scores_score_b_re_never_folded_into_score_b(driver: object) -> None:
+    """Non-interchangeability guard, both directions: a node dict carrying
+    BOTH the as-built pair AND a deliberately wrong-magnitude _re pair must
+    score EACH statistic from its OWN pair only -- score_b never picks up
+    the _re values (already covered above) and, symmetrically, score_b_re
+    never picks up the as-built values or their 0.04 denominator."""
+    b_plus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [9.0, 9.0], "ln_L_with_bh": [9.0, 9.0]}
+    )
+    b_minus = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [-9.0, -9.0], "ln_L_with_bh": [-9.0, -9.0]}
+    )
+    b_plus_re = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [0.033, 0.033], "ln_L_with_bh": [0.033, 0.033]}
+    )
+    b_minus_re = pd.DataFrame(
+        {"event_idx": [0, 1], "ln_L_no_bh": [-0.033, -0.033], "ln_L_with_bh": [-0.033, -0.033]}
+    )
+    all_nodes = {
+        "truth": [],
+        "b_plus": [_node_result(driver, "b_plus", 0.02, 1.0, b_plus)],
+        "b_minus": [_node_result(driver, "b_minus", -0.02, 1.0, b_minus)],
+        "b_plus_re": [_node_result(driver, "b_plus_re", 0.033, 1.0, b_plus_re)],
+        "b_minus_re": [_node_result(driver, "b_minus_re", -0.033, 1.0, b_minus_re)],
+    }
+    scores = driver.compute_scores(all_nodes, seeds=(1,))  # type: ignore[attr-defined]
+    channel = scores["ln_L_no_bh"]
+
+    # score_b_re: (0.033 - (-0.033)) / 0.066 = 1.0 exactly, both events --
+    # if it had picked up the wrong-magnitude as-built pair instead, this
+    # would be (9.0-(-9.0))/0.066 = 272.7...
+    assert channel["score_b_re"]["mean"] == pytest.approx(1.0)
+    assert channel["score_b_re"]["n_pooled"] == 2
+    # score_b: (9.0 - (-9.0)) / 0.04 = 450.0 exactly -- unaffected by the
+    # _re pair's presence.
+    assert channel["score_b"]["mean"] == pytest.approx(450.0)
+    assert channel["score_b"]["n_pooled"] == 2
