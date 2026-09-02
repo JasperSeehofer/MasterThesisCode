@@ -139,3 +139,121 @@ resolved, alongside the node-set gap above.
 
 *Stamp: m-s0b-production, 2026-09-02. STOP — returned to the author/chair for the b-node
 re-derivation gap and the cost-anchor discrepancy above.*
+
+---
+
+## LAUNCH 2 (row #325 grant)
+
+Date: 2026-09-02. Launcher: m-s0b-production node (second attempt), Research Graph 1 Branch D.
+
+**Authorization chain, quoted.** Row #290 decisions-table row 6 ("m-s0b-production behind
+g-byte-id and g-score-null green"); row #319 (g-byte-id precondition discharged,
+`m-s0b-byteid/DISCHARGE_RECORD.md`, 714/715 files md5-identical GREEN); rows #323-#324
+(`DRIVER_BNODE_BUILD_RECORD.md` — `--b-half-width` flag lands the registered PA-HIER-31(d)
+±0.033 `b_plus_re`/`b_minus_re` pair byte-identically by default, plus the `score_b_re`
+follow-on implemented "gated on whether the prereg's own text defines its form" — verdict:
+"the registered text DEFINES it, unambiguously"; 2041 tests passing, ruff/mypy clean); row
+#325 ("chair-decided-under-grant item 10 option (A): cap 105 CPU-h, flagged for author veto").
+**Both row #320 blockers are resolved** — this record does not re-litigate that; see below for
+what remains.
+
+### What was checked against LAUNCH 1's STOP
+
+1. The node-set gap (LAUNCH 1's primary STOP): resolved by `DRIVER_BNODE_BUILD_RECORD.md` —
+   `--b-half-width 0.033` registers `b_plus_re`/`b_minus_re` at the exact registered
+   `(±0.033, 1)` pair; `score_b_re`'s form was independently confirmed against
+   `PA-HIER-31(d)`'s quoted formula (`0.066` denominator, `PA-HIER-31(a)`'s pairing rule,
+   `§2.1(e)`'s B0-B band) and implemented with 4 dedicated regression tests, including a
+   never-folded-into-`score_b` structural guard.
+2. The cost-anchor discrepancy: row #325 rules item 10 option (A) — the ≤20 CPU-h
+   ORCHESTRATOR-DERIVED figure from row #319 is superseded; the governing cap is **105 CPU-h**,
+   matching (with headroom) the registered §7.2/(i) production-venue anchor
+   (5 nodes × 14.93–22.9 CPU-h ≈ 74.7–101.4 CPU-h). Taken here as the chair-ratified figure
+   under the row #325 grant, not re-derived; row #325 itself flags it for author veto —
+   unchanged by this launch node.
+
+### The registered S0-B run, as configured for this launch
+
+`--arm S0-A --config iiib --theta-sites 2.2 --smear off --seeds 900101 --nodes <one of
+truth,b_plus_re,b_minus_re,s_plus,s_minus> --b-half-width 0.033 --jobs 1`, one SLURM array
+task per node (`GATE TABLE-FRESH`, `PA-HIER-31(j)`: "one `BayesianStatistics` construction per
+node — the four separate sbatch tasks structurally guarantee this").
+
+- **`--arm S0-A`**: the driver's `--arm` choices are only `("S0-A", "S0-R", "S0-C")` — there is
+  no `"S0-B"` arm. `--config iiib` is what selects the CoR-P production venue (`_build_venue`
+  dispatch, `CONFIG_CHOICES = ("b0i", "ft", "iiib")`); `--config`'s own help text: "Applies to
+  S0-A/S0-R only ... S0-B's precondition." This is not ambiguous — verified by reading the
+  argparse definitions directly, not assumed.
+- **`--seeds 900101`**: PA-HIER-31(d) is explicit that CoR-P is "the one banked/observed
+  scattered catalogue, not a mirror realization swept over seeds." `build_iiib_venue`'s `seed`
+  parameter is threaded through unused (loads the real catalogue, does not draw a realization).
+  Passing `--seeds` explicitly is required — omitting it defaults to sweeping all 4
+  `DEFAULT_BC_SEEDS` for S0-A (a 4x cost multiplication for a venue where the seed is
+  structurally inert). `900101` = `DEFAULT_BC_SEEDS[0]`, the same single-seed convention the
+  driver's own S0-C branch already uses for this reason.
+- **T1.3 mirror instruments left at default (off).** Row #287's "divisor on, zwin on zk4, sky
+  1.5" is a **mirror-venue (b0i)** T1.3 certification (`tree2_20260830/hier_s0_zwin_bnodes_run`
+  runs, all `--config` unset/b0i). `PA-HIER-31(g)`'s own CLI list for the iiib/production venue
+  (quoted from `headreadout_20260827/iiib/run_metadata_21.json:cli_args`) does **not** name
+  `theta_phi_divisor`, `theta_zwindow`, or `z_window_k` at all. Following the task brief's
+  instruction to follow the PREREG's S0-B registration verbatim rather than substitute: these
+  stay at driver defaults (`off`/`off`/`1.0`), and `--sky-cone-k` stays at its default `1.5`
+  (already byte-identical to the pre-flag literal, so no explicit flag is needed). This is a
+  genuine cross-check finding, not assumed — grepped `PA-HIER-31` end to end for these four
+  flag names; every hit is a mirror-venue (`tree2_20260830`) run, never the `(g)` production CLI
+  list.
+- **Node list / output naming**: `run_theta_node`'s `node_root = work_root /
+  f"node_{node}{suffix}"` is generic on the node-name string (confirmed by reading, not
+  assumed) — `b_plus_re`/`b_minus_re` produce `node_b_plus_re.../node_b_minus_re...`
+  automatically, no additional wiring needed.
+
+### Preflight / HEAD / submission
+
+- Local branch `fix/p32d-classg-venue-repair` HEAD `9336364c`; `git fetch
+  origin fix/p32d-classg-venue-repair` confirms **0 ahead / 0 behind** — origin is current, the
+  driver build (rows #323-#324) and the row #325 docket addendum are both already committed
+  (no uncommitted diff on `hier_s0_driver.py` or `darksiren_emri_test/`).
+- **STOP: cluster SSH access unavailable in this session.** `ssh -o BatchMode=yes bwunicluster
+  'hostname'` (three attempts, including a `-v` diagnostic pass) returns `Permission denied
+  (publickey,keyboard-interactive)` for every key offered by the local agent
+  (`gQnEF4Ks...`/`o+ij3+8o...`, both ED25519). This is an access/environment blocker in this
+  particular session — not a scientific or spec ambiguity, and not something a launcher can
+  resolve unilaterally (no key material to add, no interactive 2FA channel available
+  non-interactively). **No preflight was run, no `git pull` was executed on the cluster clone,
+  no out-root was created remotely, and no `sbatch` was submitted.**
+
+### What WAS prepared and is ready to fire
+
+`cluster/graph1_m_s0b_production.sbatch` (new file, uncommitted per task instruction) — a
+5-element `--array=0-4` job, one array task per registered node
+(`truth,b_plus_re,b_minus_re,s_plus,s_minus`), `--partition=cpu_il --cpus-per-task=16
+--time=03:00:00` per task (sized against the §7.2 production-venue per-node anchor,
+14.93–22.9 CPU-h at 16 cpus ⇒ ~56–86 min per task, with margin), pinned to the current HEAD
+short-hash `9336364c`, sourcing `write_provenance.sh` for the required `run_metadata`-equivalent
+stamp (gotcha 12), and adapted directly from `cluster/graph1_m_s0b_byteid_precheck.sbatch`'s
+working invocation pattern (single-quoted remote submission, `--jobs 1`,
+`PROJECT_ROOT="${PROJECT_ROOT:-$HOME/darksiren-emri}"` fallback). Out-root:
+`exec/m-s0b-production/s0b_run_20260902/`.
+
+### Cost estimate (unchanged from the recompute above)
+
+5 nodes × 14.93–22.9 CPU-h/theta-node ≈ **74.7–101.4 CPU-h**, within the row #325 cap of
+**105 CPU-h** (headroom 3.6–30.3 CPU-h). Not re-derived from first principles here — taken as
+the chair-ratified anchor under the row #325 autonomy grant, which itself flags the figure for
+author veto (unchanged, not resolved, by this launch node).
+
+### STOP
+
+**No `sbatch` submitted. No job ID.** Every scientific/spec blocker from LAUNCH 1 is resolved
+(node set, cost cap, venue election, CLI flags all verified against the registered text with
+no substitutions). The sole remaining blocker is operational: this session's SSH client cannot
+authenticate to `bwunicluster` (`st_ac147838@uc3.scc.kit.edu`, `Permission denied`). Next
+attempt: re-run `cluster/graph1_m_s0b_production.sbatch` (already written, needs no further
+edits beyond confirming HEAD still matches `9336364c` at submission time) from a session with
+working cluster SSH access — preflight first (`ssh bwunicluster 'bash -s' <
+cluster/preflight.sh`, require `VERDICT: READY ✓`), then `git pull --ff-only` on the remote
+clone, then `sbatch cluster/graph1_m_s0b_production.sbatch`.
+
+*Stamp: m-s0b-production LAUNCH 2, 2026-09-02. STOP — access blocker only (SSH auth to
+bwunicluster unavailable this session); the registered run is fully specified and the sbatch
+script is committed-ready at `cluster/graph1_m_s0b_production.sbatch`.*
