@@ -36,7 +36,7 @@ Committed by the chair; the author rules on it via the decisions table (one-word
 | 4b | — rerun cost overrun (23.8 CPU-h vs ≤20 ORCHESTRATOR-DERIVED cap) | RULE | a word — needed only if Branch I proceeds (i.e., not if (c) is chosen) | — |
 | 5 | g-c0-baseline re-specification | RULE | Ratified — re-stamp GREEN-AS-CORRECTED against the flag-matched `c0prime_off` comparand [(A), chair-recommended] / (B) rerun an explicit-off-pinned arm for a literal bit-identity pass / (C) hold RED, bank a fresh comparand only at d-calibration | banking m-head-rebaseline as comparand of record (stays inside d-calibration, row #290); any science read of the retrieved wave-1 outputs |
 | 6 | h_grid_admissibility_max physics-change | RULE | Ratified — decoupled admissibility ceiling (1.00) on the guard only, host-window bound at `bayesian_statistics.py:5716` untouched at 0.86 | any claim the extended grid is load-bearing for a given arm (row #290 row 11) |
-| 7 | falsifier-ii fleet cost | RULE | returning with numbers — full fleet at the empirical anchor (208.1–286 CPU-h) / max subset ≤60 CPU-h per the design's own power statement / a design-sanctioned cheaper equivalent | d-a4-final-ratification (returns with the falsifier's numbers either way; A4 stays PROVISIONAL meanwhile) |
+| 7 | falsifier-ii fleet cost | RULE | (A) raise the cap to 290 CPU-h, run the 33-seed fleet [chair-recommended] / (B) hold the 60 CPU-h cap, falsifier cannot run as designed, A4 stays PROVISIONAL / (C) defer to a later batch | d-a4-final-ratification (returns with the falsifier's numbers either way; A4 stays PROVISIONAL meanwhile) |
 | 6 | Status annex | — | no decision asked | — |
 
 ---
@@ -508,7 +508,7 @@ own NOT-covered cell, restated by this design's own §5: "decided at that arm's 
 
 ## 7. falsifier-ii fleet cost — returning with numbers
 
-**[RULE]** — grant word: choose among the option table below (returns with numbers, per row #306).
+**[RULE]** — grant word: (A) / (B) / (C), the three-way word below (returns with numbers, per row #306, folded with the commissioned RECOST_RECORD.md).
 
 Source: `graph1_20260901/exec/v-falsifier-ii-classG/LAUNCH_RECORD.md`, ledger row #306
 (`BIAS_HISTORY_LEDGER.md`).
@@ -554,21 +554,87 @@ source:
 Row #306 (`BIAS_HISTORY_LEDGER.md`) confirms the same trace and disposition and adds: "**A
 zero-compute RECOST from banked runtimes was commissioned by the chair.**"
 
-### State of the commissioned recost
+### The commissioned recost — sourced option table folded in
 
-`graph1_20260901/exec/v-falsifier-ii-classG/RECOST_RECORD.md` does not exist in the repository as
-of this docket's compilation (checked directly: only `LAUNCH_RECORD.md` is present in that exec
-directory). **PENDING** — its option table, once it lands, folds in here without renumbering this
-item; until then the option table below is compiled from the LAUNCH_RECORD's and row #306's own
-disclosed figures only.
+`graph1_20260901/exec/v-falsifier-ii-classG/RECOST_RECORD.md` now exists (zero-compute, banked
+evidence only — "No code was edited, no commit made, no cluster access, no new compute").
 
-### The ask — option table
+**Empirical anchor, quoted:** "**8.6667 CPU-h/task**, from TWO independent completed SLURM
+arrays running the exact instrument (`p3_2d_fleet.py --stage fleet`, both arms `bc`+`bt` per
+task) ... | 6723958 | 24 | 900101-900124 | 24/24 COMPLETED, ~32.5 min/task |
+`P3_2D_REPAIR_READOUT_20260828.md:43` ... | 6730213 (PA-2DR-15 extension) | 9 | 900125-900133 |
+9/9 COMPLETED, ~32.5 min/task (same figure, independently reported) |
+`P3_2D_REPAIR_READOUT_20260828.md:148` |" — "32.5 min x 16 cpus / 60 = **8.6667 CPU-h/task**,
+replicated identically across a 24-task batch and an independent 9-task batch." Staleness
+checked, not assumed: "`git log d04d9dc9..HEAD` ... touches neither `p3_2d_fleet.py` nor the 2D-
+branch draw-law lines of `darksiren_emri/validation/correspondence_1d.py` that `stage_fleet`
+exercises ... Eight `[PHYSICS]` commits landed on `correspondence_1d.py` since d04d9dc9 ...
+but every one is a byte-identical-default instrument flag ... none touch the 2D
+`catalogue_selected_2d` draw path." Conclusion, quoted: "**8.6667 CPU-h/task is CURRENT, not
+stale**, and is the number to price the falsifier against."
 
-| option | description | cost | source |
-|---|---|---|---|
-| Full fleet at the empirical anchor | 24 fixed seeds (`FLEET_SEEDS`, 900101-900124), the primary registered read | 208.1 CPU-h minimum (up to 286 CPU-h across 24–33 tasks) | `PROPOSAL_2D_TWIN_ADOPTION_20260829.md` §6.1(ii), quoted above |
-| Max subset ≤60 CPU-h | a task count the launcher explicitly declined to construct itself ("shrinking the task count myself ... would be exactly the kind of improvisation the task brief prohibits"); requires the design's own power statement to certify a subset still answers the falsifier | ≤60 CPU-h by construction | not sourced in the accessible record — PENDING the commissioned RECOST or a fresh design amendment |
-| Design-sanctioned cheaper equivalent | any alternative the RECOST or a future registration surfaces (e.g. a narrower rung scope) | unknown | PENDING RECOST_RECORD.md |
+**Option (a) -- 24 seeds, UNDERPOWERED:** "24 seeds, both arms/task | **208.0 CPU-h** | design's
+own adjacent measurement: **UNDERPOWERED** on P2 (+16.7% SEM) and P3 (+4.4% SEM) at 24 seeds" --
+sourced to the sibling rung-2/3 repair fleet's own power readout: "At **24 seeds**: P2
+(`LHS2_D1only`) realized SEM was **16.7% above** the frozen planning SEM; P3 (paired ratio)
+realized SEM was **4.4% above** planning. Disposition: **UNDERPOWERED** (chair verdict §4,
+author-ratified 2026-08-28)."
+
+**Option (a') -- 33 seeds, the design's demonstrated power floor:** "33 seeds, both arms/task |
+**286.0 CPU-h** | precedent: CONFIRMED-level power (all SEMs below planning)" -- "At **33 seeds**
+(the +9 seed PA-2DR-15 extension): both SEMs fell **below** planning for every read (P1/P2/P3/P4
+all 'below check-mark'). Disposition: **CONFIRMED**" and "Section 7 explicitly states this was
+'the single pre-committed extension, decided post-data ... no further extension may run' -- i.e.
+33 seeds is the design's own demonstrated floor for meeting its planning-SEM bands, not an
+arbitrary choice."
+
+**Option (b) -- 6 seeds, cap-fitting, UNSOURCED as adequate:** "6 seeds | **52.0 CPU-h** (7 seeds
+= 60.67, over cap) | **UNSOURCED as adequate** -- no banked measurement exists at n=6 ... a
+6-seed fleet is expected to be MORE underpowered, not less (SEM proportional to 1/sqrt(n): 6
+seeds is about 2x the 24-seed SEM, about 33% above planning on P2, extrapolated, NOT measured)."
+
+**Option (c) -- no cheaper reuse:** "**NONE FOUND** -- the design's own text
+(`PREREGISTRATION_P3_2D_REPAIR_20260827.md:675/1014` ... ) states a draw-law repair 'changes RNG
+consumption' so the fleet 'must not be reused' ... `stage_gates`/`stage_lhs2d` ... require a
+freshly generated `stage_fleet` CSV, which is the expensive step being priced. Some quantities
+ARE zero-compute reuse (e.g. RHS2 ...) but RHS2 is not among falsifier (ii)'s target statistics
+(LHS2, G4)."
+
+Compiled option table:
+
+| option | config | CPU-h (empirical anchor) | power status | source |
+|---|---|---:|---|---|
+| (a) Full registered fleet, 24 tasks | 24 seeds, both arms/task | **208.0 CPU-h** | design's own adjacent measurement: **UNDERPOWERED** -- P2 SEM +16.7%, P3 SEM +4.4% over planning | `RECOST_RECORD.md` sections 2/3, sourced to `P3_2D_REPAIR_READOUT_20260828.md` sections 3/7 |
+| (a') Full registered fleet, 33 tasks | 33 seeds, both arms/task | **286.0 CPU-h** | the design's demonstrated power floor -- **CONFIRMED**-level (all SEMs below planning); "no further extension may run" | same |
+| (b) Largest subset fitting the 60 CPU-h cap | 6 seeds | **52.0 CPU-h** | **UNSOURCED as adequate** -- extrapolation (SEM proportional to 1/sqrt(n)) says WORSE-powered than the already-rejected 24-seed case, not measured | `RECOST_RECORD.md` section 3 |
+| (c) Cheaper design-sanctioned equivalent | -- | **NONE FOUND** | forbidden by design: RNG consumption changed, fleet "must not be reused" | `PREREGISTRATION_P3_2D_REPAIR_20260827.md:675/1014` |
+
+Chair caveat carried from the record, stated plainly: "the 24-vs-33 power result was measured on
+the **rung-2/3 repair fleet** (commit `d04d9dc9`, pre-Option-A-prime), not on a rung-1-repaired
+fleet -- falsifier (ii) has never itself been run. There is no banked evidence that the SEM
+behavior transfers exactly, only that it is the closest and only same-instrument, same-venue,
+same-band-machinery precedent available."
+
+### The ask -- restated as the author's three-way word
+
+**(A) Raise the k-falsifier-ii-fleet cap to 290 CPU-h and run the 33-seed fleet (option a').**
+**[CHAIR-RECOMMENDED, ORCHESTRATOR-DERIVED -- the only sourced adequate option.]** This is the
+sole configuration in the table both sourced and adequate against the design's own bands (option
+a is sourced but the design's own adjacent measurement already showed it UNDERPOWERED; options b
+and c have no sourced adequacy at all). Batch-envelope consequence, stated: the wave-2 cost
+envelope grows from **approx 345 CPU-h to approx 571 CPU-h** (286.0 CPU-h added for the fleet
+run, against whatever partial wave-2 total the envelope already carries -- the delta itself,
+286.0 CPU-h, is exact; the approx 345 -> approx 571 CPU-h envelope figures are carried as given,
+not independently re-derived here).
+
+**(B) Hold the cap at 60 CPU-h.** The falsifier cannot run as designed -- no configuration
+meeting its own demonstrated power floor fits under 60 CPU-h at the sourced anchor (a 4.77x
+overage even at the "CONFIRMED" 33-seed floor; 3.5x even at the underpowered 24-seed floor). A4
+stays PROVISIONAL. Any redesign (a smaller, explicitly-disclosed-as-underpowered fleet, or a
+genuinely new cheaper instrument) is a fresh registration and consumes a revision.
+
+**(C) Defer the falsifier to a later batch.** A4 PROVISIONAL is carried forward unresolved; no
+cost is committed in this batch either way.
 
 ### NOT covered
 
