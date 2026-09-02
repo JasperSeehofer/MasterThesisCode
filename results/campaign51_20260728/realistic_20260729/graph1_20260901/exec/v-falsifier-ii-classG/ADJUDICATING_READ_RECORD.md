@@ -220,3 +220,16 @@ three-rung ladder point); it does not certify the twin `verified` (v2.7 cap).
 (archived stdouts / gates JSONs in the out-root) and once re-derived by this verifier's own
 arithmetic from md5-verified raw per-seed CSVs, with exact agreement. Scratch analysis under this
 session's scratchpad (`aprime/`); no code was edited, nothing committed by this verifier.*
+
+---
+
+## Addendum stamp (session close, 2026-09-02 ~15:30 CEST)
+
+At this verifier's session close the cluster `--stage gates` chain (bt then bc) was still
+running and healthy (PID 250133, 98 % CPU, 2h16m CPU time, single-threaded, still inside the
+initial `build_b0i_2d_selection_objects` phase — no per-seed GATE-ACC output yet). When it
+completes it writes `gates_bt.json` then `gates_bc.json` (and `gates_33seed.DONE`) into
+`$WS/p3_2d_fleet_aprime_20260902/` with logs `gates_{bt,bc}_33seed.log`. Whoever picks this up:
+those JSONs carry the per-seed GATE-ACC p̄_s / n_drawn_total (F12 REPORTING-ONLY) and the
+driver's own M2-LINK dicts (whose part (i) self-compares the CSV, §6). Nothing in §7's
+mechanical outcome waits on them.
