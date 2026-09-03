@@ -1,0 +1,60 @@
+{
+  "rule_primary": "Same blind rule as seed3000 (M: log-spaced 5 bins equal-width in log10 M; e0, p0: quantile/quintile 5 bins), applied FRESH to the seed61000 union(kept, timeout) population -- NOT a verbatim reuse of seed3000's numeric edges, because the p0 prior changed (seed3000 = retired [10,16] snapshot-mode bound; seed61000 = production plunge-window convention, unclamped upper p0) and M's detector-frame support differs. Frozen BEFORE any timeout rate/count is computed or inspected.",
+  "rule_secondary_M_only": "seed3000's original M edges reused VERBATIM (not re-derived) for a direct cross-run comparison table on the M axis only (state so).",
+  "population_source": "union of prepared_cramer_rao_bounds.csv kept events (n=1590) and simulate_6088772_*.err timeout log records (n=822, both stages)",
+  "seed61000_M_edges": [
+    11467.740863298552,
+    47353.27632117414,
+    195533.76403830902,
+    807408.8183396299,
+    3333997.088118623,
+    13766938.689099597
+  ],
+  "seed61000_e0_edges": [
+    0.05026987344432527,
+    0.08145083793899455,
+    0.10890904969945314,
+    0.13919963284902717,
+    0.16992511759006676,
+    0.19965336523582117
+  ],
+  "seed61000_p0_edges": [
+    3.677122223516423,
+    11.338926223253553,
+    12.861147854995048,
+    14.486073699483587,
+    19.957980652997623,
+    87.22496870002044
+  ],
+  "seed3000_M_edges_reused_for_comparison": [
+    35519.79338813367,
+    77608.1885928589,
+    169568.12917853205,
+    370493.77075337456,
+    809501.3775998681,
+    1768702.1681796953
+  ],
+  "seed3000_p0_edges_for_reference_NOT_reused": [
+    10.000753793277148,
+    11.400286962597344,
+    12.586043251646046,
+    13.653349371080477,
+    14.820190225137154,
+    15.999516863531062
+  ],
+  "p0_support_note": {
+    "seed3000_p0_range_pop": [
+      0.05,
+      null
+    ],
+    "seed61000_observed_p0_range_kept": [
+      10.002483560886857,
+      15.987218556729829
+    ],
+    "seed61000_observed_p0_range_timeouts": [
+      3.6771259006423236,
+      87.22488147513897
+    ],
+    "reason": "seed3000 p0 prior = retired SNAPSHOT-mode bound [10,16] (few's Pn5AAK input domain); seed61000 (production, post 2026-07-28 flip) draws p0 via the plunge-window convention with no upper clamp -- HIGHM_AUDIT.md item 1."
+  }
+}

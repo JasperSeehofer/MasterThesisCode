@@ -1,0 +1,832 @@
+{
+  "node": "rd-timeout-bin-seed61000",
+  "existence_contract": {
+    "prepared_cramer_rao_bounds_csv": {
+      "status": "PRESENT",
+      "n_rows": 1590,
+      "md5_pin": "9a1f2a14384a9281c97ca3be312ddaab",
+      "md5_actual": "9a1f2a14384a9281c97ca3be312ddaab",
+      "md5_match": true
+    },
+    "manifest_md5_file": {
+      "status": "PRESENT",
+      "n_lines": 2194
+    },
+    "fetched_files_total": 2194,
+    "simulate_array_job": "6088772 (100 tasks, seed 61000+task_idx, sim_steps=40/task = 4000 draws)",
+    "simulate_err_files": {
+      "status": "PRESENT",
+      "n": 100
+    },
+    "simulate_out_files": {
+      "status": "PRESENT",
+      "n": 100
+    },
+    "n_snr_stage_timeout_records": 820,
+    "n_crb_stage_timeout_records": 2,
+    "n_skip_tally_lines_found": 0,
+    "other_skip_category_string_counts_first100_err_files": {
+      "ParameterOutOfBoundsError": 4071,
+      "ZeroDivisionError": 3488,
+      "EllipticK": 0,
+      "Brent": 0,
+      "SeparatrixSigns": 0,
+      "LinAlgError": 0,
+      "Warning": 0
+    },
+    "other_top_level_dirs_in_fetch_NOT_used": [
+      "real_r1..r5",
+      "sig0_control",
+      "zoom",
+      "estimatorB_2x2",
+      "top-level master_thesis_code_*.log (mixed simulate+evaluate, default h=0.73 filename suffix on both stages -- ambiguous, not used)"
+    ]
+  },
+  "design_gate": {
+    "rule_primary": "Same blind rule as seed3000 (M: log-spaced 5 bins equal-width in log10 M; e0, p0: quantile/quintile 5 bins), applied FRESH to the seed61000 union(kept, timeout) population -- NOT a verbatim reuse of seed3000's numeric edges, because the p0 prior changed (seed3000 = retired [10,16] snapshot-mode bound; seed61000 = production plunge-window convention, unclamped upper p0) and M's detector-frame support differs. Frozen BEFORE any timeout rate/count is computed or inspected.",
+    "rule_secondary_M_only": "seed3000's original M edges reused VERBATIM (not re-derived) for a direct cross-run comparison table on the M axis only (state so).",
+    "population_source": "union of prepared_cramer_rao_bounds.csv kept events (n=1590) and simulate_6088772_*.err timeout log records (n=822, both stages)",
+    "seed61000_M_edges": [
+      11467.740863298552,
+      47353.27632117414,
+      195533.76403830902,
+      807408.8183396299,
+      3333997.088118623,
+      13766938.689099597
+    ],
+    "seed61000_e0_edges": [
+      0.05026987344432527,
+      0.08145083793899455,
+      0.10890904969945314,
+      0.13919963284902717,
+      0.16992511759006676,
+      0.19965336523582117
+    ],
+    "seed61000_p0_edges": [
+      3.677122223516423,
+      11.338926223253553,
+      12.861147854995048,
+      14.486073699483587,
+      19.957980652997623,
+      87.22496870002044
+    ],
+    "seed3000_M_edges_reused_for_comparison": [
+      35519.79338813367,
+      77608.1885928589,
+      169568.12917853205,
+      370493.77075337456,
+      809501.3775998681,
+      1768702.1681796953
+    ],
+    "seed3000_p0_edges_for_reference_NOT_reused": [
+      10.000753793277148,
+      11.400286962597344,
+      12.586043251646046,
+      13.653349371080477,
+      14.820190225137154,
+      15.999516863531062
+    ],
+    "p0_support_note": {
+      "seed3000_p0_range_pop": [
+        0.05,
+        null
+      ],
+      "seed61000_observed_p0_range_kept": [
+        10.002483560886857,
+        15.987218556729829
+      ],
+      "seed61000_observed_p0_range_timeouts": [
+        3.6771259006423236,
+        87.22488147513897
+      ],
+      "reason": "seed3000 p0 prior = retired SNAPSHOT-mode bound [10,16] (few's Pn5AAK input domain); seed61000 (production, post 2026-07-28 flip) draws p0 via the plunge-window convention with no upper clamp -- HIGHM_AUDIT.md item 1."
+    }
+  },
+  "snr_stage": {
+    "aggregate": {
+      "n_timeout": 820,
+      "denom": 2412,
+      "rate": 0.33996683250414594,
+      "garwood95_count_ci": [
+        764.8282463145769,
+        878.100109182092
+      ],
+      "garwood95_rate_ci": [
+        0.3170929711088627,
+        0.3640547716343665
+      ]
+    },
+    "by_axis_native_edges": {
+      "M": {
+        "table": [
+          {
+            "bin": 0,
+            "edge_lo": 11467.740863298552,
+            "edge_hi": 47353.27632117414,
+            "n_kept": 0,
+            "n_timeout": 206,
+            "denom": 206,
+            "rate": 1.0,
+            "rate_garwood_lo95": 0.8680971650278466,
+            "rate_garwood_hi95": 1.1462808445899026,
+            "se_approx_from_garwood": 0.07096652784491349
+          },
+          {
+            "bin": 1,
+            "edge_lo": 47353.27632117414,
+            "edge_hi": 195533.76403830902,
+            "n_kept": 9,
+            "n_timeout": 302,
+            "denom": 311,
+            "rate": 0.9710610932475884,
+            "rate_garwood_lo95": 0.8646182420398263,
+            "rate_garwood_hi95": 1.0869901709277265,
+            "se_approx_from_garwood": 0.05672857483298169
+          },
+          {
+            "bin": 2,
+            "edge_lo": 195533.76403830902,
+            "edge_hi": 807408.8183396299,
+            "n_kept": 1279,
+            "n_timeout": 216,
+            "denom": 1495,
+            "rate": 0.14448160535117058,
+            "rate_garwood_lo95": 0.12585488744786508,
+            "rate_garwood_hi95": 0.1650884603701883,
+            "se_approx_from_garwood": 0.01000874835515428
+          },
+          {
+            "bin": 3,
+            "edge_lo": 807408.8183396299,
+            "edge_hi": 3333997.088118623,
+            "n_kept": 304,
+            "n_timeout": 81,
+            "denom": 385,
+            "rate": 0.21038961038961038,
+            "rate_garwood_lo95": 0.1670797194653126,
+            "rate_garwood_hi95": 0.26149507579254294,
+            "se_approx_from_garwood": 0.024085992479257357
+          },
+          {
+            "bin": 4,
+            "edge_lo": 3333997.088118623,
+            "edge_hi": 13766938.689099597,
+            "n_kept": 0,
+            "n_timeout": 15,
+            "denom": 15,
+            "rate": 1.0,
+            "rate_garwood_lo95": 0.5596924088522208,
+            "rate_garwood_hi95": 1.649347924765723,
+            "se_approx_from_garwood": 0.27797845162296403
+          }
+        ],
+        "max_gradient_sigma": 14.349157135454218,
+        "max_gradient_pair_bins": [
+          1,
+          2
+        ],
+        "band_call": "NEW_SYSTEMATIC_CANDIDATE (>3sigma)"
+      },
+      "e0": {
+        "table": [
+          {
+            "bin": 0,
+            "edge_lo": 0.05026987344432527,
+            "edge_hi": 0.08145083793899455,
+            "n_kept": 317,
+            "n_timeout": 166,
+            "denom": 483,
+            "rate": 0.34368530020703936,
+            "rate_garwood_lo95": 0.29339068948516217,
+            "rate_garwood_hi95": 0.4001278884072322,
+            "se_approx_from_garwood": 0.027229377407460037
+          },
+          {
+            "bin": 1,
+            "edge_lo": 0.08145083793899455,
+            "edge_hi": 0.10890904969945314,
+            "n_kept": 305,
+            "n_timeout": 177,
+            "denom": 482,
+            "rate": 0.36721991701244816,
+            "rate_garwood_lo95": 0.3151121438833465,
+            "rate_garwood_hi95": 0.42548356037262575,
+            "se_approx_from_garwood": 0.028156490754238147
+          },
+          {
+            "bin": 2,
+            "edge_lo": 0.10890904969945314,
+            "edge_hi": 0.13919963284902717,
+            "n_kept": 324,
+            "n_timeout": 158,
+            "denom": 482,
+            "rate": 0.3278008298755187,
+            "rate_garwood_lo95": 0.27868053702200674,
+            "rate_garwood_hi95": 0.3830857031499419,
+            "se_approx_from_garwood": 0.026634460155374066
+          },
+          {
+            "bin": 3,
+            "edge_lo": 0.13919963284902717,
+            "edge_hi": 0.16992511759006676,
+            "n_kept": 320,
+            "n_timeout": 162,
+            "denom": 482,
+            "rate": 0.3360995850622407,
+            "rate_garwood_lo95": 0.28633600965803574,
+            "rate_garwood_hi95": 0.39202578169372926,
+            "se_approx_from_garwood": 0.026962171763280734
+          },
+          {
+            "bin": 4,
+            "edge_lo": 0.16992511759006676,
+            "edge_hi": 0.19965336523582117,
+            "n_kept": 326,
+            "n_timeout": 157,
+            "denom": 483,
+            "rate": 0.3250517598343685,
+            "rate_garwood_lo95": 0.2761949199838575,
+            "rate_garwood_hi95": 0.3800609173090678,
+            "se_approx_from_garwood": 0.026496914567106934
+          }
+        ],
+        "max_gradient_sigma": 1.0170568340022539,
+        "max_gradient_pair_bins": [
+          1,
+          2
+        ],
+        "band_call": "NON_ISSUE_WITHIN_POISSON_BOUND"
+      },
+      "p0": {
+        "table": [
+          {
+            "bin": 0,
+            "edge_lo": 3.677122223516423,
+            "edge_hi": 11.338926223253553,
+            "n_kept": 371,
+            "n_timeout": 112,
+            "denom": 483,
+            "rate": 0.2318840579710145,
+            "rate_garwood_lo95": 0.19093261600943767,
+            "rate_garwood_hi95": 0.2790167770023507,
+            "se_approx_from_garwood": 0.02247086196300367
+          },
+          {
+            "bin": 1,
+            "edge_lo": 11.338926223253553,
+            "edge_hi": 12.861147854995048,
+            "n_kept": 436,
+            "n_timeout": 46,
+            "denom": 482,
+            "rate": 0.0954356846473029,
+            "rate_garwood_lo95": 0.0698709157862487,
+            "rate_garwood_hi95": 0.1272978292750747,
+            "se_approx_from_garwood": 0.014649991910266206
+          },
+          {
+            "bin": 2,
+            "edge_lo": 12.861147854995048,
+            "edge_hi": 14.486073699483587,
+            "n_kept": 442,
+            "n_timeout": 40,
+            "denom": 482,
+            "rate": 0.08298755186721991,
+            "rate_garwood_lo95": 0.05928752373815138,
+            "rate_garwood_hi95": 0.11300549162652296,
+            "se_approx_from_garwood": 0.013703814939552863
+          },
+          {
+            "bin": 3,
+            "edge_lo": 14.486073699483587,
+            "edge_hi": 19.957980652997623,
+            "n_kept": 343,
+            "n_timeout": 139,
+            "denom": 482,
+            "rate": 0.2883817427385892,
+            "rate_garwood_lo95": 0.24243483755097472,
+            "rate_garwood_hi95": 0.3405036500102856,
+            "se_approx_from_garwood": 0.025018013713341385
+          },
+          {
+            "bin": 4,
+            "edge_lo": 19.957980652997623,
+            "edge_hi": 87.22496870002044,
+            "n_kept": 0,
+            "n_timeout": 483,
+            "denom": 483,
+            "rate": 1.0,
+            "rate_garwood_lo95": 0.9127954309302668,
+            "rate_garwood_hi95": 1.0932886264673403,
+            "se_approx_from_garwood": 0.04604502825997657
+          }
+        ],
+        "max_gradient_sigma": 13.579794767490938,
+        "max_gradient_pair_bins": [
+          3,
+          4
+        ],
+        "band_call": "NEW_SYSTEMATIC_CANDIDATE (>3sigma)"
+      }
+    },
+    "M_axis_seed3000_edges_comparison_table": [
+      {
+        "bin": 0,
+        "edge_lo": 35519.79338813367,
+        "edge_hi": 77608.1885928589,
+        "n_kept": 0,
+        "n_timeout": 309,
+        "denom": 309,
+        "rate": 1.0,
+        "rate_garwood_lo95": 0.8915976886121528,
+        "rate_garwood_hi95": 1.1179478947679744,
+        "se_approx_from_garwood": 0.05774346012371186
+      },
+      {
+        "bin": 1,
+        "edge_lo": 77608.1885928589,
+        "edge_hi": 169568.12917853205,
+        "n_kept": 5,
+        "n_timeout": 163,
+        "denom": 168,
+        "rate": 0.9702380952380952,
+        "rate_garwood_lo95": 0.8270062005299866,
+        "rate_garwood_hi95": 1.1311494705745926,
+        "se_approx_from_garwood": 0.07758899399290138
+      },
+      {
+        "bin": 2,
+        "edge_lo": 169568.12917853205,
+        "edge_hi": 370493.77075337456,
+        "n_kept": 181,
+        "n_timeout": 153,
+        "denom": 334,
+        "rate": 0.45808383233532934,
+        "rate_garwood_lo95": 0.3883747762027841,
+        "rate_garwood_hi95": 0.5366927667765947,
+        "se_approx_from_garwood": 0.0378369170489383
+      },
+      {
+        "bin": 3,
+        "edge_lo": 370493.77075337456,
+        "edge_hi": 809501.3775998681,
+        "n_kept": 1103,
+        "n_timeout": 99,
+        "denom": 1202,
+        "rate": 0.08236272878535773,
+        "rate_garwood_lo95": 0.06694036177553693,
+        "rate_garwood_hi95": 0.10027366701593633,
+        "se_approx_from_garwood": 0.00850355038163951
+      },
+      {
+        "bin": 4,
+        "edge_lo": 809501.3775998681,
+        "edge_hi": 1768702.1681796953,
+        "n_kept": 303,
+        "n_timeout": 96,
+        "denom": 399,
+        "rate": 0.24060150375939848,
+        "rate_garwood_lo95": 0.19488799051377056,
+        "rate_garwood_hi95": 0.29381561653967037,
+        "se_approx_from_garwood": 0.025237102830944803
+      }
+    ],
+    "grid_2d_M_p0_native_edges": {
+      "table": [
+        {
+          "M_bin": 0,
+          "p0_bin": 0,
+          "n_kept": 0,
+          "n_timeout": 0,
+          "denom": 0,
+          "rate": NaN,
+          "rate_garwood_lo95": NaN,
+          "rate_garwood_hi95": NaN,
+          "se_approx": NaN
+        },
+        {
+          "M_bin": 0,
+          "p0_bin": 1,
+          "n_kept": 0,
+          "n_timeout": 2,
+          "denom": 2,
+          "rate": 1.0,
+          "rate_garwood_lo95": 0.12110463927198253,
+          "rate_garwood_hi95": 3.61234383386198,
+          "se_approx": 0.89063860218606
+        },
+        {
+          "M_bin": 0,
+          "p0_bin": 2,
+          "n_kept": 0,
+          "n_timeout": 3,
+          "denom": 3,
+          "rate": 1.0,
+          "rate_garwood_lo95": 0.2062240409652005,
+          "rate_garwood_hi95": 2.9224243565807746,
+          "se_approx": 0.6929209708993569
+        },
+        {
+          "M_bin": 0,
+          "p0_bin": 3,
+          "n_kept": 0,
+          "n_timeout": 1,
+          "denom": 1,
+          "rate": 1.0,
+          "rate_garwood_lo95": 0.025317807984289897,
+          "rate_garwood_hi95": 5.571643390938898,
+          "se_approx": 1.4149049632938688
+        },
+        {
+          "M_bin": 0,
+          "p0_bin": 4,
+          "n_kept": 0,
+          "n_timeout": 200,
+          "denom": 200,
+          "rate": 1.0,
+          "rate_garwood_lo95": 0.8662044134072866,
+          "rate_garwood_hi95": 1.1486099083272494,
+          "se_approx": 0.07204354134054575
+        },
+        {
+          "M_bin": 1,
+          "p0_bin": 0,
+          "n_kept": 0,
+          "n_timeout": 5,
+          "denom": 5,
+          "rate": 1.0,
+          "rate_garwood_lo95": 0.3246972780236842,
+          "rate_garwood_hi95": 2.333666415864534,
+          "se_approx": 0.512501540293814
+        },
+        {
+          "M_bin": 1,
+          "p0_bin": 1,
+          "n_kept": 2,
+          "n_timeout": 3,
+          "denom": 5,
+          "rate": 0.6,
+          "rate_garwood_lo95": 0.12373442457912029,
+          "rate_garwood_hi95": 1.7534546139484646,
+          "se_approx": 0.41575258253961406
+        },
+        {
+          "M_bin": 1,
+          "p0_bin": 2,
+          "n_kept": 0,
+          "n_timeout": 4,
+          "denom": 4,
+          "rate": 1.0,
+          "rate_garwood_lo95": 0.27246634340658127,
+          "rate_garwood_hi95": 2.5603971688509235,
+          "se_approx": 0.5836665432233302
+        },
+        {
+          "M_bin": 1,
+          "p0_bin": 3,
+          "n_kept": 7,
+          "n_timeout": 37,
+          "denom": 44,
+          "rate": 0.8409090909090909,
+          "rate_garwood_lo95": 0.5920776037978643,
+          "rate_garwood_hi95": 1.1590824123166097,
+          "se_approx": 0.14464674058267024
+        },
+        {
+          "M_bin": 1,
+          "p0_bin": 4,
+          "n_kept": 0,
+          "n_timeout": 253,
+          "denom": 253,
+          "rate": 1.0,
+          "rate_garwood_lo95": 0.8805634400612994,
+          "rate_garwood_hi95": 1.1311177428478565,
+          "se_approx": 0.06391808798186015
+        },
+        {
+          "M_bin": 2,
+          "p0_bin": 0,
+          "n_kept": 157,
+          "n_timeout": 22,
+          "denom": 179,
+          "rate": 0.12290502793296089,
+          "rate_garwood_lo95": 0.07702392666050062,
+          "rate_garwood_hi95": 0.1860796893135488,
+          "se_approx": 0.027820858610935754
+        },
+        {
+          "M_bin": 2,
+          "p0_bin": 1,
+          "n_kept": 351,
+          "n_timeout": 30,
+          "denom": 381,
+          "rate": 0.07874015748031496,
+          "rate_garwood_lo95": 0.05312565359952996,
+          "rate_garwood_hi95": 0.11240647085251355,
+          "se_approx": 0.015122935230693928
+        },
+        {
+          "M_bin": 2,
+          "p0_bin": 2,
+          "n_kept": 435,
+          "n_timeout": 33,
+          "denom": 468,
+          "rate": 0.07051282051282051,
+          "rate_garwood_lo95": 0.04853778113831163,
+          "rate_garwood_hi95": 0.09902621638711388,
+          "se_approx": 0.012879939439908655
+        },
+        {
+          "M_bin": 2,
+          "p0_bin": 3,
+          "n_kept": 336,
+          "n_timeout": 101,
+          "denom": 437,
+          "rate": 0.2311212814645309,
+          "rate_garwood_lo95": 0.18825207961793808,
+          "rate_garwood_hi95": 0.2808333082513284,
+          "se_approx": 0.023618094167390403
+        },
+        {
+          "M_bin": 2,
+          "p0_bin": 4,
+          "n_kept": 0,
+          "n_timeout": 30,
+          "denom": 30,
+          "rate": 1.0,
+          "rate_garwood_lo95": 0.6746958007140305,
+          "rate_garwood_hi95": 1.427562179826922,
+          "se_approx": 0.19206127742981288
+        },
+        {
+          "M_bin": 3,
+          "p0_bin": 0,
+          "n_kept": 214,
+          "n_timeout": 70,
+          "denom": 284,
+          "rate": 0.24647887323943662,
+          "rate_garwood_lo95": 0.19214237361952638,
+          "rate_garwood_hi95": 0.31141122828182727,
+          "se_approx": 0.03042628708034966
+        },
+        {
+          "M_bin": 3,
+          "p0_bin": 1,
+          "n_kept": 83,
+          "n_timeout": 11,
+          "denom": 94,
+          "rate": 0.11702127659574468,
+          "rate_garwood_lo95": 0.058416599651455736,
+          "rate_garwood_hi95": 0.20938338843938248,
+          "se_approx": 0.03851264329036828
+        },
+        {
+          "M_bin": 3,
+          "p0_bin": 2,
+          "n_kept": 7,
+          "n_timeout": 0,
+          "denom": 7,
+          "rate": 0.0,
+          "rate_garwood_lo95": 0.0,
+          "rate_garwood_hi95": 0.5269827791591336,
+          "se_approx": 0.13443685168685077
+        },
+        {
+          "M_bin": 3,
+          "p0_bin": 3,
+          "n_kept": 0,
+          "n_timeout": 0,
+          "denom": 0,
+          "rate": NaN,
+          "rate_garwood_lo95": NaN,
+          "rate_garwood_hi95": NaN,
+          "se_approx": NaN
+        },
+        {
+          "M_bin": 3,
+          "p0_bin": 4,
+          "n_kept": 0,
+          "n_timeout": 0,
+          "denom": 0,
+          "rate": NaN,
+          "rate_garwood_lo95": NaN,
+          "rate_garwood_hi95": NaN,
+          "se_approx": NaN
+        },
+        {
+          "M_bin": 4,
+          "p0_bin": 0,
+          "n_kept": 0,
+          "n_timeout": 15,
+          "denom": 15,
+          "rate": 1.0,
+          "rate_garwood_lo95": 0.5596924088522208,
+          "rate_garwood_hi95": 1.649347924765723,
+          "se_approx": 0.27797845162296403
+        },
+        {
+          "M_bin": 4,
+          "p0_bin": 1,
+          "n_kept": 0,
+          "n_timeout": 0,
+          "denom": 0,
+          "rate": NaN,
+          "rate_garwood_lo95": NaN,
+          "rate_garwood_hi95": NaN,
+          "se_approx": NaN
+        },
+        {
+          "M_bin": 4,
+          "p0_bin": 2,
+          "n_kept": 0,
+          "n_timeout": 0,
+          "denom": 0,
+          "rate": NaN,
+          "rate_garwood_lo95": NaN,
+          "rate_garwood_hi95": NaN,
+          "se_approx": NaN
+        },
+        {
+          "M_bin": 4,
+          "p0_bin": 3,
+          "n_kept": 0,
+          "n_timeout": 0,
+          "denom": 0,
+          "rate": NaN,
+          "rate_garwood_lo95": NaN,
+          "rate_garwood_hi95": NaN,
+          "se_approx": NaN
+        },
+        {
+          "M_bin": 4,
+          "p0_bin": 4,
+          "n_kept": 0,
+          "n_timeout": 0,
+          "denom": 0,
+          "rate": NaN,
+          "rate_garwood_lo95": NaN,
+          "rate_garwood_hi95": NaN,
+          "se_approx": NaN
+        }
+      ],
+      "max_gradient_sigma": 5.970173743945387,
+      "max_gradient_pair_cells": [
+        [
+          2,
+          2
+        ],
+        [
+          2,
+          3
+        ]
+      ],
+      "band_call": "NEW_SYSTEMATIC_CANDIDATE (>3sigma)"
+    }
+  },
+  "crb_stage_descriptive": {
+    "n_timeout": 2,
+    "denom": 1592,
+    "rate": 0.001256281407035176,
+    "garwood95_count_ci": [
+      0.24220927854396507,
+      7.22468766772396
+    ],
+    "garwood95_rate_ci": [
+      0.00015214150662309363,
+      0.00453812039429897
+    ],
+    "events": [
+      {
+        "M": 1950892.8981102726,
+        "e0": 0.10739124404824389,
+        "p0": 7.133075953683462,
+        "task_idx": 33
+      },
+      {
+        "M": 576074.3016354897,
+        "e0": 0.05478988418932291,
+        "p0": 14.389878721169366,
+        "task_idx": 87
+      }
+    ],
+    "note": "n=2, not binnable; reported descriptively only"
+  },
+  "population_depth_z": {
+    "n": 1590,
+    "min": 0.016388137652071463,
+    "median": 0.4901803366340537,
+    "p95": 0.806456032467963,
+    "max": 1.1096786496255893,
+    "HOST_DRAW_Z_MAX": 1.5,
+    "depth_fraction_of_zmax": 0.7397857664170595,
+    "frac_events_z_gt_0.9_zmax": 0.0
+  },
+  "overall_max_gradient_sigma": 14.349157135454218,
+  "overall_band_call": "NEW_SYSTEMATIC_CANDIDATE (>3sigma)",
+  "seed3000_vs_seed61000_comparison": [
+    {
+      "M_bin": 0,
+      "edge_lo": 35519.79338813367,
+      "edge_hi": 77608.1885928589,
+      "seed3000_n_kept": 15,
+      "seed3000_n_timeout": 103,
+      "seed3000_rate": 0.8728813559322034,
+      "seed61000_n_kept": 0,
+      "seed61000_n_timeout": 309,
+      "seed61000_rate": 1.0,
+      "diff_sigma": 1.2048189350671354
+    },
+    {
+      "M_bin": 1,
+      "edge_lo": 77608.1885928589,
+      "edge_hi": 169568.12917853205,
+      "seed3000_n_kept": 110,
+      "seed3000_n_timeout": 401,
+      "seed3000_rate": 0.7847358121330724,
+      "seed61000_n_kept": 5,
+      "seed61000_n_timeout": 163,
+      "seed61000_rate": 0.9702380952380952,
+      "diff_sigma": 2.128364949427492
+    },
+    {
+      "M_bin": 2,
+      "edge_lo": 169568.12917853205,
+      "edge_hi": 370493.77075337456,
+      "seed3000_n_kept": 1017,
+      "seed3000_n_timeout": 378,
+      "seed3000_rate": 0.2709677419354839,
+      "seed61000_n_kept": 181,
+      "seed61000_n_timeout": 153,
+      "seed61000_rate": 0.45808383233532934,
+      "diff_sigma": 4.6329857708319215
+    },
+    {
+      "M_bin": 3,
+      "edge_lo": 370493.77075337456,
+      "edge_hi": 809501.3775998681,
+      "seed3000_n_kept": 1993,
+      "seed3000_n_timeout": 245,
+      "seed3000_rate": 0.1094727435210008,
+      "seed61000_n_kept": 1103,
+      "seed61000_n_timeout": 99,
+      "seed61000_rate": 0.08236272878535773,
+      "diff_sigma": 2.4454309850439575
+    },
+    {
+      "M_bin": 4,
+      "edge_lo": 809501.3775998681,
+      "edge_hi": 1768702.1681796953,
+      "seed3000_n_kept": 192,
+      "seed3000_n_timeout": 69,
+      "seed3000_rate": 0.264367816091954,
+      "seed61000_n_kept": 303,
+      "seed61000_n_timeout": 96,
+      "seed61000_rate": 0.24060150375939848,
+      "diff_sigma": 0.5734081662400045
+    }
+  ],
+  "selection_effect_note": [
+    {
+      "M_bin": 0,
+      "edge_lo": 11467.740863298552,
+      "edge_hi": 47353.27632117414,
+      "frac_of_bin_lost_to_timeout": 1.0,
+      "frac_of_kept_population_in_bin": 0.0
+    },
+    {
+      "M_bin": 1,
+      "edge_lo": 47353.27632117414,
+      "edge_hi": 195533.76403830902,
+      "frac_of_bin_lost_to_timeout": 0.9710610932475884,
+      "frac_of_kept_population_in_bin": 0.005660377358490566
+    },
+    {
+      "M_bin": 2,
+      "edge_lo": 195533.76403830902,
+      "edge_hi": 807408.8183396299,
+      "frac_of_bin_lost_to_timeout": 0.14448160535117058,
+      "frac_of_kept_population_in_bin": 0.8044025157232705
+    },
+    {
+      "M_bin": 3,
+      "edge_lo": 807408.8183396299,
+      "edge_hi": 3333997.088118623,
+      "frac_of_bin_lost_to_timeout": 0.21038961038961038,
+      "frac_of_kept_population_in_bin": 0.19119496855345913
+    },
+    {
+      "M_bin": 4,
+      "edge_lo": 3333997.088118623,
+      "edge_hi": 13766938.689099597,
+      "frac_of_bin_lost_to_timeout": 1.0,
+      "frac_of_kept_population_in_bin": 0.0
+    }
+  ],
+  "gaps": [
+    "Raw injected-population files were explicitly excluded from the fetch (OPS_RECORD step 4: 'NOT injections/posteriors') -- bin edges use the union of kept + timeout parameters as the population proxy, same convention as seed3000, disclosed not substituted silently.",
+    "p0's declared prior differs between the two runs: seed3000 used the retired [10,16] SNAPSHOT-mode bound; seed61000 (production) draws p0 via the unclamped plunge-window convention (HIGHM_AUDIT.md item 1, 2026-07-28). Observed seed61000 p0 support is [3.68, 87.22], not [10,16]. seed3000's M edges (not its p0 edges) are reused verbatim for the cross-run comparison table; p0/e0 tables use fresh seed61000-native edges only.",
+    "Zero of the 100 simulate_6088772 tasks logged a final 'Skip tally' summary line (all were cancelled at walltime before reaching it) -- worse completeness than seed3000 (33/100); does not affect the binned rate (built from raw per-event records), disclosed as a caveat.",
+    "Denominator excludes all non-timeout skip categories (ParameterOutOfBoundsError, ZeroDivisionError, ...) -- no per-event params logged for those (G9 instruments only the two timeout call sites). Reported rate is conditional on {timed out, fully succeeded}, not of every attempted draw.",
+    "CRB-stage timeout sample (n=2) is descriptive only, not binned.",
+    "The fetch directory also contains real_r1..r5, sig0_control, zoom, estimatorB_2x2 subtrees and top-level master_thesis_code_*.log files (mixed simulate+evaluate app logs, ambiguous by filename alone) belonging to the same run_20260729_seed61000 workspace directory but NOT to the seed61000 simulate array (job 6088772) analyzed here -- excluded from this read."
+  ]
+}
