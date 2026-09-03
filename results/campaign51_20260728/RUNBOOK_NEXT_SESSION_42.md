@@ -18,8 +18,9 @@ watchers that DIED with the old session — §1 is the very first thing to do.
    --work-root <ABSOLUTE work root> --N 200 --cell S --seed-block 901000 --n-universes 100
    --max-wall-s 86400 > exec/m-s3-postflip-coverage/cellS_inv2.log 2>&1 &` (checkpoints skip
    automatically). Cell T is COMPLETE (25/25, row #326) — do not touch its work.
-2. **S0-B production (CLUSTER, survives):** job **6779448** (array 0-4, 5 registered θ-nodes,
-   launched row #330). Re-arm a sacct watcher. On completion: retrieval + the PA-HIER-33 /
+2. **S0-B production (CLUSTER, survives):** job **6779532** (array 0-4, 5 registered θ-nodes;
+   the first submission 6779448 failed 5/5 at 11s on a strict-equality HEAD pin, fixed to an
+   ancestor check and resubmitted — rows #330-#331). Re-arm a sacct watcher. On completion: retrieval + the PA-HIER-33 /
    score_b_re reads (g-score-null |Z|≤3 gate per rows #225/#251/#287) → d-photoz-leverage
    dossier to the author. Cost anchor: 74.7–101.4 CPU-h across 5 tasks (~15–23 CPU-h each).
 3. SSH is authenticated as of handoff; `ControlPersist` expires ~8h (OTP, author-only re-auth).
