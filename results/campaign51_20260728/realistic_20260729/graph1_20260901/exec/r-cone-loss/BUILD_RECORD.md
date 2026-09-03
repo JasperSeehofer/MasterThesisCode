@@ -389,3 +389,177 @@ No STOP. Output written to `cone_loss_work/cone_loss_result_rev1.json` (verdict
 contract). `cone_loss_result.json` at the node root (verdict `INSTRUMENT-DEFECT`,
 pre-fix) is untouched and remains superseded per the draft's instruction not to read
 it.
+
+## FIX 2 — real-mode §2 statistic implemented (builder still never runs real mode on production)
+
+Task instruction for this fix round (BUILDER, fix round 2): implement the registered
+real-mode statistic exactly as `REGISTRATION_DRAFT.md` §2–§5/§7 specifies, without
+touching gate code, and exercise the new code ONLY on a synthetic table — never on
+production/anchor/harness data. This section records what changed, the byte-identity
+proof for gate code, the `--dry-run` re-run, and the synthetic 10-row check.
+
+### What changed (diff summary)
+
+`cone_loss_reads.py`: `git diff --stat` reports `431 insertions(+), 6 deletions(-)`,
+all of it in two places:
+
+1. Module docstring — one new paragraph ("FIX ROUND 2 (task instruction, this
+   revision): ...") stating that this fix implements the real-mode statistic but the
+   builder still never executes it on production data, and that gate code is
+   byte-identical to the rev.1 file. Nothing else in the docstring, and nothing in
+   any gate-relevant comment, changed.
+2. A new block of functions inserted between `run_gates()` and `main()` (draft §2's
+   statistic, not gate code): `robust_sd_mad`, `sample_sd`, `two_outlier_sensitivity`,
+   `stencil_scores` (per-event central-difference score on the h=0.725/0.735 stencil,
+   both channels, `b4_imp_stage1_forecast.py:136-143` convention), the primary
+   statistic `cone_bias_floor_statistic` (Δh_cone, SE per the rev.1 formula
+   `SD_IN·√(n_OUT+n_OUT²/n_IN)/I_c`, Z, φ_cone, M — one call per channel),
+   `physics_floor_apply` + `t0_mean_h` (the frozen T0-scorer convention:
+   per-row physics floor, gradient-trapezoid weights, uniform prior, replicated from
+   `tier0_bootstrap_jackknife.py` P7-2a/P7-2c per the draft's own citation),
+   `leave_out_cross_check` (full-sample vs OUT-excluded mean_h, the ≤2·SE agreement
+   flag), `harness_replicate` (the 67 postflip-S3 `seed*_S` universes: per-universe
+   `f_out`/`s̄_OUT`/`s̄_IN`/`Δs`, aggregated with a one-sample paired t-test of `Δs`
+   against 0), and `evaluate_dispositions` (the three-valued §4 disposition table:
+   `"TRUE"`/`"FALSE"`/`"INPUTS-DO-NOT-EXIST"` per row, matching the READ_RECORD.md §7
+   existence-contract convention this fix supersedes with computed values).
+
+`main()`'s post-gate branch: the `raise NotImplementedError(...)` (rev.1) is replaced
+by a call sequence — `stencil_scores` on the production diagnostics CSV →
+`cone_bias_floor_statistic` ×2 (1D, 2D) → `leave_out_cross_check` →
+`harness_replicate` → `evaluate_dispositions` — writing one `--out` JSON with every
+intermediate (`statistic_1D`, `statistic_2D`, `leave_out_cross_check`,
+`harness_replicate`, `dispositions`, plus `gates` unchanged). This branch is reached
+only after `gates["passed"]` is `True` (the existing gate-fail branch above it, which
+writes `INSTRUMENT-DEFECT` and calls `SystemExit`, is untouched).
+
+**Not touched (byte-identical to the rev.1 file, confirmed by reading the full diff):**
+`md5_of_file`, `cone_radius`, `sky_mahalanobis2`, `wrap_angle`, `load_catalogue`,
+`build_census`, `build_anchor`, `score_anchor`, `parse_p6_line`, `count_harness_seeds`,
+`run_gates` in its entirety (G-1..G-4, `g_population_disclosure`, the top-level
+`gates["passed"]` assembly), all module-level constants (`ANCHOR_MKER`, `ANCHOR_CMEM`,
+`SCATTER_ENVELOPE`, `SCORED_SET_GAPS`, `P6_LINE_RE`, `CRB_COLS`), the full argparse
+block, and the `--dry-run` branch of `main()` (still writes `GATES-GREEN`/
+`INSTRUMENT-DEFECT` with no per-event scores, exits 0 unconditionally). `ruff check
+--fix` and `ruff format` were run on the file after editing (`All checks passed!`,
+one reformat, no logic change); `mypy` on the file reports `Success: no issues found
+in 1 source file`.
+
+### Dry-run re-run (this fix) — proves gates still all GREEN
+
+Command: draft §7 launch block, repo root, `--dry-run` appended, `--out` pointed at
+a NEW file per task instruction:
+`graph1_20260901/exec/r-cone-loss/cone_loss_result_rev2_dry.json` (not the rev.1
+`cone_loss_work/cone_loss_result_rev1.json`, which is untouched).
+
+Tail of stdout (full gate block identical field-for-field to the rev.1 re-run above;
+reproduced here only where it differs in location, i.e. nowhere):
+
+```
+CENSUS: n_in_catalogue=76 n_OUT=10 n_IN=66 f_OUT=0.1316
+--dry-run: G-1..G-4 + census only (GATES-GREEN). Registered statistic (Delta h_cone/phi_cone/SE/Z) NOT computed (verifier independence, draft §7).
+```
+
+`cone_loss_result_rev2_dry.json`: top-level `"gates"` block is field-for-field
+identical to the rev.1 GATES-GREEN block above (G-1 all 3 pins GREEN, G-2 both
+anchors GREEN with the same full-float chord/radius reproductions, G-3 GREEN
+`n_out=10`/`n_in=66`, G-4 KS GREEN `p=0.872` + envelope GREEN `binom p=1.0` against
+edge 0.134, g-population disclosure `n_seed_S=67`/`n_seed_T=25`), `"verdict":
+"GATES-GREEN"`, `"dry_run": true`. **`gates["passed"] == true` reproduced exactly —
+byte-identity of the gate code is confirmed by output, not just by diff.**
+
+### Synthetic 10-row check (cone) — the only data this build exercised the new statistic on
+
+Script: `/tmp/claude-1000/.../scratchpad/synthetic_check.py` (imports
+`cone_loss_reads` and calls the new functions directly; never touches
+`--production-crb`/`--production-run`/`--replicate-run`/`--harness-root`/anchor-fleet
+paths). Full JSON output reproduced in-session; the load-bearing numbers, given here
+so a reviewer can check the arithmetic by hand:
+
+**Input — synthetic census (10 events, OUT = {0,1,2}, IN = {3..9}) and scores:**
+
+| event_idx | outside | s_1D | s_2D |
+|---|---|---|---|
+| 0 | True | 0.30 | 0.10 |
+| 1 | True | 0.35 | 0.12 |
+| 2 | True | 0.25 | 0.09 |
+| 3 | False | 0.10 | 0.05 |
+| 4 | False | 0.12 | 0.06 |
+| 5 | False | 0.11 | 0.055 |
+| 6 | False | 0.09 | 0.045 |
+| 7 | False | 0.50 | 0.20 |
+| 8 | False | 0.10 | 0.05 |
+| 9 | False | 0.08 | 0.04 |
+
+**`cone_bias_floor_statistic(census, scores, "1D")` output, hand-checked:**
+
+- `s_bar_in` = (0.10+0.12+0.11+0.09+0.50+0.10+0.08)/7 = 1.10/7 = **0.157142857** ✓
+  (matches `0.15714285714285717`)
+- IN-class median = 0.10; abs devs = {0.02,0.01,0,0,0.40,0,0.02}; MAD = median of
+  sorted devs {0,0,0.01,0.01,0.02,0.02,0.40} = **0.01** → `sd_in_mad_scaled` =
+  1.4826·0.01 = **0.014826** ✓ (matches `0.014826000000000013`)
+- `two_outlier_sensitivity`: event 7 (dev 0.40), event 9 (dev 0.02) ✓ (matches
+  output; the 0.02-tie between events 4 and 9 breaks toward 9 because
+  `np.argsort` on ties preserves ascending-index order, and the top-2 slice is taken
+  from the *reversed* ascending sort)
+- `delta_h_cone` = Σ_OUT(s_e−s̄_IN)/I_1D = [(0.90) − 3·0.157142857]/3256 =
+  0.428571/3256 = **1.3163e-4** ✓ (matches `0.0001316251316251316`)
+- `SE` = 0.014826·√(3+9/7)/3256 = 0.014826·2.070197/3256 = **9.4265e-6** ✓ (matches
+  `9.42651595467729e-06`)
+- `Z` = 1.3163e-4/9.4265e-6 = **13.963** ✓ (matches `13.963285296283964`)
+- `phi_cone` = 1.3163e-4/(−0.0630) = **−0.00209** ✓ (matches `-0.0020892878...`)
+- `M` = 0.008/9.4265e-6 = **848.67** ✓ (matches `848.6698625944111`)
+
+Same arithmetic pattern verified for the 2D channel (`s̄_IN`=0.0714286, MAD-SD
+0.007413, `Δh_cone`=3.267e-5, SE=5.238e-6, Z=6.237, φ=−5.10e-4, M=1527.4) — all
+reproduced by the script exactly.
+
+**`stencil_scores` on a 3-event synthetic diagnostics CSV** (h=0.725→lo,
+h=0.735→hi): event 0 (lo=1.0, hi=1.2) → `s_1D` = ln(1.2/1.0)/0.01 = **18.2322**,
+script output `18.232155679395444` ✓; event 1 (lo=2.0, hi=1.8, a DECREASING
+likelihood) → ln(1.8/2.0)/0.01 = **−10.5361**, script `-10.536051565782612` ✓; event
+2 (lo=hi=0.5, flat) → **0.0** ✓.
+
+**`physics_floor_apply` on a synthetic 4-event×4-h table:** row 1 has one zero
+(`[0.05, 0.00, 0.07, 0.06]`) → floored to `[0.05, 0.05, 0.07, 0.06]` (its own min
+nonzero, 0.05) ✓; row 2 is all-zero → excluded (`exclude=[F,F,T,F]`) ✓; rows 0 and 3
+pass through unchanged ✓ — matches the P7-2c rule verbatim.
+
+**`t0_mean_h` full-sample vs leave-out-event-0**, hand-computed on the same table
+(uniform grid `h=[0.70,0.71,0.72,0.73]`, `w=0.01` each, rows {0,1,3} kept after the
+floor excludes row 2): Σ log L per h = {−7.4186, −7.1001, −6.3089, −6.4943};
+`mean_h` = Σ(post·h·w)/Σ(post·w) ≈ **0.71892** — matches script `0.718921589236914`
+(hand arithmetic carried to 5 s.f., script to full float precision). Excluding event
+0 (rows {1,3} only): Σ log L = {−5.1160, −5.2030, −4.6995, −4.7795} → `mean_h` ≈
+**0.71695** — matches script `0.7168620689655172`. `delta_mean_h_leave_out` =
+0.716862−0.718922 = **−0.00206**, matches `-0.0020595202713967753`; with the
+(deliberately arbitrary, synthetic) `se_1d=0.02` passed in, `agrees_within_2SE_of_linear`
+= True (|−0.00206−0.01| = 0.0121 ≤ 0.04) ✓.
+
+**`evaluate_dispositions` on the synthetic 1D/2D statistics:** `IMMATERIAL-FLOOR-SHARE`
+= `"TRUE"` (|Δh_1D|=1.3e-4 < 0.008, φ_1D=−0.0021 (|·|<0.2), M=849≥3 — all satisfied
+by this synthetic table's arbitrary numbers, which is expected: it is a hand-picked
+smoke case, not a claim about production); `CONE-OWNS-FLOOR` = `"FALSE"` (φ_1D<0.5);
+`INTERMEDIATE-UNPOWERED` = `"FALSE"` (SE ≪ T_mat/3); `INTERMEDIATE` = `"FALSE"`
+(disp_1d already resolved to IMMATERIAL); `disagree_1D_2D` = `false`;
+`leave_out_disagrees_gt_2SE` = `false`. All four rows evaluate to a definite
+`"TRUE"`/`"FALSE"` (never `"INPUTS-DO-NOT-EXIST"`) because every input the synthetic
+table supplies is finite — confirming the three-valued fallback path itself was not
+exercised here (it is exercised implicitly by `evaluate_dispositions`'s `finite()`
+guards, which are unit-testable but were not separately forced to the NaN branch in
+this synthetic run; noted as a residual gap for the reviewer).
+
+### Not done by this build (per task instruction)
+
+Real mode was **not** run against `--production-crb`/`--production-run`/
+`--replicate-run`/`--harness-root`/`--anchor-fleet-*` — no aggregate or per-event
+score over the registered production/anchor/harness population was computed by this
+agent. `stencil_scores`/`cone_bias_floor_statistic`/`leave_out_cross_check` were
+exercised only on the hand-built synthetic tables above; `harness_replicate` was
+**not** separately exercised on a synthetic fleet directory (it composes
+`build_census` + `stencil_scores`, both independently synthetic-tested above, and
+building a realistic multi-seed synthetic fleet tree was judged out of proportion to
+this fix's scope — flagged for the reviewer rather than silently skipped). Running
+the new real-mode branch end-to-end against production is the runner agent's job per
+the module docstring's verifier-independence contract, gated on this fix's dry-run
+GREEN above.

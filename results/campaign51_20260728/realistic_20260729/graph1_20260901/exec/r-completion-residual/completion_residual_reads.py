@@ -183,10 +183,86 @@ def reproduce_harness_byte_id(
     }
 
 
+# ── §2.3 Read B: harness matched-channel S_M per universe (rev. 1 item 2, 1b) ─
+
+
+def compute_harness_matched_channel_scores(
+    harness_root: Path,
+    population: int,
+    cell: str,
+    h_lo: float,
+    h_hi: float,
+) -> dict[str, Any]:
+    """Per-universe matched-channel dark score ``S_M,harn,U`` (REGISTRATION_DRAFT.md §2.3, 1b).
+
+    For every harness universe checkpoint matching ``population``, reads that universe's OWN
+    ``simulations/diagnostics/event_likelihoods.csv`` and sibling ``simulations/
+    prepared_cramer_rao_bounds.csv``, applies the identical stencil/columns as the production
+    read (:func:`compute_event_terms`), masks the dark class (``host_galaxy_index == -1``), and
+    takes the per-universe mean of ``s_M`` over dark events. ``T_harn``/``SE_harn`` are then the
+    between-universe mean/SE of these 67 (or fewer) per-universe values -- the registered
+    statistic's OWN SE, never the harness full-score checkpoint SE.
+
+    The checkpoint's ``score_at_truth.no_bh.dark.mean`` (full score) is NOT used here; it enters
+    only the byte-id instrument gate (:func:`reproduce_harness_byte_id`).
+    """
+    checkpoint_files = sorted(harness_root.glob(f"universe_seed*_{cell}.json"))
+    matched_seeds: list[int] = []
+    for f in checkpoint_files:
+        try:
+            c = json.loads(f.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if int(c["universe"]["n_draw_requested"]) == population:
+            matched_seeds.append(int(c["universe"]["seed"]))
+    matched_seeds.sort()
+
+    per_universe: list[dict[str, Any]] = []
+    for seed in matched_seeds:
+        universe_dir = harness_root / f"seed{seed}_{cell}" / "simulations"
+        csv_path = universe_dir / "diagnostics" / "event_likelihoods.csv"
+        crb_path = universe_dir / "prepared_cramer_rao_bounds.csv"
+        if not (csv_path.is_file() and crb_path.is_file()):
+            per_universe.append({"seed": seed, "available": False})
+            continue
+        df = pd.read_csv(csv_path)
+        crb = pd.read_csv(crb_path)
+        terms = compute_event_terms(df, h_lo, h_hi)
+        dark_mask = crb["host_galaxy_index"].to_numpy() == -1
+        dark_idx = set(int(i) for i in np.nonzero(dark_mask)[0])
+        dark_terms = terms.loc[terms.index.isin(dark_idx)]
+        per_universe.append(
+            {
+                "seed": seed,
+                "available": True,
+                "n_dark": int(len(dark_terms)),
+                "S_M_universe": float(dark_terms["s_M"].mean())
+                if len(dark_terms)
+                else float("nan"),
+            }
+        )
+
+    values = [u["S_M_universe"] for u in per_universe if u.get("available")]
+    values = [v for v in values if v == v]  # drop nan
+    n = len(values)
+    t_harn = float(np.mean(values)) if n else float("nan")
+    se_harn = float(np.std(values, ddof=1) / (n**0.5)) if n > 1 else float("nan")
+    return {
+        "n_universes_matched": len(matched_seeds),
+        "n_universes_available": n,
+        "seeds": matched_seeds,
+        "per_universe": per_universe,
+        "T_harn": t_harn,
+        "SE_harn": se_harn,
+    }
+
+
 # ── T0 mean_h reproduction (the re-baseline gate, §7 / BUILD_RECORD target) ─
 
 
-def t0_mean_h(csv_path: Path, channel: str = "combined_no_bh") -> tuple[float, npt.NDArray[np.float64]]:
+def t0_mean_h(
+    csv_path: Path, channel: str = "combined_no_bh"
+) -> tuple[float, npt.NDArray[np.float64]]:
     """Reproduce the T0 gradient-trapezoid-weighted ``mean_h`` (prod2d_closure_20260818/
     tier0_bootstrap_jackknife.py docstring convention): physics-floor zero handling via
     :func:`combine_log_likelihood`, ``w = np.gradient(h_grid)``, ``mean_h = sum(post_n*h*w)``.
@@ -208,9 +284,7 @@ def t0_mean_h(csv_path: Path, channel: str = "combined_no_bh") -> tuple[float, n
 # ── §2.1 the g-closure identity and the matched-channel per-event score ─────
 
 
-def compute_event_terms(
-    df: pd.DataFrame, h_lo: float, h_hi: float
-) -> pd.DataFrame:
+def compute_event_terms(df: pd.DataFrame, h_lo: float, h_hi: float) -> pd.DataFrame:
     """Per-event s_M, s_T, s_C, s_e and the g-closure residual (§2.1), indexed by event_idx.
 
     Args:
@@ -236,19 +310,22 @@ def compute_event_terms(
     ln_b_num = np.log(b_num.to_numpy(dtype=np.float64))
     ln_beta_gbar_phi = np.log(beta_gbar_phi.to_numpy(dtype=np.float64))
 
-    s_M = (ln_b_num[:, 1] - ln_b_num[:, 0]) / dh - (ln_beta_gbar_phi[:, 1] - ln_beta_gbar_phi[:, 0]) / dh
-    s_T = (ln_beta_gbar_phi[:, 1] - ln_beta_gbar_phi[:, 0]) / dh - (
-        den_log_term.to_numpy(dtype=np.float64)[:, 1] - den_log_term.to_numpy(dtype=np.float64)[:, 0]
+    s_M = (ln_b_num[:, 1] - ln_b_num[:, 0]) / dh - (
+        ln_beta_gbar_phi[:, 1] - ln_beta_gbar_phi[:, 0]
     ) / dh
-    s_C = (
-        (num_log_term_no_bh.to_numpy(dtype=np.float64)[:, 1] - ln_b_num[:, 1]) / dh
-        - (num_log_term_no_bh.to_numpy(dtype=np.float64)[:, 0] - ln_b_num[:, 0]) / dh
-    )
+    s_T = (ln_beta_gbar_phi[:, 1] - ln_beta_gbar_phi[:, 0]) / dh - (
+        den_log_term.to_numpy(dtype=np.float64)[:, 1]
+        - den_log_term.to_numpy(dtype=np.float64)[:, 0]
+    ) / dh
+    s_C = (num_log_term_no_bh.to_numpy(dtype=np.float64)[:, 1] - ln_b_num[:, 1]) / dh - (
+        num_log_term_no_bh.to_numpy(dtype=np.float64)[:, 0] - ln_b_num[:, 0]
+    ) / dh
     s_e = (
         num_log_term_no_bh.to_numpy(dtype=np.float64)[:, 1]
         - num_log_term_no_bh.to_numpy(dtype=np.float64)[:, 0]
     ) / dh - (
-        den_log_term.to_numpy(dtype=np.float64)[:, 1] - den_log_term.to_numpy(dtype=np.float64)[:, 0]
+        den_log_term.to_numpy(dtype=np.float64)[:, 1]
+        - den_log_term.to_numpy(dtype=np.float64)[:, 0]
     ) / dh
 
     closure_residual = np.abs(s_M + s_T + s_C - s_e)
@@ -340,7 +417,9 @@ def run_dry_run(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.replicate_csv is not None and args.replicate_csv.is_file():
         replicate_csv = pd.read_csv(args.replicate_csv)
-        report["g_population_replicate"] = check_production_population(replicate_csv, production_crb)
+        report["g_population_replicate"] = check_production_population(
+            replicate_csv, production_crb
+        )
         report["g_znorm_replicate"] = check_gznorm(replicate_csv)
     else:
         report["g_population_replicate"] = {"available": False}
@@ -377,7 +456,9 @@ def run_dry_run(args: argparse.Namespace) -> dict[str, Any]:
         "crb_rows": int(len(production_crb)),
         "n_dark_scored": report["g_population_production"]["n_dark_scored"],
         "n_in_catalogue_scored": report["g_population_production"]["n_in_catalogue_scored"],
-        "harness_checkpoints_matched": report["g_byte_id_harness"]["n_checkpoints_matched_population"],
+        "harness_checkpoints_matched": report["g_byte_id_harness"][
+            "n_checkpoints_matched_population"
+        ],
         "h_stencil": [args.h_lo, args.h_hi],
         "h_true": args.h_true,
     }
@@ -412,10 +493,27 @@ def compute_registered_statistics(
     se_prod = float(dark_terms["s_M"].std(ddof=1) / (len(dark_terms) ** 0.5))
     z_prod = t_prod / se_prod if se_prod else float("nan")
 
+    # byte-id instrument gate: harness FULL-score checkpoint means, reproduced bit-for-bit.
+    # INFORMATIONAL ONLY below (rev. 1 item 2) -- never enters T_harn/SE_harn/Z_harn.
     byte_id = reproduce_harness_byte_id(harness_root, population, CELL, h_lo, h_hi)
-    means = byte_id["dark_full_score_means"]
-    t_harn = float(np.mean(means)) if means else float("nan")
-    se_harn = float(np.std(means, ddof=1) / (len(means) ** 0.5)) if len(means) > 1 else float("nan")
+    full_score_means = byte_id["dark_full_score_means"]
+    t_full_harn_informational = (
+        float(np.mean(full_score_means)) if full_score_means else float("nan")
+    )
+    se_full_harn_informational = (
+        float(np.std(full_score_means, ddof=1) / (len(full_score_means) ** 0.5))
+        if len(full_score_means) > 1
+        else float("nan")
+    )
+
+    # Registered statistic (rev. 1 item 2, 1b): the matched-channel score S_M, computed per
+    # harness universe from that universe's OWN per-event diagnostics, same stencil/columns as
+    # production. T_harn/SE_harn are the between-universe mean/SE of THESE values.
+    harn_matched = compute_harness_matched_channel_scores(
+        harness_root, population, CELL, h_lo, h_hi
+    )
+    t_harn = harn_matched["T_harn"]
+    se_harn = harn_matched["SE_harn"]
     z_harn = t_harn / se_harn if se_harn else float("nan")
 
     rho = t_harn / t_prod if (abs(z_prod) > Z_BAND and t_prod) else None
@@ -430,8 +528,13 @@ def compute_registered_statistics(
         disposition = "INTERMEDIATE (b) partial"
     elif abs(z_harn) > Z_BAND and rho is not None and rho <= RHO_MINOR:
         disposition = "INTERMEDIATE (c) minor-illegitimate"
-    else:
-        disposition = "INTERMEDIATE (unclassified -- rho undefined, |Z_prod| <= 3)"
+    elif abs(z_harn) > Z_BAND and rho is None:
+        # |Z_harn| > 3 AND |Z_prod| <= 3 (rho undefined) -- REGISTRATION_DRAFT.md §4 revision 1b.
+        disposition = "INTERMEDIATE (d) HARNESS-ONLY-SIGNAL"
+    else:  # pragma: no cover -- exhaustive by construction (§4 revision 1b); defensive only.
+        raise AssertionError(
+            f"unreachable disposition state: Z_harn={z_harn}, Z_prod={z_prod}, rho={rho}"
+        )
 
     return {
         "mode": "real",
@@ -442,7 +545,9 @@ def compute_registered_statistics(
         "T_harn": t_harn,
         "SE_harn": se_harn,
         "Z_harn": z_harn,
-        "n_universes_harn": len(means) if means else 0,
+        "n_universes_harn": harn_matched["n_universes_available"],
+        "T_full_harn_informational": t_full_harn_informational,
+        "SE_full_harn_informational": se_full_harn_informational,
         "rho": rho,
         "disposition": disposition,
         "per_event_terms": {
@@ -457,6 +562,7 @@ def compute_registered_statistics(
             "g_closure": check_gclosure(terms),
             "g_byte_id_harness": byte_id,
         },
+        "harness_matched_channel_detail": harn_matched,
     }
 
 

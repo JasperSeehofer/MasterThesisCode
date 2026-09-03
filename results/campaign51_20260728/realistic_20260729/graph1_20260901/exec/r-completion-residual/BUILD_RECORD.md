@@ -231,3 +231,171 @@ would only ever print `"any_full_precision_source_found": false`; the function i
 for the verifier or a future run if such files appear. This is a disclosed no-op, not a missed
 gate — the identity of §2.1 does not depend on β reconstruction, and g-closure (which does not
 need selection tables) is GREEN.
+
+## FIX 2 (2026-09-03, fix round 2) — DESIGN_GATE_rev1_computability.md RED-1 + RED-2
+
+Both RED items from the fresh computability re-gate are fixed in
+`completion_residual_reads.py`. Every other code path is byte-identical to the pre-fix version
+(diffed manually against git; only the two named blocks changed). Dry-run only — real mode was not
+run.
+
+### Diff summary
+
+**Pre-check (RED-1's own demand): does the per-universe data exist for all 67 S universes?**
+Verified with `ls`/`find` before writing any code, per the task instruction:
+
+```
+$ ls .../b8_cal_harness_work_s4_postflip | grep -E '^seed9010[0-9]{2}_S$' | sort | wc -l
+67
+$ find .../b8_cal_harness_work_s4_postflip -path '*_S/simulations/diagnostics/event_likelihoods.csv' | wc -l
+67
+$ find .../b8_cal_harness_work_s4_postflip -path '*_S/simulations/prepared_cramer_rao_bounds.csv' | wc -l
+67
+$ find .../b8_cal_harness_work_s4_postflip -maxdepth 1 -name 'universe_seed*_S.json' | wc -l
+67
+```
+All four counts are 67/67 — full population, so Fix 1 proceeds as specified (no STOP needed).
+
+**Fix 1 (RED-1 — S_M,harn must be matched-channel, computed per harness universe, not the harness
+full score):**
+
+- New function `compute_harness_matched_channel_scores(harness_root, population, cell, h_lo, h_hi)`.
+  For each of the 67 matched checkpoints it opens THAT universe's own
+  `seed{seed}_S/simulations/diagnostics/event_likelihoods.csv` and sibling
+  `simulations/prepared_cramer_rao_bounds.csv`, calls the SAME `compute_event_terms` used for
+  production (identical stencil/columns — `B_num`, `D_tilde_phi`, `alpha_G_phi`, `den_log_term`,
+  `num_log_term_no_bh`), masks the dark class via `host_galaxy_index == -1`, and takes the
+  per-universe mean of `s_M` over dark events. `T_harn` = mean of these 67 per-universe values;
+  `SE_harn` = their between-universe SD/√67 — the registered statistic's OWN SE (§2.3/§2.4), not
+  the harness full-score checkpoint SE.
+- `compute_registered_statistics` now calls this function for `T_harn`/`SE_harn`/`Z_harn`. The old
+  full-score-checkpoint aggregate (`reproduce_harness_byte_id`'s `dark_full_score_means`) is kept
+  ONLY as two new INFORMATIONAL fields in the output record —
+  `T_full_harn_informational` / `SE_full_harn_informational` — and continues to serve the g-byte-id
+  instrument gate (unchanged: 67/67 bit-for-bit against the checkpoints), exactly as revision 1b
+  specifies ("the checkpoint's `score_at_truth.no_bh.dark.mean` ... is used ONLY for the byte-id
+  gate, never for Z_harn").
+- `reproduce_harness_byte_id` (the byte-id gate function) and `run_dry_run` (dry-run gate suite)
+  are untouched — the byte-id gate is still computed from the checkpoint full-score means, as
+  designed; only the registered `Z_harn` no longer conflates the two.
+
+**Fix 2 (RED-2 — disposition table gap; the script's own "unclassified" fallback):**
+
+- The disposition `elif` chain in `compute_registered_statistics` gained one explicit branch,
+  matching REGISTRATION_DRAFT.md §4 revision 1b verbatim:
+  `elif abs(z_harn) > Z_BAND and rho is None: disposition = "INTERMEDIATE (d)
+  HARNESS-ONLY-SIGNAL"` — the `|Z_harn| > 3 AND |Z_prod| ≤ 3` (ρ undefined) combination.
+- The old unregistered fallback string
+  (`"INTERMEDIATE (unclassified -- rho undefined, |Z_prod| <= 3)"`) is REMOVED entirely — it does
+  not appear anywhere in the file any more (`grep -c unclassified` = 0).
+- The final `else` is now a defensive `raise AssertionError(...)` rather than a silent label: the
+  six named rows (ILLEGITIMATE, FLOOR-CONSISTENT, (a), (b), (c), (d)) are exhaustive over the
+  `(Z_harn, Z_prod, rho)` state space by construction (verified by case analysis in the synthetic
+  sweep below), so this branch should be unreachable; if it is ever hit the script now fails loudly
+  instead of banking an unregistered outcome.
+
+### Byte-id re-run (`byteid_check.py`, independent, does not import the fixed script)
+
+`byteid_check.py` is untouched by this fix (it re-derives everything from raw files, never imports
+`completion_residual_reads.py`) and was re-run to confirm the byte-id anchors are still exactly
+where they were before the fix:
+
+```
+verdict: GREEN
+n_pairs: 68  (67 harness dark-mean pairs + 1 T0 anchor pair)
+max_abs_dev: 5.855265972076751e-08   (the T0 6-dp display-rounding gap, disclosed, unchanged)
+harness_byte_id.count_green: true
+harness_byte_id.bit_for_bit_exact_vs_build_record: true   (67/67 exact, 0.0 max deviation)
+harness_byte_id.mean_matches_build_record: true
+harness_byte_id.sem_matches_build_record: true
+t0_mean_h.rounds_to_display_anchor: true
+```
+
+Byte-id is still GREEN at 67/67 exact after the fix.
+
+### Dry-run output (verbatim, launch-block CLI, `--dry-run`)
+
+```
+DRY-RUN gates all green: True
+```
+
+Full JSON (elided to the gate/anchor tail; the leading per-checkpoint `dark_full_score_means` list
+is identical to the FIX-1 build's and to `byteid_check.py`'s independent read — omitted here for
+length, unchanged from the section above):
+
+```json
+{
+ "production_crb_md5": {"expected": "9a1f2a14384a9281c97ca3be312ddaab", "actual": "9a1f2a14384a9281c97ca3be312ddaab", "match": true},
+ "g_population_production": {"n_h_nodes": 41, "rows_per_h_uniform": true, "n_rows_total": 65108, "n_crb_rows": 1590, "missing_event_idx": [1203, 1356], "join_gate_green": true, "n_in_catalogue_scored": 76, "n_dark_scored": 1512, "in_catalogue_matches_expected": true, "dark_matches_expected": true},
+ "g_znorm_production": {"all_h_nodes_uniform": true, "n_h_nodes_checked": 41},
+ "g_population_replicate": {"n_h_nodes": 41, "rows_per_h_uniform": true, "join_gate_green": true, "in_catalogue_matches_expected": true, "dark_matches_expected": true},
+ "g_znorm_replicate": {"all_h_nodes_uniform": true},
+ "g_closure_production": {"n_events": 1588, "max_closure_residual": <~1e-13>, "n_violations": 0, "gclosure_green": true},
+ "g_byte_id_harness": {"n_checkpoint_files_globbed": 67, "n_checkpoints_matched_population": 67, "n_checkpoints_expected": 67, "byte_id_count_green": true, "resolved_flags_internally_consistent": true},
+ "t0_mean_h": {"computed": 0.6669869414473403, "target_display_precision": 0.666987, "computed_rounded_to_6dp": 0.666987, "abs_diff": 5.855265972076751e-08, "reproduces_to_tolerance": true, "tolerance": 1e-09, "n_h_grid": 41},
+ "anchors": {"production_rows": 65108, "production_n_h_nodes": 41, "crb_rows": 1590, "n_dark_scored": 1512, "n_in_catalogue_scored": 76, "harness_checkpoints_matched": 67, "h_stencil": [0.725, 0.735], "h_true": 0.73}
+}
+```
+
+Note: dry-run does NOT exercise the fixed `compute_harness_matched_channel_scores` or the new
+disposition branch — per the launch block, `--dry-run` runs gates/closure/byte-id only and never
+computes `T_harn`/`Z_harn`/the disposition (real mode does, and real mode was not run by this
+builder, per standing rule 2). The two fixes are verified below by a **synthetic-table check**
+instead, per the task's ≤5-row / synthetic-only builder constraint.
+
+### (cone) Synthetic-table check — fabricated data, ≤5 rows/universe, no registered-population aggregate
+
+A standalone script (`/tmp/.../synth_test/run_synth.py`, not committed — scratch verification
+only) fabricated 3 synthetic "harness universes" (3, 2, and 4 dark rows respectively — all ≤ 5) in
+a temp directory, with `B_num`/`num_log_term_no_bh` constructed so each event's `s_M` equals a
+chosen target value exactly (constant `D_tilde_phi`, `alpha_G_phi`, `den_log_term` across h,
+so `s_T` and the `den_log_term` contribution are algebraically zero and `s_M` is exact by
+construction). It then called the real, unmodified `compute_harness_matched_channel_scores` and
+`compute_event_terms` from the fixed script against this fabricated data (no import of the
+registered population; no aggregate computed over any registered dataset):
+
+```
+n_universes_matched: 3 (expected 3)
+T_harn computed:  0.012777777777782431  vs analytically expected 0.012777777777777777  (match)
+SE_harn computed: 0.004339027597727321  vs analytically expected 0.004339027597725920  (match)
+per-universe S_M: seed 901000 -> 0.013333... (n_dark=3); seed 901001 -> 0.005000... (n_dark=2);
+                  seed 901002 -> 0.020000... (n_dark=4)
+compute_event_terms (2-event synthetic table): max closure residual = 0.0 (exact, as designed)
+```
+
+Confirms Fix 1: `T_harn`/`SE_harn` are computed from the between-universe mean/SD of the
+per-universe MATCHED-CHANNEL score, matching hand-computed values to float precision, not from the
+harness full-score checkpoint aggregate.
+
+A second synthetic sweep exercised the disposition selector (the exact logic now in
+`compute_registered_statistics`) over six `(Z_harn, Z_prod, rho)` triples chosen to hit every named
+row, including the new one:
+
+```
+Z_harn=5.0 Z_prod=1.0 rho=None -> INTERMEDIATE (d) HARNESS-ONLY-SIGNAL   [Fix 2's new row]
+Z_harn=1.0 Z_prod=1.0 rho=None -> FLOOR-CONSISTENT
+Z_harn=1.0 Z_prod=5.0 rho=0.9  -> INTERMEDIATE (a) harness-clean, production-displaced
+Z_harn=5.0 Z_prod=5.0 rho=0.9  -> ILLEGITIMATE
+Z_harn=5.0 Z_prod=5.0 rho=0.3  -> INTERMEDIATE (b) partial
+Z_harn=5.0 Z_prod=5.0 rho=0.1  -> INTERMEDIATE (c) minor-illegitimate
+```
+
+Confirms Fix 2: the `|Z_harn| > 3 AND |Z_prod| ≤ 3` combination now returns the registered
+`INTERMEDIATE (d) HARNESS-ONLY-SIGNAL` label (not `"unclassified"`), and the other five rows are
+unaffected.
+
+### Quality gates
+
+`ruff check` — clean. `ruff format --check` — clean (one reformat applied and verified idempotent).
+`mypy` — `Success: no issues found in 1 source file`.
+
+### Status
+
+Both RED items from `DESIGN_GATE_rev1_computability.md` are fixed; byte-id anchors remain GREEN
+(67/67 exact + T0 display-rounding disclosed); the AMBER items (A1 CRB-md5-not-gated, A2 stale
+`T0_MEAN_H_TOLERANCE` constant, A3 dead `check_gprecision`) were **not** in scope for this fix round
+(task named only items 2 and 3 / RED-1 and RED-2) and are left as-is, unchanged from the prior
+build. Real mode was not run by this builder; the next verifier should re-run
+`compute_registered_statistics` on the real inputs as a DIFFERENT agent (standing rule 2) and
+independently re-derive `T_harn`/`SE_harn`/`Z_harn`/the disposition rather than trusting this
+record's printed numbers, per `agent-verifier-output-is-evidence-not-authority`.
