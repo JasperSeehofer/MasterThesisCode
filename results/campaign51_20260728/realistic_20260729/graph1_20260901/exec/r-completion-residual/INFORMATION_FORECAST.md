@@ -15,9 +15,9 @@ questions need. Neither arm requires a new evaluation to reach a disposition. Th
 | forecast input | value | source |
 |---|---|---|
 | object, pre-flip, inferred | ≈ −0.147/event (dark matched-channel shortfall) | B4_3 §4.4 (ARITH on C5 0.7134/σ 0.0277 and tilt +0.1326) — STALE, [INFER] |
-| harness dark full score, post-flip | +0.0082 ± 0.0063 (67 universes, 11,525 events) | `b8_cal_harness_work_s4_postflip` checkpoints, `score_at_truth.no_bh.dark` |
+| harness dark FULL score, post-flip (informational; SE_full,harn — NOT the registered matched-channel SE_harn, rev. 1) | +0.0082 ± 0.0063 (67 universes, 11,525 events) | `b8_cal_harness_work_s4_postflip` checkpoints, `score_at_truth.no_bh.dark` |
 | harness catalogue-hosted full score | +0.587 ± 0.064 (843 events) | same; the S3 DEFECT-SIGNATURE locus |
-| production dark N, SE | 1512 events; SE ≈ 0.68/√1512 = 0.0175 per event | per-event SD 0.68 (harness), production pool census |
+| production dark N, SE_prod | 1512 events; SE_prod = SD_e(s_M,e \| dark, production)/√1512 — filled by the read; harness-borrowed proxy ≈ 0.68/√1512 = 0.0175 (rev. 1) | per-event SD 0.68 = harness FULL-score proxy; production pool census |
 | I_1D post-flip | 3256 (σ_h 0.017526) | re-baseline iiib 1D |
 | F band in h (context) | 3·F·σ_floor = 0.0600 vs offset −0.0630 | F 11.44 (DEFECT-context), floor 0.001747058397810697 |
 
@@ -38,8 +38,9 @@ did include "+ a closed dark-class residual ⇒ 0.73"); ILLEGITIMATE 0.1; INTERM
 - INTERMEDIATE (a) ⇒ neither claim; the residual moves to the THIRD bucket (generator–estimator
   population mismatch) with T_prod ± SE — a sharper object than "−0.14/event" because it is a measured
   per-event score with a class label and a closure identity; Graph 2's question layer inherits it.
-- Effect sizes vs bands: the arm resolves illegitimate components ≥ 0.02/event (14 % of −0.14) and
-  production displacements ≥ 0.05/event; both are well inside the plausible range of the object.
+- Effect sizes vs bands: the arm resolves illegitimate components ≥ 3·SE_harn (≈ 0.02/event on the
+  informational full-score proxy; larger on the matched-channel SE) and production displacements
+  ≥ 3·SE_prod (≈ 0.05/event on the proxy); both are well inside the plausible range of the object.
 
 ## 3. Branch H — the cone loss
 
@@ -49,13 +50,14 @@ did include "+ a closed dark-class residual ⇒ 0.73"); ILLEGITIMATE 0.1; INTERM
 | production cone loss (disclosed-seen) | 13.2 % (10/76); P6 66/76 | stage-0 census 2026-09-03; production log line 8622 |
 | in-catalogue impostor score, pre-flip | −1.707/event | C5 (ASSUMPTION-JOIN, secondary) |
 | I_1D, I_2D | 3256, 2930 | re-baseline |
-| SE(Δh_cone,1D) | ≈ 0.0007 | 0.68·√11.5/3256 |
+| SE(Δh_cone,1D) | SD_IN,1D(MAD-scaled, production IN class)·√11.5/3256 — filled by the read (rev. 1); the earlier 0.0007 used the harness dark-class SD and is withdrawn; M = T_mat/SE may be O(1) | registration §2/§3 |
 
 **Expected outcome:** IMMATERIAL-FLOOR-SHARE. Reasoning: 10 events × O(−1.7) nats/h ⇒ Δh ≈ −0.005, φ ≈ 8 %
 of the −0.063 offset; even at 3× that pull φ ≈ 25 % (INTERMEDIATE). CONE-OWNS-FLOOR needs a per-event
 excess pull of ≈ −20 nats/h on each OUT event — 30× the in-catalogue class mean; implausible but exactly
 what the registered statistic would show if the CMEM rerouting hypothesis were strongly true.
-Probability weights: IMMATERIAL 0.7; INTERMEDIATE 0.25; CONE-OWNS-FLOOR 0.05.
+Probability weights (rev. 1, with the under-power path added): IMMATERIAL 0.45; INTERMEDIATE-UNPOWERED 0.3;
+INTERMEDIATE 0.2; CONE-OWNS-FLOOR 0.05. The "11-SE margin" statements below are withdrawn for the same reason.
 
 **What each outcome changes:** IMMATERIAL ⇒ q-cone-loss SETTLED (charter kill criterion), the board's
 "leading candidate for the absolute floor" is demoted to a bounded ≤ 20 % share, and d-residual-attribution's
@@ -71,7 +73,7 @@ the OUT events — this is the first paired test of [CMEM]'s mechanism at n ≈ 
 Both arms cost ≈ 0.1–0.2 CPU-h for their decisive reads; the ratio is dominated by the numerator.
 - **Higher information per CPU-h: Branch H (cone loss).** Its most likely outcome SETTLES a charter
   question outright (kill criterion reached), demotes a named "leading candidate", and delivers a paired
-  test of the [CMEM] mechanism as a by-product — all at zero compute, with an 11-SE margin to materiality.
+  test of the [CMEM] mechanism as a by-product — all at zero compute, with a materiality margin M = T_mat/SE that the read must first establish (rev. 1: possibly O(1)).
 - **Higher absolute information: Branch G.** It re-measures the largest unexplained item on the board
   post-flip with a class label and a closure identity, and bounds the illegitimate share at ±0.02/event —
   but its most likely disposition is a bound routed to a third bucket, not a settled question.

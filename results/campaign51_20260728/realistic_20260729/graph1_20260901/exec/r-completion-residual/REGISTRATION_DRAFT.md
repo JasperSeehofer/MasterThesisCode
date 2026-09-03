@@ -60,7 +60,7 @@ production re-baseline. Both are zero-compute (§2.3).
 | hop | what the record actually says | tag |
 |---|---|---|
 | charter §1.0/§1.7, docket item 3 | "the approx −0.14/event dark-class completion-leg residual (artifact section 09)" | [DOC] |
-| artifact `a8824799` §09 board card (`tool-results/artifact-a8824799-…html` line 563) | "Completion-leg residual (~−0.14/event) … Named in the B4.3 derivation as B8's object" — a board card, no derivation | [DOC] |
+| "artifact section 09" (charter wording) | the board card is not a git-tracked source; its only git-tracked antecedents are B4_3 §4.4 (the derivation, next row) and ledger row #261 (`gate_b_20260730/BIAS_HISTORY_LEDGER.md:3144`) — cited here in its place | [DOC] |
 | ledger row #261 (`gate_b_20260730/BIAS_HISTORY_LEDGER.md:3144`) | "not to truth — a separate ~−0.14/event completion-leg residual remains, routed to B8 [CAL]" — a parenthetical inside the A18 prediction | [DOC] |
 | **B4_3 §4.4 (the only derivation)** | production dark-only pure arm at 0.7134, σ 0.0277 (C5) ⇒ total dark pure score ≈ −22 nats/h (−0.014/event); the model's composition tilt +0.1326/event × 1514 = +201 ⇒ shortfall (−22 − 201)/1514 ≈ **−0.147/event** (the text says "about −0.15 per event") | [INFER] from [DOC] + ARITH |
 | C5 itself (`fanout1_20260829/CLAIM_IMPOSTOR_DRAG_20260829.md:202`) | "`[LOCAL; ASSUMPTION-JOIN — secondary until validated]`" — the dark/in-catalogue split was a CSV row-order join | [DOC], flagged secondary |
@@ -129,7 +129,9 @@ Class label: `seed61000/prepared_cramer_rao_bounds.csv` (md5 `9a1f2a14384a9281c9
 the in-catalogue count must equal the P6 denominator 76 (`darksiren_emri_20260902_000633_h_0_73.log:8622`:
 "1D 66/76 hosts recovered/in-cat events seen"). This closes C5's ASSUMPTION-JOIN caveat by construction.
 Outputs: S_M,prod, s_T,prod, S_C,prod (dark), the same three for the catalogue-hosted class, S_all, and
-SE_prod = SD_e(s_M,e)/√N_Ḡ (N_Ḡ = 1512). Venue replicate (REPORTED): joint_r1 CSV, same script.
+**SE_prod = SD_e(s_M,e | dark, production)/√N_Ḡ** (N_Ḡ = 1512) — the per-event SD is that of the
+MATCHED-CHANNEL score on the PRODUCTION dark class, computed by the registered read itself; no
+harness-borrowed proxy enters SE_prod (rev. 1 item 1). Venue replicate (REPORTED): joint_r1 CSV, same script.
 
 ### 2.3 Read B — the S3 harness, cell S, post-flip (zero compute)
 
@@ -141,18 +143,23 @@ mean of the 67 per-universe dark S_M; SE_harn = SD/√67. **Byte-id gate for the
 per-universe dark FULL score must reproduce `score_at_truth.no_bh.dark.mean` in all 67 checkpoints
 bit-for-bit (same convention, same machine).
 
-Power inputs (banked, informational; full score): per-universe dark mean +0.0082, between-universe SD
-0.0517, SE 0.0063 (11,525 dark events); per-event SD 0.68. The matched-channel SE is of the same order
-(same events, one global term removed).
+Two SEs, kept separate (rev. 1 item 2): (i) **SE_full,harn = 0.0063** — the harness FULL-score
+between-universe SE (per-universe dark mean +0.0082, SD 0.0517, 67 universes, 11,525 dark events;
+raw checkpoints `score_at_truth.no_bh.dark`; reproduced exactly, BYTEID_RECORD.md) — INFORMATIONAL
+only, a design-power proxy; (ii) **SE_harn = SD_U(S_M,harn,U)/√67** — the matched-channel
+between-universe SE, the registered statistic's OWN SE, computed by the registered read; it is
+expected to be LARGER than (i) (the matched-channel score has the larger per-event spread) and it,
+not (i), enters Z_harn. Per-event SD proxies quoted anywhere in this draft (0.68) are harness
+FULL-score values and are labelled "harness-borrowed proxy".
 
 ### 2.4 Registered statistics
 
 | symbol | definition | null |
 |---|---|---|
 | T_prod | S_M,prod (dark, iiib) | 0 |
-| Z_prod | T_prod / SE_prod | N(0,1) |
+| Z_prod | T_prod / SE_prod, SE_prod = SD_e(s_M,e \| dark, production)/√1512 | N(0,1) |
 | T_harn | mean over universes of S_M,harn | 0 |
-| Z_harn | T_harn / SE_harn | N(0,1) |
+| Z_harn | T_harn / SE_harn, SE_harn = SD_U(S_M,harn,U)/√67 (matched-channel, per-universe) | N(0,1) |
 | ρ | T_harn / T_prod, evaluated only when \|Z_prod\| > 3 | — |
 | δh_M (REPORTED-ONLY) | N_Ḡ·T_prod / I_1D, I_1D = 1/σ_h,1D² = 1/0.017526² = 3256 (re-baseline iiib 1D) | linear response, F-free |
 
@@ -164,9 +171,13 @@ Power inputs (banked, informational; full score): per-universe dark mean +0.0082
 - ρ ≥ 0.5 = ILLEGITIMATE threshold: the estimator's own inconsistency owns the majority of the residual.
   ρ ≤ 0.2 = not-illegitimate threshold: the un-owned remainder is at least 4× the owned part (0.2 ≈ the
   materiality ratio T_mat/|offset| = 0.008/0.063 = 0.13 rounded up to one-in-five).
-- False-fail under the null: two |Z| ≤ 3 tests ⇒ ≤ 0.54 % joint (2 × 0.27 %). Power: at SE_harn ≈ 0.0063
-  an illegitimate component of 0.07/event (half of −0.14) is an 11σ detection; a 0.02/event component is
-  3.2σ (the smallest detectable illegitimate share ≈ 14 % of −0.14).
+- False-fail under the null: two |Z| ≤ 3 tests ⇒ ≤ 0.54 % joint (2 × 0.27 %) — this rate depends only
+  on the band, not on SE sourcing. Power (rev. 1 item 2): stated as formulas filled by the registered
+  read — the smallest illegitimate component detectable at 3σ is 3·SE_harn (matched-channel);
+  using the INFORMATIONAL full-score proxy SE_full,harn = 0.0063 that would be ≈ 0.02/event (≈ 14 % of
+  −0.14), and a 0.07/event component ≈ 11σ; with the matched-channel SE_harn (larger) both figures
+  degrade in proportion SE_harn/0.0063. The read reports 3·SE_harn and 3·SE_prod explicitly as the
+  arm's realised detection floors.
 - 3.4 The h-space context read (leans on F — REPORTED, never verdict-bearing): "floor-consistent" in
   h-units means |mean_h − 0.73| ≤ 3·F·σ_floor(1588) = 3 × 11.44 × 0.001747058397810697 = **0.0600**
   against the measured −0.0630 (iiib 1D, row #302) — a 5 % excess, i.e. the object sits at the edge of the
@@ -181,7 +192,7 @@ Power inputs (banked, informational; full score): per-universe dark mean +0.0082
 | **INTERMEDIATE (a) harness-clean, production-displaced** | \|Z_harn\| ≤ 3 AND \|Z_prod\| > 3 | NEITHER claim supported; c-residual-illegitimate bounded (\|T_harn\| + 3·SE_harn); the residual is a generator–estimator population mismatch | routed to d-residual-attribution as the THIRD bucket ("irreducible venue physics / population misspecification") with T_prod ± SE_prod and δh_M — the expected branch (forecast) |
 | **INTERMEDIATE (b) partial** | \|Z_harn\| > 3 AND 0.2 < ρ < 0.5 | both claims partial; split quoted | fresh RULE: replication cell R (§6) within the cap, or park with the split |
 | **INTERMEDIATE (c) minor-illegitimate** | \|Z_harn\| > 3 AND ρ ≤ 0.2 | c-residual-illegitimate SUPPORTED-BUT-IMMATERIAL | fresh RULE: physics-change intake deferred; residual attribution proceeds on (a) |
-| **NO-READ** | g-closure red, JOIN gate red, byte-id red, g-population red | nothing banked | INSTRUMENT-DEFECT: repair; revision counter not consumed |
+| **NO-READ** | g-closure red, JOIN gate red, byte-id red, g-population red, **g-znorm red** | nothing banked | INSTRUMENT-DEFECT: repair; revision counter not consumed |
 
 Sign convention: T_prod < 0 is the §4.4 direction; a positive T_prod is booked by the same rows (the
 bands are two-sided). Neither-band ⇒ INTERMEDIATE ⇒ fresh RULE (charter §1.7 row).
@@ -197,10 +208,17 @@ bands are two-sided). Neither-band ⇒ INTERMEDIATE ⇒ fresh RULE (charter §1.
   **Rail-fraction disclosure rule:** any h-space quote (δh_M, the §3.4 F band) MUST carry the S3 rail
   fraction (S no_bh 10/67 = 14.9 %, with_bh 14/67 = 20.9 %; all at the upper rail 0.86) and the production
   MAP (0.665, interior); a quote without the disclosure is void.
-- **g-znorm** — standing on the flipped leg (row #292); one spot check that `den_log_term` is identical
-  across all 1588 rows per h in both venues.
-- **g-byte-id (instrument)** — §2.3: 67/67 harness dark full-score means reproduced bit-for-bit; the
-  T0 helper's re-baseline `mean_h = 0.666987` (iiib 1D) reproduced to 1e-9 by the same script.
+- **g-znorm** — standing on the flipped leg (row #292); registered check: at every h-node,
+  max_e |den_log_term(e,h) − den_log_term(0,h)| = 0 EXACTLY (it is one `math.log` per h-node,
+  bayesian_statistics.py:6800-6803), in both venues and in every harness universe; any nonzero
+  ⇒ **g-znorm red ⇒ NO-READ** (rev. 1 item 3).
+- **g-byte-id (instrument)** — §2.3: 67/67 harness dark full-score means reproduced bit-for-bit
+  (GREEN, BYTEID_RECORD.md); the T0 re-baseline anchor is re-stated (rev. 1 item 6): the ONLY committed
+  source is the 6-dp display `mean_h = 0.666987` (`exec/m-head-rebaseline/READOUT_RECORD.md:40`), so the
+  tolerance is **1e-6 on that display value**; the full-precision value `0.6669869414473403`
+  (independently computed twice, BUILD_RECORD.md and BYTEID_RECORD.md, from the retrieved CSV) is
+  banked here as the full-precision anchor with tolerance 1e-12 for every later re-run. A literal 1e-9
+  against the display value was unsatisfiable by construction and is withdrawn.
 
 Invariants ([A10], one line each): stencil (0.725, 0.735) — audited 2026-08-29 (B4.1) · H_GRID_41 and
 h_bounds (0.60, 0.86) — audited row #303 · catalogue md5 `c52c13b5cab61f6b3f04bbe202550969` — audited
@@ -230,7 +248,7 @@ The grid MUST stay 41-node: the candidate z-window is built from `h_bounds = (mi
 `graph1_20260901/exec/r-completion-residual/completion_residual_reads.py` implementing §2.1–§2.4 with the
 gates of §5; builder runs ONLY `--dry-run` (gates + closure + byte-id, no statistic); a DIFFERENT agent
 runs it (standing rule 2; memory `agent-verifier-output-is-evidence-not-authority`). Launch waits on the
-byte-id gate GREEN (67/67 + T0 mean_h).
+byte-id gate GREEN (67/67 + T0 mean_h at the §5 tolerances) — stamped GREEN in BYTEID_RECORD.md.
 
     # from REPO ROOT (runbook 42 §5 gotcha)
     uv run python results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-completion-residual/completion_residual_reads.py \
@@ -259,6 +277,19 @@ author has NOT read S_M on either dataset; the only numbers seen are the banked 
 (§2.3 power inputs) and the identity/reconstruction checks of §2.1 (which read no class-resolved score).
 6 Internal consistency: bands are two-sided; INTERMEDIATE is first-class with three named sub-branches.
 
+## 8b. Parent kill criterion (verbatim) and blindness status
+
+Charter `RESEARCH_GRAPH_1_PROPOSAL_20260901.md:45`, q-completion-residual kill_criterion, quoted verbatim:
+"registered arm fails to discriminate at its registered band after revision 2 -> park
+bounded-undetermined with the measured bound". This draft is revision 1; a NO-READ or an
+INTERMEDIATE (b) that the author elects to re-register consumes revision 2; a third failure parks
+the question with the measured bound (|T_harn| + 3·SE_harn, T_prod ± SE_prod).
+
+**Blindness status:** primary statistic point estimates exist in a gate record dated 2026-09-03
+(unblinded by a design-gate side effect: DESIGN_GATE_stats.md); band thresholds were frozen before
+that record; the registered read is executed by an agent that has not opened that record. The
+revising author did not open it.
+
 ## 9. Open questions routed to d-completion-register (fresh RULE)
 
 1. Ratify the operational definition of the residual as the matched-channel dark score (§1.1) and the
@@ -271,3 +302,17 @@ author has NOT read S_M on either dataset; the only numbers seen are the banked 
 5. Ratify the F-leaning §3.4 line as REPORTED-ONLY with the rail disclosure.
 6. Note for the author: the harness commit stamp carries 1112 dirty paths; the resolved-flag equality
    assertion (§5 invariants) is the substitute for a byte-id of harness vs production code paths.
+
+## REVISION 1 (2026-09-03) — changes against MUSTFIX_REVISION1_20260903.md (band thresholds untouched)
+
+| item | change |
+|---|---|
+| 1 (stats) | §2.2: SE_prod re-sourced to the matched-channel per-event SD on the PRODUCTION dark class, formula given, computed by the read; §2.4 table updated; the 0.68 per-event SD is labelled "harness-borrowed proxy" wherever it appears. |
+| 2 (stats) | §2.3: the harness FULL-score SE (0.0063, informational, reproduced exactly) separated from the matched-channel SE_harn (registered, larger, between-universe); §3 power restated as 3·SE_harn / 3·SE_prod formulas, the 0.02/event figure explicitly tied to the informational proxy. |
+| 3 (design) | §5 g-znorm: exact-equality tolerance (max_e \|Δ den_log_term\| = 0 per h-node); "g-znorm red" added to the §4 NO-READ trigger list. |
+| 4 (design) | §8b: charter line 45 kill criterion quoted verbatim, with the revision-counter consequence. |
+| 5 (provenance) | §1.2: the artifact board-card row re-cited to B4_3 §4.4 + ledger row #261 (git-tracked sources). |
+| 6 (byte-id) | §5: T0 anchor tolerance 1e-6 on the 6-dp display (READOUT_RECORD.md:40); full-precision 0.6669869414473403 banked as the re-run anchor at 1e-12; the literal 1e-9 withdrawn. §7 launch note updated. |
+| both | §8b: blindness-status line added verbatim. |
+
+Not changed: bands (|Z| ≤ 3, ρ 0.5 / 0.2), the identity (§2.1), the launch CLI (§7 — matches the built `completion_residual_reads.py` argparse exactly), the cost line, the disposition rows other than the NO-READ trigger list.

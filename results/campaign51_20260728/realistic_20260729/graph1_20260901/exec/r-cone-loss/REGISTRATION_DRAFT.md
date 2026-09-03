@@ -16,7 +16,7 @@ applied; stage-1 forecast in `../r-completion-residual/INFORMATION_FORECAST.md`.
 | **R-MKER-6 STAGE-0 CENSUS (`CLAIM_P3_MKER_20260826.md:928-947`)** | 2261 events (24-seed `p3_2d_fleet_20260825` bc arm), **380 outside, 0.1681**; per-seed 10.1–24.5 %; anchor seed 900121 event 20 chord 1.6746585172e-03 / radius 1.4956979546e-03 reproduced full-float before counting | [DOC], agent-run, anchor-gated |
 | chair closed-form envelope (same entry) | a hard 1.5·√λ_max circle excludes between 13.4 % (1-D limit, 2Φ(−1.5)) and 32.5 % (isotropic Rayleigh tail) of true hosts ⇒ "consistent with the cone working AS DESIGNED" | [LOCAL] chair |
 | [CMEM] A1 replicate (`fanout1_20260829/B2_1_CMEM_A1_RECORD.md`) | 380/2336 = 0.1627 on `p3_b0_work` (different fleet; the 380 is a coincidence, explicitly flagged) | [DOC] |
-| [CMEM] verdict of record (row #220) | C-STRUCTURAL-ONLY; the outside-cone truth-likelihood deficit R2c NOT-DISTINGUISHED (p = 0.0358 vs α = 0.01; power ≈ 68 %) | [DOC] |
+| [CMEM] verdict of record | C-STRUCTURAL-ONLY (row #220); the outside-cone truth-likelihood deficit R2c NOT-DISTINGUISHED, p = 0.0358 vs α = 0.01, pre-registered power ≈ 68 % (**row #226**, `gate_b_20260730/BIAS_HISTORY_LEDGER.md:3026`) | [DOC] |
 | **production pool (this session, 2026-09-03, stage-0 fact — DISCLOSED, see §4)** | `seed61000/prepared_cramer_rao_bounds.csv`: 76 in-catalogue events, all 76 with chord > 0 (median 1.24e-3, max 5.11e-2 rad; cone radius median 2.70e-3), **10/76 = 13.2 % outside at k = 1.5**; independently, the production log's P6 counter: "1D 66/76 hosts recovered/in-cat events seen (86.84 %)" (`retrieved/run_20260902_graph1_headrebaseline_iiib/darksiren_emri_20260902_000633_h_0_73.log:8622`) | [LOCAL] |
 
 Findings: the 17 % is a genuine, anchor-gated census — but on the **mirror fleet**, and it counts sky
@@ -62,7 +62,13 @@ Per-event full score on the stencil (0.725, 0.735): s_e = Δ ln combined_no_bh /
 
 s̄_IN is the paired comparand (rule 10, [A2]): the same class with the host inside the cone, so the
 contribution is the EXCESS pull of cone loss, not the in-catalogue class's pull as a whole.
-Uncertainty: SE(Δh) = SD_IN(s)·√(n_OUT + n_OUT²/n_IN) / I_c (SD from the 66 IN events); Z = Δh/SE.
+Uncertainty (rev. 1 item 1): **SE(Δh_cone,c) = SD_IN,c · √(n_OUT + n_OUT²/n_IN) / I_c**, where SD_IN,c is
+the per-event spread of s_e,c over the PRODUCTION in-catalogue IN class (n_IN = 66) — the population
+the OUT events are drawn from — for each channel c separately, NEVER the harness dark-class SD.
+**Robust-SD convention, fixed before any number is read:** SD_IN,c = 1.4826 · MAD_IN(s_e,c) (MAD-scaled),
+with the plain sample SD reported alongside; the registered Z uses the MAD-scaled value. Rationale: at
+n_IN = 66 a 2-event outlier pair can move the sample SD by a large factor; the read must disclose the
+sample-SD/MAD-SD ratio and the two largest |s_e − median| IN events (2-outlier sensitivity). Z = Δh/SE.
 **Cross-check (registered, must agree within 2·SE):** the exact leave-out counterfactual — the frozen
 T0 scorer (`prod2d_closure_20260818/tier0_bootstrap_jackknife.py` convention; gradient-trapezoid weights,
 physics floor) on the 1578 non-OUT events ⇒ Δmean_h,leave-out. Disagreement beyond 2·SE flags the linear
@@ -72,8 +78,10 @@ response as non-linear and the read is booked on the leave-out number with the f
 S3 cell-S universes (`b8_cal_harness_work_s4_postflip/seed9010NN_S/simulations/{prepared_cramer_rao_bounds,
 diagnostics/event_likelihoods}.csv`; population n200-postflip; 843 catalogue-hosted events, expected
 ≈ 140 OUT). Statistics: f_OUT,harn with per-universe SE; Δs = s̄_OUT − s̄_IN with between-universe SE.
-Reads whether the catalogue-hosted defect signature (+0.587 ± 0.064 per event, 67 universes; rd-s3-readout
-Z 9.76) concentrates on OUT events — REPORTED to d-calibration; not verdict-bearing here.
+Reads whether the catalogue-hosted defect signature (+0.587 ± 0.064 per event over 67 universes — raw
+checkpoints `b8_cal_harness_work_s4_postflip/universe_seed*_S.json`, `score_at_truth.no_bh.catalogue_hosted`;
+also `../r-completion-residual/INFORMATION_FORECAST.md:19`; rd-s3-readout carries only the Z = 9.76 for
+this class) concentrates on OUT events — REPORTED to d-calibration; not verdict-bearing here.
 
 ## 3. Bands (ORCHESTRATOR-DERIVED) and mapping to the floor
 
@@ -83,8 +91,14 @@ Z 9.76) concentrates on OUT events — REPORTED to d-calibration; not verdict-be
   remainder ≥ 4× the cone part; 0.2 ≈ T_mat/|offset| = 0.13 rounded up to one-in-five).
 - **Fraction band (harness replicate only; the production fraction is disclosed-seen, §4):** f_OUT within
   the closed-form envelope [13.4 %, 32.5 %] ⇒ AS-DESIGNED; outside ⇒ INSTRUMENT question (fresh RULE).
-- Power: SD_IN(s) ≈ 0.68 (per-event score SD, harness) ⇒ SE(Δh_1D) ≈ 0.68·√(10 + 1.5)/3256 ≈ **0.0007**;
-  T_mat is 11 SE away; φ = 0.2 (Δh = −0.0126) is 18 SE. False-fail at |Z| ≤ 3: 0.27 %.
+- Power (rev. 1 item 1): the materiality margin is **M = T_mat / SE(Δh_cone,1D)** in SE units, filled by
+  the registered read from the production IN-class SD (formula above). No numeric margin is quoted
+  here: the earlier "0.68 ⇒ SE ≈ 0.0007, 11 SE" figure used the harness DARK-class SD as a proxy and is
+  withdrawn; the production in-catalogue class carries a much larger per-event spread (C5's impostor
+  scores are O(1) nats/h per event), so **M may be of order 1 — the arm may be UNDER-POWERED to
+  distinguish CONE-OWNS-FLOOR from IMMATERIAL.** Honest consequence, registered now: if
+  SE(Δh_cone,1D) > T_mat/3 (M < 3) the disposition is INTERMEDIATE-UNPOWERED (a bound), §4.
+  False-fail at |Z| ≤ 3 under the null: 0.27 % (band-only, independent of SE sourcing).
 - Forecast (stage 1, disclosed): C5's pre-flip in-catalogue impostor score −1.707/event × 10 ⇒ Σ ≈ −17
   nats/h ⇒ Δh_1D ≈ −0.005, φ ≈ 0.08 — IMMATERIAL predicted; the arm is designed to falsify that.
 
@@ -92,9 +106,10 @@ Z 9.76) concentrates on OUT events — REPORTED to d-calibration; not verdict-be
 
 | disposition | trigger (1D primary; 2D reported alongside) | claim writeback | action |
 |---|---|---|---|
-| **IMMATERIAL-FLOOR-SHARE** | \|Δh_cone\| < 0.008 AND φ < 0.2 | c-residual-floor-consistent: the cone-loss component is bounded at φ + 3·SE/\|offset\|; "leading candidate for the absolute floor" DEMOTED | q-cone-loss SETTLED (kill criterion: "confirms the floor within its band ⇒ irreducible geometry, no fix") — with the bound |
-| **CONE-OWNS-FLOOR** | \|Z\| > 3 AND φ ≥ 0.5 | c-residual-floor-consistent SUPPORTED as geometry | d-residual-attribution: the floor is geometric; no consistency fix pursued (charter) |
-| **INTERMEDIATE** | \|Z\| > 3 AND 0.2 ≤ φ < 0.5; or \|Δh\| ≥ 0.008 with φ < 0.2; or 1D/2D disagree in disposition; or linear vs leave-out disagree > 2·SE | partial share quoted | fresh RULE: bank the share; a revision (≤ 2) only if the author wants the z-window component resolved |
+| **IMMATERIAL-FLOOR-SHARE** | \|Δh_cone\| < 0.008 AND φ < 0.2 AND M ≥ 3 | c-residual-floor-consistent: the cone-loss component is bounded at φ + 3·SE/\|offset\|; "leading candidate for the absolute floor" DEMOTED | q-cone-loss SETTLED (kill criterion: "confirms the floor within its band ⇒ irreducible geometry, no fix") — with the bound |
+| **CONE-OWNS-FLOOR** | \|Z\| > 3 AND φ ≥ 0.5 AND M ≥ 3 | c-residual-floor-consistent SUPPORTED as geometry (evidence, not a ruling) | contributes evidence toward d-residual-attribution, which stays OPEN pending d-calibration + d-photoz-leverage (charter §1.11, line 189); returns as a fresh RULE deferred to the morning (docket 2.3), exactly as the INTERMEDIATE row |
+| **INTERMEDIATE-UNPOWERED** | SE(Δh_cone,1D) > T_mat/3 (M < 3), whatever Δh and φ read | no share claim; the cone-loss contribution is banked as the BOUND \|Δh_cone\| + 3·SE with φ_max = (\|Δh_cone\| + 3·SE)/\|offset\| | fresh RULE: bank the bound; the harness replicate (n_OUT ≈ 140) is the only in-cap route to power and returns as a revision-2 election |
+| **INTERMEDIATE** | M ≥ 3 AND (\|Z\| > 3 AND 0.2 ≤ φ < 0.5; or \|Δh\| ≥ 0.008 with φ < 0.2; or 1D/2D disagree in disposition; or linear vs leave-out disagree > 2·SE) | partial share quoted | fresh RULE: bank the share; a revision (≤ 2) only if the author wants the z-window component resolved |
 | **INSTRUMENT / NO-READ** | G-1…G-4 red; g-population red | nothing banked | repair; no revision consumed |
 
 **Blindness disclosure (binding):** the registration author computed the production geometric census
@@ -103,6 +118,21 @@ stage-0 design fact (it decides whether production is sky-scattered at all — i
 therefore NOT a blind read on production and is banked as context, never as a verdict. The primary
 statistic (the OUT events' scores, Δh_cone, φ_cone, the leave-out delta, the harness replicate) has NOT
 been read by anyone.
+
+## 4b. Parent kill criterion (verbatim) and blindness status
+
+Charter `RESEARCH_GRAPH_1_PROPOSAL_20260901.md:46`, q-cone-loss kill_criterion, quoted verbatim:
+"measurement confirms the floor within its registered uncertainty band -> settled as irreducible
+geometry; no fix pursued". Read with §4: IMMATERIAL-FLOOR-SHARE and CONE-OWNS-FLOOR both "confirm the
+floor within its band" in the charter's sense (a bounded share is a confirmed floor component); the
+question SETTLES on either; INTERMEDIATE-UNPOWERED does not settle it and consumes a revision only
+if the author elects the harness-replicate route (max_revisions 2).
+
+**Blindness status:** primary statistic point estimates exist in a gate record dated 2026-09-03
+(unblinded by a design-gate side effect: DESIGN_GATE_stats.md); band thresholds were frozen before
+that record; the registered read is executed by an agent that has not opened that record. The
+revising author did not open it. (The production OUT FRACTION, 10/76, was additionally seen by the
+registration author at stage 0 — §4 disclosure — and is context, never a verdict.)
 
 ## 5. Gates
 
@@ -114,11 +144,25 @@ been read by anyone.
   `cmem_a1.py:67`). Both fleets are on disk. A miss = INSTRUMENT-DEFECT.
 - **G-3 join:** event_idx = CRB row index; scored set = {0..1589} − {1203, 1356}; in-catalogue count = 76 =
   the P6 denominator; the P6 numerator 66 must equal n_IN (the log line quoted verbatim in the record).
+  Mismatch ⇒ INSTRUMENT-DEFECT (rev. 1 item 3). Dry-run status: GREEN (`cone_loss_work/cone_loss_gates.json`).
 - **G-4 scatter law (production is sky-scattered by the forward model, not by a frame artefact):** the
-  sky offsets' Mahalanobis² under the row's own J Σ' Jᵀ must be χ²₂-distributed (KS at α = 0.05 on 76
-  events) AND f_OUT at k = 1.5 must sit inside [13.4 %, 32.5 %]. A failure means the offsets are not the
-  designed Fisher tail (e.g. a frame translation — cf. `resolve_host_recovery_position`, handler.py:853)
-  ⇒ INSTRUMENT-DEFECT, STOP, fresh RULE. Open audit item: which of (d_L, qS, phiS) the production pool
+  sky offsets' Mahalanobis² under the row's own Σ' must be χ²₂-distributed (KS at α = 0.05 on 76
+  events) — the DECISIVE clause — AND the envelope clause, **re-stated in rev. 1 (item 7)**: the
+  realised n_OUT must be consistent with SOME expected fraction p in the closed-form envelope
+  [13.4 %, 32.5 %] under Binomial(n_in-cat, p), i.e. the exact two-sided binomial test of n_OUT against
+  the NEAREST envelope edge must not reject at α = 0.05. The draft's original wording ("f_OUT must sit
+  inside the envelope") applied an asymptotic expectation to a 76-event realisation whose 1σ sampling
+  width is ≈ 4 %; the dry-run correctly reported it RED (f_OUT = 10/76 = 0.1316 vs edge 0.134,
+  `cone_loss_gates.json` g4_scatter_law.envelope_passed = false) while the decisive KS clause passed
+  (D = 0.066, p = 0.87). Under the corrected rule 10/76 against p = 0.134 (expected 10.2) is not a
+  rejection — the registration's expectation was wrong, not the instrument; **no STOP is declared**.
+  The harness replicate (n ≈ 843) uses the same binomial form, where the envelope is genuinely tight.
+  A KS failure, or a binomial rejection against BOTH edges, means the offsets are not the designed
+  Fisher tail (e.g. a frame translation — cf. `resolve_host_recovery_position`, handler.py:853)
+  ⇒ INSTRUMENT-DEFECT, STOP, fresh RULE. Consequence for the build: `cone_loss_reads.py`'s envelope
+  clause must be changed to the binomial form and the `--dry-run` re-run (builder, b-cone-scorer)
+  before launch; the currently written `cone_loss_result.json` (verdict INSTRUMENT-DEFECT) is
+  superseded by that re-run and must not be read. Open audit item: which of (d_L, qS, phiS) the production pool
   scatters is set in `datamodels/detection.py:161-178` (`convert_to_best_guess_parameters`) — the
   record must quote the resolved draw, because the B8 design's "production is truth-centred" (§2.3
   cell-T convention) is contradicted in the sky by the 76/76 nonzero chords found here.
@@ -176,3 +220,18 @@ anchor. 5 Blindness: §4 disclosure — fraction seen, statistic unread. 6 Inter
 4. Ratify the venue statement: the 17 % is a mirror-fleet number; production carries 13.2 % (10/76);
    both inside the as-designed envelope — the charter's "17 %" is re-labelled accordingly.
 5. Accept G-4 as a launch gate and the `convert_to_best_guess_parameters` audit item as a record line.
+
+## REVISION 1 (2026-09-03) — changes against MUSTFIX_REVISION1_20260903.md (band thresholds untouched)
+
+| item | change |
+|---|---|
+| 1 (stats) | §2: SE(Δh_cone,c) re-sourced to the PRODUCTION in-catalogue IN class per channel; MAD-scaled robust-SD convention fixed before any read, sample SD reported alongside, 2-outlier sensitivity disclosed. §3: numeric margin withdrawn (it used the harness dark-class SD); margin M = T_mat/SE stated as a formula; under-power disclosed plainly. §4: **INTERMEDIATE-UNPOWERED** row added (SE > T_mat/3 ⇒ bound only); IMMATERIAL / CONE-OWNS-FLOOR / INTERMEDIATE now require M ≥ 3. |
+| 2 (design) | §4 CONE-OWNS-FLOOR action cell rewritten: evidence toward d-residual-attribution (open pending d-calibration + d-photoz-leverage, charter line 189), fresh RULE deferred to the morning (docket 2.3), same phrasing as INTERMEDIATE; the "(charter)" citation dropped. |
+| 3 (design) | §5 G-3: "Mismatch ⇒ INSTRUMENT-DEFECT" on its own line; dry-run status GREEN noted. |
+| 4 (design) | §4b: charter line 46 kill criterion quoted verbatim in quotation marks, with its reading against the §4 rows. |
+| 5 (provenance) | §0: the p = 0.0358 / power ≈ 68 % clause re-cited to row #226 (ledger line 3026); row #220 kept for C-STRUCTURAL-ONLY only. |
+| 6 (provenance) | §2: "+0.587 ± 0.064" re-cited to the raw checkpoints' `score_at_truth.no_bh.catalogue_hosted` and INFORMATION_FORECAST.md:19; rd-s3-readout credited only with Z = 9.76. |
+| 7 (build dry-run) | `cone_loss_gates.json` read: G-1 (3 pins), G-2 (both anchors), G-3 all GREEN; G-4 KS clause GREEN (D 0.066, p 0.87); the RED is the envelope clause (0.1316 vs 0.134). Diagnosis: registration expectation wrong (asymptotic envelope applied to a 76-event realisation). §5 G-4 re-stated as an exact binomial test against the nearest envelope edge; NO STOP declared; the builder must apply the one-clause change and re-run `--dry-run`; the existing `cone_loss_result.json` is superseded and must not be read. |
+| both | §4b: blindness-status line added verbatim (plus the stage-0 fraction disclosure). |
+
+Not changed: bands (T_mat 0.008, φ 0.5 / 0.2, \|Z\| ≤ 3, envelope [13.4 %, 32.5 %]), the statistic definition, the launch CLI (§7 — matches the built `cone_loss_reads.py` argparse), the cost line.
