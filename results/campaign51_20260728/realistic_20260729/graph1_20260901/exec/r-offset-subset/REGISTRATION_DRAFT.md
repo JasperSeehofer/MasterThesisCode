@@ -260,3 +260,18 @@ replicates as consistency reads; separation and materiality are sequential, not 
 pending (R14 itself is NOT pre-empted: the arm measures all three labels and rules on none); (b) two build scripts do not exist yet (phase A/B), and the phase-A log join has never been
 exercised; (c) C8 is not blind (disclosed); (d) C9 is not a distinct covariate on production; (e) C10b may
 be near-empty (production M ≥ 1.33e5, edge 1.70e5) — n unknown until phase A runs.
+
+## PIN CORRECTIONS + CHAIR NOTES (2026-09-04 ~00:40 CEST, before launch; no threshold touched)
+1. §8 launch block: the phase-A/B script names are `build_covariate_table.py` and
+   `build_influence_vector.py` (as built), not `offset_subset_table.py` / `offset_subset_influence.py`;
+   the phase-C CLI is unchanged. Column schema of record = the BUILT files' headers
+   (`covariate_table_{iiib,joint_r1}.csv`: suffixed ids `C1_in_catalog`, `C2_hosted_exact`, …;
+   `influence_{iiib,joint_r1}.csv`: event_idx, influence_2D, influence_1D, rank, d_e per family as
+   built). The scorer must read THESE; a missing registered covariate is INSTRUMENT-DEFECT (hard
+   pre-flight), never a silent skip.
+2. Blindness status (chair reading of DESIGN_GATE_formula_rev3 finding 1, flagged for the author):
+   the influence ranking is PUBLIC by registration — its top-10 lists per family are the byte-id
+   anchors of §"G-2" and were banked in row #342 before this arm existed. BUILD_RECORD_B2.md
+   listing them per family is therefore not a leak of a blind quantity. The BLIND object of this arm
+   is the covariate table (hashed before any join) and, above all, the JOIN itself, which no agent
+   has performed. Disclosed; the read proceeds with this note attached.

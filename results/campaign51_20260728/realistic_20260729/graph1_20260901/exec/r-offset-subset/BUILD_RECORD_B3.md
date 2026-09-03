@@ -227,3 +227,434 @@ build, test, or alter `offset_subset_reads.py` -- the schema mismatch is flagged
 unresolved, for the launch reviewer to reconcile (either B2's schema or this reader's
 expectations must change before phase C can run in real mode; `--table`/`--influence` were
 never pointed at B2's files by this builder).
+
+---
+
+## FIX 2 — response to `DESIGN_GATE_formula.md` (RED, findings A-D)
+
+Builder: B3, fix round 2, Sonnet/medium (mechanical fix stage, same task label). No
+real-mode run performed here either — every number below is from synthetic data
+constructed by this builder; `covariate_table_iiib.csv` / `covariate_table_joint_r1.csv`
+/ `influence_iiib.csv` / `influence_joint_r1.csv` were not opened beyond their header (no
+row beyond the header, no statistic) while diagnosing Finding B against
+`BUILD_RECORD_B1.md`'s already-published column table.
+
+All four confirmed/flagged findings in `DESIGN_GATE_formula.md` are fixed in
+`offset_subset_reads.py`. Every other code path (Holm step-down, AUC/OR arithmetic, sha256
+refusal, launch-block CLI, `--k-*` flags, R14 line) is byte-identical to the version the
+gate reviewed — only `materiality_for_covariate()`, `disposition_for()`, `build_report()`,
+and the `MaterialityResult` dataclass changed.
+
+### Finding A — binary materiality stratum: OR-direction, not raw majority
+
+`materiality_for_covariate()`'s binary branch now sets `enriched_level = bool(sep.effect
+>= 1.0)` (the already-registered odds-ratio direction, symmetric with the continuous
+branch's `sep.effect >= 0.5` AUC direction) instead of recomputing `s_bool.mean() >= 0.5`
+inside S alone. Both a code comment at the call site and this record document the rule.
+
+### Finding B — the §5 "NOT-TESTED -> INTERMEDIATE" branch
+
+`disposition_for()` now checks, only when `separators` is empty, whether C8 or C10b's
+*primary-family* verdict is `NOT-TESTED`; if so it returns `("INTERMEDIATE", [])` instead
+of falling through to `DIFFUSE-IN-COVARIATES`. This is the exact `REGISTRATION_DRAFT.md`
+§5 disposition-table row: *"C8 or C10b NOT-TESTED and no other covariate separates"* ->
+INTERMEDIATE.
+
+**Downstream effect on Exercise 1 (re-run, see below):** the committed 8-row synthetic
+table has `C10b` all-`False` (n=0 < 10, NOT-TESTED by design, per §2 of this record) and no
+other covariate separates at that n — so the fix flips Exercise 1's own disposition from
+`DIFFUSE-IN-COVARIATES` to `INTERMEDIATE`. This is not a regression: it is precisely the
+bug `DESIGN_GATE_formula.md` Finding B described (quoting `BUILD_RECORD_B1.md`: C10b is
+NOT-TESTED in both real venues too), now correctly reachable in the disposition logic.
+`SYNTH_out.json` is re-committed with the corrected disposition.
+
+### Finding C — NaN excluded from the decile-tail stratum (continuous covariates)
+
+`REGISTRATION_DRAFT.md` is silent on decile-tail NaN handling specifically (§6
+g-population only mandates *disclosure* of `n_NaN` per covariate for the separation
+statistic, not a stratum-construction rule; C6's own row in §2, `docs` line 84, says NaN
+is "excluded from **this test**" — i.e. the separation test — without addressing the
+materiality decile). Per this task's fallback instruction, the **orchestrator-derived
+default** applied and disclosed here is:
+
+> NaN excluded from both S and bulk for that covariate and disclosed as `n_missing`.
+
+Implementation: `col.rank(method="first", na_option="keep")` leaves NaN rows as NaN
+(instead of the previous `na_option="bottom"`, which — verified directly, see
+`DESIGN_GATE_formula.md` Finding C — ranks NaN *above every real value* under an ascending
+rank, so it was sweeping NaN rows into the "top decile" whenever `auc_above_half` was
+True). The tail size `n_tail` is now computed against `valid_n = n_total - n_missing`
+(not `n_total`), and `stratum_mask` is explicitly `& ~nan_mask`. `MaterialityResult` gained
+an `n_missing` field, reported in the output JSON. This is flagged as an
+orchestrator-derived default (not a verbatim draft quote) per the fix-round instructions.
+
+### Finding D — g-censoring null-rail gate wired into INSTRUMENT / NO-READ
+
+`MaterialityResult` gained `null_rail_fraction` (the previously-discarded per-null-draw MAP
+rail flag, now accumulated across all `null_draws`) and `censoring_gate_red`. §6's
+g-censoring gate text ("MAP position for the full sample, every stratum leave-out and
+every null draw; any MAP at 0.60/0.86 => that Delta is a BOUND, rail fraction reported")
+mandates *disclosure* but does not itself state a numeric red/green cut for the
+INSTRUMENT / NO-READ table row ("any §6 gate red") — `CENSORING_NULL_RAIL_RED_FRACTION =
+0.5` is an **orchestrator-derived default** (majority of null draws railed => the 0.5/99.5
+percentile null-CI used for the outside-null materiality test is itself degenerate and
+cannot certify MATERIAL / not-MATERIAL), documented in a module-level comment next to the
+constant and here. `build_report()` now collects every covariate whose materiality result
+has `censoring_gate_red = True`, folds them into `instrument_note`, and — via the existing
+`if instrument_note is not None: report["disposition"]["value"] = "INSTRUMENT / NO-READ"`
+line (unchanged) — actually overrides the disposition, closing the "computed but discarded,
+never wired to anything" gap Finding D identified. No other §6 gate applies inside this
+reader's scope (G-1/G-2/G-3 are phase A/B; G-4 was already a hard `SystemExit` refusal,
+confirmed correct by the gate; g-population's `n`/`n_NaN` disclosure was already present via
+`SeparationResult.n_nan`; g-precision is a phase A/B concern).
+
+### Extended synthetic check (`SYNTH_make_synth.py`, appended "FIX 2" section)
+
+`SYNTH_make_synth.py` was extended (Exercise 1/2's original 8-row table and its outputs
+are untouched — same sha256 `cf89eb374...`) with four new, deliberately-constructed direct
+calls into the fixed functions, each with an assertion that fails loudly on regression.
+Full numeric record: `SYNTH_fix2_output.json` (committed). Console output from the actual
+run:
+
+```
+FIX 2 / Finding A: OR=5.0000, s_bool.mean(S)=0.333 (<0.5, minority) -> fixed n_stratum=4 (old buggy rule would give n_stratum=26)
+FIX 2 / Finding B: all-NULL + C10b NOT-TESTED -> disposition = 'INTERMEDIATE' (was DIFFUSE-IN-COVARIATES pre-fix)
+FIX 2 / Finding C: n_missing=5, valid_n=15, n_stratum=2 (all real values, no NaN row swept in)
+FIX 2 / Finding D: null_rail_fraction=0.775, censoring_gate_red=True (forced rail red)
+FIX 2: all assertions passed (A, B, C, D)
+```
+
+- **A** (n=30, binary covariate `C_A`, S=events 0-5 k=6): built so True is a MINORITY
+  within S (`s_bool.mean()=2/6=0.333`) but enriched in S vs bulk (`OR=5.0`, 2/6 vs
+  2/24). The old rule would freeze the stratum at the 26 False rows; the fixed rule
+  correctly freezes it at the 4 True rows (`n_stratum=4`) — hand-check: `a=2 (True,S),
+  b=4 (False,S), c=2 (True,bulk), d=22 (False,bulk)`, `OR_Haldane = (2.5*22.5)/(4.5*2.5) =
+  56.25/11.25 = 5.0` ✓.
+- **B**: `disposition_for()` called directly with every `HOLM_FAMILY` covariate at verdict
+  `NULL` except `C10b` at `NOT-TESTED` (mirroring `BUILD_RECORD_B1.md`'s real-table
+  finding) -> `("INTERMEDIATE", [])`, not `DIFFUSE-IN-COVARIATES`.
+- **C** (n=20, continuous `C_C`, 5 NaN + values 0..14): `n_missing=5` ✓ matches the 5
+  constructed NaN; `valid_n=15`, `n_tail=max(1,round(15*0.10))=2` ✓; `n_stratum=2` ✓,
+  drawn from the top-2 REAL values (indices 18, 19 -> covariate values 13, 14), no NaN row
+  in the stratum.
+- **D** (n=4, continuous `C_D`, one event (idx 3) carries all the log-likelihood signal,
+  the other three flat): `decile=0.75` forces `n_tail=3` so every null draw (size 3 of 4)
+  excludes exactly one event; hand-check of the 4 equally-likely size-3 subsets: the 3
+  subsets that exclude a flat event still contain event 3, so removing the drawn 3 leaves
+  only a flat/uninformative logpost that MAP-rails to the grid boundary (`0.60`); the 1
+  subset that excludes event 3 leaves the informative logpost intact (no rail). Expected
+  rail fraction = 3/4 = 0.75; observed over 400 draws = `0.775` (sampling noise, within
+  the `[0.65, 0.85]` tolerance asserted in the script) -> `censoring_gate_red=True`
+  (`>= CENSORING_NULL_RAIL_RED_FRACTION=0.5`) ✓; `map_rail_full=False` confirms only the
+  *null draws* rail, not the full sample (isolating the mechanism this finding targets).
+  A one-line replication of `build_report()`'s wiring (`[cov for cov, m in {...}.items()
+  if m.censoring_gate_red]`) confirms this actually reaches `instrument_note`, not just the
+  `MaterialityResult` field.
+
+### Re-run of Exercise 1 (full CLI, post-fix)
+
+Re-ran the exact Exercise 1 launch-block invocation (§3 of this record) against the
+unchanged `SYNTH_covariate_table_blind.csv` / `SYNTH_influence_vectors.csv`:
+
+```
+wrote SYNTH_out.json: disposition = INTERMEDIATE
+```
+
+`{'value': 'INTERMEDIATE', 'named_covariates': [], 'instrument_note': None}` — the only
+change from the pre-fix `SYNTH_out.json` (`DIFFUSE-IN-COVARIATES`) is the disposition
+value itself (Finding B, discussed above); every per-covariate AUC/OR/p_holm number in the
+table is unchanged (confirmed by inspection of the re-written `SYNTH_out.json`), since
+Findings A/C/D's code paths are not reached by this 8-row/all-NULL exercise (materiality is
+never invoked when nothing SEPARATES).
+
+### Quality gate (post-fix)
+
+```
+$ uv run ruff check offset_subset_reads.py SYNTH_make_synth.py
+All checks passed!
+$ uv run mypy offset_subset_reads.py
+Success: no issues found in 1 source file
+```
+
+### Scope discipline (unchanged)
+
+No production CRB, no `event_likelihoods.csv`, no galaxy catalogue, no cluster, no
+`darksiren_emri/` file opened or run; `--table`/`--influence` never pointed at anything
+under `graph1_20260901/retrieved/` or `seed61000/`; `covariate_table_iiib.csv` /
+`covariate_table_joint_r1.csv` / `influence_iiib.csv` / `influence_joint_r1.csv` (the
+real, concurrently-produced phase A/B output already present in this directory) were
+opened only for their header line (column names) while cross-checking Finding B against
+`BUILD_RECORD_B1.md` — no row beyond the header, no aggregate, no registered statistic.
+
+---
+
+## FIX 3 — response to `DESIGN_GATE_formula_rev2.md` (RED, findings B/C/D + E)
+
+Builder: B3, fix round 3, Sonnet/medium (mechanical fix stage, same task label). No
+real-mode run performed — every number below is from synthetic data constructed by this
+builder or from the committed `SYNTH_*` fixtures; `covariate_table_iiib.csv` /
+`covariate_table_joint_r1.csv` / `influence_iiib.csv` / `influence_joint_r1.csv` were not
+opened at all in this round (not even the header — no need arose).
+
+All findings in `DESIGN_GATE_formula_rev2.md` (rev2's §B/§C/§D defects, §E gap) are
+addressed. Findings A–D from round-1 (`DESIGN_GATE_formula.md`) were already fixed in
+FIX 2 above and are untouched here except where rev2 §B required generalising
+`disposition_for()`'s signature (see item 1 below — Finding A/B/C/D's own code paths and
+assertions are byte-identical).
+
+### Item 1 (rev2 §B) — the §5 "primary 2D and 1D iiib families disagree in disposition" trigger
+
+`disposition_for()` (`offset_subset_reads.py:587`) gained a `replicate_families` parameter
+(default `REPLICATE_FAMILIES`, so the existing call site and every FIX 2 direct-call test
+are unaffected) so the same function can be re-run with `iiib_1d` substituted as primary
+against the complementary replicate set `(iiib_2d, jr1_2d, jr1_1d)`, instead of the
+disposition logic silently comparing `iiib_1d` against itself via the hardcoded global.
+
+`build_report()` (`offset_subset_reads.py:773-799`) now: (a) computes the primary (iiib_2d)
+disposition as before and saves it as `primary_disposition_raw`; (b) computes iiib_1d's own
+whole-family disposition via `disposition_for(per_family_sep["iiib_1d"], {}, ...,
+replicate_families=(iiib_2d, jr1_2d, jr1_1d))`; (c) if the two disagree, overrides the
+final `disposition` to `INTERMEDIATE` (line 799) — this happens *before* the §6
+instrument-note override, so a red gate still takes final precedence over this trigger, per
+the disposition table's own priority (INSTRUMENT / NO-READ is "any §6 gate red", not
+conditioned on the other three rows).
+
+**Disclosed limitation (both in a code comment at the call site and here, not silently
+assumed):** `iiib_1d_materiality` is always `{}` — the data contract (module docstring)
+only requires `logL_h*` columns for the PRIMARY family (iiib_2d), so no per-covariate
+materiality can be computed for iiib_1d as an alternate primary with the current
+`influence_vectors.csv` schema. This means iiib_1d's own disposition can only ever read
+`DIFFUSE-IN-COVARIATES` or `INTERMEDIATE`, never `SUBSET-IDENTIFIED` — a well-defined
+"whole disposition" for the §5 comparison, but not a symmetric re-run of §4.2. This is the
+same open data-contract question `DESIGN_GATE_formula_rev2.md`'s own §B note flagged (routed
+to the launch reviewer, not resolved here — resolving it would need a fresh amendment to
+phase B's column contract, out of scope for a mechanical fix round).
+
+Both raw dispositions and the agreement flag are recorded in the output JSON under
+`iiib_1d_disposition_check` (`offset_subset_reads.py:891-901`).
+
+Test: `SYNTH_make_synth.py` "FIX 3" item 1 (`finding_2d_1d_disagree`) constructs a
+primary (iiib_2d) result that alone would bank `SUBSET-IDENTIFIED` (one SEPARATES +
+MATERIAL + 2-of-3 replicate-consistent covariate) against an iiib_1d result with nothing
+separating (`DIFFUSE-IN-COVARIATES`), and asserts the final wired disposition is
+`INTERMEDIATE`, not the raw `SUBSET-IDENTIFIED` iiib_2d alone would have produced.
+
+### Item 2 (rev2 §C) — g-population join completeness
+
+New `check_join_completeness()` (`offset_subset_reads.py:234-256`) computes
+`table.index`/`infl.index` set difference in both directions (not a `pandas.Index
+.intersection()`, which silently drops mismatches with no count) and returns row counts,
+unmatched-count and the actual unmatched `event_idx` lists on each side, plus a
+`join_complete` boolean. Called once at the top of `build_report()` (line 746) — one check
+suffices because both venues' `in_S`/`d_e` columns for all four (c,v) live in the single
+registered `influence_vectors.csv` joined against the single `covariate_table_blind.csv`
+(§8 launch block passes exactly one `--table`/`--influence` pair); "n = 1588 per venue" in
+the task instruction is what the real production run's `n_table_rows`/`n_influence_rows`
+are expected to read, disclosed generically here rather than hardcoded (hardcoding 1588
+would break every synthetic exercise, which intentionally use n ∈ {4, 8, 20, 30}).
+
+Disclosed in the output JSON under `gates.g_population` (line 888-890) unconditionally
+(not only on failure) and, when `join_complete` is `False`, folded into `instrument_note`
+(lines 811-818) exactly like the existing g-censoring wiring — which forces the final
+disposition to `INSTRUMENT / NO-READ` via the pre-existing override at the end of
+`build_report()` (line 914-916, see item 5 below).
+
+Test: `SYNTH_make_synth.py` "FIX 3" item 2 (`finding_g_population_join`) builds a 5-row
+table (`event_idx` 0–4) against a 5-row influence frame (`event_idx` 0,1,2,3,5) — one
+table-only row (4) and one influence-only row (5) — and asserts
+`n_unmatched_table_only=1`, `n_unmatched_influence_only=1`, `join_complete=False`, and
+that the replicated build_report wiring produces an `instrument_note` containing
+`"g-population RED"`.
+
+### Item 3 (rev2 §D) — WEAK keyed to Holm-adjusted significance, not raw p
+
+`holm_correct()` (`offset_subset_reads.py:376-385`): the `elif` branch that assigns `WEAK`
+now reads `elif r.holm_significant and not r.band_pass:` (was `elif (r.p_raw < alpha) and
+not r.band_pass:`). `REGISTRATION_DRAFT.md` §4.1 defines "significant" as Holm-adjusted p <
+0.05 one clause before using that exact word for WEAK's trigger — this is now the same test
+`SEPARATES` already used (`r.holm_significant`), so WEAK and NULL are both keyed to the
+registered multiplicity-corrected test; a covariate can no longer be raw-significant,
+Holm-non-significant, and still surface as WEAK (which would misstate the mandatory R14
+class-label line, per rev2 §D). No other code path changes — `p_holm ≥ p_raw` always (Holm
+multiplier ≥ 1), so `SEPARATES` (which `disposition_for()`/`materiality_for_covariate()`
+actually key off) was never affected by this bug, only the verdict string itself.
+
+Test: `SYNTH_make_synth.py` "FIX 3" item 3 (`finding_weak_holm`) replicates rev2 §D's own
+hand-check exactly — an m=10 family, sorted raw p-values `[0.001, 0.006, 0.011, 0.02, 0.03,
+0.04, 0.3, 0.4, 0.5, 0.6]`, every covariate's `band_pass=False` (to isolate the
+significance question) — and asserts rank-1 (`p_raw=0.001`, `p_holm=0.01<0.05`,
+`holm_significant=True`) reads `WEAK`, while rank-2 (`p_raw=0.006<alpha` but
+`p_holm=0.054≥0.05`, `holm_significant=False`) reads `NULL`, not `WEAK`.
+
+### Item 4 (rev2 §E) — reported-only secondaries
+
+Three new functions (`offset_subset_reads.py:680-734`), none feeding `disposition_for()`
+or `class_label_line()` (no disposition role, per the task instruction):
+
+- `spearman_secondaries(table, infl, family)` — §4.1: Spearman ρ between the primary
+  family's `d_e` and every continuous covariate (`COVARIATE_TYPE[cov] == "continuous"`,
+  i.e. C3c/C4/C5/C6/C7/C10/C11), over the table/influence inner join (all events with both
+  a covariate value and a `d_e`), NaN-dropped pairwise; `n < 3` reports `rho=None` rather
+  than calling `scipy.stats.spearmanr` on too few points.
+- `class_composition_counts(table, s_index)` — §4.1: raw True/False/NaN counts for C1, C2,
+  C3 within S (the registered "class composition of S as raw counts").
+- `truth_disagreement_tables(table)` — §2: C1 (truth) vs C2 and C1 vs C3, each as a 2×2
+  count table over the whole population (inner-joined, NaN-dropped).
+
+Wired into `build_report()`'s `secondaries` key (line 903-907), called with the primary
+family's `d_e` and S index.
+
+Test: `SYNTH_make_synth.py` "FIX 3" item 4 (`finding_secondaries`) builds a 5-event table
+with a perfectly monotonic covariate (`C4 = [1,2,3,4,5]`) against a perfectly
+anti-monotonic `d_e = [5,4,3,2,1]`, asserting Spearman ρ = exactly −1.0 (`n=5`); a
+hand-counted class composition over `S = {0,1}` for C1/C2/C3; and a hand-counted C1-vs-C2
+and C1-vs-C3 2×2 table, matching by inspection.
+
+### Item 5 — clear `named_covariates` on the INSTRUMENT / NO-READ override
+
+`build_report()`'s existing unconditional override (`offset_subset_reads.py:914-916`):
+
+```python
+if instrument_note is not None:
+    report["disposition"]["value"] = "INSTRUMENT / NO-READ"
+    report["disposition"]["named_covariates"] = []
+```
+
+previously left `named_covariates` populated with whatever the pre-override disposition had
+named (e.g. a `SUBSET-IDENTIFIED` covariate list) even though the disposition table's
+"nothing banked" action for INSTRUMENT / NO-READ means no covariate claim should survive the
+override. No dedicated new test was needed — FIX 2's Finding D exercise (censoring-red ⇒
+instrument override) and this round's item 2 exercise (join-incomplete ⇒ instrument
+override) both go through this same line; a manual check of `SYNTH_out.json`'s `disposition`
+block after a forced-red run (not committed, hand-run only) confirms `named_covariates ==
+[]` whenever `value == "INSTRUMENT / NO-READ"`.
+
+### Extended synthetic check (`SYNTH_make_synth.py`, appended "FIX 3" section)
+
+Console output from the actual run (full numeric record: `SYNTH_fix3_output.json`,
+committed):
+
+```
+FIX 3 / SS5 2D-vs-1D disagreement: iiib_2d raw='SUBSET-IDENTIFIED', iiib_1d='DIFFUSE-IN-COVARIATES' -> final disposition='INTERMEDIATE' (would have banked SUBSET-IDENTIFIED without this trigger)
+FIX 3 / SS6 g-population: 1 unmatched table row(s), 1 unmatched influence row(s) -> routed to INSTRUMENT / NO-READ
+FIX 3 / SS4.1 WEAK-vs-Holm: C1 p_raw=0.001 p_holm=0.010 holm_sig=True -> WEAK; C2 p_raw=0.006 p_holm=0.054 holm_sig=False -> NULL (raw-significant, Holm-not)
+FIX 3 / secondaries: spearman(d_e, C4).rho=-1.000 (exact -1.0); class_composition_S={'C1': {'n_true': 2, 'n_false': 0, 'n_nan': 0}, 'C2': {'n_true': 1, 'n_false': 1, 'n_nan': 0}, 'C3': {'n_true': 0, 'n_false': 2, 'n_nan': 0}}; truth_disagreement(C1 vs C2/C3)={'C2': {...}, 'C3': {...}}
+FIX 3: all assertions passed (2D/1D disagreement, g-population join, WEAK-vs-Holm, secondaries)
+```
+
+Exercise 1's original 8-row `SYNTH_out.json` was re-run against the launch-block CLI
+(unchanged `SYNTH_covariate_table_blind.csv`/`SYNTH_influence_vectors.csv`, sha256 still
+`cf89eb374...`): disposition remains `INTERMEDIATE` (unchanged from FIX 2 — this 8-row
+table's iiib_2d and iiib_1d both read `INTERMEDIATE` via the C10b NOT-TESTED gate, so the
+new SS5 trigger agrees and does not change the outcome here); the new `gates.g_population`
+(`join_complete: true`, 8/8 rows), `iiib_1d_disposition_check`
+(`agrees_with_primary: true`), and `secondaries` blocks are present and populated in the
+re-written `SYNTH_out.json` (committed).
+
+### Quality gate (post-fix)
+
+```
+$ uv run ruff check offset_subset_reads.py SYNTH_make_synth.py
+All checks passed!
+$ uv run mypy offset_subset_reads.py
+Success: no issues found in 1 source file
+```
+
+### Scope discipline (unchanged)
+
+No production CRB, no `event_likelihoods.csv`, no galaxy catalogue, no cluster, no
+`darksiren_emri/` file opened or run; `--table`/`--influence` never pointed at anything
+under `graph1_20260901/retrieved/` or `seed61000/`; `covariate_table_iiib.csv` /
+`covariate_table_joint_r1.csv` / `influence_iiib.csv` / `influence_joint_r1.csv` were not
+opened at all this round (real mode was never invoked).
+
+---
+
+## Checklist table — every §2/§4/§5/§6/§8 item ↔ implementing code (or `ABSENT`)
+
+Reviewer note: every row cites the current `offset_subset_reads.py` (post-FIX-3) unless
+marked `ABSENT`.
+
+### §2 (definitions, covariates, class axis)
+
+| draft item | implementation | line(s) |
+|---|---|---|
+| C1 `in_catalog` | `COVARIATE_TYPE["C1"]="binary"`; column is phase A's output, read via `table[cov]` | 76, 268 |
+| C2 `hosted_exact` (a) | `COVARIATE_TYPE["C2"]`; `CLASS_LABELS["C2"]` | 77, 91 |
+| C3 `hosted_rel` (b) | `COVARIATE_TYPE["C3"]`; `CLASS_LABELS["C3"]` | 78, 91 |
+| C3c `log10_f_cat` (c) | `COVARIATE_TYPE["C3c"]="continuous"`; `CLASS_LABELS["C3c"]` | 79, 91 |
+| C4–C7, C10 | `COVARIATE_TYPE` entries, all in `HOLM_FAMILY` | 80-90 |
+| C8 `cone_outside`, in-catalog-only restriction | `COVARIATE_TYPE["C8"]`; restriction applied in `run_family_separation` (`restrict = table.index[table["C1"].astype(bool)] if cov == "C8" else None`) | 84, 568 |
+| C9 alias of C1, no separate test | not in `COVARIATE_TYPE`/`HOLM_FAMILY` (deliberately absent — draft says "no separate test") | n/a by design |
+| C10b `low_M_timeout_bins12`, n≥10 gate | `COVARIATE_TYPE["C10b"]`; `C10B_MIN_N=10`; NOT-TESTED gate in `run_family_separation` | 86, 94, 561-576 |
+| C11 `log10_snr`, reported-only | `REPORTED_ONLY=("C11",)`; handled in `run_family_separation`'s reported-only loop | 92, 582-586 |
+| m=11 / m=10 family size (C10b conditional) | `HOLM_FAMILY` (11 members incl. C10b); `holm_correct()` only counts `verdict != "NOT-TESTED"` members as `m` | 90, 376-378 |
+| §2 secondary: C1 vs C2/C3 truth-disagreement 2×2 | `truth_disagreement_tables()`, wired into `secondaries.truth_disagreement_2x2` | 716-734, 905 |
+
+### §4.1 (separation)
+
+| draft item | implementation | line(s) |
+|---|---|---|
+| Continuous: AUC via Mann-Whitney U, two-sided p | `_continuous_auc()` | 264-270 |
+| Binary: Haldane OR, two-sided Fisher p | `_binary_or()` | 273-279 |
+| C8 tested inside in_catalog stratum only | `restrict_index` param threaded through `separation_for_covariate` | 578, 288-296 |
+| Holm step-down at family-wise α=0.05 over m | `holm_correct()` | 363-390 |
+| SEPARATES band: Holm p<0.05 AND effect outside band | `holm_correct()`: `if r.holm_significant and r.band_pass: r.verdict = "SEPARATES"` | 379 |
+| WEAK: Holm-significant AND inside band fails — **keyed to Holm p, not raw p (FIX 3 item 3)** | `holm_correct()`: `elif r.holm_significant and not r.band_pass: r.verdict = "WEAK"` | 380-386 |
+| NULL (otherwise) | `holm_correct()` `else` branch | 387-388 |
+| Secondary: Spearman ρ(d_e, each continuous covariate), all events — **FIX 3 item 4** | `spearman_secondaries()`, wired into `secondaries.spearman_d_e_vs_continuous` | 680-698, 904 |
+| Secondary: class composition of S raw counts (C1/C2/C3) — **FIX 3 item 4** | `class_composition_counts()`, wired into `secondaries.class_composition_S` | 699-713, 905 |
+
+### §4.2 (materiality)
+
+| draft item | implementation | line(s) |
+|---|---|---|
+| Stratum: binary → enriched level; continuous → decile tail on enriched side | `materiality_for_covariate()` binary/continuous branches (Finding A/C fixed in FIX 2) | 468-495 |
+| Δ_strat = mean_h(full−stratum) − mean_h(full) | `materiality_for_covariate()` | 502-503 |
+| Null: 1000 draws same size, seed 20260904, percentile + 99% CI | `materiality_for_covariate()` null-draw loop + `null_percentile`/`null_ci99` | 516-531 |
+| MATERIAL iff Δ_strat ≥ T_mat AND outside null 99% CI | `material = bool(delta_strat >= t_mat and outside_null)` | 530 |
+| Oracle Δ_S + captured fraction | `delta_s_oracle`, `captured_fraction` | 505-508 |
+| MAP rail flag every re-marginalisation (g-censoring) | `t0_moments()` rail flag; `map_rail_full`/`map_rail_stratum`/`null_rail_fraction` | 400-410, 469, 483, 516-527 |
+| Reweighting NOT registered | not implemented (correctly — draft says it is out of scope) | n/a by design |
+
+### §4.3 (replicate consistency)
+
+| draft item | implementation | line(s) |
+|---|---|---|
+| 2-of-3 replicate families, same sign, before SUBSET-IDENTIFIED | `disposition_for()` `n_consistent` loop over `replicate_families` | 606-616 |
+
+### §5 (disposition table)
+
+| §5 row | implementation | line(s) |
+|---|---|---|
+| SUBSET-IDENTIFIED | `disposition_for()`: `mat.material` + `n_consistent>=2` → `identified` | 599-616 |
+| DIFFUSE-IN-COVARIATES | `disposition_for()` line 634, past the `not_tested_gate` guard | 618-634 |
+| INTERMEDIATE — separates but not material | `disposition_for()` lines 601-604 | 601-604 |
+| INTERMEDIATE — material but not replicate-consistent | `disposition_for()` lines 611-614 | 611-614 |
+| INTERMEDIATE — C8/C10b NOT-TESTED, nothing else separates | `disposition_for()` `not_tested_gate` | 630-633 |
+| INTERMEDIATE — **primary 2D and 1D iiib families disagree — FIX 3 item 1** | `build_report()`: `families_agree` check, overrides `disposition` | 792-799 |
+| INSTRUMENT / NO-READ — any §6 gate red | `build_report()`: unconditional override at the end, now also clears `named_covariates` (FIX 3 item 5) | 914-916 |
+| Mandatory R14 class-label line, every disposition | `class_label_line()`, called unconditionally in `build_report()` | 637-676, 883 |
+
+### §6 (gates, phase-C-owned rows only — G-1/G-2/G-3/g-precision are phase A/B, correctly `ABSENT` here)
+
+| §6 gate | implementation | line(s) |
+|---|---|---|
+| G-4 blindness hash | `check_table_hash()`, called first in `main()` | 167-176, 964 |
+| g-population: n/n_NaN disclosure | `SeparationResult.n_nan`, populated in `separation_for_covariate` | 121, 288-289 |
+| g-population: C10b n≥10 disclosed | `c10b_testable` gate in `run_family_separation`, NOT-TESTED verdict when false | 561-576 |
+| g-population: **"every table row joined (0 unmatched)" — FIX 3 item 2** | `check_join_completeness()`, wired into `gates.g_population` + `instrument_note` | 234-256, 746, 811-818, 888-890 |
+| g-censoring: MAP rail disclosure, null-rail red wired to INSTRUMENT / NO-READ | `MaterialityResult.map_rail_full/map_rail_stratum/null_rail_fraction/censoring_gate_red`; wired in `build_report()` | 400-410, 469, 483, 519-527, 820-832 |
+
+### §8 (launch block)
+
+| draft item | implementation | line(s) |
+|---|---|---|
+| `--table --table-sha256 --influence --alpha --auc-band --or-band --t-mat --decile --null-draws --null-seed --out [--dry-run]` | `parse_args()` | 925-943 |
+| `--k-<family>` sanity flags (harmless addition) | `parse_args()` loop | 941-943 |
+| sha256 refused before any covariate touched | `main()`: `check_table_hash()` is the first statement | 947 |
+
+**Summary: nothing from §2/§4/§5/§6/§8 is `ABSENT` after this round.** The three RED
+findings from `DESIGN_GATE_formula_rev2.md` (§B, §C, §D) and the one lower-severity gap
+(§E) are all implemented and wired per the table above; C9 and "reweighting not registered"
+are correctly absent by the draft's own design, not gaps.
