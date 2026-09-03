@@ -3522,3 +3522,13 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(4) R4 comparand:** `cluster/graph1_r4_comparand_sites22.sbatch` (the registered CoR-P production CLI from `cluster/graph1_headrebaseline_iiib.sbatch` with exactly two deviations: `--theta_sites 2.2`, `--catalogue_leg_1d_mass_aware off`; single `h = 0.73`) → **job 6790708 COMPLETED** (`6m31s`), retrieved + md5-verified `13/13` → `graph1_20260901/retrieved/r4_comparand_sites22_20260904/` (a first rsync pass dereferenced the job's `cwd/darksiren_emri` symlink and pulled the 1.6 GB catalogue; removed locally, disclosed).
 
 **(5) Reads launched:** R4 three-way diff (`exec/d-photoz-leverage/R4_COMPARAND_READ.md`) and `rd-timeout-bin-seed61000`.
+
+## Row #354 — 2026-09-04 ~01:55 — **S0-C + sealed m1 gates and submission. All content chair-derived.**
+
+**(1) Computability gates (fresh sonnet) GREEN for both.** **PA-HIER-34** / `cluster/graph1_s0c_hgrid.sbatch` (CLI byte-identical to job `6779532` + `--h-nodes`; `h=0.73` reuse verified by an empty driver diff `081b1f28..HEAD`; Lagrange stencil coefficients re-derived by hand; cost `10 cells × 2.0 CPU-h = 20 ≤ cap 25` allocation basis; records `exec/r-s0c-hgrid/DESIGN_GATE_computability.md`) and **`r-sealed-mock` stage m1** (27 CLI flags identical to the head-rebaseline sbatch; reading rule anchored on row #302; `exec/r-sealed-mock/DESIGN_GATE_computability_m1.md`).
+
+**(2) S0-C SUBMITTED:** job `6790794` (array 0–9), `7 RUNNING / 3 PENDING` at `+5 min`.
+
+**(3) Sealed m1 NOT submitted by the first submitter:** (a) it ran before the gate record landed (resolved) and (b) pin-at-first-touch found the 0.67 run's injections link resolves to `injection_pool_mix200k_20260728`, NOT the canonical `injection_pool_depth15_50k` the sbatch/dossier expected; `prepared_cramer_rao_bounds.csv` md5 `8e9253fef42f574c569a04a3e19299ab` (`1346` lines incl. header vs expected `1344` — disclosed).
+
+**(4) CHAIR DECISION (flagged):** the registration's pool expectation was a factual error; the pin is corrected to the pool the run actually used (`mix200k_20260728`, file count as measured), sbatch pool lines amended, dossier §5 + `PIN_RECORD` annotated; submission re-issued by a second submitter.
