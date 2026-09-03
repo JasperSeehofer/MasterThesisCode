@@ -195,3 +195,22 @@ rather than counted as non-detections, p_det is estimated on the truncated popul
 M/p0 dependence of the per-event H0 information — both are registrable questions (Graph 2
 candidates: q-timeout-selection-pdet, q-timeout-population-mismatch). G7 row 8 cannot be closed
 NON-ISSUE; it is now a two-axis systematic candidate on the production pool.
+
+## ERRATUM (chair, after the r-timeout-selection MECHANISM_NOTE, 2026-09-03 ~23:35 CEST)
+1. **p0 axis WITHDRAWN as a timeout systematic.** Kept p0 ∈ [10.0025, 15.987] (chair-verified on
+   prepared_cramer_rao_bounds.csv); the live [10,16] p0 bound (parameter_space.py:95–106) is enforced
+   by the 5-point-stencil bounds check (parameter_estimation.py:271–276, ParameterOutOfBoundsError),
+   which silently drops every SNR-passing draw with p0 near/above 16 (4,071 of 5,921 per the
+   mechanism note). So the "p0 > 20 → 100 % timeout" row has no non-timeout counterpart by
+   construction; the p0 finding is the already-ratified D1 bounded null (row #94; RUNBOOK-7 §1.2b),
+   not a new systematic. The row #355 "two-axis systematic" claim is corrected to ONE axis (M).
+2. **Rate denominator.** "34 %" is P(timeout | kept ∪ timeout). Per DRAW the SNR-stage timeout rate
+   is 822/89,456 = 0.92 % (mechanism note). The M-axis SHAPE stands (timeouts concentrate at low M
+   and, in the n=15 top bin, high M), but its weight in the drawn population is ~1 %; the kept
+   population's M support [1.3e5, 1.6e6] M☉ is set mainly by SNR selection, not by timeouts.
+3. **Mechanism (code-quoted):** timed-out draws are ABSENT from the pool and from the simulate
+   results (main.py:1293–1302 / :763–771 `continue` before append / threshold), so every p_det is
+   conditional on "completed in 90 s" (both budgets 90 s, main.py:1094–1099; G7 row 8's "30 s/90 s"
+   premise is stale).
+Consequence for the docket: R9 is downgraded from "two-axis new systematic" to "one-axis (M),
+~1 %-of-draws selection whose H0 consequence is registered in r-timeout-selection Q1/Q2".
