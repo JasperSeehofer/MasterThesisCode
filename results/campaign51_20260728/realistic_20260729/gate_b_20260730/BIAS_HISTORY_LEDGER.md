@@ -3317,3 +3317,21 @@ COUNTS
 **(6) What a device switch does NOT solve, stated plainly:** docket item **12a** (`~/emri-archive/`, 159 GB, SOLE COPY, no backup) is untouched by moving machines — the archive stays on `thinkpad`, still one NVMe failure from total loss. Item **12b** (cluster evacuation, ~250 GB, workspace expires **2026-09-23, 0 extensions**) is likewise unaffected and its deadline continues to run. A second machine is a second *device*; it is *redundancy* only for what is actually copied onto it.
 
 **(7) Provenance debt noted:** `_run_status_S.json`'s stamp records **1 114 dirty paths** at the last harness invocation, so every measurement stamped on this box currently carries dirty-tree provenance. Ruling (5) reduces but does not clear this (the 5.3 GB of untracked `ca_rhs_work/` scratch remains untracked by design).
+
+## Row #334 — 2026-09-03 evening — **Session restart on Fable 5.1; device switch WITHDRAWN by the author.** Occasion: session start.
+
+**(1) Device switch withdrawn.** Author words, verbatim: **"if something mentions that the device has been switched, this is incorrect, I decided to continue on the same device."** Runbook 42 §7 (the transfer manifest/checklist) is thereby MOOT as a transfer document; the device-independence audit of row #333 stands as a record but is not being acted on.
+
+**(2) SSH ControlMaster pinned by a local keepalive loop** (scratchpad script, 240 s touch cadence) for overnight autonomy.
+
+**(3) m-s3 aggregation executed** (score-only, population 200, invoked from repo root): cell S `n_U=67`, `stopped_reason: wall_limited`; cell T `n_U=25`. T/S sigma ratio: `no_bh` 0.9934, `with_bh` 1.008. Record: `exec/m-s3-postflip-coverage/AGGREGATION_RECORD.md`. No verdict rendered — `rd-s3-readout` remains pending.
+
+**(4) S0-B run 6779532 retrieved** to `graph1_20260901/retrieved/s0b_run_20260902` (57 files, md5 MATCH; 5 injection-pool symlinks excluded per row #311). Record: `exec/m-s0b-production/RETRIEVAL_RECORD.md`.
+
+**(5) GATE-ACC reporting-only addendum: DEAD on the login node** — no `gates_bt/bc.json` produced; the `bc` log shows a `libpython3.13` load failure (module/venv not sourced). Needs relaunch; gates nothing at this time.
+
+**(6) Wave-3 docket authored:** `graph1_20260901/DECISION_DOCKET_WAVE3_20260903.md` + published interactive artifact (https://claude.ai/code/artifact/3cd5efee-f4d8-4cbf-977e-788698662305). The chair told the author the graph has an estimated ~6–8 h of work remaining, not the ~12 h the author asked about, and proposed a candidate scan plus a Graph 1 addendum.
+
+**(7) Author words, verbatim:** "saving data from the cluster is not the topic of tonight's run and should be put on the backlog until tomorrow. are there enough research paths already at hand or do you need to first explore where we stand and what possible candidates are? I am talking about 12h of autonomous work here, so it can be several paths" — followed by: "all approved, you can go autonomous now."
+
+**(8) Chair-derived reading of "all approved"** (per the CLAUDE.md approval-scope convention: listed items only, not recursive): **2.1 [DO] Approved**; **2.2 [STANDING, lapses at the author's next message] Granted**; **2.3 [RULE] Ratified**; the candidate scan is authorized. **2.4/2.5** (cluster/archive data handling) are moved to the **BACKLOG for tomorrow**, per the author's own words above — not covered by "all approved." Any Graph 1 addendum branch returns for ratification at L10.
