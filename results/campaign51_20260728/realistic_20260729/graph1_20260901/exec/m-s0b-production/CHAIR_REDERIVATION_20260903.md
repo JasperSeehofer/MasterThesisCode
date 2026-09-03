@@ -65,3 +65,17 @@ in the campaign (B3 population anchors, A12 score-by-class incl. tonight's S3 ca
 localisation) inherits a label that can flip on float noise. A relative-threshold definition
 (e.g. L_cat/combined < 1e-6) is a build item with a g-byte-id requirement on the physics and a
 re-derivation of the affected class counts. Routed to the Graph 1 addendum as a candidate.
+
+## ERRATA (end-verification D3/D5, 2026-09-03 ~22:10)
+- D3: "physics identical / DIAGNOSTIC-ONLY" holds for the 157 moved events ONLY. Against the
+  mass-aware-matched production baseline (`wave3_20260830/c0prime_off_iiib`, bit-identical to the
+  2026-08-27 head readout) the S0-B TRUTH node differs on 562/1588 events in combined_no_bh
+  (max_rel 0.734, every shift positive, +2.58 nats total; with_bh max_rel 1.65 on 392). The secants
+  are internal to the run and unaffected; but PA-HIER-31(d) "truth = C0" and §3.1 GATE T-ID (0 ULP)
+  are NOT satisfied (same finding as rd-s0b-parity-vs-c0prime, row #342). Cause OPEN: the site-2.2
+  hook is identity-forced at (0,1) per the verifier; the run's 606 dirty files are unaudited. This
+  is an instrument-level open item on the production venue and goes to the author inside
+  d-photoz-leverage (dossier amended).
+- D5: "config = row #287 certified" was wrong: row #287 certified b0i / divisor on / zwin zk4 (the
+  mirror); S0-B ran iiib / divisor off / zwindow off per PA-HIER-31 (the registered production shape,
+  row #332). Corrected wording: "config = the registered PA-HIER-31 production shape".

@@ -34,3 +34,13 @@ cannot contain the true host do NOT own the floor.
 3. Harness replicate: Δs (OUT − IN) = +0.32 ± 0.20 over 48 usable universes (19 had no OUT event or
    NaN stencil) — not significant.
 4. Cost: ≈ 0.1 CPU-h, local, zero cluster.
+
+## ERRATUM (end-verification D4, 2026-09-03 ~22:10) — booking CORRECTED
+The draft's own §2 rule reads: "Disagreement beyond 2·SE flags the linear response as non-linear and
+the read is booked on the leave-out number with the flag." The chair had booked INTERMEDIATE on the
+two-rows-fire literal reading and omitted this resolution rule. Applying it: leave-out Δmean_h =
+−0.004904 → φ_leave-out = 0.0049/0.063 = 7.8 % < 0.2, |Δh| < T_mat = 0.008 → **IMMATERIAL-FLOOR-SHARE,
+booked on the leave-out number, non-linearity flag attached** (chair-derived; returns as fresh RULE).
+The verifier also shows the "18×" gap was a mismatched comparison (Δh_cone is the excess over s̄_IN;
+leave-out removes OUT wholesale); like-for-like −Σ_OUT s_e/I_1D = −0.00347 ± 0.00082 vs −0.00490 is
+1.75·SE — inside 2·SE. The non-linearity claim in "facts for the decider" item 2 is WITHDRAWN.

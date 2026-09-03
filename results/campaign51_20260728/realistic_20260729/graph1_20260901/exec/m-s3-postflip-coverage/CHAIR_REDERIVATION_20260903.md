@@ -56,3 +56,17 @@ T with_bh lo-rail 0 hi-rail 6 median MAP 0.785 mean MAP 0.7788
 All rail mass sits at the UPPER grid edge h = 0.86 (one T no_bh universe at 0.60). The harness
 universe's truth is h = 0.73; the mean MAP of 0.77–0.78 is a +0.04–0.05 offset with 15–24 % of
 posteriors pinned at the ceiling — the coverage numbers are therefore upper-rail-censored bounds.
+
+## ERRATA (end-verification, 2026-09-03 ~22:10)
+- D1: the harness's centering Z uses std(MAP)/√n; registration §2.1 defines SEM = σ̄_post/√n_U → Z =
+  6.00/7.27 (S), 3.48/4.34 (T). Outcome unchanged (OUTSIDE), number corrected.
+- D2: "floor(200) = 0.00518915" is in fact floor(180) (median n_scored per universe); floor(200) =
+  0.004923 → F = 12.06/12.00 (S). F is "at the realised median n_scored ≈ 180", not "at N=200". Label
+  corrected; the [1,25] sanity band is unaffected.
+- D7: the "pre-flip" ladder cell T reference is POST-flip (stamped 6c43f8f9 after 5e7fda16); the
+  20/20 T byte-identity is a same-code rerun, not a flip-invariance check. The S pin (63/63 vs the
+  pre-flip ladder S) stands. The chair's claim that the pin "DISCHARGES the deferred row #291
+  g-byte-id criterion" is withdrawn to the registration's own wording: PROPOSED, routed to d-s4-review.
+- D8: no checkpoint carries a `catalogue_leg_1d_mass_aware` token, and the S stamps span 13 commits —
+  g-population is green on seed-block/N purity but only half-checked on the registration's
+  population-identity token; disclosed for d-calibration.

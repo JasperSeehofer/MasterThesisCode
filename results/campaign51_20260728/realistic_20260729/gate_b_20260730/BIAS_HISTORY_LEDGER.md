@@ -3437,3 +3437,20 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(2) `m-completion-residual` (Branch G) round 2.** Builder implemented the per-universe matched-channel `T_harn`/`SE_harn` (`67/67` per-universe diagnostics present) and the INTERMEDIATE (d) row; byte-id still GREEN `67/67`; fresh gate (`exec/r-completion-residual/DESIGN_GATE_rev2_computability.md`) **RED on two REPORTING gaps:** `delta_h_M` (§2.4 reported-only) has no code path; `g-closure`/`g-znorm` are evaluated on production only, not on the harness universes that generate `T_harn`, and the §2.1 class-closure `S_all` check is unimplemented. Fix round 3 + fresh gate + disjoint read launched. Chair ratification of `d-completion-register` under docket item 2.2 stays conditional.
 
 **(3) Clerk note.** `exec/r-cone-loss/cone_loss_work/cone_loss_result_rev2_dry.json` named in the source instruction was not found on disk at commit time; not added (all other named files present and staged).
+
+## Row #345 — 2026-09-03 ~22:15 — **END-VERIFICATION of wave-3 + addendum reads; errata applied.** Verifier = one top-tier agent. Record: `exec/END_VERIFICATION_20260903.md`. All content chair-derived.
+
+**(1) Reproduction.** All decisive numbers of `rd-s3-readout`, `m-s0b-production`, the four addendum reads and `m-cone-loss` re-derived from raw inputs: **MATCH** (KS crits, F, D, HPD counts, score-zero Z, secants `−5.274`/`−7.188`/`−7.101`, curvature leg, classes `1139`/`449`, parity buckets `19`/`442`, bootstrap SEs, timeout `12.19σ`, cone `Δh −2.73e-4 ± 8.757e-4`, leave-out `−0.004904`).
+
+**(2) Nine discrepancies; errata appended to the affected records.**
+**D1** — S3 centering Z per registration SEM convention = `6.00`/`7.27` (S), `3.48`/`4.34` (T) (outcome unchanged).
+**D2** — the "floor(200)" is floor(180) (median `n_scored`); floor(200) = `0.004923` → `F = 12.06`/`12.00`; F re-labelled "at realised `n_scored ≈ 180`".
+**D7** — the ladder cell-T reference is POST-flip (`6c43f8f9` after `5e7fda16`): the `20/20` T pin is a same-code rerun; the chair's "row #291 `g-byte-id` DISCHARGED" is **withdrawn** to the registration's "PROPOSED, routed to `d-s4-review`."
+**D8** — g-population half-checked (no `mass_aware` token in checkpoints; S stamps span 13 commits) — disclosed for `d-calibration`.
+**D3 (CHANGES A CLAIM)** — "physics identical / DIAGNOSTIC-ONLY" holds for the 157 moved events only — the S0-B TRUTH node differs from the mass-aware-matched baseline `c0prime_off_iiib` on `562/1588` events (`combined_no_bh max_rel 0.734`, all positive, `+2.58` nats; `with_bh` 392 events, `max_rel 1.65`): PA-HIER-31(d) "truth = C0" and GATE T-ID are **NOT satisfied**; cause OPEN; secants unaffected; `d-photoz-leverage` dossier AMENDED (new item 5 + a proposed 1-task comparand re-evaluation, not pre-granted).
+**D5** — dossier config line corrected (row #287 certified the mirror instrument, not this venue's config).
+**D4 (CHANGES A BOOKING)** — the cone draft §2 rule "disagreement beyond `2·SE` … the read is booked on the leave-out number with the flag" was not applied; applied now: `φ_leave-out = 7.8 % < 0.2` and `|Δh| < T_mat` → `m-cone-loss` **RE-BOOKED IMMATERIAL-FLOOR-SHARE on the leave-out number with the non-linearity flag** (chair-derived, fresh RULE); the "18×" comparison was mismatched (like-for-like `1.75·SE`) — withdrawn.
+**D6** — bootstrap §5 vs §2 SE inconsistency `18 %` (no band change).
+**D9** — cosmetic.
+
+**(3) Bookings the verifier lists as not literally supported** are each either withdrawn (byte-id discharge; "F at N=200"; "physics identical"; cone INTERMEDIATE) or amended as above.
