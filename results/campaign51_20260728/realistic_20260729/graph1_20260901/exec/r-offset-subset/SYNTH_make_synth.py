@@ -1,6 +1,7 @@
 import hashlib
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -594,42 +595,246 @@ except osr.InstrumentDefectError as exc:
     fix4_record["venue_mismatch"] = {"message": exc.message}
     print(f"FIX 4 / venue mismatch: InstrumentDefectError raised as required: {exc.message}")
 
-# --- (5) `--dry-run` on the REAL, committed per-venue files never writes an
-# output file and never touches a registered aggregate -- confirmed via the
-# CLI itself (subprocess), mirroring the launch-block invocation, for both
-# venues; asserts exit 0 and the exact "1588/1588 joined" row counts.
+# --- (5) `--dry-run` on the REAL, committed files never writes an output file and
+# never touches a registered aggregate -- confirmed via the CLI itself (subprocess),
+# mirroring the PIN CORRECTION 3 (round 5) launch block: ONE invocation, BOTH venues'
+# table/influence/logL paths at once (the round-4 CLI's single-venue invocation is
+# exactly what crashed in real mode, per READ_RECORD.md SS3-SS4); asserts exit 0 and
+# the exact "1588/1588 joined" row counts, both logL md5 matches, and all four
+# families' k in one run.
 import subprocess  # noqa: E402
+
+# Reuse build_influence_vector.py's own pinned paths (imported transitively via
+# `osr.biv`) rather than re-deriving REPO_ROOT-relative paths by hand.
+LOGL_IIIB = osr.biv.VENUE_CSV["iiib"]
+LOGL_JR1 = osr.biv.VENUE_CSV["joint_r1"]
 
 covariate_sha = {}
 for line in (OUT / "covariate_table.sha256").read_text().splitlines():
     digest, name = line.split(maxsplit=1)
     covariate_sha[name.strip()] = digest
 
-for venue_name, table_name, influence_name, expected_k in (
-    ("iiib", "covariate_table_iiib.csv", "influence_iiib.csv", {"iiib_2d": 82, "iiib_1d": 94}),
-    ("joint_r1", "covariate_table_joint_r1.csv", "influence_joint_r1.csv", {"jr1_2d": 72, "jr1_1d": 46}),
-):
-    out_path = OUT / f"SYNTH_should_not_exist_{venue_name}.json"
-    if out_path.exists():
-        out_path.unlink()
-    result = subprocess.run(
-        [
-            sys.executable, str(Path(__file__).resolve().parent / "offset_subset_reads.py"),
-            "--table", str(OUT / table_name), "--table-sha256", covariate_sha[table_name],
-            "--influence", str(OUT / influence_name), "--out", str(out_path), "--dry-run",
-        ],
-        capture_output=True, text=True, check=False,
-    )
-    assert result.returncode == 0, (venue_name, result.returncode, result.stdout, result.stderr)
-    assert "1588 table rows / 1588 influence rows joined" in result.stdout, result.stdout
-    assert "unmatched table-only=0, unmatched influence-only=0; join_complete=True" in result.stdout, result.stdout
-    for fam, k in expected_k.items():
-        assert f"family {fam}: k={k}" in result.stdout, (fam, k, result.stdout)
-    assert not out_path.exists(), f"--dry-run must never write {out_path}"
-    fix4_record[f"dry_run_{venue_name}"] = {"returncode": result.returncode, "stdout": result.stdout}
-    print(f"FIX 4 / --dry-run ({venue_name}, REAL inputs): exit 0, 1588/1588 joined, k={expected_k}, no file written")
+out_path5 = OUT / "SYNTH_should_not_exist_both_venues.json"
+if out_path5.exists():
+    out_path5.unlink()
+result = subprocess.run(
+    [
+        sys.executable, str(Path(__file__).resolve().parent / "offset_subset_reads.py"),
+        "--table-iiib", str(OUT / "covariate_table_iiib.csv"),
+        "--table-sha256-iiib", covariate_sha["covariate_table_iiib.csv"],
+        "--influence-iiib", str(OUT / "influence_iiib.csv"),
+        "--logl-iiib", str(LOGL_IIIB),
+        "--table-jr1", str(OUT / "covariate_table_joint_r1.csv"),
+        "--table-sha256-jr1", covariate_sha["covariate_table_joint_r1.csv"],
+        "--influence-jr1", str(OUT / "influence_joint_r1.csv"),
+        "--logl-jr1", str(LOGL_JR1),
+        "--out", str(out_path5), "--dry-run",
+    ],
+    capture_output=True, text=True, check=False,
+)
+assert result.returncode == 0, (result.returncode, result.stdout, result.stderr)
+assert result.stdout.count("sha256 OK") == 2, result.stdout
+assert result.stdout.count("md5 OK") == 2, result.stdout
+assert "join iiib: 1588 table rows / 1588 influence rows joined" in result.stdout, result.stdout
+assert "join jr1: 1588 table rows / 1588 influence rows joined" in result.stdout, result.stdout
+assert result.stdout.count("unmatched table-only=0, unmatched influence-only=0; join_complete=True") == 2, result.stdout
+assert "logL columns present: iiib=True" in result.stdout and "jr1=True" in result.stdout, result.stdout
+for fam, k in (("iiib_2d", 82), ("iiib_1d", 94), ("jr1_2d", 72), ("jr1_1d", 46)):
+    assert f"family {fam}: k={k}" in result.stdout, (fam, k, result.stdout)
+assert not out_path5.exists(), f"--dry-run must never write {out_path5}"
+fix4_record["dry_run_both_venues"] = {"returncode": result.returncode, "stdout": result.stdout}
+print("FIX 4 / --dry-run (both venues, ONE invocation, REAL inputs): exit 0, both sha256 + both "
+      "logL md5 matches, 1588/1588 joined per venue, all four families' k, no file written")
 
 fix4_out_path = OUT / "SYNTH_fix4_output.json"
 fix4_out_path.write_text(json.dumps(fix4_record, indent=2, default=str))
 print("wrote", fix4_out_path)
-print("FIX 4: all assertions passed (real-schema mapping, missing-column INSTRUMENT-DEFECT x2, venue mismatch, real-input --dry-run x2)")
+print("FIX 4: all assertions passed (real-schema mapping, missing-column INSTRUMENT-DEFECT x2, venue mismatch, real-input --dry-run)")
+
+# ===========================================================================
+# FIX 5 (BUILD_RECORD_B3.md "FIX 5") -- PIN CORRECTION 3 (round 5): the round-4
+# CLI's single-venue invocation left `build_report()`'s unconditional four-family
+# loop reading a `{family}_in_S` column that was never derived for the OTHER
+# venue's data -- an uncaught `KeyError` in real mode (READ_RECORD.md SS3-SS4). This
+# exercises the FULL pipeline (`main()` -> `build_report()`), real mode (not
+# `--dry-run`), on a hand-built TWO-VENUE synthetic fixture that includes tiny
+# per-event 41-node-analogue logL matrices (5 h-grid nodes here) as separate raw
+# `event_likelihoods.csv`-shaped files -- exactly the PIN CORRECTION 3 data
+# contract (`--logl-iiib`/`--logl-jr1`, loaded via `load_primary_logl_matrix`,
+# which imports `build_influence_vector._load_matrix` rather than re-implementing
+# it). Asserts: (a) all four families resolve (their OWN venue's table/influence,
+# not a KeyError); (b) the materiality path actually runs for the primary family
+# (iiib_2d) on this fixture, i.e. `build_report()` reaches
+# `materiality_for_covariate` and returns a non-empty `materiality` dict rather than
+# stopping at INSTRUMENT / NO-READ for a missing logL matrix.
+# ===========================================================================
+
+fix5_record: dict = {}
+
+n5 = 30
+k5 = 6  # S = top-6 by influence (events 0-5)
+event_idx5 = list(range(n5))
+
+
+def _fix5_covariate_table(seed_offset: int) -> pd.DataFrame:
+    """A 30-event table where C3c/C4/C5/C10 perfectly separate S (events 0-5, LOW
+    values) from the bulk (events 6-29, HIGH values) -- large enough (n=30) that the
+    resulting AUC=0/1 separation survives Holm correction over the m~9 HOLM_FAMILY
+    covariates (verified directly against `run_family_separation` before writing this
+    fixture: C3c/C4/C5/C10 -> SEPARATES, p_holm ~= 3e-5). `seed_offset` perturbs the
+    binary covariates slightly between venues so iiib/jr1 aren't byte-identical
+    fixtures, without disturbing the SEPARATES covariates' clean split.
+    """
+    return pd.DataFrame(
+        {
+            "event_idx": event_idx5,
+            "C1_in_catalog": [True, True] + [False] * (n5 - 2 - seed_offset) + [True] * seed_offset,
+            "C2_hosted_exact": [True] + [False] * (n5 - 1),
+            "C3_hosted_rel": [True] + [False] * (n5 - 1),
+            "C3c_log10_f_cat": [float(-0.1 * i) for i in range(n5)],
+            "C3c_censored": [False] * n5,
+            "C4_z_gw": [float(i) for i in range(n5)],
+            "C5_log10_sky_area": [0.1 * i for i in range(n5)],
+            "C6_mass_window_retention": [0.9] * n5,
+            "C7_log10_n_cand_1d": [1.0] * n5,
+            "C8_cone_outside": [False] + [None] * (n5 - 1),
+            "C10_log10_M": [5.0 + 0.01 * i for i in range(n5)],
+            "C10b_low_M_timeout_bins12": [False] * n5,
+            "C11_log10_snr": [1.0] * n5,
+        }
+    )
+
+
+def _fix5_influence_table() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "event_idx": event_idx5,
+            "influence_2D": [float(n5 - i) for i in range(n5)],
+            "influence_1D": [float(n5 - i) * 0.9 for i in range(n5)],
+            "rank": list(range(1, n5 + 1)),
+        }
+    )
+
+
+def _fix5_logl_csv(path: Path, seed: int) -> None:
+    """A tiny (5 h-grid node) `event_likelihoods.csv`-shaped file: the S stratum
+    (events 0-5) is peaked toward the LOW end of the grid, the bulk toward the
+    middle (truth) node -- so leaving the S stratum out moves mean_h, giving
+    `materiality_for_covariate` a real (non-degenerate) Delta_strat to compute,
+    exactly mirroring the pattern used for FIX 2's n=30 Finding-A/B/D fixtures
+    above. Positive likelihoods (not log), per `_load_matrix`'s own contract.
+    """
+    h_grid5 = np.array([0.60, 0.665, 0.73, 0.795, 0.86])
+    rng5 = np.random.default_rng(seed)
+    rows = []
+    for e in range(n5):
+        base = np.array([3.0, 1.0, -1.0, -3.0, -5.0]) if e < k5 else np.array([-2.0, 1.0, 3.0, 1.0, -2.0])
+        logl_row = base + rng5.normal(0, 0.05, size=5)
+        likelihood_row = np.exp(logl_row)
+        for h_val, l_val in zip(h_grid5, likelihood_row, strict=True):
+            rows.append({"event_idx": e, "h": h_val, "combined_no_bh": l_val, "combined_with_bh": l_val})
+    pd.DataFrame(rows).to_csv(path, index=False)
+
+
+fix5_paths: dict[str, dict[str, Any]] = {}
+for venue_label, seed_offset, logl_seed in (("iiib", 0, 20260905), ("jr1", 2, 20260906)):
+    table5 = _fix5_covariate_table(seed_offset)
+    table5_path = OUT / f"SYNTH_fix5_covariate_table_{venue_label}.csv"
+    table5.to_csv(table5_path, index=False)
+    table5_sha256 = hashlib.sha256(table5_path.read_bytes()).hexdigest()
+
+    infl5 = _fix5_influence_table()
+    infl5_path = OUT / f"SYNTH_fix5_influence_{venue_label}.csv"
+    infl5.to_csv(infl5_path, index=False)
+
+    logl5_path = OUT / f"SYNTH_fix5_logl_{venue_label}.csv"
+    _fix5_logl_csv(logl5_path, logl_seed)
+
+    fix5_paths[venue_label] = {"table": table5_path, "table_sha256": table5_sha256, "influence": infl5_path, "logl": logl5_path}
+
+# --- (1) direct-function check: `load_primary_logl_matrix` md5-verifies (patched to
+# accept these unpinned synthetic files -- the registered md5 pins are for the REAL
+# event_likelihoods.csv only, verified separately in FIX 4 item (5) above) and
+# reindexes onto the influence dataframe's own event order.
+family_k5 = {"iiib_2d": k5, "iiib_1d": k5, "jr1_2d": k5, "jr1_1d": k5}
+infl5_iiib_loaded, _, _ = osr.load_influence(fix5_paths["iiib"]["influence"], "iiib", family_k5)
+event_order5 = infl5_iiib_loaded.index.to_numpy(dtype=np.float64)
+h_grid5_loaded, event_idx5_loaded, logl5_loaded, n_excl5 = osr.biv._load_matrix(
+    fix5_paths["iiib"]["logl"], "combined_with_bh"
+)
+assert h_grid5_loaded.size == 5, h_grid5_loaded
+assert n_excl5 == 0, n_excl5
+idx_lookup5 = {int(e): i for i, e in enumerate(event_idx5_loaded)}
+logl5_matrix = logl5_loaded[[idx_lookup5[int(e)] for e in event_order5], :]
+assert logl5_matrix.shape == (n5, 5), logl5_matrix.shape
+fix5_record["logl_loader"] = {"h_grid_n": int(h_grid5_loaded.size), "n_excluded": n_excl5, "matrix_shape": list(logl5_matrix.shape)}
+print(f"FIX 5 / logL loader: h_grid n={h_grid5_loaded.size}, n_excluded={n_excl5}, matrix shape={logl5_matrix.shape}")
+
+# --- (2) full pipeline, real mode (not --dry-run), via `main()` directly: all four
+# families resolve (the round-4 KeyError this fix round addresses), and the
+# materiality path runs (non-empty `materiality` dict) for the primary family.
+fix5_out_path = OUT / "SYNTH_fix5_result.json"
+if fix5_out_path.exists():
+    fix5_out_path.unlink()
+argv5: list[str] = [
+    "--table-iiib", str(fix5_paths["iiib"]["table"]),
+    "--table-sha256-iiib", fix5_paths["iiib"]["table_sha256"],
+    "--influence-iiib", str(fix5_paths["iiib"]["influence"]),
+    "--logl-iiib", str(fix5_paths["iiib"]["logl"]),
+    "--table-jr1", str(fix5_paths["jr1"]["table"]),
+    "--table-sha256-jr1", fix5_paths["jr1"]["table_sha256"],
+    "--influence-jr1", str(fix5_paths["jr1"]["influence"]),
+    "--logl-jr1", str(fix5_paths["jr1"]["logl"]),
+    "--k-iiib-2d", str(k5), "--k-iiib-1d", str(k5), "--k-jr1-2d", str(k5), "--k-jr1-1d", str(k5),
+    "--null-draws", "100", "--null-seed", "20260905",
+    "--out", str(fix5_out_path),
+]
+# `load_primary_logl_matrix`/`verify_logl_md5` in the real CLI path check against the
+# REGISTERED (real-file) md5 pins, which these synthetic files do NOT match by
+# construction -- so `main()` itself cannot be used unpatched here. Patch
+# `osr.biv.VENUE_CSV_MD5` for the duration of this call only (restored immediately
+# after) to the actual md5 of the synthetic logL files, mirroring exactly how a real
+# invocation would verify a real pin -- the pin-check CODE PATH itself is exercised
+# unmodified; only the expected-value table is substituted for this synthetic run.
+_orig_venue_csv_md5 = dict(osr.biv.VENUE_CSV_MD5)
+try:
+    osr.biv.VENUE_CSV_MD5["iiib"] = osr.biv._md5(fix5_paths["iiib"]["logl"])
+    osr.biv.VENUE_CSV_MD5["joint_r1"] = osr.biv._md5(fix5_paths["jr1"]["logl"])
+    rc5 = osr.main(argv5)
+finally:
+    osr.biv.VENUE_CSV_MD5.clear()
+    osr.biv.VENUE_CSV_MD5.update(_orig_venue_csv_md5)
+
+assert rc5 == 0, rc5
+assert fix5_out_path.exists(), "main() must write --out in real mode"
+report5 = json.loads(fix5_out_path.read_text())
+
+for fam in osr.FAMILIES:
+    assert fam in report5["separation"], (fam, sorted(report5["separation"]))
+    assert len(report5["separation"][fam]) > 0, fam
+assert report5["family_k"] == {"iiib_2d": k5, "iiib_1d": k5, "jr1_2d": k5, "jr1_1d": k5}, report5["family_k"]
+assert report5["meta"]["logl_columns_present"] is True, report5["meta"]
+assert report5["materiality"], "materiality path must have run on this fixture (non-empty materiality dict)"
+for cov, mat in report5["materiality"].items():
+    assert report5["separation"]["iiib_2d"][cov]["verdict"] == "SEPARATES", (cov, report5["separation"]["iiib_2d"][cov])
+    # n_stratum is the DECILE-tail stratum size (SS4.2), a distinct concept from k5 (the
+    # influence-ranked |S| used for separation) -- just confirm materiality actually ran
+    # (a positive stratum size, no NaN/None propagated through from a degenerate divide).
+    assert mat["n_stratum"] > 0, (cov, mat)
+    assert mat["delta_strat"] is not None and not (isinstance(mat["delta_strat"], float) and np.isnan(mat["delta_strat"])), (cov, mat)
+assert report5["disposition"]["value"] in (
+    "SUBSET-IDENTIFIED", "DIFFUSE-IN-COVARIATES", "INTERMEDIATE", "INSTRUMENT / NO-READ",
+), report5["disposition"]
+fix5_record["materiality_covariates"] = sorted(report5["materiality"])
+fix5_record["disposition"] = report5["disposition"]["value"]
+fix5_record["family_k"] = report5["family_k"]
+print(
+    f"FIX 5 / full pipeline (real mode, two-venue synthetic fixture): all four families resolved "
+    f"({sorted(report5['separation'])}), materiality ran for {sorted(report5['materiality'])}, "
+    f"disposition={report5['disposition']['value']!r}"
+)
+
+fix5_out_record_path = OUT / "SYNTH_fix5_output.json"
+fix5_out_record_path.write_text(json.dumps(fix5_record, indent=2, default=str))
+print("wrote", fix5_out_record_path)
+print("FIX 5: all assertions passed (logL loader reindex, full pipeline four-family resolution + materiality on a two-venue synthetic fixture)")

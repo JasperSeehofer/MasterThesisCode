@@ -874,3 +874,225 @@ round (out of scope: items 1-2 gate columns, not cross-venue orchestration) and 
 for `--dry-run` to pass. Flagged for whoever authors the real-mode launch (author ruling
 needed on whether real mode runs twice, once per venue, with a combined third pass merging
 the two JSONs for the 2-of-3 replicate check, or the launch block itself is revised).
+
+## FIX 5 (builder round 5) — real-mode crash fix: two-venue single invocation + logL third path
+
+Trigger: `READ_RECORD.md` §3-§4, the first real (non-`--dry-run`) invocation of the round-4
+launch block — `uv run ... offset_subset_reads.py --table covariate_table_iiib.csv
+--influence influence_iiib.csv ...` (no `--dry-run`) raised an uncaught
+`KeyError: 'jr1_2d_in_S'` at `build_report()` line ~909
+(`s_mask = infl[in_s_col].astype(bool)`), exit code 1, zero bytes of `--out` written. Root
+cause (READ_RECORD.md §4, confirmed by re-reading the round-4 source, not re-derived): FIX 4's
+own item 7 had already flagged this exact gap as out of round-4's scope — `build_report()`
+iterates all four registered families (`FAMILIES = (iiib_2d, iiib_1d, jr1_2d, jr1_1d)`)
+unconditionally, but a single-venue invocation's `load_influence()` only derives
+`{family}_in_S` for the TWO families native to whichever one venue's files were passed
+(`VENUE_FAMILIES[venue]`, by design — the round-4 docstring's own contract). No single
+real-mode invocation of the round-4 CLI could reach the end of `build_report()` for either
+venue (symmetric crash on `iiib_2d_in_S` if joint_r1's files were loaded instead). A second,
+independent, already-disclosed gap (`DESIGN_GATE_formula_rev4.md` §5): `influence_{iiib,
+joint_r1}.csv` carry no `logL_h*` columns, so materiality (§4.2) was NOT-TESTED under the
+round-4 data contract regardless.
+
+Round 5 fixes both with **zero fresh choices** — every band, threshold, K, seed, and
+statistic function is unchanged; only the CLI shape and the file→family/venue routing in
+`main()`/`build_report()` changed:
+
+1. **CLI takes both venues in one invocation.** `parse_args()` now declares
+   `--table-{iiib,jr1}`, `--table-sha256-{iiib,jr1}`, `--influence-{iiib,jr1}`, and
+   `--logl-{iiib,jr1}` (8 required path/hash args replacing the round-4 3). `main()` loads
+   both tables (G-4 hash-checked, both), both influence files (`load_influence()` itself
+   UNCHANGED — still one call per venue, still only derives that venue's two families' columns
+   — the fix is in the CALLER now supplying both venues, not in that function), and validates
+   each `(--table-<v>, --influence-<v>)` pair resolves to its expected venue via the
+   UNCHANGED `detect_venue()` (still raises `InstrumentDefectError` on a mismatch or an
+   ambiguous filename — ratified in FIX 4, re-verified unchanged below).
+2. **`build_report()` now takes `(table_iiib, infl_iiib, table_jr1, infl_jr1, h_grid,
+   logl_matrix, args)`** and a new one-line helper `_venue_of_family(family)` routes each of
+   the four `FAMILIES` entries to its OWN venue's `(table, infl)` pair before calling the
+   UNCHANGED `run_family_separation()` — this is the actual fix for the `KeyError`: every
+   family's `{family}_in_S` lookup now hits a dataframe that column was actually derived on.
+   `check_join_completeness()` runs once per venue (`gates.g_population_iiib`/
+   `gates.g_population_jr1` in the output JSON; either red routes to INSTRUMENT / NO-READ,
+   same wording pattern as the round-3 single-venue g-population gate). The SS5 2D-vs-1D
+   disagreement trigger (`iiib_1d` re-run as an alternate primary against the complementary
+   replicate set) is UNCHANGED code, now actually exercised against real jr1 data instead of
+   crashing before it could run.
+3. **Materiality's third input path**: a new `load_primary_logl_matrix(path, venue_key,
+   event_order)` builds the primary-family (iiib / `combined_with_bh`) per-event 41-node ln L
+   matrix from the raw, md5-pinned `event_likelihoods.csv` by IMPORTING
+   `build_influence_vector.py`'s own `_load_matrix`/`_md5`/`VENUE_CSV_MD5` (`import
+   build_influence_vector as biv` — same frozen T0 convention: physics-floor zero handling
+   then log; cited, not re-derived) and reindexing its rows onto the primary venue's own
+   influence-dataframe event order, so `materiality_for_covariate`'s row-position arithmetic
+   (UNCHANGED function, byte-identical) lines up with the registered join. A new
+   `verify_logl_md5(path, venue_key)` STOPs (`InstrumentDefectError`) on a pin mismatch or a
+   missing file, BEFORE any covariate or likelihood value is touched — run for BOTH venues
+   (jr1's logL is verified for disclosure/parity even though only iiib's feeds materiality;
+   `PRIMARY_FAMILY = "iiib_2d"` is unchanged from round 1). `load_influence()`'s pre-existing
+   (dead-in-production, still exercised by FIX 2/3's hand-built fixtures) self-describing
+   `logL_h<value>`-column path is untouched but no longer the production data source.
+
+### 1. Six paths + md5s of record (unchanged values; only newly the CLI's own arguments)
+
+| arg | path | pin |
+|---|---|---|
+| `--table-iiib` | `covariate_table_iiib.csv` | sha256 `90c92026bb7fecff46e5a55e1e2c67a33b424e4b71611ee0d0854576b189f7b0` |
+| `--influence-iiib` | `influence_iiib.csv` | (unpinned; joined against the hashed table) |
+| `--logl-iiib` | `.../retrieved/run_20260902_graph1_headrebaseline_iiib/simulations/diagnostics/event_likelihoods.csv` | md5 `8e6a2c18dc5838dd1d52641589243672` |
+| `--table-jr1` | `covariate_table_joint_r1.csv` | sha256 `fc2eebe7fa66afbe2e35b0dd09c889be790511a6f5dabce3338969c849fcdf3a` |
+| `--influence-jr1` | `influence_joint_r1.csv` | (unpinned; joined against the hashed table) |
+| `--logl-jr1` | `.../retrieved/run_20260902_graph1_headrebaseline_joint_r1/simulations/diagnostics/event_likelihoods.csv` | md5 `745954a0fdee5f10878fb5e622a06144` |
+
+All six re-verified independently this round (`sha256sum`/`md5sum` re-run, not re-quoted from
+an earlier record):
+
+```
+$ sha256sum covariate_table_iiib.csv covariate_table_joint_r1.csv
+90c92026bb7fecff46e5a55e1e2c67a33b424e4b71611ee0d0854576b189f7b0  covariate_table_iiib.csv
+fc2eebe7fa66afbe2e35b0dd09c889be790511a6f5dabce3338969c849fcdf3a  covariate_table_joint_r1.csv
+$ md5sum .../run_20260902_graph1_headrebaseline_iiib/simulations/diagnostics/event_likelihoods.csv \
+         .../run_20260902_graph1_headrebaseline_joint_r1/simulations/diagnostics/event_likelihoods.csv
+8e6a2c18dc5838dd1d52641589243672  .../headrebaseline_iiib/.../event_likelihoods.csv
+745954a0fdee5f10878fb5e622a06144  .../headrebaseline_joint_r1/.../event_likelihoods.csv
+```
+
+All four match `REGISTRATION_DRAFT.md` §1/§8's committed pins exactly (also identical to
+`build_influence_vector.py`'s own `VENUE_CSV_MD5`, which pins and reads the SAME two files —
+no new file, no new choice, only a new caller).
+
+### 2. §8 launch block, `--dry-run`, on the REAL committed inputs — ONE invocation, both venues
+
+```
+$ uv run python offset_subset_reads.py \
+    --table-iiib covariate_table_iiib.csv --table-sha256-iiib 90c92026bb7fecff46e5a55e1e2c67a33b424e4b71611ee0d0854576b189f7b0 \
+    --influence-iiib influence_iiib.csv \
+    --logl-iiib .../run_20260902_graph1_headrebaseline_iiib/simulations/diagnostics/event_likelihoods.csv \
+    --table-jr1 covariate_table_joint_r1.csv --table-sha256-jr1 fc2eebe7fa66afbe2e35b0dd09c889be790511a6f5dabce3338969c849fcdf3a \
+    --influence-jr1 influence_joint_r1.csv \
+    --logl-jr1 .../run_20260902_graph1_headrebaseline_joint_r1/simulations/diagnostics/event_likelihoods.csv \
+    --alpha 0.05 --auc-band 0.20 --or-band 3.0 --t-mat 0.008 \
+    --decile 0.10 --null-draws 1000 --null-seed 20260904 \
+    --out /tmp/pincorr3_out.json --dry-run
+table iiib: covariate_table_iiib.csv (1588 rows), sha256 OK
+table jr1:  covariate_table_joint_r1.csv (1588 rows), sha256 OK
+logL iiib: .../run_20260902_graph1_headrebaseline_iiib/simulations/diagnostics/event_likelihoods.csv md5 OK (h_grid n=41)
+logL jr1:  .../run_20260902_graph1_headrebaseline_joint_r1/simulations/diagnostics/event_likelihoods.csv md5 OK (h_grid n=41)
+join iiib: 1588 table rows / 1588 influence rows joined on event_idx; unmatched table-only=0, unmatched influence-only=0; join_complete=True
+join jr1: 1588 table rows / 1588 influence rows joined on event_idx; unmatched table-only=0, unmatched influence-only=0; join_complete=True
+logL columns present: iiib=True (h_grid n=41), jr1=True (h_grid n=41)
+  family iiib_2d: k=82
+  family iiib_1d: k=94
+  family jr1_2d: k=72
+  family jr1_1d: k=46
+dry-run OK
+$ echo exit=$?
+exit=0
+$ ls /tmp/pincorr3_out.json
+ls: cannot access '/tmp/pincorr3_out.json': No such file or directory
+```
+
+**Exit 0. Both sha256 matches. Both logL md5 matches. 1588/1588 joined, 0 unmatched, both
+venues. All four families with their registered banked k exactly (82/94/72/46). `logL
+columns present: True` for both venues (the round-4 `False (h_grid n=0)` gap is closed —
+materiality now has real data to run on, though whether it actually finds anything material
+is a REAL-mode question, deliberately not answered by this `--dry-run`). No `--out` file
+written** — `--dry-run` still returns before `build_report()`/materiality/any registered
+aggregate is touched, identically to every prior round's `--dry-run` behaviour. This is the
+same output the module docstring's PIN CORRECTION note (REGISTRATION_DRAFT.md) also carries,
+independently re-run here rather than copied.
+
+### 3. `SYNTH_make_synth.py` extension — "FIX 5": two-venue synthetic fixture + full-pipeline real-mode run
+
+Appended a "FIX 5" section (after the untouched FIX 2/FIX 3 sections and the updated FIX 4
+item-(5) subprocess check, which now exercises the NEW two-venue-single-invocation `--dry-run`
+CLI on the real committed files instead of the round-4 per-venue-invocation shape — necessary
+because the CLI's own arguments changed; every other FIX 4 assertion is untouched and still
+passes byte-identically). FIX 5 builds a hand-constructed, 30-event, two-venue fixture
+(`SYNTH_fix5_covariate_table_{iiib,jr1}.csv`, `SYNTH_fix5_influence_{iiib,jr1}.csv`,
+`SYNTH_fix5_logl_{iiib,jr1}.csv` — the last using the REAL `event_idx,h,combined_no_bh,
+combined_with_bh` `event_likelihoods.csv` column shape, 5 h-grid nodes, `k5=6` events in S
+peaked toward the low end of the grid vs. a bulk peaked at truth) sized so that C3c/C4/C5/C10
+perfectly separate S from bulk and survive Holm correction (verified directly against
+`run_family_separation` before committing the fixture: `p_holm ≈ 3.03e-5`, well under
+`alpha=0.05`) — large enough to actually exercise `SEPARATES` → `materiality_for_covariate`,
+unlike a smaller (n≤10) fixture, which this round confirmed empirically stays all-`NULL`
+under Holm at that sample size.
+
+Two checks:
+
+1. **Direct-function check**: `load_influence` + `build_influence_vector._load_matrix`
+   (imported as `osr.biv`) load and reindex correctly — asserts `h_grid.size == 5`,
+   `n_excluded == 0`, and the reindexed logL matrix has shape `(30, 5)` matching the influence
+   dataframe's own event order.
+2. **Full-pipeline check, REAL MODE (not `--dry-run`)**, via `osr.main(argv5)` directly (not
+   subprocess — same code path) on the synthetic fixture ONLY (never the registered
+   population, per this script's own docstring mandate). Because `verify_logl_md5` checks
+   against the REGISTERED (real-file) md5 pins, which the synthetic logL files do not match by
+   construction, `osr.biv.VENUE_CSV_MD5` is monkeypatched for the duration of the call to the
+   synthetic files' own actual md5 (restored in a `finally`) — the pin-CHECK code path itself
+   is exercised unmodified; only the expected-value table is substituted, exactly mirroring
+   what a real invocation does against a real pin. Asserts: all four families appear in
+   `report["separation"]` with populated per-covariate results (the round-5 fix — this is
+   exactly where round-4's real-mode run raised `KeyError`); `family_k == {82: iiib_2d→6,
+   iiib_1d→6, jr1_2d→6, jr1_1d→6}` (the `--k-<family>` override flags, unchanged mechanism);
+   `meta.logl_columns_present is True`; `materiality` is non-empty (the round-5 fix for the
+   rev4-disclosed logL gap — materiality actually RAN); every materiality entry's covariate
+   SEPARATES in `iiib_2d` and has a positive, non-NaN `n_stratum`/`delta_strat`; disposition is
+   one of the four valid values (not an exception).
+
+Live run (`uv run python SYNTH_make_synth.py`), FIX 5 section:
+
+```
+FIX 5 / logL loader: h_grid n=5, n_excluded=0, matrix shape=(30, 5)
+wrote SYNTH_fix5_result.json: disposition = INTERMEDIATE
+FIX 5 / full pipeline (real mode, two-venue synthetic fixture): all four families resolved (['iiib_1d', 'iiib_2d', 'jr1_1d', 'jr1_2d']), materiality ran for ['C10', 'C3c', 'C4', 'C5'], disposition='INTERMEDIATE'
+FIX 5: all assertions passed (logL loader reindex, full pipeline four-family resolution + materiality on a two-venue synthetic fixture)
+```
+
+(`disposition='INTERMEDIATE'` on this fixture is because the identical-by-construction jr1
+fixture makes every replicate family agree in direction and the SS5 2D-vs-1D check then finds
+`iiib_1d`'s own disposition differs enough from `iiib_2d`'s to trigger the disagreement
+downgrade — a property of this deliberately simple fixture, not a claim about the registered
+population; not compared to any registered anchor.)
+
+All FIX 2, FIX 3, and (updated) FIX 4 assertions in the same run still pass — FIX 2/3's
+console lines are byte-identical to every prior round's (their code was not touched); FIX 4's
+item-(5) `--dry-run` check now covers the new CLI shape, all other FIX 4 items unchanged and
+passing.
+
+### 4. Quality gates
+
+```
+$ uv run ruff check offset_subset_reads.py SYNTH_make_synth.py
+All checks passed!
+$ uv run mypy offset_subset_reads.py
+Success: no issues found in 1 source file
+$ uv run mypy SYNTH_make_synth.py
+Found 3 errors in 1 file (checked 1 source file)
+```
+
+The 3 `SYNTH_make_synth.py` mypy errors (a `str`-vs-`Literal` verdict argument at what is now
+line 308, two `float | None` subtractions at lines 408/411) are the SAME 3 pre-existing errors
+FIX 4's record already disclosed, confirmed unchanged this round via `git stash` (re-ran mypy
+against the pre-round-5 file: identical 3 errors, identical lines modulo the FIX 5 section's
+line-number shift) — inside the untouched FIX 2/FIX 3 sections, not introduced by this round.
+Two NEW mypy errors this round's own edits introduced (a `dict[str, Path]` vs `dict[str, str]`
+inference on `fix5_paths` and a `list[object]` vs `list[str]` inference on `argv5`) were fixed
+with explicit type annotations (`dict[str, dict[str, Any]]`, `list[str]`) before this record
+was written — `offset_subset_reads.py` and `SYNTH_make_synth.py`'s own round-5 code are both
+clean.
+
+### 5. Real mode — explicitly NOT run on the registered population
+
+Per the task boundary for this round: `offset_subset_reads.py` was never invoked without
+`--dry-run` against `covariate_table_{iiib,joint_r1}.csv`/`influence_{iiib,joint_r1}.csv` (the
+registered population). The only real-mode (non-`--dry-run`) invocations this round were
+`osr.main()` calls inside `SYNTH_make_synth.py`'s FIX 5 section, against the hand-built
+30-event synthetic fixture exclusively (§3 above) — consistent with this script's own
+docstring mandate ("the build record for this script exercises it ONLY on a synthetic
+table, never on the registered population") and with every prior round's practice. Whether
+the round-4 crash is now actually fixed on the REAL, registered data — i.e. whether a real,
+non-dry-run invocation of the §8 launch block (PIN CORRECTION 3, round 5, rewritten above)
+reaches a `disposition` value at all, and if so which — remains for a fresh disjoint reader to
+determine, per §3's three-agent phase design; this record supplies no such number.

@@ -74,3 +74,13 @@ relaunch (dead on the login node, libpython) · seed61000 timeout-log fetch (R9)
 Cluster: 0 CPU-h (no job submitted). Local: ≈ 0.5 CPU-h (aggregations, reads, bootstrap).
 Top-tier identities: chair, wave-3 prereg author, addendum prereg author, end-verifier (4 across two
 workflows; ≤3 concurrent). Sonnet agents: ~55.
+
+## 7. Batch 2 additions (rows #349–#362; SSH lost at 23:03, row #357/#359)
+| # | ruling | chair's provisional reading | inputs |
+|---|---|---|---|
+| R14 | What "catalogue-hosted" MEANS for class-conditioned reads (exact-zero support vs materiality threshold vs continuous f_cat): the relative label re-splits the post-flip re-baseline 1241/347 | Register f_cat as a continuous covariate everywhere; keep exact-zero for backward comparability with a disclosed fragility | #350, #362 |
+| R15 | m-offset-subset: INTERMEDIATE by the literal table; primary family SUBSET-IDENTIFIED — the 82 offset-carrying events are high-z (AUC 0.87), few-candidate, low-f_cat, low-SNR; top-z decile leave-out +0.086 | Ratify SUBSET-IDENTIFIED for the primary with the 1D data-contract gap disclosed; open Graph 2 branch "high-z incomplete-catalogue balance" as the mechanism register node | #362 |
+| R16 | S0-B provenance: the S0-B driver's iiib venue differs from production in the catalogue leg (θ-sites has zero effect; suspect the 2D-survival pin); R4b job prepared, not submitted | Submit R4b first thing; if byte-identical, the θ-pull read is on the pre-[P3-2D] counterfactual and d-photoz-leverage needs a re-run on production (≈2 CPU-h) | #355 |
+| R9′ | Timeout selection downgraded to one axis (M), 0.92 % of draws; r-timeout-selection Q1/Q2 registered; p0 axis = the D1 bound | Approve Q2 (zero-compute) after R15; Q1 after the pool build-log fetch | #358 |
+| R17 | Sealed-mock m1 (job 6790859) and S0-C (6790794) ran unattended; reads in the morning | Retrieve via cluster/agent_ssh.sh; the m1 binary read and the S0-C derivative return as dossiers | #354, #357 |
+Chair decisions added to the veto list: D6 batch-2 execution under the renewed standing (#349); D7 S0-C cap on the allocation basis (#352); D8 m1 pool pin corrected to mix200k (#357); D9 the offset-subset blindness note (#360); D10 the ssh-guard hook + wrapper (#359, code change under the author's "ensure it does not happen again").

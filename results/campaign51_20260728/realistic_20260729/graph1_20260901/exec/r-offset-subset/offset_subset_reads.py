@@ -28,21 +28,31 @@ refuse to do so unless the covariate table's sha256 (recomputed here) equals the
 supplied via ``--table-sha256`` (the value phase A committed to BUILD_RECORD.md
 *before* phase B's first run).
 
-Materiality data contract (documented here because the registered launch block
-(REGISTRATION_DRAFT.md §8) does not pass phase C a separate path to the raw
-``event_likelihoods.csv``): for the PRIMARY family only (iiib / combined_with_bh),
-``influence_vectors.csv`` (phase B) must carry, per event_idx, the physics-floored
-per-event log-likelihood at every H_GRID_41 node, as self-describing columns named
-``logL_h<value>`` with ``<value>`` the grid h formatted to 6 decimals (e.g.
-``logL_h0.730000``). This lets phase C reconstruct the full-sample and any
-stratum-removed log-posterior (``logpost(h) = sum_e logL_e(h)``) and its T0 moments
-(gradient-trapezoid weights, no re-floor needed) using ONLY the two registered input
-files -- no third path, no re-reading the pinned CSVs. Absence of these columns is an
-INSTRUMENT-DEFECT for materiality only; separation statistics do not need them.
+Materiality data contract (PIN CORRECTION 3, round 5 -- REGISTRATION_DRAFT.md's PIN
+CORRECTIONS section): the built ``influence_{iiib,joint_r1}.csv`` files carry no
+``logL_h<value>`` columns (DESIGN_GATE_formula_rev4.md §5, disclosed), so this script
+takes a THIRD path per venue -- ``--logl-iiib``/``--logl-jr1``, the re-baseline
+``event_likelihoods.csv`` files already md5-pinned by REGISTRATION_DRAFT.md §1 (the
+same files ``build_influence_vector.py`` itself reads and pins) -- and builds the
+per-event 41-node ln L matrix for the PRIMARY family (iiib / combined_with_bh) from
+it directly, at load time, by IMPORTING ``build_influence_vector.py``'s own
+``_load_matrix``/``_md5``/``VENUE_CSV_MD5`` (same frozen T0 convention: physics-floor
+zero handling then log; cited, not re-derived) rather than re-implementing the parse.
+The loaded matrix's rows are then reindexed onto the primary venue's own influence-
+dataframe event order, so ``materiality_for_covariate``'s row-position arithmetic
+lines up with the registered table/influence join. A logL-source md5 mismatch (either
+venue) or a missing event_idx is INSTRUMENT-DEFECT, verified BEFORE any covariate is
+touched; separation statistics do not need this path at all.
 
-CLI: exactly the r-offset-subset launch block (REGISTRATION_DRAFT.md §8), plus
-optional ``--k-<family>`` sanity-check flags (defaulted to the registered banked k,
-§2) that verify ``in_S`` column cardinality without ever re-deriving S.
+CLI (PIN CORRECTION 3, round 5): ONE invocation covers BOTH venues --
+``--table-iiib``/``--table-sha256-iiib``/``--influence-iiib``/``--logl-iiib`` and the
+``-jr1`` equivalents -- so ``build_report()`` can resolve each of the four registered
+families (iiib_2d, iiib_1d, jr1_2d, jr1_1d) against ITS OWN venue's table/influence
+pair (the round-4 defect: a single-venue invocation left the other venue's
+``{family}_in_S`` column undefined, and the unconditional four-family loop in
+``build_report()`` then raised an uncaught ``KeyError`` -- see READ_RECORD.md §3-§4).
+Plus optional ``--k-<family>`` sanity-check flags (defaulted to the registered banked
+k, §2) that verify ``in_S`` column cardinality without ever re-deriving S.
 """
 
 from __future__ import annotations
@@ -59,6 +69,14 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from scipy.stats import fisher_exact, mannwhitneyu, spearmanr
+
+# PIN CORRECTION 3 (round 5): the primary-family logL matrix is built by reusing
+# build_influence_vector.py's own loader (_load_matrix/_md5/VENUE_CSV_MD5) -- same
+# frozen T0 convention, imported rather than re-implemented. Sibling module in this
+# directory; script's own dir is sys.path[0] when run directly, but insert defensively
+# so `import offset_subset_reads` from elsewhere (e.g. the SYNTH fixture harness) works too.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import build_influence_vector as biv  # noqa: E402
 
 FloatArray = npt.NDArray[np.float64]
 
@@ -368,6 +386,54 @@ def load_influence(path: Path, venue: str, family_k: dict[str, int]) -> tuple[pd
     logl_cols = [logl_cols[i] for i in order]
     logl_matrix = df[logl_cols].to_numpy(dtype=np.float64)
     return df, h_grid, logl_matrix
+
+
+def verify_logl_md5(path: Path, venue_key: str) -> str:
+    """PIN CORRECTION 3 (round 5): md5-verify a raw event_likelihoods.csv against the
+    REGISTRATION_DRAFT.md §1 / build_influence_vector.py pin BEFORE any covariate or
+    likelihood value is touched. `venue_key` is "iiib" or "joint_r1" (`biv.VENUE_CSV_MD5`'s
+    own keys). STOP (InstrumentDefectError) on mismatch or a missing file -- never a
+    silent fall-through to an un-pinned file.
+    """
+    if not path.exists():
+        raise InstrumentDefectError(
+            f"logL source file not found for venue {venue_key}: {path}", {"logl_path": str(path), "venue": venue_key}
+        )
+    expected = biv.VENUE_CSV_MD5[venue_key]
+    actual = biv._md5(path)
+    if actual != expected:
+        raise InstrumentDefectError(
+            f"G-4-logL PIN MISMATCH: {venue_key} event_likelihoods.csv md5 does not match the "
+            f"registered pin -- expected {expected}, got {actual} (path={path})",
+            {"logl_path": str(path), "venue": venue_key, "expected_md5": expected, "actual_md5": actual},
+        )
+    return actual
+
+
+def load_primary_logl_matrix(path: Path, venue_key: str, event_order: FloatArray) -> tuple[FloatArray, FloatArray]:
+    """Build the primary-family (2D / combined_with_bh) per-event ln L matrix from a
+    (caller-verified) raw event_likelihoods.csv, reusing `build_influence_vector._load_matrix`
+    by import (same frozen T0 convention: physics-floor zero handling then log; cited, not
+    re-derived) -- then reindex its rows onto `event_order` (the primary venue's own
+    influence-dataframe event order) so `materiality_for_covariate`'s row-position
+    arithmetic lines up with the registered table/influence join. A missing event_idx
+    (present in the join but absent from the logL source, e.g. a physics-floor
+    all-zero-row exclusion in `_load_matrix`) is INSTRUMENT-DEFECT, never a silent
+    row-count mismatch.
+    """
+    h_grid, event_idx_ll, logl, n_excluded = biv._load_matrix(path, "combined_with_bh")
+    idx_lookup = {int(e): i for i, e in enumerate(event_idx_ll)}
+    missing = [int(e) for e in event_order if int(e) not in idx_lookup]
+    if missing:
+        shown = missing[:10]
+        more = f" (+{len(missing) - 10} more)" if len(missing) > 10 else ""
+        raise InstrumentDefectError(
+            f"primary-family ({venue_key}) logL matrix missing event_idx present in the "
+            f"table/influence join: {shown}{more}",
+            {"n_missing": len(missing), "n_excluded_physics_floor": n_excluded},
+        )
+    rows = [idx_lookup[int(e)] for e in event_order]
+    return h_grid, logl[rows, :]
 
 
 def family_in_s_col(family: str) -> str:
@@ -893,23 +959,44 @@ def truth_disagreement_tables(table: pd.DataFrame) -> dict[str, dict[str, int]]:
     return out
 
 
+#: registered family -> which venue's (table, influence) pair it resolves against
+#: (PIN CORRECTION 3, round 5: the round-4 defect was `build_report()` iterating all
+#: four families unconditionally while only one venue's files were ever loaded --
+#: fixed by loading BOTH venues up front and routing each family to its own pair here,
+#: never by re-deriving a family's data from the wrong venue's dataframe).
+def _venue_of_family(family: str) -> str:
+    return "iiib" if family.startswith("iiib") else "jr1"
+
+
 def build_report(
-    table: pd.DataFrame,
-    infl: pd.DataFrame,
+    table_iiib: pd.DataFrame,
+    infl_iiib: pd.DataFrame,
+    table_jr1: pd.DataFrame,
+    infl_jr1: pd.DataFrame,
     h_grid: FloatArray,
     logl_matrix: FloatArray,
     args: argparse.Namespace,
 ) -> dict[str, Any]:
-    event_order = infl.index.to_numpy(dtype=np.float64)
+    venue_tables = {"iiib": table_iiib, "jr1": table_jr1}
+    venue_infl = {"iiib": infl_iiib, "jr1": infl_jr1}
 
-    join_info = check_join_completeness(table, infl)
+    # Primary family (iiib_2d) event order -- what `logl_matrix`'s rows were reindexed
+    # onto by `load_primary_logl_matrix` (main()), so materiality's row-position
+    # arithmetic must key off THIS array, not either venue's raw CSV row order.
+    event_order = infl_iiib.index.to_numpy(dtype=np.float64)
+
+    join_info_iiib = check_join_completeness(table_iiib, infl_iiib)
+    join_info_jr1 = check_join_completeness(table_jr1, infl_jr1)
 
     per_family_sep: dict[str, dict[str, SeparationResult]] = {}
     for family in FAMILIES:
-        per_family_sep[family] = run_family_separation(family, table, infl, args.alpha, args.auc_band, args.or_band)
+        venue = _venue_of_family(family)
+        per_family_sep[family] = run_family_separation(
+            family, venue_tables[venue], venue_infl[venue], args.alpha, args.auc_band, args.or_band
+        )
 
     primary_sep = per_family_sep[PRIMARY_FAMILY]
-    primary_s_index = infl.index[infl[family_in_s_col(PRIMARY_FAMILY)].astype(bool)]
+    primary_s_index = infl_iiib.index[infl_iiib[family_in_s_col(PRIMARY_FAMILY)].astype(bool)]
 
     materiality: dict[str, MaterialityResult] = {}
     for cov, r in primary_sep.items():
@@ -918,7 +1005,7 @@ def build_report(
         mat = materiality_for_covariate(
             cov,
             r,
-            table,
+            table_iiib,
             event_order,
             logl_matrix,
             h_grid,
@@ -960,20 +1047,28 @@ def build_report(
 
     logl_missing = logl_matrix.size == 0
     if any(cov in materiality or (per_family_sep[PRIMARY_FAMILY][cov].verdict == "SEPARATES") for cov in HOLM_FAMILY) and logl_missing:
-        instrument_note = "materiality NOT computable: influence_vectors.csv carries no logL_h* columns for the primary family"
+        instrument_note = (
+            "materiality NOT computable: primary-family (iiib) logL matrix is empty "
+            "(--logl-iiib carried no usable rows)"
+        )
     else:
         instrument_note = None
 
     # g-population (SS6): "every table row joined (0 unmatched)" -- route a join
     # mismatch into INSTRUMENT / NO-READ instead of letting it silently shrink n_s/n_b
-    # for whichever covariates lose rows (DESIGN_GATE_formula_rev2.md SSC).
-    if not join_info["join_complete"]:
-        join_note = (
-            "g-population RED: table/influence join incomplete -- "
-            f"{join_info['n_unmatched_table_only']} table row(s) with no influence match, "
-            f"{join_info['n_unmatched_influence_only']} influence row(s) with no table "
-            "match (0 unmatched required, SS6 g-population)"
-        )
+    # for whichever covariates lose rows (DESIGN_GATE_formula_rev2.md SSC). Checked for
+    # BOTH venues (PIN CORRECTION 3, round 5: each venue is its own join now).
+    join_notes = []
+    for venue_label, join_info in (("iiib", join_info_iiib), ("jr1", join_info_jr1)):
+        if not join_info["join_complete"]:
+            join_notes.append(
+                f"g-population RED ({venue_label}): table/influence join incomplete -- "
+                f"{join_info['n_unmatched_table_only']} table row(s) with no influence match, "
+                f"{join_info['n_unmatched_influence_only']} influence row(s) with no table "
+                "match (0 unmatched required, SS6 g-population)"
+            )
+    if join_notes:
+        join_note = "; ".join(join_notes)
         instrument_note = join_note if instrument_note is None else f"{instrument_note}; {join_note}"
 
     # Finding D: wire the g-censoring null-rail gate (and, generically, any other
@@ -1026,9 +1121,14 @@ def build_report(
 
     report: dict[str, Any] = {
         "meta": {
-            "table_path": str(args.table),
-            "table_sha256": args.table_sha256,
-            "influence_path": str(args.influence),
+            "table_path_iiib": str(args.table_iiib),
+            "table_sha256_iiib": args.table_sha256_iiib,
+            "influence_path_iiib": str(args.influence_iiib),
+            "logl_path_iiib": str(args.logl_iiib),
+            "table_path_jr1": str(args.table_jr1),
+            "table_sha256_jr1": args.table_sha256_jr1,
+            "influence_path_jr1": str(args.influence_jr1),
+            "logl_path_jr1": str(args.logl_jr1),
             "alpha": args.alpha,
             "auc_band": args.auc_band,
             "or_band": args.or_band,
@@ -1036,16 +1136,20 @@ def build_report(
             "decile": args.decile,
             "null_draws": args.null_draws,
             "null_seed": args.null_seed,
-            "n_events": len(table),
+            "n_events_iiib": len(table_iiib),
+            "n_events_jr1": len(table_jr1),
             "primary_family": PRIMARY_FAMILY,
             "logl_columns_present": not logl_missing,
         },
-        "family_k": {fam: int(infl[family_in_s_col(fam)].astype(bool).sum()) for fam in FAMILIES},
+        "family_k": {
+            fam: int(venue_infl[_venue_of_family(fam)][family_in_s_col(fam)].astype(bool).sum()) for fam in FAMILIES
+        },
         "separation": {fam: {cov: sep_to_dict(r) for cov, r in results.items()} for fam, results in per_family_sep.items()},
         "materiality": {cov: mat_to_dict(m) for cov, m in materiality.items()},
         "r14_class_label_line": r14,
         "gates": {
-            "g_population": join_info,
+            "g_population_iiib": join_info_iiib,
+            "g_population_jr1": join_info_jr1,
         },
         "iiib_1d_disposition_check": {
             "iiib_1d_disposition": iiib_1d_disposition,
@@ -1053,16 +1157,16 @@ def build_report(
             "primary_disposition_before_this_trigger": primary_disposition_raw,
             "agrees_with_primary": families_agree,
             "note": (
-                "iiib_1d has no logL_h* columns under the current data contract "
-                "(primary-family-only, per module docstring); its materiality is always "
-                "empty, so its own disposition can only read DIFFUSE-IN-COVARIATES or "
-                "INTERMEDIATE, never SUBSET-IDENTIFIED."
+                "iiib_1d has no logL matrix of its own under the current data contract "
+                "(primary-family-only, --logl-iiib feeds iiib_2d exclusively, per module "
+                "docstring); its materiality is always empty, so its own disposition can "
+                "only read DIFFUSE-IN-COVARIATES or INTERMEDIATE, never SUBSET-IDENTIFIED."
             ),
         },
         "secondaries": {
-            "spearman_d_e_vs_continuous": spearman_secondaries(table, infl, PRIMARY_FAMILY),
-            "class_composition_S": class_composition_counts(table, primary_s_index),
-            "truth_disagreement_2x2": truth_disagreement_tables(table),
+            "spearman_d_e_vs_continuous": spearman_secondaries(table_iiib, infl_iiib, PRIMARY_FAMILY),
+            "class_composition_S": class_composition_counts(table_iiib, primary_s_index),
+            "truth_disagreement_2x2": truth_disagreement_tables(table_iiib),
         },
         "disposition": {
             "value": disposition,
@@ -1082,10 +1186,20 @@ def build_report(
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="r-offset-subset phase C: registered read")
-    p.add_argument("--table", type=Path, required=True)
-    p.add_argument("--table-sha256", type=str, required=True)
-    p.add_argument("--influence", type=Path, required=True)
+    """PIN CORRECTION 3 (round 5): ONE invocation takes BOTH venues -- the root cause
+    of the READ_RECORD.md §3-§4 crash was a single-venue CLI feeding `build_report()`'s
+    unconditional four-family loop. `--logl-{iiib,jr1}` are the re-baseline
+    `event_likelihoods.csv` files (md5-pinned, REGISTRATION_DRAFT.md §1) the materiality
+    stage now reads directly (see module docstring)."""
+    p = argparse.ArgumentParser(description="r-offset-subset phase C: registered read (both venues)")
+    p.add_argument("--table-iiib", type=Path, required=True)
+    p.add_argument("--table-sha256-iiib", type=str, required=True)
+    p.add_argument("--influence-iiib", type=Path, required=True)
+    p.add_argument("--logl-iiib", type=Path, required=True)
+    p.add_argument("--table-jr1", type=Path, required=True)
+    p.add_argument("--table-sha256-jr1", type=str, required=True)
+    p.add_argument("--influence-jr1", type=Path, required=True)
+    p.add_argument("--logl-jr1", type=Path, required=True)
     p.add_argument("--alpha", type=float, default=0.05)
     p.add_argument("--auc-band", type=float, default=0.20)
     p.add_argument("--or-band", type=float, default=3.0)
@@ -1109,7 +1223,14 @@ def _write_instrument_defect(exc: InstrumentDefectError, args: argparse.Namespac
     print(f"INSTRUMENT-DEFECT: {exc.message}")
     if not args.dry_run:
         report = {
-            "meta": {"table_path": str(args.table), "influence_path": str(args.influence)},
+            "meta": {
+                "table_path_iiib": str(args.table_iiib),
+                "influence_path_iiib": str(args.influence_iiib),
+                "logl_path_iiib": str(args.logl_iiib),
+                "table_path_jr1": str(args.table_jr1),
+                "influence_path_jr1": str(args.influence_jr1),
+                "logl_path_jr1": str(args.logl_jr1),
+            },
             "disposition": {
                 "value": "INSTRUMENT-DEFECT",
                 "named_covariates": [],
@@ -1128,52 +1249,87 @@ def main(argv: list[str] | None = None) -> int:
     family_k: dict[str, int] = {fam: getattr(args, f"k_{fam}") for fam in FAMILIES}
 
     try:
-        check_table_hash(args.table, args.table_sha256)
-        venue = detect_venue(args.table, args.influence)
-        active_families = VENUE_FAMILIES[venue]
-        table = load_table(args.table)
-        infl, h_grid, logl_matrix = load_influence(args.influence, venue, family_k)
+        # G-4 blindness hash, BOTH tables (item 2).
+        check_table_hash(args.table_iiib, args.table_sha256_iiib)
+        check_table_hash(args.table_jr1, args.table_sha256_jr1)
 
-        # Item 2, belt-and-suspenders: with `check_covariate_schema` already gating
-        # `load_table`, `table.columns` covers every registered covariate by
-        # construction -- this recomputes the same check as a regression guard, so
-        # a future edit that weakens the schema pre-flight still cannot reach
-        # `build_report()`/`disposition_for()` with a partially-populated table
-        # (DESIGN_GATE_formula_rev3.md finding 4.2's silent-DIFFUSE-IN-COVARIATES
-        # failure mode).
-        missing_covariates = [c for c in list(HOLM_FAMILY) + list(REPORTED_ONLY) if c not in table.columns]
-        if missing_covariates:
+        venue_iiib = detect_venue(args.table_iiib, args.influence_iiib)
+        if venue_iiib != "iiib":
             raise InstrumentDefectError(
-                f"covariate table missing registered covariate(s) after schema mapping: {missing_covariates}",
-                {"missing_covariates": missing_covariates},
+                f"--table-iiib/--influence-iiib resolved to venue {venue_iiib!r}, not 'iiib' -- "
+                "refusing to guess which file belongs to which venue.",
+                {"table_path": str(args.table_iiib), "influence_path": str(args.influence_iiib), "detected_venue": venue_iiib},
             )
-        for fam in active_families:
+        venue_jr1 = detect_venue(args.table_jr1, args.influence_jr1)
+        if venue_jr1 != "jr1":
+            raise InstrumentDefectError(
+                f"--table-jr1/--influence-jr1 resolved to venue {venue_jr1!r}, not 'jr1' -- "
+                "refusing to guess which file belongs to which venue.",
+                {"table_path": str(args.table_jr1), "influence_path": str(args.influence_jr1), "detected_venue": venue_jr1},
+            )
+
+        table_iiib = load_table(args.table_iiib)
+        table_jr1 = load_table(args.table_jr1)
+        infl_iiib, _h_unused_iiib, _logl_unused_iiib = load_influence(args.influence_iiib, "iiib", family_k)
+        infl_jr1, _h_unused_jr1, _logl_unused_jr1 = load_influence(args.influence_jr1, "jr1", family_k)
+
+        # Item 2, belt-and-suspenders (both venues): with `check_covariate_schema`
+        # already gating `load_table`, `table.columns` covers every registered
+        # covariate by construction -- this recomputes the same check as a
+        # regression guard (DESIGN_GATE_formula_rev3.md finding 4.2's silent-
+        # DIFFUSE-IN-COVARIATES failure mode).
+        for venue_label, table in (("iiib", table_iiib), ("jr1", table_jr1)):
+            missing_covariates = [c for c in list(HOLM_FAMILY) + list(REPORTED_ONLY) if c not in table.columns]
+            if missing_covariates:
+                raise InstrumentDefectError(
+                    f"covariate table ({venue_label}) missing registered covariate(s) after "
+                    f"schema mapping: {missing_covariates}",
+                    {"venue": venue_label, "missing_covariates": missing_covariates},
+                )
+        for fam in FAMILIES:
+            infl = infl_iiib if fam.startswith("iiib") else infl_jr1
             verify_k(infl, fam, family_k[fam])
+
+        # PIN CORRECTION 3 (round 5): primary-family (iiib_2d) logL matrix, built from
+        # the re-baseline event_likelihoods.csv files -- md5-verified BEFORE use, both
+        # venues (jr1's is verified for parity/disclosure even though only iiib's feeds
+        # materiality: PRIMARY_FAMILY is iiib_2d only, per the registered design).
+        verify_logl_md5(args.logl_jr1, "joint_r1")
+        verify_logl_md5(args.logl_iiib, "iiib")
+        event_order_iiib = infl_iiib.index.to_numpy(dtype=np.float64)
+        h_grid, logl_matrix = load_primary_logl_matrix(args.logl_iiib, "iiib", event_order_iiib)
     except InstrumentDefectError as exc:
         return _write_instrument_defect(exc, args)
 
-    join_info = check_join_completeness(table, infl)
+    join_info_iiib = check_join_completeness(table_iiib, infl_iiib)
+    join_info_jr1 = check_join_completeness(table_jr1, infl_jr1)
 
     if args.dry_run:
-        print(f"venue: {venue}")
-        print(f"table: {args.table} ({len(table)} rows), sha256 OK")
-        print(f"influence: {args.influence} ({len(infl)} rows)")
-        print(
-            f"join: {join_info['n_table_rows']} table rows / {join_info['n_influence_rows']} "
-            f"influence rows joined on event_idx; unmatched table-only="
-            f"{join_info['n_unmatched_table_only']}, unmatched influence-only="
-            f"{join_info['n_unmatched_influence_only']}; join_complete={join_info['join_complete']}"
-        )
-        print(f"logL columns present: {logl_matrix.size > 0} (h_grid n={h_grid.size})")
-        for fam in active_families:
+        print(f"table iiib: {args.table_iiib} ({len(table_iiib)} rows), sha256 OK")
+        print(f"table jr1:  {args.table_jr1} ({len(table_jr1)} rows), sha256 OK")
+        print(f"logL iiib: {args.logl_iiib} md5 OK (h_grid n={h_grid.size})")
+        # jr1 logL loaded only for the md5 pin check above (not wired into materiality);
+        # report its own h_grid size too so the dry-run output discloses both venues.
+        _h_grid_jr1_report, _, _, _ = biv._load_matrix(args.logl_jr1, "combined_with_bh")
+        print(f"logL jr1:  {args.logl_jr1} md5 OK (h_grid n={_h_grid_jr1_report.size})")
+        for venue_label, join_info in (("iiib", join_info_iiib), ("jr1", join_info_jr1)):
+            print(
+                f"join {venue_label}: {join_info['n_table_rows']} table rows / "
+                f"{join_info['n_influence_rows']} influence rows joined on event_idx; "
+                f"unmatched table-only={join_info['n_unmatched_table_only']}, "
+                f"unmatched influence-only={join_info['n_unmatched_influence_only']}; "
+                f"join_complete={join_info['join_complete']}"
+            )
+        print(f"logL columns present: iiib=True (h_grid n={h_grid.size}), jr1=True (h_grid n={_h_grid_jr1_report.size})")
+        for fam in FAMILIES:
+            infl = infl_iiib if fam.startswith("iiib") else infl_jr1
             k = int(infl[family_in_s_col(fam)].astype(bool).sum())
             print(f"  family {fam}: k={k}")
         print("dry-run OK")
         return 0
 
-    report = build_report(table, infl, h_grid, logl_matrix, args)
+    report = build_report(table_iiib, infl_iiib, table_jr1, infl_jr1, h_grid, logl_matrix, args)
     report["meta"]["missing_covariates"] = []
-    report["meta"]["venue"] = venue
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, indent=2, default=str))
     print(f"wrote {args.out}: disposition = {report['disposition']['value']}")

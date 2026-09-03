@@ -3592,3 +3592,17 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(2) The disjoint read** (launched under the standing) **CRASHED in real mode:** `KeyError 'jr1_2d_in_S'` — `build_report` iterates all four families unconditionally while the §8 launch block passes one venue's files; uncaught (outside the INSTRUMENT-DEFECT path), exit 1, no output; `READ_RECORD.md` is an existence report (no aggregate was computed for the primary family before the crash — verified by the reader: the crash occurs at the first cross-venue family). **Chair booking: NO-READ (instrument), revision counter untouched (pre-registration build round).**
 
 **(3) Round 5 launched:** one invocation takes both venues' tables + influence files + the md5-pinned re-baseline `event_likelihoods.csv` (41-node `ln L` for the materiality leave-out under the frozen T0 convention); launch block rewritten as PIN CORRECTION 3 (file arguments only); mandatory real-input dry-run (4 families + `logL` present) → fresh integration re-gate → disjoint read.
+
+## Row #362 — 2026-09-04 ~02:00 CEST — **m-offset-subset READ (Graph 2). All content chair-derived.**
+
+**(1) Round 5** — one invocation over both venues + the md5-pinned re-baseline `ln L` tables (PIN CORRECTION 3); real-input dry-run exit 0 (both sha256, both md5, `1588/1588` per venue, `k 82/94/72/46`, `ln L` present); fresh integration reviewer GREEN (`DESIGN_GATE_formula_rev5.md`: T0 convention shared by import; one `Δ_strat` hand-verified on the fixture). `d-offset-register` **RATIFIED-BY-CHAIR** (conditional satisfied); disjoint read ran ONCE, exit 0 (`READ_RECORD_rev5.md`, `offset_subset_result_read.json`).
+
+**(2) Numbers** (chair re-derived from the built CSVs, MATCH): `iiib` 2D, `k = 82`: **SEPARATES (Holm)** — C4 redshift AUC `0.872` (S median `z 0.85` vs bulk `0.48`; 1D `0.98`; `joint_r1` `0.91`/`0.92`), C10 `log10 M` `0.741`, C7 log candidate count `0.267` (fewer), C3c `log10 f_cat` `0.292` (lower catalogue-leg fraction), C2 exact-zero label OR `0.128` (S `18 %` dark vs `64 %`); **WEAK** C5 cone area `0.65`, C6; **NULL** C1 TRUE in-catalogue (OR `2.1`, `p_holm 0.22`), C3 relative label (2D), C8 outside-cone; **NOT-TESTED** C10b; **reported-only** C11 SNR `0.23`. **Materiality** (159-event decile leave-out, frozen T0, null `99 %` band `±0.010`): top-z decile `Δmean_h = +0.0861` (`1.9×` the oracle `0.046` of removing S), C3c bottom decile `+0.034`, C7 `+0.034`, C10 `+0.005` immaterial. R14 line: labels (a) and (c) separate, (b) does not. All 82 S events pull h DOWN; `ΣS/Σall ≈ 15`.
+
+**(3) Disposition.** Primary `iiib_2d` SUBSET-IDENTIFIED before the 2D/1D-agreement trigger; the trigger fires INTERMEDIATE only because `iiib_1d` has no `ln L` under the launch block (materiality empty by data contract) → **BOOKED INTERMEDIATE by the literal table, primary reading disclosed; fresh RULE R15.**
+
+**(4) Physical picture (facts).** The offset is carried by high-z, low-SNR, few-candidate events with a small-but-nonzero catalogue leg — the depth-skew made event-level; removing the top-z decile over-shoots truth.
+
+**(5) Flags.** **F1** the C2 materiality stratum removed the `level == False` (`606` dark) events although S is enriched in True — enrichment-direction rule suspect for `OR < 1` (verifier asked); **F2** replicate families lack `ln L` → materiality 2-of-3 not evaluable (separation replicates `3/3`).
+
+**(6) Morning docket §7 added** (R14–R17, R9′; D6–D10). End-verifier requested.

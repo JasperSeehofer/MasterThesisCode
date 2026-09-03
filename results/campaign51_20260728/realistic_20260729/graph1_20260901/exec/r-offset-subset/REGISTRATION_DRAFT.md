@@ -275,3 +275,86 @@ be near-empty (production M ≥ 1.33e5, edge 1.70e5) — n unknown until phase A
    listing them per family is therefore not a leak of a blind quantity. The BLIND object of this arm
    is the covariate table (hashed before any join) and, above all, the JOIN itself, which no agent
    has performed. Disclosed; the read proceeds with this note attached.
+3. **PIN CORRECTION 3 (round 5, 2026-09-04):** the round-4 §8 launch block (one `offset_subset_reads.py`
+   invocation per venue) crashed in real mode: `build_report()` iterates all four registered families
+   (`iiib_2d`, `iiib_1d`, `jr1_2d`, `jr1_1d`) unconditionally, but a single invocation's `load_influence()`
+   only derives `{family}_in_S` for the ONE venue's files actually passed on the command line -- an
+   uncaught `KeyError: 'jr1_2d_in_S'` (or the symmetric `iiib_2d_in_S` failure for the other loading
+   order), exit code 1, zero bytes written, no registered aggregate computed (READ_RECORD.md §3-§4, the
+   first real-mode execution on file). Separately, `DESIGN_GATE_formula_rev4.md` §5 disclosed that
+   `influence_{iiib,joint_r1}.csv` carry no `logL_h<value>` columns, so materiality (§4.2) could not be
+   computed under the round-4 data contract even had the crash not occurred. Round 5 fixes BOTH defects
+   with **zero fresh choices** -- same bands, same primary family, same K, same T0 convention -- by
+   changing only the file arguments:
+
+   - **CLI is now ONE invocation covering BOTH venues** (`offset_subset_reads.py` takes
+     `--table-{iiib,jr1}`, `--table-sha256-{iiib,jr1}`, `--influence-{iiib,jr1}`, plus
+     `--logl-{iiib,jr1}`), so `build_report()` can resolve every family against its own venue's
+     table/influence pair instead of the other venue's undefined columns.
+   - **Materiality's third input path** is the re-baseline `event_likelihoods.csv` files already
+     md5-pinned by this draft's §1/§8 (identical to what `build_influence_vector.py` itself pins) --
+     `offset_subset_reads.py` builds the primary-family (iiib / combined_with_bh) per-event 41-node ln L
+     matrix from them by IMPORTING `build_influence_vector.py`'s own `_load_matrix`/`_md5`/
+     `VENUE_CSV_MD5` (same frozen T0 convention, cited not re-derived), md5-verified before use, STOP
+     (`INSTRUMENT-DEFECT`) on any mismatch.
+   - Every registered statistic/threshold/disposition function (`separation_for_covariate`,
+     `holm_correct`, `materiality_for_covariate`, `disposition_for`, `class_label_line`, the g-population
+     and g-censoring gates) is **byte-identical** to the round-4 build -- verified by `ruff`/`mypy` clean
+     and a fresh `--dry-run` on the real inputs (below); only the CLI parsing and the file-to-family/venue
+     routing in `main()`/`build_report()` changed.
+
+   **Six paths + md5s of record (unchanged values, only newly the CLI's own arguments):**
+
+   | arg | path | pin |
+   |---|---|---|
+   | `--table-iiib` | `covariate_table_iiib.csv` | sha256 `90c92026bb7fecff46e5a55e1e2c67a33b424e4b71611ee0d0854576b189f7b0` |
+   | `--influence-iiib` | `influence_iiib.csv` | (unpinned; joined against the hashed table) |
+   | `--logl-iiib` | `retrieved/run_20260902_graph1_headrebaseline_iiib/simulations/diagnostics/event_likelihoods.csv` | md5 `8e6a2c18dc5838dd1d52641589243672` |
+   | `--table-jr1` | `covariate_table_joint_r1.csv` | sha256 `fc2eebe7fa66afbe2e35b0dd09c889be790511a6f5dabce3338969c849fcdf3a` |
+   | `--influence-jr1` | `influence_joint_r1.csv` | (unpinned; joined against the hashed table) |
+   | `--logl-jr1` | `retrieved/run_20260902_graph1_headrebaseline_joint_r1/simulations/diagnostics/event_likelihoods.csv` | md5 `745954a0fdee5f10878fb5e622a06144` |
+
+   (paths relative to `results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-offset-subset/`
+   unless prefixed `retrieved/...`, which is relative to `.../graph1_20260901/`.)
+
+   **§8 phase-C launch block, rewritten (replaces the round-4 per-venue invocation verbatim; every band/
+   threshold/seed below is copied unchanged from the original block):**
+
+   ```
+   uv run python results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-offset-subset/offset_subset_reads.py \
+     --table-iiib results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-offset-subset/covariate_table_iiib.csv \
+     --table-sha256-iiib 90c92026bb7fecff46e5a55e1e2c67a33b424e4b71611ee0d0854576b189f7b0 \
+     --influence-iiib results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-offset-subset/influence_iiib.csv \
+     --logl-iiib results/campaign51_20260728/realistic_20260729/graph1_20260901/retrieved/run_20260902_graph1_headrebaseline_iiib/simulations/diagnostics/event_likelihoods.csv \
+     --table-jr1 results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-offset-subset/covariate_table_joint_r1.csv \
+     --table-sha256-jr1 fc2eebe7fa66afbe2e35b0dd09c889be790511a6f5dabce3338969c849fcdf3a \
+     --influence-jr1 results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-offset-subset/influence_joint_r1.csv \
+     --logl-jr1 results/campaign51_20260728/realistic_20260729/graph1_20260901/retrieved/run_20260902_graph1_headrebaseline_joint_r1/simulations/diagnostics/event_likelihoods.csv \
+     --alpha 0.05 --auc-band 0.20 --or-band 3.0 --t-mat 0.008 \
+     --decile 0.10 --null-draws 1000 --null-seed 20260904 \
+     --out results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-offset-subset/offset_subset_result.json [--dry-run]
+   ```
+
+   **`--dry-run` re-run on the REAL inputs (this round, real filesystem, BUILD_RECORD_B3.md "FIX 5" mirrors
+   it on a synthetic fixture):**
+
+   ```
+   table iiib: .../covariate_table_iiib.csv (1588 rows), sha256 OK
+   table jr1:  .../covariate_table_joint_r1.csv (1588 rows), sha256 OK
+   logL iiib: .../run_20260902_graph1_headrebaseline_iiib/simulations/diagnostics/event_likelihoods.csv md5 OK (h_grid n=41)
+   logL jr1:  .../run_20260902_graph1_headrebaseline_joint_r1/simulations/diagnostics/event_likelihoods.csv md5 OK (h_grid n=41)
+   join iiib: 1588 table rows / 1588 influence rows joined on event_idx; unmatched table-only=0, unmatched influence-only=0; join_complete=True
+   join jr1: 1588 table rows / 1588 influence rows joined on event_idx; unmatched table-only=0, unmatched influence-only=0; join_complete=True
+   logL columns present: iiib=True (h_grid n=41), jr1=True (h_grid n=41)
+     family iiib_2d: k=82
+     family iiib_1d: k=94
+     family jr1_2d: k=72
+     family jr1_1d: k=46
+   dry-run OK
+   ```
+
+   Exit code 0. No `--out` file written (confirmed by `ls` before/after). No registered aggregate computed
+   by this `--dry-run` invocation -- it still returns before `build_report()` is ever called, identically
+   to round 4's behaviour. This note fixes the launch block only; it rules on nothing (SUBSET-IDENTIFIED
+   vs DIFFUSE-IN-COVARIATES remains undetermined pending a REAL, non-dry-run read by a fresh disjoint
+   reader, per §3's three-agent phase design).
