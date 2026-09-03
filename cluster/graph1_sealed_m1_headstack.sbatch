@@ -26,8 +26,10 @@
 #   CRB:   $WORKSPACE/run_20260729_seed64000_h0p67/simulations/{prepared_,}cramer_rao_bounds.csv
 #          md5 pin = EXPECTED_CRB67_MD5, taken at FIRST TOUCH by the submitter (dossier sec 2/5;
 #          no md5 of this file exists in any record) -- STOP if unset or mismatched.
-#   pool:  $WORKSPACE/injection_pool_depth15_50k (datasets.yaml canonical, h_ref 0.73, 500 files)
-#          = the pool the 0.67 simulate itself used; STOP if the file count != 500, and STOP if
+#   pool:  $WORKSPACE/injection_pool_mix200k_20260728 (PIN CORRECTION, chair 2026-09-04: the
+#          registration's expectation of injection_pool_depth15_50k was a factual error; the
+#          0.67 run's own injections link resolves to this pool -- 707 files, measured at
+#          first touch), STOP if the file count != 707, and STOP if
 #          the 0.67 run dir's own simulations/injections link resolves elsewhere.
 #   cat.:  darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv md5 c52c13b5...
 #
@@ -89,7 +91,7 @@ git rev-parse HEAD > "$RUN_DIR/GIT_COMMIT_AT_RUN.txt"
 
 # --- data staging: the 0.67 pool's CRB + the canonical 0.73 p_det pool ----------------------
 CRB_SRC="$WORKSPACE/run_20260729_seed64000_h0p67"
-POOL="$WORKSPACE/injection_pool_depth15_50k"
+POOL="$WORKSPACE/injection_pool_mix200k_20260728"
 
 for f in cramer_rao_bounds.csv prepared_cramer_rao_bounds.csv; do
     if [[ ! -f "$CRB_SRC/simulations/$f" ]]; then
@@ -105,8 +107,8 @@ if [[ ! -d "$POOL" ]]; then
     exit 1
 fi
 POOL_COUNT=$(ls "$POOL"/injection_h_*.csv 2>/dev/null | wc -l)
-if [[ "$POOL_COUNT" -ne 500 ]]; then
-    echo "STOP: injection pool file count $POOL_COUNT != 500 (datasets.yaml canonical)" >&2
+if [[ "$POOL_COUNT" -ne 707 ]]; then
+    echo "STOP: injection pool file count $POOL_COUNT != 707 (PIN CORRECTION, chair 2026-09-04: injection_pool_mix200k_20260728 measured count)" >&2
     exit 1
 fi
 if [[ -e "$CRB_SRC/simulations/injections" ]]; then

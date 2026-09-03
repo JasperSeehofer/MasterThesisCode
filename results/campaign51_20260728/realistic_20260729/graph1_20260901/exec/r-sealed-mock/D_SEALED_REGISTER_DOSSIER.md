@@ -223,12 +223,43 @@ not bind here — stated so nobody applies it by reflex).
 
 ## 5. Pin slots (filled by the ops agent at first touch, never by this dossier's author)
 
-CRB67_MD5 (`prepared_cramer_rao_bounds.csv`) = ______ · rows = ______ (expected 1343 + header) ·
-`cramer_rao_bounds.csv` md5 = ______ · `simulations/injections` → ______ (expected
-`$WS/injection_pool_depth15_50k`, 500 files) · cluster HEAD at submit = ______ (must contain
-`081b1f28`) · job ID iiib = ______ · job ID joint_r1 = ______ (or "not launched: iiib cost
-= __ core-h > 60").
+CRB67_MD5 (`prepared_cramer_rao_bounds.csv`) = `8e9253fef42f574c569a04a3e19299ab` · rows = 1345
+data rows (`wc -l` 1346 incl. header; expected 1343 + header = 1344 — g-population disclosure,
++2 rows, not a STOP per this dossier's own rule) · `cramer_rao_bounds.csv` (raw) md5 =
+`70cba8a3de9a658e8eef8975c9a61283` · `simulations/injections` → **MISMATCH**: `injections` is a
+real directory (not a top-level symlink) whose per-file symlinks resolve into
+`$WS/injection_pool_mix200k_20260728`, NOT the canonical `$WS/injection_pool_depth15_50k` —
+`readlink -f .../injections` (the sbatch's own check) returns the directory's own path (no
+single-target dereference), which the sbatch compares against `readlink -f $POOL` and would
+correctly STOP on (blocker table item 3, fired). · cluster HEAD at submit = `06a12422` (fast-
+forwarded same session; contains `081b1f28` and matches local HEAD) · job ID iiib = **NOT
+LAUNCHED** — see SUBMIT_RECORD_s0c_m1.md (blockers 1 design-gate-absent and 3 pool-mismatch both
+unresolved) · job ID joint_r1 = not launched (m1 iiib itself not launched, so the ≤60-core-h
+condition on the sibling was never reached).
+
+*Pin taken 2026-09-03/04 by the batch-2 cluster-ops submitter session (read-only ssh commands
+only; no sbatch submitted for this node). Full command transcript and blocker disposition:
+`results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/batch2_cluster_ops/SUBMIT_RECORD_s0c_m1.md`.*
 
 *Stamp: prereg author B, 2026-09-04. Read-only except this file and
 `cluster/graph1_sealed_m1_headstack.sbatch`; no cluster command, no draw, no pool, no edit under
 `darksiren_emri/`. Every reading above is chair-provisional and veto-able.*
+
+## PIN CORRECTION (chair, 2026-09-04)
+
+Chair ruling: §2/§5's expectation that the 0.67 run used `injection_pool_depth15_50k` (500 files)
+was a factual error, not a data problem. **The pin is corrected to the pool the 0.67 run actually
+used: `injection_pool_mix200k_20260728` (707 files).** `cluster/graph1_sealed_m1_headstack.sbatch`
+has been edited accordingly (pool-expectation lines only — comment header §"DATA THIS JOB READS",
+the `POOL=` assignment, and the `POOL_COUNT -ne 500` STOP threshold, now `-ne 707`; every other
+line, including the CRB md5 STOP, the catalogue md5 STOP, and the injections-link mismatch STOP,
+is byte-identical). This resolves blocker #3 of §4 as a corrected registration, not as a run
+disqualification. Blocker #1 (design-gate record) is separately resolved GREEN by
+`exec/r-sealed-mock/DESIGN_GATE_computability_m1.md`.
+
+Re-measured at this pin correction (batch-2 cluster-ops submitter session): `injections` dir file
+count 707; `injection_pool_mix200k_20260728` file count 707 (match); pool file-list md5
+`a1dffdf561c51c8c778dce115c5fb371` (no manifest file exists in the pool dir); CRB67 md5 and row
+count unchanged from the §5 pin (`8e9253fef42f574c569a04a3e19299ab`, 1345 data rows). Full
+transcript: `PIN_RECORD.md` (appended) and
+`exec/batch2_cluster_ops/SUBMIT_RECORD_m1.md`.
