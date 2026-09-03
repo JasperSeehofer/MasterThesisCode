@@ -42,3 +42,12 @@ Not ILLEGITIMATE (ρ < 0.5), not FLOOR-CONSISTENT (ρ > 0.2), powered on both le
    per dark event on the matched channel is the first registered number for this object.
 5. Cost: ≈ 0.2 CPU-h local; zero cluster. Registration revision counter: 0 consumed (the four rounds
    were pre-registration build/gate rounds, not post-disposition re-registrations).
+
+## ERRATA (end-verification appendix D10/D11, 2026-09-03 ~23:45)
+- D10: the g-precision disclosure "False, rel 5.5e-3" is a filename bug (`f"{h:.2f}"` maps 0.725→_0_72,
+  0.735→_0_73); against the correct selection_tables_h_0_725/0_735.json the relative differences are
+  5.5e-8 / 3.5e-8 → within tolerance. Non-gating; disclosure text corrected here; script fix is a
+  maintenance item.
+- D11: draft §4 row (b) is 0.2 < ρ < 0.5 (strict); the chair wrote "≤". Immaterial at ρ = 0.257.
+- End-verifier confirms: s_M is the same quantity in both venues (identical 19-column header; β̄(h) =
+  D̃φ − αφ numerically identical production vs every harness universe at all three stencil nodes).

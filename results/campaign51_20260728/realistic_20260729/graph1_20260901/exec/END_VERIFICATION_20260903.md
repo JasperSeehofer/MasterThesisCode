@@ -82,3 +82,29 @@ None decisive. Absent as the readers said: byte-pin script (S3), `global_denom_*
 - S0-B chair §4 "population-ROBUST … physics identical" — D3 (labels robust: yes; physics identical to baseline: no).
 - Cone chair "two rows fire → INTERMEDIATE" — literal §4 yes; §2's own resolution rule (book on leave-out) not applied; D4.
 - Dossier item 1 presents charter-clause conflict but not the failed C0/T-ID parity (rd-s0b-parity STOP) — D3.
+
+---
+## ADDENDUM — m-completion-residual (rev 4), appended 2026-09-03 late
+
+Re-derived from raw: production re-baseline CSV + `seed61000/prepared_cramer_rao_bounds.csv` (`host_galaxy_index<0` = dark), 67 harness `seed9010NN_S/simulations/{diagnostics/event_likelihoods.csv, prepared_cramer_rao_bounds.csv}`, 67 checkpoint `resolved_flags` blocks. Formula per draft §2.1 (β̄ = D_tilde_phi − alpha_G_phi; stencil 0.725/0.735).
+
+| quantity | reader/chair | mine | match |
+|---|---|---|---|
+| per-event closure max | 2.56e-13 | 8.5e-14 (s_e vs ln combined ≤1.0e-11) | Y |
+| T_prod, SE, Z (n=1512) | −0.19663662, 0.01943993, −10.1151 | −0.19663662, 0.01943993, −10.1151 | Y |
+| S_G, S_dark, π_G, S_all, residual | 1.207935, −0.114203, 0.047859, −0.05092649, 1.4e-17 | same, residual 0.0 | Y |
+| T_harn, SD_U, SE, Z (67 U) | −0.05054134, 0.059931, 0.00732173, −6.9029 | same; range [−0.1901, +0.0883], 79.1 % negative, n_dark 165–184, Σ 11 525 | Y |
+| byte-id (full dark score vs checkpoint) | 67/67 | 67/67 to <1e-12; T_full 0.0082159 / SE 0.0063142 | Y |
+| ρ | 0.25703 | 0.25703 (δρ ≈ 0.045) | Y |
+| δh_M | −0.091323 | −0.091323 | Y |
+| resolved-flags = REGISTERED (13 tokens) | 67/67 | 1 distinct block, all 13 values as listed | Y |
+| disposition literal row | INTERMEDIATE (b) | draft §4 row reads **0.2 < ρ < 0.5** (strict); chair wrote "0.2 ≤ ρ < 0.5" — immaterial at ρ=0.257 | cosmetic |
+
+**Column-semantics check (chair's flag):** production and harness diagnostics CSVs carry the identical 19-column header; both grids contain 0.725/0.73/0.735; `B_num`, `num_log_term_no_bh`, `den_log_term`, `D_tilde_phi`, `alpha_G_phi` are written by the same `bayesian_statistics.py` diagnostics block in both. β̄(h) = D̃φ − αφ is numerically IDENTICAL production vs every harness universe at all three nodes (893324910 / 888403790 / 883510540) — a catalogue-level global, so s_M is the same quantity in both venues. Harness event_idx (176 scored) ⊂ CRB rows (200); dark labels join cleanly.
+
+**Discrepancies**
+- D10 (number/cosmetic, non-gating): §2.9 g-precision "within_tolerance False, rel 5.5e-3" is a filename bug — `f"{h:.2f}"` maps 0.725→`_0_72`, 0.735→`_0_73`, so h=0.72/0.73 full-precision tables were compared to the 0.725/0.735 CSV values. Against the correct `selection_tables_h_0_725/0_735.json`: rel 5.5e-8 / 3.5e-8 → within tolerance. The disclosure text should be corrected; no booking effect.
+- D11 (label): row-text "0.2 < ρ < 0.5" in draft vs "0.2 ≤ ρ" in chair; row (c) is "ρ ≤ 0.2", so the boundary at exactly 0.2 belongs to (c) — chair's paraphrase is the wrong side. Immaterial here.
+- Note (context, not a discrepancy): δh_M = −0.091 magnitude > rail −0.063 — as the chair says, linear-response over-prediction; same class of mismatch as D4 (cone).
+
+Bookings: INTERMEDIATE (b) is the literal sole-firing row — supported. Rail disclosure 14.9 %/20.9 % carried (disposition_role None) — consistent with registration.
