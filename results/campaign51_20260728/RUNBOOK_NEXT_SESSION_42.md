@@ -6,18 +6,14 @@ watchers that DIED with the old session — §1 is the very first thing to do.
 
 ## 1. FIRST ACTIONS — re-arm the watchers (nothing else before this)
 
-1. **m-s3 cell S (LOCAL process, survives the restart):** PID in
-   `graph1_20260901/exec/m-s3-postflip-coverage/pidS... ` — actually inv-1 PID file is
-   `pids_inv1.txt` (first number = cell S, PID 2428302), log `cellS_inv1.log`, work root
-   `tree2_20260830/b8_cal_harness_work_s4_postflip/`. At handoff: ~60/100 universes (n_U_min=60
-   floor CROSSED → read-valid whenever it stops). Its 24h `--max-wall-s` expires ~2026-09-03
-   10:55 CEST → it will stop `wall_limited` and write `_run_status_S.json`. THE FROZEN RULE
-   (r-b82-s4 §3, ratified row #301 item 2): resume-to-complete allowed, ≤3 invocations —
-   **invocation 2 launch** (from REPO ROOT — the catalogue path is cwd-relative, row #288/#320
-   gotcha): `nohup .venv/bin/python results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness.py
-   --work-root <ABSOLUTE work root> --N 200 --cell S --seed-block 901000 --n-universes 100
-   --max-wall-s 86400 > exec/m-s3-postflip-coverage/cellS_inv2.log 2>&1 &` (checkpoints skip
-   automatically). Cell T is COMPLETE (25/25, row #326) — do not touch its work.
+1. **m-s3 cell S: CLOSED at n_U = 67 — do NOT resume (author ruling, row #333).** Invocation 1
+   ended `wall_limited` (67/100 universes, wall 87 016 s); no local process survives. The
+   `n_U_min = 60` floor was crossed, so the cell is read-valid. The author ruled "Read out at
+   n_U=67 / never invoke cell S again" — invocations 2 and 3 of the frozen rule (r-b82-s4 §3,
+   row #301 item 2) are FORFEIT BY RULING, not exhausted. **There is no watcher to re-arm.**
+   → go straight to aggregation + `rd-s3-readout` (§4 item 1), which must report n_U = 67, not
+   the design target of 100, and must disclose `stopped_reason: wall_limited`. Cell T is
+   COMPLETE (25/25, row #326) — do not touch its work.
 2. **S0-B production: COMPLETE (rows #330–#332).** Job 6779532, 5/5 COMPLETED; out-root
    `graph1_20260901/exec/m-s0b-production/s0b_run_20260902` on the cluster (925M). Chair-verified:
    production Σφ/Σ_4D loaded, registered config verbatim, single-h design → the ~7.5-min/node cost
@@ -48,13 +44,13 @@ watchers that DIED with the old session — §1 is the very first thing to do.
 
 ## 3. OPEN AUTHOR WORDS (docket item 12, rows #328): 12a backup destination for the 159GB
 sole-copy ~/emri-archive (TOP PRIORITY) · 12b cluster evacuation before Sep 23 (~250GB,
-0 extensions) · 12c disk culls · 12d DATA_INVENTORY commit · 12e merge→main (112 ahead) ·
+0 extensions) · 12c disk culls · ~~12d DATA_INVENTORY commit~~ [CLOSED row #333] · 12e merge→main (112 ahead) ·
 12f safe builds (renderer/readout/utilities now; EvaluationConfig after merge) · 12g docs sync.
 Health scan: `graph1_20260901/health_scan/` (synthesis + 4 lenses + archive-fix record).
 
 ## 4. Then-next queue (graph order)
 
-1. Cell S concludes → aggregation (`--score-only --population 200` per cell +
+1. Cell S is CLOSED at n_U = 67 (row #333) → aggregation NOW (`--score-only --population 200` per cell +
    `--score-only-ratio-t-s`, from repo root) → **rd-s3-readout** (three-valued existence;
    the two design-gate caveats routed there: general-n exact-KS computed externally; the
    binom_bands normal-approx-vs-"exact" label, row #303) → F value → **r-completion-residual +
@@ -84,3 +80,79 @@ Orchestrator = chair: delegates writes/runs (sonnet for mechanical, top-tier onl
 derivation/prereg/decisive verification, ≤4 identities per batch), reviews, adjudicates, commits.
 Gate-panel law: no science read without green-or-waived stamps. Every event = a ledger row.
 The author's autonomy grant (row #325) stands: decide-and-flag, veto reverts.
+
+## 7. DEVICE TRANSFER — what is `thinkpad`-only (audited 2026-09-03)
+
+**Verdict: switching devices is possible for every open thread, but ONLY after the transfer
+manifest below is executed. Nothing here is a blocker; three items are silently lossy if
+skipped.** The audit was run because "continue on another device" was proposed; the numbers
+are as-measured on 2026-09-03, not carried over from the 2026-09-02 storage register.
+
+### 7.1 Already portable (in git, pushed to `origin/fix/p32d-classg-venue-repair`)
+
+HEAD `82599c91`, **0 unpushed commits**. All code, all runbooks 1–42, `BIAS_HISTORY_LEDGER.md`
+rows #1–#332, every registration/prereg/readout record, and 5 289 tracked files under
+`results/`. A fresh clone + `uv sync --extra cpu --extra dev` reconstructs the whole *decision*
+record. **The scientific state of record is device-independent — only data and in-flight
+process state are not.**
+
+### 7.2 Uncommitted work — STRANDED unless committed before the switch
+
+| Path | Size | What it is |
+|---|---|---|
+| `DATA_INVENTORY.md` (modified) | +145 lines | The entire **Local Storage Register** — device-tag convention, the single-filesystem finding, the 2026-09-02 161 GB dedup record, the three VERIFIED-ABSENT datasets, the off-device storage assessment. This is docket item **12d (open author word)**. |
+| `docs/CLAUDE_SCIENCE_BRIEF.md` | 243 lines | External-collaborator briefing (prepared 2026-08-29) |
+| `docs/CLAUDE_SCIENCE_ABSTRACT.md` | 45 lines | Companion abstract |
+| `results/.../ca_rhs_work/ca_rhs_{acceptance,fidelity}_output.json`, `ca_rhs_fidelity_rerun.json` | small | CA-RHS outputs (the surrounding `*_work/` dirs are 5.3 GB of scratch — do NOT commit those) |
+| `selection_tables_h_0_{725,73,735}.json` (repo root) | small | stray selection tables — classify or delete |
+| `scripts/bridge_closure/outputs/f4_specz_decomposition.json` | small | F4 output |
+
+**Note the recursion:** `_run_status_S.json`'s provenance stamp records 1 114 dirty paths at the
+last harness invocation. Every measurement stamped on this box carries "dirty tree" provenance
+until this is cleaned up.
+
+### 7.3 Local-only DATA required to continue (transfer or re-fetch)
+
+| Item | Size | Second copy? | Note |
+|---|---|---|---|
+| `darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv` | **1.68 GB** | `bwuni` (copy of record) | **Hard requirement** for the b8 harness and every local evaluation. Gitignored. Pinned `REDUCED_CATALOGUE_MD5 = c52c13b5cab61f6b3f04bbe202550969` (`validation/correspondence_1d.py:313`) — **verify the md5 on the new device before any run** (dataset-pinning rule; a stale local catalogue already caused one silent-corruption incident). |
+| **Cell-S/T resume state** — `tree2_20260830/b8_cal_harness_work_s4_postflip/universe_seed*_{S,T}.json` (92 files) + `_run_status_{S,T}.json` + `_gridsplit_check_verified.json` | **13 MB** | none | See §7.4 — the good news of this audit. |
+| `realistic_20260729/seed61000/` (staged pool + raw CRB) | 57 MB | `bwuni` (expiring) | md5-manifest-verified |
+| `darksiren_emri/galaxy_catalogue/GLADE+.txt` | 6.0 GB | GLADE+ upstream | only needed to *rebuild* the reduced catalogue — re-download instead of transferring |
+| `results/campaign51_20260728/realistic_20260729/` gitignored blocks (`wave*/posteriors_with_bh_mass/`, retrieved run dirs, harness scratch) | ~200 GB | `bwuni`, **expires 2026-09-23, 0 extensions** | Not needed for the queued threads (S0-B reads retrieve fresh from the cluster). Needed only to re-open a *banked* posterior locally. Do not bulk-transfer. |
+| `~/emri-archive/` | **159 GB, SOLE COPY** | **NONE** | Docket item **12a**. ⚠️ **Switching devices does not move this and does not reduce its risk** — it stays on `thinkpad`, still unbacked, still one NVMe failure from total loss. A device switch is not an answer to 12a. |
+
+### 7.4 The in-flight measurement IS portable (13 MB, not 46 GB)
+
+`m-s3` cell S: **invocation 1 has ENDED** — `_run_status_S.json` reports
+`stopped_reason: wall_limited`, `n_done_this_invocation: 67`, wall 87 016 s. The `n_U_min = 60`
+floor is CROSSED, so the cell is **read-valid right now**; invocation 2 (of the ≤3 allowed by the
+frozen rule r-b82-s4 §3, row #301 item 2) is optional, not blocking. No local process is running
+(PID 2428302 is gone) — nothing is lost by powering down `thinkpad`.
+
+The harness resumes by skipping seeds whose checkpoint exists (`checkpoint_path()` →
+`universe_seed{seed}_{cell}.json`, harness l.1127). Those 92 JSONs total **13 MB**. The 46 GB
+work root is per-universe scratch (`seed901058_S/` 1.7 GB, etc.) plus regenerable
+`draw_weight_cache/` (477 MB) and `precompute_cache/`. **So the resume state moves in seconds.**
+
+✅ **RULED (author, row #333): read out cell S at n_U = 67 and never invoke it again.** The
+alternative — resuming universes 68–100 on the new box — would have made the population
+machine-heterogeneous (not a defect: byte-id gates are same-machine by definition, row #325;
+cross-machine FP drift 1e-16→1e-9 is not a defect, rows #318/#319 — but a provenance fact
+attaching to the readout). Invocations 2–3 are forfeit by ruling. **Consequence for the
+transfer: the 13 MB of checkpoints still travel** (they ARE the measurement), but only as
+read-input for aggregation, never as resume state.
+
+### 7.5 Access + environment on the new device
+
+- `~/.ssh/config` `Host bwunicluster` block (HostName `uc3.scc.kit.edu`, User `st_ac147838`,
+  ControlMaster/ControlPersist 8h) must be copied. **Login needs password + OTP and is
+  author-only** — no session can bootstrap cluster access unaided. The `thinkpad` ControlMaster
+  socket does not travel.
+- `uv sync --extra cpu --extra dev` (needs GSL; `.venv/` is not transferable).
+- Add the new machine to the **Device Registry** in `DATA_INVENTORY.md` §Local Storage Register
+  with its own tag — the convention is that an untagged path is a rumour. `ext-1` is still
+  *(not yet acquired)*; a second laptop is a second *device* but is only *redundancy* for what is
+  actually copied onto it.
+- Disk on the new box: ≥2 GB for the catalogue is trivial; ≥600 GB if the campaign tree is to
+  follow. `thinkpad` is at 87 % (117 GB free of 931 GB) as of 2026-09-03.

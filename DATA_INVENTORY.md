@@ -30,11 +30,15 @@ production run (regenerating injections AND events with the merged code) superse
 
 The 2026-07-01 de-rail demonstration ran in ephemeral `/tmp/seed600_local/` (not in git).
 Durable copies now exist:
-- **Repo:** `results/commission_20260701/redteam/posteriors_per_mode/` — per-mode combined
-  posteriors (prod 0.86 / prod_global 0.60 / local_ratio 0.73 / volume_deconv 0.73 / catonly 0.73)
-  + `crux_results{,_fixed}.json` (commit `1f0e371`).
-- **Home:** `~/data-backups/seed600_local_derail_20260702/` (3.8 GB: full working dirs incl. the
-  474 MB with-BH-mass per-event posteriors, the 494-event CRB subsample, the fixed 8-col catalogue copy).
+- **Repo** [`thinkpad`, ✅ present 2026-09-02, 776 KB]: `results/commission_20260701/redteam/posteriors_per_mode/`
+  — per-mode combined posteriors (prod 0.86 / prod_global 0.60 / local_ratio 0.73 / volume_deconv 0.73
+  / catonly 0.73) + `crux_results{,_fixed}.json` (commit `1f0e371`). **This is in git**, so it is the
+  one genuinely durable piece of the de-rail evidence.
+- **Home** [`thinkpad`, ⚠️ **VERIFIED ABSENT 2026-09-02**]: `~/data-backups/seed600_local_derail_20260702/`
+  (was 3.8 GB: full working dirs incl. the 474 MB with-BH-mass per-event posteriors, the 494-event CRB
+  subsample, the fixed 8-col catalogue copy). The directory `~/data-backups/` does not exist. The
+  "durable copies now exist" claim above therefore holds **only** for the small in-git repo copy; the
+  full working dirs are gone. Not recovered by the 2026-09-02 dedup — this is a separate, earlier loss.
 - **⚠ Ω_m era mismatch (registered 2026-07-10):** the underlying seed600 CRBs were simulated at
   Ω_m = 0.25 (pre-G11) but every post-`bdf5339` evaluation infers at Ω_m = 0.2726 → the venue is
   biased LOW ≈0.3–0.8% (z-graded). **A/B-code-comparison venue only** — see the 2026-07-10
@@ -106,8 +110,9 @@ The single on-disk input the whole pipeline shares — previously untracked here
 
 | Property | Value |
 |----------|-------|
-| **Location (cluster)** | `/pfs/work9/workspace/scratch/st_ac147838-emri/run_phase45_20260501/simulations/` |
+| **Location (cluster)** [`bwuni`] | `/pfs/work9/workspace/scratch/st_ac147838-emri/run_phase45_20260501/simulations/` |
 | **Location (local)** | `simulations/cluster_run_phase45_20260501/cramer_rao_bounds.csv` |
+| **Device** | `thinkpad` — ⚠️ **VERIFIED ABSENT 2026-09-02** (the whole `simulations/` tree is gone from the dev box; reclaimed at some point without a ledger row). Copy of record is `bwuni` only, and that workspace expires 2026-09-23 |
 | **Lineage** | Same population as `prod-seed200-20260401`; CRB rsynced into Phase 45 workspace 2026-05-01 19:44 (no new GPU sims) |
 | **Simulation date (origin)** | 2026-04-01 / 2026-04-02 |
 | **Git commit (simulation)** | `a56e30de` — v1.3 milestone roadmap |
@@ -130,7 +135,7 @@ The single on-disk input the whole pipeline shares — previously untracked here
 
 | Property | Value |
 |----------|-------|
-| **Location (cluster)** | `/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260504_seed300_extension/` |
+| **Location (cluster)** [`bwuni`] | `/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260504_seed300_extension/` |
 | **Submission** | 2026-05-04 (job `4216105` failed, replaced by `4216323`, gpu_h100) |
 | **Git commit (simulation)** | `b110ba7` — verification scaffold |
 | **SLURM tasks** | 50 GPU tasks, `gpu_h100`, BASE_SEED=300 (per-task seed = 300 + array_id) |
@@ -154,6 +159,7 @@ The single on-disk input the whole pipeline shares — previously untracked here
 | Property | Value |
 |----------|-------|
 | **Location (local)** | `simulations/cluster_run_phase46_merged_20260504/cramer_rao_bounds.csv` |
+| **Device** | `thinkpad` — ⚠️ **VERIFIED ABSENT 2026-09-02** (`simulations/` tree gone). No cluster row was ever recorded for the merged CSV → **this dataset may exist nowhere**; it is a local concat, so it is reconstructible from its two parents if those survive |
 | **Lineage** | `phase45-seed200-20260501` (4497 rows, 424 SNR≥20) ⊕ `sim-seed300-extension-20260504` partial (500 rows, 500 SNR≥20) |
 | **Total CRB rows** | 4 997 |
 | **Rows with SNR ≥ 20** | **924** (~2.18× over Phase 45 alone) |
@@ -179,7 +185,7 @@ Historical record of the original simulation campaign. Same data lives in `phase
 
 | Property | Value |
 |----------|-------|
-| **Location (cluster)** | `/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260409_seed200000/` |
+| **Location (cluster)** [`bwuni`] | `/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260409_seed200000/` |
 | **Simulation date** | 2026-04-09 / 2026-04-11 |
 | **Git commit (simulation)** | `d247f8ba` — Phase 34 |
 | **SLURM tasks** | 15 GPU tasks |
@@ -201,6 +207,7 @@ Historical record of the original simulation campaign. Same data lives in `phase
 | Property | Value |
 |----------|-------|
 | **Location (local)** | `simulations/prepared_cramer_rao_bounds.csv` |
+| **Device** | `thinkpad` — ⚠️ **VERIFIED ABSENT 2026-09-02** (`simulations/` tree gone). Regenerable via `prepare_detections.py` from `prod-seed200-20260401` if that CRB survives on `bwuni` |
 | **Origin** | Partial rsync of `prod-seed200-20260401` (542 of 4 497 rows) |
 | **SNR threshold (simulation)** | 15 |
 | **Total rows** | 542 |
@@ -369,3 +376,133 @@ were not named in the provenance-defect task and were not checked for sidecar re
 | **2026-07-26 (five-seed production-stack campaign — PASS on valid-4 basis; CANONICAL config declared)** | `run_20260726_seed{1000,900,2000,3000,90000}_prodstack` (source CRBs: `run_20260703_seed1000`, `run_20260703_seed900` **[INVALID — see below]**, `run_20260707_seed2000`, `run_20260707_seed3000`, `run_20260707_seed90000`) | eval+combine `6dae9d3`; env flags `--normalization_mode generator_marginal --pdet_z_resolved` (pre-dates the `ce6338e` default flip — set explicitly per run) | 41-pt 0.60–0.86 | seed1000 3,454/3,454; seed2000 3,254/3,254; seed3000 3,314/3,314; seed90000 20/20; seed900 20/20 (**invalid pool, see below**) | seed1000 0.7304; seed2000 0.7300; seed3000 0.7297; seed90000 0.7287; seed900 **0.86 RAIL (invalid)** | seed1000 0.7304; seed2000 0.7301; seed3000 0.7298; seed90000 0.7296; seed900 0.8547 (invalid) | Jobs 6044799–6044808 (eval+combine ×5). **Registered 5-seed test: QUALIFIED FAIL** (seed900 rails, criterion 3) — root cause diagnosed as invalid injection-pool provenance (see seed900 row below), not an estimator defect. **Valid-4 (1000/2000/3000/90000) readout, author-ratified 2026-07-26: PASS all criteria** — bias −0.00030±0.00035 (base) / −0.00003±0.00018 (bh_mass), width χ²=8.0 (base, marginal)/3.7 (bh_mass) both VALID, sanity PASS. Full readout + author ratification: `results/lcat_h_dependence_20260725/MULTISEED_READOUT_20260726.md`. **Campaign NO-GO LIFTED on the valid-4 basis**; merge to `main` additionally gated on an independent redteam (math+physics+anti-tuning) review, `results/redteam_20260726/` pending. **`generator_marginal` + `--pdet_z_resolved` declared the CANONICAL production configuration as of `[PHYSICS]` `ce6338e`** (defaults flipped to match; `--no-pdet_z_resolved` for legacy pooled), superseding `volume_deconv` for all production H0 claims. Per the 5-tier Pipeline Change Checklist: the `ce6338e` default flip triggers **no dataset staleness** — every 2026-07-26 prodstack run above already used these exact settings via explicit CLI/env flags, so no re-run is required on account of the flip itself. |
 | **2026-07-26 (seed900 injection pool — DEFECTIVE, dataset-registry flag)** | `$WS/run_20260703_seed900/simulations/injections` | n/a (input-data defect, not a code change) | n/a | n/a | n/a | n/a | **Mark DEFECTIVE.** The `injections` symlink at this path points at a bespoke one-off pool `injection_20260703-112746_seed46910/` (4 task CSVs, ≈204 injections) instead of the canonical `injection_pool_depth15_50k/` (500 task CSVs, 50,000 injections) used by every other Phase-2 seed. Consequence: the z-resolved survival estimator built from it is severely undersampled (node ESS min/median 6/55; 418/726 sky-band cells, 57.6%, below the ESS floor — cf. seed90000 on the canonical pool: ESS min/median 211/3944, 0/726 below floor), which rails the seed900 posterior to h=0.86 (see campaign row above). **Do not evaluate anything against this symlink until re-pointed.** Fix in flight: `run_20260726_seed900_fixpool` re-points at `injection_pool_depth15_50k` (generator-consistency confirmed), eval job 6051189, combine job 6051190, canonical pool relinked and provenance-verified (500 CSVs, era-consistent). This restores the registered n=5 multi-seed test (non-blocking — the campaign verdict already stands on the valid-4 basis above). |
 | **2026-08-31 (wave-3 blind HEAD readout + C0′ gate — A14 NOT MATERIAL; row #283)** | `run_20260830_wave3_headreadout_{iiib,joint_r1}` + `run_20260830_wave3_c0prime_off_{iiib,joint_r1}` (CRB `run_20260729_seed61000`, md5 `9a1f2a14…`; catalogue `c52c13b5…`; joint_r1 realization sha256 `e8f7ab31…`) | eval `1e092e82` | 41-pt 0.60–0.86 (gate: h=0.730 only) | 1588/1588 both venues | 1D 0.600 (both, unchanged) | 2D 0.665 (iiib; joint_r1 0.660→0.665) | Jobs 6746274–6746276 (84 tasks, all COMPLETED, ~6.5 min/task). C0′ gate PASS **bit-identical** both venues (row #281) → banked 2026-08-27 readouts certified as the A14 baseline. Blind readout: **2D Δmean_h +0.002127 (iiib) / +0.003519 (joint_r1), both ≤ T_mat = 0.008 → adoption NOT MATERIAL; 1D exact-zero.** A4 returns to the author pending falsifier (ii). Retrieved to `realistic_20260729/wave3_20260830/`; archive program running (`results/_archive/archive_run_wave2.sh`, wave-2+3 blocks). Also this date: the seed61000 injection pool (707 files) + raw CRB (`a1c34a46…`) staged LOCALLY under `realistic_20260729/seed61000/simulations/` (md5-manifest-verified) for T2.2b — local copies are consumers of the same pins. |
+
+---
+
+## Local Storage Register (added 2026-09-02)
+
+**Why this section exists:** on 2026-09-02 the dev box hit a low-disk warning with **1.0 GB free
+of 931 GB**. This register tracks what run data physically lives on the dev box, what is
+regenerable, and what has no second copy anywhere. Update it whenever a campaign is retrieved
+from the cluster or a local working dir is deleted.
+
+### Device Registry — every location gets a device tag
+
+**Convention (adopted 2026-09-02):** every path in this file carries a `device` tag naming the
+physical machine or medium it lives on. A path without a device tag is not an inventory entry, it
+is a rumour. Tag the *device*, not the *role* — "backup" is a claim about redundancy that only
+holds if two rows name two different devices.
+
+| Tag | Device | Identity | Capacity / free | Backed up? |
+|---|---|---|---|---|
+| `thinkpad` | dev laptop (the machine this repo is checked out on) | hostname `thinkpadseehofer`, machine-id `4140d149…`, NVMe `UMIS RPETJ1T24MHP2QDQ` s/n `SS1D71506X1LC51B069S`, rootfs UUID `2786115f-…` | 931 GB single partition · 160 GB free (2026-09-02) | **NO** |
+| `bwuni` | bwUniCluster 3.0 workspace `emri` | `/pfs/work9/workspace/scratch/st_ac147838-emri/` | scratch | **NO** — and **expires 2026-09-23, 0 extensions left** |
+| `ext-1` | *(not yet acquired)* | — | — | — |
+
+**⚠️ There is currently exactly ONE local device.** `thinkpad` has a single NVMe with a single
+partition carrying `/` and `/home` both. So today, "we have it in two places locally" is never
+true — `results/_archive/` vs `~/emri-archive/`, or repo vs `~/data-backups/`, are two directories
+on one disk. This is precisely the illusion that the 2026-09-02 dedup dissolved (161 GB recovered
+by deleting a "second copy" that protected nothing). **Redundancy starts existing when `ext-1`
+exists.**
+
+**Tagging drift found on adoption (2026-09-02).** Applying device tags to the pre-existing entries
+immediately surfaced three rows asserting local copies that are gone — the whole `simulations/`
+tree and `~/data-backups/`. None had a ledger row recording the deletion. This is the argument for
+the convention: an untagged path silently decays from *fact* to *belief*, and you only find out
+when you go looking for the data.
+
+### ⚠️ The single-filesystem finding (READ THIS FIRST)
+
+`/` and `/home` are **the same partition** (`/dev/nvme0n1p3`, 931 GB). There is therefore
+**no local redundancy of any kind**: `~/emri-archive/` is *not* a backup of
+`results/_archive/`, it sits on the same physical disk. One NVMe failure loses every
+byte in this register simultaneously.
+
+```
+$ df -h /
+/dev/nvme0n1p3  931G  725G  160G  82% /     # after the 2026-09-02 dedup below
+```
+
+### 2026-09-02 dedup action (space recovered: 161 GB, zero data loss)
+
+`results/_archive/` and `~/emri-archive/` held **byte-identical duplicate copies** of four
+seed600 evidence-locker venues (separate inodes — real duplication, not hardlinks).
+Verified before deletion: full `name+size` manifest match on all four trees (948 / 388 / 262 /
+389 files) plus `md5sum` agreement on the three largest files of each tree. The only delta was a
+leftover partial-write temp file `posteriors_with_bh_mass/.h_0_705.json.xTV1f2` (158 MB) in the
+repo copy — junk, not data.
+
+The **repo-side copies were deleted**; `~/emri-archive/` is retained as the copy of record:
+
+| Venue (now only at `~/emri-archive/`) | Device | Size | Status |
+|---|---|---|---|
+| `run_20260628_seed600` | `thinkpad` (**only**) | 56 GB | evidence locker; **A/B-comparison venue only** (Ω_m era mismatch, see 2026-07-10 provenance row) |
+| `run_20260726_seed600_ab_absmarg` | `thinkpad` (**only**) | 35 GB | seed600 gate arm 2 (`absolute_marginal`) |
+| `run_20260726_seed600_ab_genmarg_zres` | `thinkpad` (**only**) | 35 GB | seed600 gate arm 3 (production candidate) |
+| `run_20260726_seed600_ab_vdeconv` | `thinkpad` (**only**) | 35 GB | seed600 gate arm 1 (`volume_deconv`) |
+
+Free space went 1.0 GB → **160 GB**, past the 50 GB floor, without discarding any science data.
+
+### What is on the dev box now (~526 GB project-related)
+
+| Path | Device | Size | Regenerable? | Second copy? | Retention call |
+|---|---|---|---|---|---|
+| `results/campaign51_20260728/realistic_20260729/` | `thinkpad` | 200 GB | from seed + cluster | cluster ws (**expires 2026-09-23**) | **HOT — do not touch.** Backs the live branch and rows #315–#317 |
+| `results/_archive/` (post-dedup) | `thinkpad` | 119 GB | from seed | partly cluster | warm; oldest seed1000/2000/3000 blocks are the first cull candidates |
+| `~/emri-archive/` | `thinkpad` | 159 GB | expensive (GPU re-sim) | **NONE** | **sole copy — highest-priority evacuation target** |
+| `darksiren_emri/galaxy_catalogue/GLADE+.txt` | `thinkpad` | 6.0 GB | re-downloadable from GLADE+ upstream | upstream | keep (needed to rebuild the reduced catalogue) |
+| `results/prod2d_closure_20260818/` | `thinkpad` | 14 GB | from seed | cluster ws (expiring) | warm |
+| `results/run_20260817_fusion_counterfactual/` | `thinkpad` | 13 GB | from seed | cluster ws (expiring) | warm; thread CLOSED (row #119) → cull candidate |
+| `results/run_20260804_frozeng/` | `thinkpad` | 6.5 GB | from seed | cluster ws (expiring) | warm |
+| `results/run_20260805_n2sel1d/` | `thinkpad` | 4.6 GB | from seed | cluster ws (expiring) | warm |
+| `results/run_20260620_seed500_phase50/` | `thinkpad` | 2.3 GB | n/a — **pre-2026-06-20 RETIRED era** | — | **cold — safe to delete** (retired by the mass-convention + L_cat banner above) |
+
+Size is dominated by `posteriors_with_bh_mass/` per-h JSONs (~150–250 MB each × 41 h-values per
+venue); the CRB CSVs and verdict JSONs that actually carry the claims are a rounding error by
+comparison.
+
+### Storage decision put to the author
+
+Three deadlines collide: the disk is 82% full even after the dedup, the cluster workspace
+`emri` **expires 2026-09-23 with 0 extensions left**, and 159 GB currently exists in exactly one
+place. Recommendation:
+
+1. **Buy a ≥2 TB external SSD/HDD.** Total project footprint is ~526 GB and the campaign51 tree
+   grows with every wave; 1 TB would be tight within months. This is the only option that solves
+   the cluster-expiry deadline and the no-backup finding at the same time.
+2. **First evacuation, in priority order:** `~/emri-archive/` (159 GB, no second copy) →
+   everything that must come off the cluster before 2026-09-23 → `results/_archive/` warm blocks.
+3. **Pulling to another machine is not a substitute** unless that machine has ≥600 GB spare and
+   is itself backed up; otherwise it just relocates the single-point-of-failure.
+
+### Off-device storage options (assessed 2026-09-02)
+
+The question "should this go on a big online filesystem instead?" resolves differently for the
+three classes of online storage — the instinct that online storage is "usually used for other
+things" is right about consumer drives and wrong about research archives.
+
+| Option | Fit for this data | Verdict |
+|---|---|---|
+| **Institutional research archive** (KIT LSDF / bwDataArchive-class tape+disk for BW research data) | Purpose-built for exactly this: write-once, read-rarely, multi-year retention of research outputs; typically free at project scale; off-site by construction | ✅ **Best durable copy.** Also the intended answer to "copy to persistent storage before the workspace expires" |
+| **Object storage** (B2 / Wasabi / S3 Glacier-class) | Technically fine; ~500 GB–1 TB is cheap to store. Watch egress pricing — free/cheap egress tiers matter because a restore pulls the whole 500 GB | 🟡 Workable fallback if no institutional option |
+| **Consumer sync drive** (Dropbox / Drive / OneDrive / bwSync&Share) | Poor fit: sync clients degrade badly on the hundreds of thousands of small per-h JSONs; the client wants to mirror data back onto the already-full laptop; quotas are far below 500 GB | ❌ **Not this.** This is the class that is "used for other things" — active documents and sharing, not bulk archive |
+
+**Online storage is complementary to the external disk, not a substitute.** They fail differently:
+a local disk gives fast restores but shares a desk (and a theft/fire/coffee radius) with the
+laptop; an archive is off-site and durable but slow to pull 500 GB back. Holding both, plus the
+working copy on `thinkpad`, is the standard 3-2-1 arrangement (3 copies, 2 media, 1 off-site) and
+is the recommendation.
+
+**⚠️ Open action — identify the institutional archive.** `cluster/README.md:185` instructs
+"copy to persistent storage before expiration" but **never names what that storage is**, and no
+device tag for it exists in the Device Registry. With the `emri` workspace expiring 2026-09-23,
+resolving this is time-critical: ask the bwHPC/KIT support desk what long-term research-data
+archive the account is entitled to, then add it to the Device Registry as its own tag.
+
+**Cheap wins available without buying anything** (~16 GB, author sign-off required — none are
+deletable by an agent unilaterally since `results/` is fully gitignored and therefore
+unrecoverable):
+`run_20260620_seed500_phase50` (2.3 GB, retired era) · `run_20260817_fusion_counterfactual`
+(13 GB, thread closed at row #119) · stray `.json.*` partial-write temp files across
+`posteriors_with_bh_mass/` dirs.
