@@ -1,0 +1,110 @@
+{
+ "g1_catalogue_pin": {
+  "path": "/home/jasper/Repositories/darksiren-emri/darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv",
+  "md5": "c52c13b5cab61f6b3f04bbe202550969",
+  "expected": "c52c13b5cab61f6b3f04bbe202550969",
+  "passed": true
+ },
+ "g1_crb_pin": {
+  "path": "results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv",
+  "md5": "9a1f2a14384a9281c97ca3be312ddaab",
+  "expected": "9a1f2a14384a9281c97ca3be312ddaab",
+  "passed": true
+ },
+ "g1_git_commit_pin": {
+  "checks": {
+   "production": {
+    "path": "results/campaign51_20260728/realistic_20260729/graph1_20260901/retrieved/run_20260902_graph1_headrebaseline_iiib/GIT_COMMIT_AT_RUN.txt",
+    "commit": "1ec9514dd1808c48b18c0792dce558e5bba0f116",
+    "expected_prefix": "1ec9514d",
+    "passed": true
+   },
+   "replicate": {
+    "path": "results/campaign51_20260728/realistic_20260729/graph1_20260901/retrieved/run_20260902_graph1_headrebaseline_joint_r1/GIT_COMMIT_AT_RUN.txt",
+    "commit": "1ec9514dd1808c48b18c0792dce558e5bba0f116",
+    "expected_prefix": "1ec9514d",
+    "passed": true
+   }
+  },
+  "passed": true
+ },
+ "g2_anchor_mker6": {
+  "path": "results/campaign51_20260728/realistic_20260729/p3_2d_fleet_20260825/bc_900121_work/seed900121/simulations/prepared_cramer_rao_bounds.csv",
+  "expected": {
+   "fleet_arm_seed": "bc_900121_work",
+   "seed": 900121,
+   "event_idx": 20,
+   "chord": 0.00167466,
+   "chord_tol": 5e-10,
+   "radius": 0.0014956979545757095,
+   "radius_tol": 1e-15
+  },
+  "found_chord": 0.001674659860716462,
+  "found_radius": 0.0014956979545757095,
+  "expected_chord": 0.00167466,
+  "expected_radius": 0.0014956979545757095,
+  "chord_ok": true,
+  "radius_ok": true,
+  "passed": true
+ },
+ "g2_anchor_cmem_a1": {
+  "path": "results/campaign51_20260728/realistic_20260729/p3_b0_work/bc_900101_work/seed900101/simulations/prepared_cramer_rao_bounds.csv",
+  "expected": {
+   "fleet_arm_seed": "bc_900101_work",
+   "seed": 900101,
+   "event_idx": 0,
+   "chord": 0.0116656941007181,
+   "chord_tol": 5e-10,
+   "radius": 0.0359121946154451,
+   "radius_tol": 1e-15
+  },
+  "found_chord": 0.01166569410071811,
+  "found_radius": 0.035912194615445196,
+  "expected_chord": 0.0116656941007181,
+  "expected_radius": 0.0359121946154451,
+  "chord_ok": true,
+  "radius_ok": true,
+  "passed": true
+ },
+ "g2_passed": true,
+ "g3_join": {
+  "n_total_crb_rows": 1590,
+  "scored_set_size": 1588,
+  "n_in_catalogue": 76,
+  "n_out": 10,
+  "n_in": 66,
+  "p6_log": {
+   "log_path": "results/campaign51_20260728/realistic_20260729/graph1_20260901/retrieved/run_20260902_graph1_headrebaseline_iiib/darksiren_emri_20260902_000633_h_0_73.log",
+   "line": "2026-09-02 00:12:39,636 [bayesian_statistics.py:5903 - p_D()] P6 host-recovery (h=0.7300): 1D 66/76 hosts recovered/in-cat events seen (86.84211%), 2D 66/76 hosts recovered/in-cat events seen (86.84211%)",
+   "h": 0.73,
+   "n_recovered_1d": 66,
+   "n_in_catalogue": 76,
+   "found": true
+  },
+  "p6_numerator_matches_n_in": true,
+  "passed": true
+ },
+ "g4_scatter_law": {
+  "n_finite_mahalanobis2": 76,
+  "n_singular_covariance": 0,
+  "ks_statistic": 0.06614822414302035,
+  "ks_pvalue": 0.8715984091477792,
+  "ks_alpha": 0.05,
+  "ks_passed": true,
+  "f_outside": 0.13157894736842105,
+  "envelope": [
+   0.134,
+   0.325
+  ],
+  "envelope_passed": false,
+  "passed": false
+ },
+ "g_population_disclosure": {
+  "root": "results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness_work_s4_postflip",
+  "n_seed_S": 67,
+  "n_seed_T": 25,
+  "population": 200,
+  "note": "harness 0 mixed rows disclosure; production is a single pool (draft G-invariants)."
+ },
+ "passed": false
+}
