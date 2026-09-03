@@ -48,7 +48,20 @@ Class split at truth: L_cat_no_bh > 0: 1139 · == 0 (dark): 449 (chair count, bo
 
 ## 4. Chair booking (under the row #325 grant; returns inside d-photoz-leverage)
 m-s0b-production: DONE. Disposition **LEVER-LIVE / MIXED / POWERED, REPORTED-ONLY,
-PROVISIONAL-ON-POPULATION** pending (b). c-theta-pull-venue-physics: the registered discriminating
+population-ROBUST** — (b) resolved, see §5. c-theta-pull-venue-physics: the registered discriminating
 measurement did NOT null it; promotion/interpretation is the author's (kill criterion of
 q-theta-pull "production null at |Z|≤3 → not venue physics" is NOT met). d-photoz-leverage dossier
 assembled for the morning once (b) resolves.
+
+## 5. Class-count anchor — RESOLVED (DIAG_COLUMN_FORENSICS.md, chair-accepted)
+The 606→449 shift is DIAGNOSTIC-ONLY: `combined_no_bh` (the likelihood actually used) agrees to
+≤ 1.6e-7 relative on all 157 moved events; `D_tilde_phi`, `alpha_G_phi` bit-identical; the raw
+`L_cat_no_bh` diagnostic crossed the IEEE exact-zero boundary (1e-110 … 2.3e-8) under a
+summation-order perturbation, and the class script (`b3_1_pop_measure.py`) tests `== 0`.
+Consequences: (i) the S0-B dispositions are population-robust (pooled statistics are
+label-invariant; the C-C identity check passes on the 449 either way); (ii) FINDING for the author:
+the "dark class" criterion `L_cat_no_bh == 0` is numerically fragile — every class-labelled read
+in the campaign (B3 population anchors, A12 score-by-class incl. tonight's S3 catalogue-hosted
+localisation) inherits a label that can flip on float noise. A relative-threshold definition
+(e.g. L_cat/combined < 1e-6) is a build item with a g-byte-id requirement on the physics and a
+re-derivation of the affected class counts. Routed to the Graph 1 addendum as a candidate.
