@@ -3510,3 +3510,15 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(2) (ii) sealed-mock m1.** `exec/r-sealed-mock/D_SEALED_REGISTER_DOSSIER.md` + `cluster/graph1_sealed_m1_headstack.sbatch` — 9 decisions tabulated with chair-provisional "ratify-and-flag" (prior `P-A U[0.79,0.82]`; binary TUNED/NOT-TUNED read; `75` core-h cap); NOT covered: the sealed draw, all of m2, the unseal; m1 = 41-task `H_GRID_41` HEAD re-score of the existing `closure_seed64000_h0p67` pool on the production CoR-P CLI, `iiib` first, seeds `777000+TID`, ancestor pin, `joint_r1` only if `iiib ≤ 60 core-h`; the pool exists ONLY on the cluster (`$WS/run_20260729_seed64000_h0p67`), md5 in no record → pin-at-first-touch (`EXPECTED_CRB67_MD5 --export` STOP).
 
 **(3) CHAIR DECISIONS (flagged):** S0-C cap binds on the ALLOCATION basis, set `25 CPU-h` ORCHESTRATOR-DERIVED; both arms go through a computability-only design gate BEFORE submission (the standing requires a green gate); `d-sealed-register` and PA-HIER-34 **RATIFIED-BY-CHAIR conditional on those gates**; workflow launched (2 sonnet gates → 1 sonnet submitter with the md5 pin-at-first-touch).
+
+## Row #353 — 2026-09-04 ~01:35 — **Batch-2 cluster ops.** Record: `exec/batch2_cluster_ops/OPS_RECORD.md`. All content chair-derived.
+
+**(1) Preflight** `VERDICT: READY ✓` (WARN: 76 unregistered dataset dirs, pre-existing); cluster repo fast-forwarded `081b1f28 → 40509193` (= local HEAD at the time; no `uv sync` needed).
+
+**(2) GATE-ACC reporting-only relaunch:** `cluster/graph1_gateacc_relaunch.sbatch` (`cpu_il`, 16 cores, `08:00:00`, `source cluster/modules.sh` fixes the login-node `libpython` failure; chains `--stage gates` `bt` then `bc`, seeds `900101–900133`, out-root `$WS/p3_2d_fleet_aprime_20260902`) → **job 6790465, PENDING at last poll.**
+
+**(3) seed61000 timeout logs fetched** (READ, not evacuation): `2194` log-type files / `730 MB` → `seed61000/cluster_logs_fetch_20260904/` with md5 manifest.
+
+**(4) R4 comparand:** `cluster/graph1_r4_comparand_sites22.sbatch` (the registered CoR-P production CLI from `cluster/graph1_headrebaseline_iiib.sbatch` with exactly two deviations: `--theta_sites 2.2`, `--catalogue_leg_1d_mass_aware off`; single `h = 0.73`) → **job 6790708 COMPLETED** (`6m31s`), retrieved + md5-verified `13/13` → `graph1_20260901/retrieved/r4_comparand_sites22_20260904/` (a first rsync pass dereferenced the job's `cwd/darksiren_emri` symlink and pulled the 1.6 GB catalogue; removed locally, disclosed).
+
+**(5) Reads launched:** R4 three-way diff (`exec/d-photoz-leverage/R4_COMPARAND_READ.md`) and `rd-timeout-bin-seed61000`.
