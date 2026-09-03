@@ -3347,3 +3347,17 @@ COUNTS
 **(4) Fact for the decider.** The harness universe centres `+0.042` ABOVE truth in the flipped no-BH leg, while production sits `−0.063` BELOW (row #286).
 
 **(5) Consequence for Branch G.** F is delivered as a DEFECT-SIGNATURE-context number; `r-completion-residual` + `r-cone-loss` authoring LAUNCHED (one top-tier prereg author, xhigh) under docket item 2.1; launch stays behind `d-completion-register`/`d-cone-register` and docket item 2.2.
+
+## Row #336 — 2026-09-03 — **m-s0b-production READ (Research Graph 1 Branch D). All content chair-derived unless quoted.**
+
+**(1) Readout + re-derivation.** S0-B registered reads DONE: reader record `exec/m-s0b-production/READOUT_RECORD.md` (fresh sonnet reader, ran the ratified driver `--score-only` + hand recomputation) + chair re-derivation `exec/m-s0b-production/CHAIR_REDERIVATION_20260903.md` (chair recomputed every secant from the five per-node `event_likelihoods.csv`: MATCH to the digit).
+
+**(2) Numbers** (N=1588, venue `iiib` CoR-P, h=0.73, config honoured incl. `catalogue_leg_1d_mass_aware=off` on all 5 nodes): no_bh `score_b_re` mean `−0.6822` SEM `0.1293` Z `−5.274`; `score_lns` Z `−7.188` (PA-HIER-33 Bartlett-corrected `−7.101`); with_bh `Z_b −6.204`, `Z_lns −7.333`. Curvature leg: `b̂ = −0.01137` (σ_b `0.00324`), `ln ŝ = −1.165` (σ `0.150`). GATE ENG on the registered `±0.033` pair: `54 %`/`49 %` moved → pass. C-C identity `449` events, `0` deviation.
+
+**(3) Registered disposition** (PA-HIER-31(e)): **B0-B LEVER-LIVE** (both `|Z| > 3`); **B0-M MIXED** (b small, ln s material); **B0-P POWERED both axes**; REPORTED-ONLY cap. `q-theta-pull` kill criterion (production null → not venue physics) NOT met. Interpretation returns to the author (docket item 2.3) as the `d-photoz-leverage` dossier.
+
+**(4) FLAG (a) — charter clause conflict.** Graph §2 panel says a red `g-score-null` on `m-s0b-production` STOPs `d-photoz-leverage` and reopens the instrument question; on production there is no separate control and the score at truth IS the registered measurement (PA-HIER-31(h)). Chair reading (veto-able): instrument certification of record is row #287 (mirror); this red is a measurement, not an instrument red. Put to the author, not applied.
+
+**(5) FLAG (b) — class-count anchor mismatch.** Registered anchor `dark`/`C-C` `606`/`982` (`b3_pop_prediction`, 2026-08-29, commit `d04d9dc9` head readout) vs this run `449`/`1139`. Forensics (`CLASS_COUNT_FORENSICS.md`, sonnet): then∩now `449`, then\now `157`, now\then `0` — one-directional dark→matched; the 157 events have bit-identical `w_G`, `w_tilde_G`, `alpha_G_phi`, `r_Malm`, `D_tilde_phi`, `g_frac`; ONLY `L_cat_no_bh` moved from exactly `0.0` to `1e-110…2.3e-8`; class criterion identical; all four committed-code candidates ruled out; resolved config identical. Pooled Z is label-invariant, so the disposition is booked **PROVISIONAL-ON-POPULATION only for class-labelled reads**. Follow-up diagnostics-column forensics LAUNCHED (`DIAG_COLUMN_FORENSICS.md`).
+
+**(6) Cost note.** `9.98 CPU-h` is the sbatch reservation; `≈2 CPU-h` the elapsed×cores used — both true.
