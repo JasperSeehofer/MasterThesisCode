@@ -92,12 +92,17 @@
   "ks_alpha": 0.05,
   "ks_passed": true,
   "f_outside": 0.13157894736842105,
+  "n_out": 10,
+  "n_total": 76,
   "envelope": [
    0.134,
    0.325
   ],
-  "envelope_passed": false,
-  "passed": false
+  "envelope_nearest_edge": 0.134,
+  "envelope_binom_pvalue": 1.0,
+  "envelope_alpha": 0.05,
+  "envelope_passed": true,
+  "passed": true
  },
  "g_population_disclosure": {
   "root": "results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness_work_s4_postflip",
@@ -106,5 +111,5 @@
   "population": 200,
   "note": "harness 0 mixed rows disclosure; production is a single pool (draft G-invariants)."
  },
- "passed": false
+ "passed": true
 }

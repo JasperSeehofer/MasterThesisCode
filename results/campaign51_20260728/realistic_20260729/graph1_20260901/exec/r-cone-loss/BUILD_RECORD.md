@@ -248,3 +248,144 @@ runner-only — a DIFFERENT agent's job, gated on G-2 anchors GREEN (met) and, p
 build's finding, on the author's disposition of the G-4 envelope miss (RED as
 measured). This build does not rule on that disposition — it is routed to
 `d-cone-register` per the draft's §9 item 2/4.
+
+## FIX (rev1) — G-4 envelope clause changed to exact binomial test
+
+Per `REGISTRATION_DRAFT.md` REVISION 1 item (7): the G-4 envelope clause was an
+asymptotic `f_OUT` in-band comparison, which incorrectly RED-flagged a genuine
+sampling-width miss (10/76 = 0.1316 vs edge 0.134) as an instrument defect. Rev. 1
+restates the clause as the exact two-sided binomial test of `n_OUT` against the
+NEAREST envelope edge under `Binomial(n_total, p)`, alpha = 0.05
+(`scipy.stats.binomtest`). Only the `g4_scatter_law` envelope sub-clause was
+touched; every other gate (G-1, G-2, G-3, the G-4 KS clause, g-population) is
+byte-identical to the pre-fix script.
+
+### Diff (`cone_loss_reads.py`)
+
+```diff
+diff --git a/results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-cone-loss/cone_loss_reads.py b/results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-cone-loss/cone_loss_reads.py
+index 40c87f62..eef64cfb 100644
+--- a/results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-cone-loss/cone_loss_reads.py
++++ b/results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-cone-loss/cone_loss_reads.py
+@@ -87,7 +87,10 @@ ANCHOR_CMEM = {
+     "radius_tol": 1e-15,
+ }
+ 
+-# G-4 sky-scatter envelope (draft §1/§3): closed-form 1.5*sqrt(lambda_max) circle.
++# G-4 sky-scatter envelope (draft §1/§3): closed-form 1.5*sqrt(lambda_max) circle,
++# 13.4% (1-D limit) to 32.5% (isotropic Rayleigh tail). Rev. 1 item 7: the envelope
++# clause is an exact two-sided binomial test of n_out against the NEAREST edge, not
++# an asymptotic f_out-in-band comparison (see g4_scatter_law below).
+ SCATTER_ENVELOPE = (0.134, 0.325)
+ 
+ # G-3 join: production CRB row-index gaps (event_idx not scored in the diagnostics).
+@@ -444,8 +447,18 @@ def run_gates(args: argparse.Namespace) -> dict[str, Any]:
+         )
+         m2_finite = m2[np.isfinite(m2)]
+         ks = stats.kstest(m2_finite, "chi2", args=(2,))
++        n_total_g4 = int(len(census))
++        n_out_g4 = int(census["outside"].sum())
+         f_out = float(census["outside"].mean())
+-        envelope_ok = SCATTER_ENVELOPE[0] <= f_out <= SCATTER_ENVELOPE[1]
++        # G-4 envelope clause (draft §5, rev. 1 item 7): NOT an asymptotic comparison
++        # of f_out against the envelope band. The exact two-sided binomial test of
++        # n_out against the NEAREST envelope edge p - the realised count must not
++        # reject Binomial(n_total, p) at alpha=0.05.
++        nearest_edge = min(SCATTER_ENVELOPE, key=lambda edge: abs(f_out - edge))
++        binom_result = stats.binomtest(
++            n_out_g4, n_total_g4, p=nearest_edge, alternative="two-sided"
++        )
++        envelope_ok = bool(binom_result.pvalue >= 0.05)
+         ks_ok = bool(ks.pvalue >= 0.05)
+         gates["g4_scatter_law"] = {
+             "n_finite_mahalanobis2": int(len(m2_finite)),
+@@ -455,8 +468,13 @@ def run_gates(args: argparse.Namespace) -> dict[str, Any]:
+             "ks_alpha": 0.05,
+             "ks_passed": ks_ok,
+             "f_outside": f_out,
++            "n_out": n_out_g4,
++            "n_total": n_total_g4,
+             "envelope": list(SCATTER_ENVELOPE),
+-            "envelope_passed": bool(envelope_ok),
++            "envelope_nearest_edge": nearest_edge,
++            "envelope_binom_pvalue": float(binom_result.pvalue),
++            "envelope_alpha": 0.05,
++            "envelope_passed": envelope_ok,
+             "passed": bool(ks_ok and envelope_ok),
+         }
+     else:
+```
+
+`uv run ruff check --fix` and `uv run ruff format` were run on the file after the edit;
+ruff reported `All checks passed!` (format reformatted the new binomtest call onto
+three lines, no logic change).
+
+### Dry-run re-run (this fix)
+
+Command: draft §7 launch block, repo root, with `--dry-run` appended, `--out` pointed
+at a NEW file `cone_loss_work/cone_loss_result_rev1.json` (the superseded
+`cone_loss_result.json` at the node root was NOT touched — confirmed unchanged
+mtime/content before and after this run).
+
+```
+Building sky-cone census + running gates G-1..G-4...
+GATES: {
+ "g1_catalogue_pin": { "passed": true, ... },
+ "g1_crb_pin": { "passed": true, ... },
+ "g1_git_commit_pin": { "passed": true, ... },
+ "g2_anchor_mker6": { "passed": true, "found_chord": 0.001674659860716462, "found_radius": 0.0014956979545757095, ... },
+ "g2_anchor_cmem_a1": { "passed": true, "found_chord": 0.01166569410071811, "found_radius": 0.035912194615445196, ... },
+ "g2_passed": true,
+ "g3_join": {
+  "n_total_crb_rows": 1590,
+  "scored_set_size": 1588,
+  "n_in_catalogue": 76,
+  "n_out": 10,
+  "n_in": 66,
+  "p6_numerator_matches_n_in": true,
+  "passed": true
+ },
+ "g4_scatter_law": {
+  "n_finite_mahalanobis2": 76,
+  "n_singular_covariance": 0,
+  "ks_statistic": 0.06614822414302035,
+  "ks_pvalue": 0.8715984091477792,
+  "ks_alpha": 0.05,
+  "ks_passed": true,
+  "f_outside": 0.13157894736842105,
+  "n_out": 10,
+  "n_total": 76,
+  "envelope": [0.134, 0.325],
+  "envelope_nearest_edge": 0.134,
+  "envelope_binom_pvalue": 1.0,
+  "envelope_alpha": 0.05,
+  "envelope_passed": true,
+  "passed": true
+ },
+ "g_population_disclosure": {
+  "root": "results/campaign51_20260728/realistic_20260729/tree2_20260830/b8_cal_harness_work_s4_postflip",
+  "n_seed_S": 67,
+  "n_seed_T": 25,
+  "population": 200,
+  "note": "harness 0 mixed rows disclosure; production is a single pool (draft G-invariants)."
+ },
+ "passed": true
+}
+CENSUS: n_in_catalogue=76 n_OUT=10 n_IN=66 f_OUT=0.1316
+--dry-run: G-1..G-4 + census only (GATES-GREEN). Registered statistic (Delta h_cone/phi_cone/SE/Z) NOT computed (verifier independence, draft §7).
+```
+
+`binomtest(10, 76, p=0.134, alternative='two-sided').pvalue == 1.0` — 10 is the mode
+of `Binomial(76, 0.134)` (expected count = 10.184), so the two-sided p-value is 1
+exactly (no more-extreme outcome exists at the mode). This confirms the draft's own
+diagnosis (§5/rev.1 item 7): the realised `n_OUT` = 10 is not a rejection of the
+envelope's nearer edge under the correct exact test — the earlier RED was the
+asymptotic comparison's error, not an instrument defect.
+
+**Verdict: `cone_loss_gates.json`'s top-level `"passed"` is now `true` — all gates
+(G-1, G-2 both anchors, G-3, G-4 both clauses, g-population disclosure) are GREEN.**
+No STOP. Output written to `cone_loss_work/cone_loss_result_rev1.json` (verdict
+`GATES-GREEN`, `dry_run: true` — no per-event scores, per verifier-independence
+contract). `cone_loss_result.json` at the node root (verdict `INSTRUMENT-DEFECT`,
+pre-fix) is untouched and remains superseded per the draft's instruction not to read
+it.

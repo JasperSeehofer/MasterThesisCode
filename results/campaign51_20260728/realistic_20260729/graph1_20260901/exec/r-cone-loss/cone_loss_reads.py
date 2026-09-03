@@ -87,7 +87,10 @@ ANCHOR_CMEM = {
     "radius_tol": 1e-15,
 }
 
-# G-4 sky-scatter envelope (draft §1/§3): closed-form 1.5*sqrt(lambda_max) circle.
+# G-4 sky-scatter envelope (draft §1/§3): closed-form 1.5*sqrt(lambda_max) circle,
+# 13.4% (1-D limit) to 32.5% (isotropic Rayleigh tail). Rev. 1 item 7: the envelope
+# clause is an exact two-sided binomial test of n_out against the NEAREST edge, not
+# an asymptotic f_out-in-band comparison (see g4_scatter_law below).
 SCATTER_ENVELOPE = (0.134, 0.325)
 
 # G-3 join: production CRB row-index gaps (event_idx not scored in the diagnostics).
@@ -444,8 +447,18 @@ def run_gates(args: argparse.Namespace) -> dict[str, Any]:
         )
         m2_finite = m2[np.isfinite(m2)]
         ks = stats.kstest(m2_finite, "chi2", args=(2,))
+        n_total_g4 = int(len(census))
+        n_out_g4 = int(census["outside"].sum())
         f_out = float(census["outside"].mean())
-        envelope_ok = SCATTER_ENVELOPE[0] <= f_out <= SCATTER_ENVELOPE[1]
+        # G-4 envelope clause (draft §5, rev. 1 item 7): NOT an asymptotic comparison
+        # of f_out against the envelope band. The exact two-sided binomial test of
+        # n_out against the NEAREST envelope edge p — the realised count must not
+        # reject Binomial(n_total, p) at alpha=0.05.
+        nearest_edge = min(SCATTER_ENVELOPE, key=lambda edge: abs(f_out - edge))
+        binom_result = stats.binomtest(
+            n_out_g4, n_total_g4, p=nearest_edge, alternative="two-sided"
+        )
+        envelope_ok = bool(binom_result.pvalue >= 0.05)
         ks_ok = bool(ks.pvalue >= 0.05)
         gates["g4_scatter_law"] = {
             "n_finite_mahalanobis2": int(len(m2_finite)),
@@ -455,8 +468,13 @@ def run_gates(args: argparse.Namespace) -> dict[str, Any]:
             "ks_alpha": 0.05,
             "ks_passed": ks_ok,
             "f_outside": f_out,
+            "n_out": n_out_g4,
+            "n_total": n_total_g4,
             "envelope": list(SCATTER_ENVELOPE),
-            "envelope_passed": bool(envelope_ok),
+            "envelope_nearest_edge": nearest_edge,
+            "envelope_binom_pvalue": float(binom_result.pvalue),
+            "envelope_alpha": 0.05,
+            "envelope_passed": envelope_ok,
             "passed": bool(ks_ok and envelope_ok),
         }
     else:
