@@ -598,3 +598,153 @@ report on those inputs — real mode was not run by this builder, per standing r
 verifier should independently re-run `compute_registered_statistics` and re-derive every field,
 per `agent-verifier-output-is-evidence-not-authority`). `byteid_check.py` (unmodified, independent)
 re-confirms GREEN at 67/67 exact.
+
+## FIX 4 (2026-09-03, fix round 4) — DESIGN_GATE_rev3_computability.md check 5 (RED: F1; AMBER: F3, F4)
+
+Repairs the sole RED (F1) and the two disclosure gaps (F3, F4) rev. 3 flagged. F2 (byte-id
+re-read-vs-re-derive) and F5 (`T0_MEAN_H_TOLERANCE` mislabel) were explicitly out of scope for this
+fix round (F2 is a note for the author, not scored; F5 was not named in the fix instruction) and are
+untouched.
+
+### F1 — resolved-flags equality now has a real code path and feeds `gates_green`/`NO_READ`
+
+Rev. 3's finding: the draft's §5 Invariants line ("the harness's resolved 13 flags equal
+production's CoR-P CLI ... asserted from the checkpoint `resolved_flags` block by the script, else
+NO-READ") had zero runtime enforcement — `resolved_flags_internally_consistent` only checked the 67
+harness checkpoints against each other, never against a production-side reference, and was dead
+output besides.
+
+Searched the repo for a production-side resolved-flags reference (rev. 3's own fix-option (a)/(b)
+split hinged on whether one exists). Found one: `REGISTERED_RESOLVED_FLAGS` in
+`darksiren_emri/validation/correspondence_1d.py` — a module-level dict, keyed off
+`PRODUCTION_FLAGS` for the flags that map to an actual production CLI arg, documented in that
+file's own comment as "The registered production values [the resolved flags] resolve to ... the
+chair-confirmed ... adoptions." Its 13 keys are exactly `_RESOLVED_FLAG_ATTRS` in the same file,
+which is itself documented as the "resolved (post-`auto`-dispatch) engagement record" — i.e. this
+IS the "production's CoR-P CLI" (Correspondence-1D Production) the draft's §5 line names, not a
+per-run production JSON (grepped the retrieved run dirs' `run_metadata_*.json`: their `cli_args`
+carry only a subset of the 13 names as literal CLI flags — e.g. `mass_filter_sigma` and the bare
+`catalogue_numerator_survival` are never CLI-exposed in production, they resolve internally inside
+`BayesianStatistics.evaluate()` — so a raw `cli_args` diff would have manufactured 2/13 spurious
+mismatches on every checkpoint; `REGISTERED_RESOLVED_FLAGS` is the correct, already-resolved
+comparand). Fix option (a) applied, not (b): the reference exists, so it is wired in rather than
+rewriting the invariant to "internal-consistency-only."
+
+Implemented `RESOLVED_FLAG_NAMES` (module constant, the 13 tokens listed by name, asserted equal to
+`REGISTERED_RESOLVED_FLAGS.keys()` at import time so the two cannot silently drift) and
+`check_resolved_flags(harness_root, population, cell)`: reads every matched checkpoint's
+`resolved_flags` block, restricts it to `RESOLVED_FLAG_NAMES`, and diffs it against
+`REGISTERED_RESOLVED_FLAGS`. Per-checkpoint `match`/`diffs` plus an aggregate
+`resolved_flags_equality_green` and `differing_keys` list are returned. Wired into
+`collect_gate_report` as `g_resolved_flags`, folded into `gates_green`, and added to the
+`NO_READ.triggers` list under the label `"resolved-flags-mismatch"` (the literal trigger name the
+fix instruction specified) when any checkpoint mismatches.
+
+**Synthetic check (5 fabricated checkpoints, not the registered population):** 4 checkpoints with
+the correct 13-value resolved-flags block, 1 (`seed=4`) with `theta_zwindow` flipped from `"off"` to
+`"on"`. `check_resolved_flags` returns `n_checkpoints_matched_population=5`,
+`n_checkpoints_mismatched=1`, `resolved_flags_equality_green=False`,
+`differing_keys=['theta_zwindow']`, and the per-checkpoint record for seed 4 carries
+`{"theta_zwindow": {"harness": "on", "production_registered": "off"}}` — confirms the gate actually
+discriminates an injected flag flip, not a tautological pass.
+
+### F3 — rail-fraction disclosure now computed and attached to `delta_h_M`'s own record
+
+Rev. 3's finding: `compute_delta_h_m`'s output carried no rail-fraction field, so per §5's own rule
+("a quote without the disclosure is void") the `delta_h_M` value was not citable as-is; no function
+computed the S3 rail fractions at all.
+
+Implemented `compute_rail_fraction_disclosure(harness_root, population, cell)`: for every matched
+harness checkpoint, reads `posterior.{no_bh,with_bh}.map_h` and `grid.h_bounds`, counts a MAP
+exactly at either bound as "at the rail," and reports the fraction per channel against the new
+`RAIL_FRACTION_DISCLOSURE_THRESHOLD = 0.10` constant. Production/replicate: the draft's §5
+rail-fraction sentence quotes a bare production MAP figure (0.665) but names no file/column this
+script reads for a production-side `map_h` (grepped `REGISTRATION_DRAFT.md` — no MAP-source
+reference for production/replicate outside that one prose sentence), so `production_map_source` is
+disclosed `{"available": False, "note": ...}` rather than hardcoding the draft's prose figure as if
+it were computed. Wired into `collect_gate_report` (`g_rail_fraction_disclosure`, dry-run visible)
+and, per the fix instruction's "attach it to `delta_h_M`'s own record" reading, merged into
+`compute_delta_h_m`'s returned dict in `compute_registered_statistics` as
+`delta_h_m["rail_fraction_disclosure"]` (reusing the `gates` value already computed, not
+recomputing, so the two cannot disagree). No disposition role — `compute_rail_fraction_disclosure`
+returns `disposition_role: None` explicitly and nothing in the `elif` disposition chain reads it,
+matching §5's own framing (disclosure obligation, not a gate).
+
+**Live re-run on the real inputs (dry-run, `--harness-root .../b8_cal_harness_work_s4_postflip`,
+`--population 200`):** `no_bh` 10/67 = 14.925…% (rounds to the draft's quoted 14.9%), `with_bh`
+14/67 = 20.896…% (rounds to the draft's quoted 20.9%), both flagged `above_disclosure_threshold:
+true` against the 10% constant — reproduces the draft's own quoted fractions exactly from the live
+checkpoints, not from a hardcoded copy of the draft's prose.
+
+**Synthetic check (5 fabricated checkpoints):** 4 with `no_bh` MAP at the upper rail (0.86) and
+`with_bh` MAP at the upper rail, 1 (`seed=5`) with both channels' MAP at the *lower* rail (0.6).
+Result: `no_bh` rail_fraction = 1/5 = 0.2, `with_bh` rail_fraction = 5/5 = 1.0, both
+`above_disclosure_threshold: true` — confirms both bounds are checked (not just the upper rail) and
+the fraction arithmetic is right on a hand-countable set.
+
+### F4 — g-precision cross-check is now called and its result recorded (informational, no gate change)
+
+Rev. 3's finding: `check_gprecision` matched the draft's formula and tolerance but was never called
+anywhere, so the mandatory disclosure ("the two must agree to 1e-3 relative, else disclose") never
+happened even though nothing gated on it.
+
+Added `_beta_gbar_phi_at_nodes(df, h_lo, h_hi)` (the CSV-derived `D_tilde_phi − alpha_G_phi` at the
+two stencil nodes, reusing the same "operational source" definition `compute_event_terms` already
+uses) and call `check_gprecision` once for production and once for replicate (when available) inside
+`collect_gate_report`, storing the results as `g_precision_production` / `g_precision_replicate`.
+Neither result enters `gates_green` — the draft's §4 NO-READ trigger list does not include
+g-precision, and the fix instruction says fold it in "only if the draft says so," which it does not.
+
+**Live re-run on the real inputs:** a full-precision `selection_tables_h_*.json` source is found
+under the harness root for both stencil nodes (`seed901013_S/selection_tables_h_0_72.json` and
+`.../selection_tables_h_0_73.json`); `relative_diff` ≈ 0.0055 at both nodes, i.e. `within_tolerance:
+false` against the 1e-3 bound — disclosed, does not gate (`gates_green` stayed `True` with this
+result present, confirmed in the dry-run JSON). **Observation for the reviewer/author, not fixed
+here (out of scope — `check_gprecision`'s internals were not touched, per "keep everything else
+byte-identical"):** the file-matching label is `f"{h:.2f}"`, which collapses the actual stencil
+nodes 0.725/0.735 to "0.72"/"0.73" — the found source files are for h≈0.72/0.73, not exactly
+0.725/0.735, so the ~0.55% disagreement may be partly (or wholly) a wrong-node comparison rather
+than a genuine CSV-vs-full-precision drift at the registered stencil. This is a pre-existing
+property of `check_gprecision` (unchanged by this fix round); flagging it for whoever next reviews
+that function, since now that it is actually called the imprecision is visible in the output for the
+first time.
+
+### Quality gates (FIX 4)
+
+`ruff check` — clean. `ruff format` — one reformat applied after the new code was first written (line
+wrap only, no logic change); `ruff format --check` is now clean. `mypy` — `Success: no issues found
+in 1 source file`.
+
+### Dry-run on the real registered inputs (§7 launch block, `--dry-run`, unchanged flags)
+
+```
+gates_green: True
+NO_READ: {"no_read": false, "triggers": []}
+g_resolved_flags: resolved_flags_equality_green=True, n_checkpoints_matched_population=67,
+                   n_checkpoints_mismatched=0, differing_keys=[]
+```
+
+**Resolved-flags equality holds on the real inputs.** All 67 matched harness checkpoints'
+`resolved_flags` blocks equal `REGISTERED_RESOLVED_FLAGS` exactly, restricted to the 13 named
+tokens — no differing keys, nothing to list verbatim. This was independently confirmed by direct
+comparison of one checkpoint (`universe_seed901000_S.json`) against the imported
+`REGISTERED_RESOLVED_FLAGS` dict before wiring the gate in (`rf == REGISTERED_RESOLVED_FLAGS` →
+`True`), not solely inferred from the gate's own green report.
+
+`byteid_check.py` (unmodified) re-run: still GREEN, 67/67 exact, `t0_mean_h` reproduces to the
+disclosed 6-dp/full-precision bases — unaffected by this fix round, confirming no regression.
+
+### Status
+
+F1 (RED) repaired: the resolved-flags equality invariant now has a code path, feeds `gates_green`,
+and fires a named `NO_READ` trigger (`"resolved-flags-mismatch"`) on any mismatch — confirmed live
+GREEN on the real inputs and confirmed to actually fire on a synthetic injected mismatch. F3 (AMBER)
+repaired: rail-fraction disclosure is computed live (not hardcoded) and attached to `delta_h_M`'s
+own output record, with the 10% threshold flagged; reproduces the draft's quoted 14.9%/20.9%
+exactly from the real checkpoints. F4 (AMBER) repaired: g-precision is called and disclosed for both
+venues, still non-gating as the draft specifies; one out-of-scope pre-existing imprecision in its
+own node-label matching is flagged for a future round, not fixed here. F2 and F5 untouched (not in
+this fix round's scope). Builder ran only `--dry-run` (standing rule 2 unchanged) — real mode was
+not run by this builder; the next verifier should independently re-run
+`compute_registered_statistics` on the real inputs and re-derive `T_prod`/`T_harn`/`rho`/the
+disposition, per `agent-verifier-output-is-evidence-not-authority`.

@@ -44,7 +44,10 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from darksiren_emri.validation.correspondence_1d import combine_log_likelihood
+from darksiren_emri.validation.correspondence_1d import (
+    REGISTERED_RESOLVED_FLAGS,
+    combine_log_likelihood,
+)
 
 # ── constants of record (REGISTRATION_DRAFT.md §5 invariants) ────────────────
 
@@ -63,6 +66,41 @@ T0_MEAN_H_TOLERANCE = 1.0e-9
 GCLOSURE_TOLERANCE = 1.0e-9
 GPRECISION_TOLERANCE = 1.0e-3
 SIGMA_H_1D_REBASELINE_IIIB = 0.017526  # §2.4 delta_h_M denominator (re-baseline iiib 1D)
+
+# §5 Invariants, FIX 4 / F1: "the harness's resolved 13 flags equal production's CoR-P CLI" --
+# the 13 tokens named by REGISTRATION_DRAFT.md §2.3 ("resolved flags 13 tokens, checkpoint
+# resolved_flags") and by correspondence_1d.py's own _RESOLVED_FLAG_ATTRS (B8.2 S1 design §3
+# item 1). Listed here by name, not just imported implicitly, per the fix instruction. The
+# production-side comparand is `REGISTERED_RESOLVED_FLAGS` (correspondence_1d.py) -- the
+# chair-confirmed registered production engagement record ("CoR-P" = Correspondence-1D
+# Production), itself keyed off `PRODUCTION_FLAGS` for the flags that map to a production CLI
+# arg. This is the only resolved-flags reference for production anywhere in the repo (grepped);
+# there is no separate per-run production resolved_flags JSON to read.
+RESOLVED_FLAG_NAMES: tuple[str, ...] = (
+    "normalization_mode",
+    "catalogue_global_selection",
+    "selection_in_completion_numerator",
+    "catalogue_numerator_survival",
+    "catalogue_numerator_survival_2d",
+    "mass_filter_sigma",
+    "mass_filter_geometry",
+    "mass_filter_k",
+    "theta_b",
+    "theta_s",
+    "theta_sites",
+    "theta_phi_divisor",
+    "theta_zwindow",
+)
+assert set(RESOLVED_FLAG_NAMES) == set(REGISTERED_RESOLVED_FLAGS), (
+    "RESOLVED_FLAG_NAMES (this script, listed from REGISTRATION_DRAFT.md §2.3/§5) has drifted "
+    "from REGISTERED_RESOLVED_FLAGS (correspondence_1d.py) -- update whichever is stale."
+)
+
+# §5 g-censoring rail-fraction disclosure rule (FIX 4 / F3): "any h-space quote ... MUST carry
+# the S3 rail fraction ... a quote without the disclosure is void." The disclosure THRESHOLD is
+# the panel's standing 10% figure (draft's own quoted fractions, 14.9%/20.9%, are flagged
+# ABOVE-THRESHOLD by this constant, not hardcoded as pass/fail).
+RAIL_FRACTION_DISCLOSURE_THRESHOLD = 0.10
 
 
 def _md5(path: Path) -> str:
@@ -185,6 +223,134 @@ def reproduce_harness_byte_id(
         "sem_of_dark_full_score_means": (
             float(np.std(means, ddof=1) / (len(means) ** 0.5)) if len(means) > 1 else None
         ),
+    }
+
+
+# ── §5 Invariants: harness-vs-production resolved-flags equality (FIX 4 / F1) ───
+
+
+def check_resolved_flags(harness_root: Path, population: int, cell: str = CELL) -> dict[str, Any]:
+    """Harness-vs-production resolved-flags equality (§5 Invariants, NO-READ trigger, FIX 4/F1).
+
+    Reads every harness checkpoint's ``resolved_flags`` block (matched to ``population``) and
+    compares it -- restricted to :data:`RESOLVED_FLAG_NAMES`, the 13 tokens the draft names -- to
+    :data:`REGISTERED_RESOLVED_FLAGS` (the production comparand; see the module-level comment on
+    that constant for why it, not a per-run production JSON, is the reference). A checkpoint whose
+    restricted resolved-flags dict does not equal the reference is a mismatch; the differing keys
+    and both sides' values are recorded per-checkpoint AND at top level for the report. This is the
+    runtime substitute the draft promises for "harness commit ... NEVER audited against the
+    production commit": it does not compare commits, it compares the resolved ENGAGEMENT the two
+    venues ran under, which is what the draft's own parenthetical actually conditions on.
+    """
+    files = sorted(harness_root.glob(f"universe_seed*_{cell}.json"))
+    per_checkpoint: list[dict[str, Any]] = []
+    all_diff_keys: set[str] = set()
+    n_matched = 0
+    n_mismatched = 0
+    for f in files:
+        try:
+            c = json.loads(f.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if int(c["universe"]["n_draw_requested"]) != population:
+            continue
+        n_matched += 1
+        seed = int(c["universe"]["seed"])
+        rf = c.get("resolved_flags", {})
+        restricted = {k: rf.get(k) for k in RESOLVED_FLAG_NAMES}
+        diffs = {
+            k: {"harness": restricted[k], "production_registered": REGISTERED_RESOLVED_FLAGS[k]}
+            for k in RESOLVED_FLAG_NAMES
+            if restricted[k] != REGISTERED_RESOLVED_FLAGS[k]
+        }
+        if diffs:
+            n_mismatched += 1
+            all_diff_keys |= set(diffs)
+        per_checkpoint.append(
+            {
+                "seed": seed,
+                "match": not diffs,
+                "diffs": diffs,
+            }
+        )
+    return {
+        "flag_names_compared": list(RESOLVED_FLAG_NAMES),
+        "n_checkpoints_matched_population": n_matched,
+        "n_checkpoints_mismatched": n_mismatched,
+        "resolved_flags_equality_green": bool(n_matched > 0 and n_mismatched == 0),
+        "differing_keys": sorted(all_diff_keys),
+        "production_registered_flags": {
+            k: REGISTERED_RESOLVED_FLAGS[k] for k in RESOLVED_FLAG_NAMES
+        },
+        "per_checkpoint": per_checkpoint,
+    }
+
+
+# ── §5 g-censoring rail-fraction disclosure (FIX 4 / F3) ────────────────────
+
+
+def compute_rail_fraction_disclosure(
+    harness_root: Path, population: int, cell: str = CELL
+) -> dict[str, Any]:
+    """Rail-fraction disclosure for every input that carries ``map_h`` (§5 g-censoring, FIX 4/F3).
+
+    For each harness checkpoint (matched to ``population``), reads ``posterior.<channel>.map_h``
+    and ``grid.h_bounds`` for channel in {``no_bh``, ``with_bh``}; a MAP exactly at either bound is
+    "at the rail." Returns the rail fraction per channel across the 67 (or however many matched)
+    checkpoints, flagged against :data:`RAIL_FRACTION_DISCLOSURE_THRESHOLD`.
+
+    Production/replicate: the draft's §5 rail-fraction sentence names only the S3 harness
+    fractions and quotes a bare production MAP figure (0.665) with no file/column this script
+    reads for a production-side ``map_h`` -- REGISTRATION_DRAFT.md names no MAP source for
+    production/replicate in this script's scope (grepped: no ``map_h``/MAP-source reference
+    outside the §5 rail-fraction sentence itself). Disclosed as unavailable here rather than
+    silently omitted or hardcoded from the draft's prose figure.
+    """
+    files = sorted(harness_root.glob(f"universe_seed*_{cell}.json"))
+    channels = ("no_bh", "with_bh")
+    map_values: dict[str, list[float]] = {c: [] for c in channels}
+    rail_hits: dict[str, int] = {c: 0 for c in channels}
+    n = 0
+    for f in files:
+        try:
+            c = json.loads(f.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if int(c["universe"]["n_draw_requested"]) != population:
+            continue
+        n += 1
+        lo, hi = c["grid"]["h_bounds"]
+        for channel in channels:
+            m = c["posterior"][channel]["map_h"]
+            map_values[channel].append(m)
+            if m == lo or m == hi:
+                rail_hits[channel] += 1
+
+    per_channel: dict[str, Any] = {}
+    for channel in channels:
+        frac = rail_hits[channel] / n if n else float("nan")
+        per_channel[channel] = {
+            "n_checkpoints": n,
+            "n_at_rail": rail_hits[channel],
+            "rail_fraction": frac,
+            "above_disclosure_threshold": bool(frac > RAIL_FRACTION_DISCLOSURE_THRESHOLD)
+            if frac == frac
+            else None,
+        }
+
+    return {
+        "disclosure_threshold": RAIL_FRACTION_DISCLOSURE_THRESHOLD,
+        "harness": per_channel,
+        "production_map_source": {
+            "available": False,
+            "note": (
+                "REGISTRATION_DRAFT.md §5 names no production/replicate map_h source for this "
+                "script; the draft's 'production MAP (0.665, interior)' figure is quoted prose, "
+                "not a file/column this read consumes -- disclosed as unavailable rather than "
+                "hardcoded from that prose figure."
+            ),
+        },
+        "disposition_role": None,  # never verdict-bearing unless the draft assigns one (it does not)
     }
 
 
@@ -534,6 +700,15 @@ def check_gprecision(
     return {"nodes": found, "any_full_precision_source_found": any_checked}
 
 
+def _beta_gbar_phi_at_nodes(df: pd.DataFrame, h_lo: float, h_hi: float) -> dict[float, float]:
+    """CSV-derived beta_Gbar_phi(h) = D_tilde_phi - alpha_G_phi at the two stencil nodes (§2.1's
+    "operational source"; global per-h, so the first event row's value is representative)."""
+    d_tilde_phi = _pivot_h(df, "D_tilde_phi", h_lo, h_hi)
+    alpha_g_phi = _pivot_h(df, "alpha_G_phi", h_lo, h_hi)
+    beta = (d_tilde_phi - alpha_g_phi).iloc[0]
+    return {h_lo: float(beta[h_lo]), h_hi: float(beta[h_hi])}
+
+
 # ── shared gate collection: dry-run reporting AND real-mode self-gating ─────
 # (rev. 2 item 4: real mode must run this SAME suite itself, not trust a separate dry-run.)
 
@@ -605,6 +780,24 @@ def collect_gate_report(
     report["g_harness_universes"] = check_harness_universe_gates(
         harness_root, population, CELL, h_lo, h_hi
     )
+    report["g_resolved_flags"] = check_resolved_flags(harness_root, population, CELL)
+    report["g_rail_fraction_disclosure"] = compute_rail_fraction_disclosure(
+        harness_root, population, CELL
+    )
+
+    # F4: g-precision cross-check (§2.1/§5) -- informational only, never gates. Called once per
+    # venue here (rev.'s own framing: "no gate change needed").
+    beta_gbar_phi_production = _beta_gbar_phi_at_nodes(production_csv, h_lo, h_hi)
+    report["g_precision_production"] = check_gprecision(
+        harness_root, h_lo, h_hi, beta_gbar_phi_production
+    )
+    if replicate_available:
+        beta_gbar_phi_replicate = _beta_gbar_phi_at_nodes(replicate_csv, h_lo, h_hi)
+        report["g_precision_replicate"] = check_gprecision(
+            harness_root, h_lo, h_hi, beta_gbar_phi_replicate
+        )
+    else:
+        report["g_precision_replicate"] = {"available": False}
 
     mean_h, h_grid = t0_mean_h(production_csv_path, "combined_no_bh")
     # READOUT_RECORD.md's table quotes mean_h at 6 decimal places (0.666987) -- that display
@@ -674,6 +867,7 @@ def collect_gate_report(
     )
     byte_id_green = bool(report["g_byte_id_harness"]["byte_id_count_green"])
     t0_green = bool(report["t0_mean_h"]["reproduces_to_tolerance"])
+    resolved_flags_green = bool(report["g_resolved_flags"]["resolved_flags_equality_green"])
 
     gates_green = bool(
         population_production_green
@@ -687,6 +881,7 @@ def collect_gate_report(
         and harness_universes_green
         and byte_id_green
         and t0_green
+        and resolved_flags_green
     )
 
     triggers: list[str] = []
@@ -712,6 +907,8 @@ def collect_gate_report(
         triggers.append("g-byte-id")
     if not t0_green:
         triggers.append("t0-mean-h anchor")
+    if not resolved_flags_green:
+        triggers.append("resolved-flags-mismatch")
 
     report["gates_green"] = gates_green
     report["NO_READ"] = {"no_read": bool(triggers), "triggers": triggers}
@@ -826,7 +1023,13 @@ def compute_registered_statistics(
     rho = t_harn / t_prod if (abs(z_prod) > Z_BAND and t_prod) else None
 
     # delta_h_M (§2.4, rev. 2 item 1): REPORTED-ONLY, never enters the disposition below.
+    # F3 (FIX 4): §5's g-censoring rule voids any h-space quote without the rail-fraction
+    # disclosure -- attach it to delta_h_M's own record (not just buried in `gates`) so a quote
+    # of this field alone still carries its mandatory disclosure. Same value already computed by
+    # `gates` (collect_gate_report); reused, not recomputed, to keep the two identical by
+    # construction.
     delta_h_m = compute_delta_h_m(t_prod, int(len(dark_terms)))
+    delta_h_m["rail_fraction_disclosure"] = gates["g_rail_fraction_disclosure"]
 
     # class-closure identity (§2.1, rev. 2 item 3), re-derived here (in addition to the
     # pre-disposition gate check above) so its residual sits alongside the other per-event terms
