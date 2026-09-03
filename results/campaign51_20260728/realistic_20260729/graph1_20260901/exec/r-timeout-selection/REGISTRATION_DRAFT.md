@@ -294,3 +294,13 @@ physics claim. Line count ≤ 320.
 (`rate_table_M.csv`, `selection_effect_note.csv`, denominators) includes the 2 CRB-stage timeout records as
 "kept"; on the pinned CRB CSV the kept counts are `[0, 9, 1278, 303, 0]` (1590 rows) / `[0, 9, 1276, 303, 0]`
 (1588 scored) — rates and gradients unchanged at the quoted precision.
+
+## CHAIR ERRATUM (append-only, 2026-09-04 ~03:35 CEST; closes gate rev2 F6; no threshold touched)
+The pinned n_timeout anchor [206,302,216,81,15] is the population of the 820 SNR-stage timeout
+records. Phase A parses ALL 822 records but bins them by stage: the SNR-stage 820 form the g-byteid
+target; the 2 CRB-stage records (M = 576074.30 → bin 2; M = 1950892.90 → bin 3) are listed
+separately as reported-only and never enter n_timeout or the S2.3 decomposition line, which is
+restated as "share_to(b) of the 820 SNR-stage timeouts (+2 CRB-stage, reported)". The draft's
+max_revisions 2 counted the two pre-launch registration revisions; the revision counter for
+post-disposition re-registration (charter §1.13) is untouched (0 consumed). LAUNCH of Q2 is deferred
+to the morning docket as [DO] R18 (zero compute; gate expected GREEN on this erratum).

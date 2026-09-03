@@ -57,3 +57,29 @@ addendum's zero-compute set. Rows #334–#347. Nothing is running. Nothing was s
 ## 5. Tiering used (for the record)
 Top-tier: chair + wave-3 prereg author + addendum prereg author + end-verifier (≤3 concurrent). Sonnet:
 ~60 agents (readers, panels, builders, forensics, clerk). Cluster: 0 CPU-h. Local: ≈0.5 CPU-h.
+
+## 6. AMENDMENT after batch 2 (2026-09-04 ~00:20 CEST; rows #349–#359)
+**FIRST ACTION of the morning: the author logs in once (`ssh bwunicluster`, password + OTP) to
+restore the ControlMaster.** The socket was lost at 23:03 (row #357; root cause + enforced fix in
+row #359: `.claude/hooks/ssh-guard.py` + `cluster/agent_ssh.sh` — every agent cluster call goes
+through the wrapper now; one ops agent per batch).
+Then, through ONE ops agent using `cluster/agent_ssh.sh`:
+1. `poll 6790794,6790859,6790465` → retrieve S0-C (`$WS/graph1_s0c_hgrid_20260904/h_0p665|h_0p780`,
+   exclude injection-pool symlinks), sealed m1 iiib (`$WS/graph1_sealed_m1_iiib_20260904`; then the
+   joint_r1 switch only if iiib ≤ 60 core-h), GATE-ACC (`$WS/p3_2d_fleet_aprime_20260902/gates_{bt,bc}.json`).
+2. Submit R4b (`cluster/graph1_r4b_comparand_sites22_2doff.sbatch`, prepared, ~6.5 min) → diff vs
+   the S0-B truth node (byte-identical ⇒ S0-B was measured on the pre-[P3-2D] counterfactual).
+3. Fetch the pool build logs for r-timeout-selection Q1 (NOT-covered [DO] A in its §8).
+Batch-2 state of record: r-offset-subset built (blind table + influence vector byte-id 30/30; scorer
+in fix round 3 — check exec/r-offset-subset/READ_RECORD.md exists); r-timeout-selection drafted
+(rows #358; p0 axis withdrawn — D1 bound; per-draw timeout 0.92 %); R8 build done, migration HELD
+(R14); S0-C addendum + sealed-m1 dossier ratified-by-chair under the batch-2 grant.
+Morning docket additions: R14 (class definition), the R4/R4b provenance question for S0-B, R9 downgraded.
+
+## 7. Session close (2026-09-04 ~03:40 CEST; last row #366)
+Batch 2 closed. Open in the morning, in this order: (1) author OTP login → `cluster/agent_ssh.sh poll
+6790794,6790859,6790465` → retrieve S0-C, sealed m1, GATE-ACC → submit R4b; (2) the docket's R1–R18
+(R18 = launch r-timeout-selection Q2: exec/r-timeout-selection/, gate rev2 RED only on F6, closed by
+the chair erratum; rerun the gate→build→read chain, zero compute); (3) Q1 after the pool build-log
+fetch. Everything else is recorded; nothing is running locally. Keepalive loop: kill it
+(`pgrep -f ssh_keepalive.sh`) — it only logs FAIL until the socket is restored.

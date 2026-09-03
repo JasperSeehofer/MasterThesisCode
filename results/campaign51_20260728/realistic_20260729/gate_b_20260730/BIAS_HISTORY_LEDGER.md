@@ -3634,3 +3634,15 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(2) Fresh gate** (`exec/r-timeout-selection/DESIGN_GATE_Q2_computability_rev1.md`): **F1–F4 CLOSED.** **NEW F5 RED** — the g-byteid `n_kept` anchor `[0,9,1279,304,0]` came from the unpinned `rate_table_M.csv`, which folds the 2 CRB-stage timeout records into "kept"; from the pinned CRB CSV + pinned bin edges the counts are `[0,9,1278,303,0]` (`1590` rows) / `[0,9,1276,303,0]` (`1588` scored); SNR-stage timeouts `[206,302,216,81,15]` reproduce exactly; supported-bin set unchanged; materiality `~0.0005` in share — **RED on reproducibility, not magnitude.** **AMBER:** the §10 pre-read sentence mixed bin sets (pool bin 2 alone `58.1 %`, bins 2+3 `82.7 %`; kept bin 2 `80.4 %`).
 
 **(3) Chair decision.** Revision 2 requested (re-pin the anchor to the scored-1588 derivation from pinned inputs; drop or pin `rate_table_M.csv`; fix §10); **ERRATUM 2** appended to `exec/rd-timeout-bin-seed61000/READ_RECORD.md` (`n_kept` per bin included the 2 CRB-stage timeouts; no band change).
+
+## Row #366 — 2026-09-04 ~03:40 CEST — **SESSION CLOSE: r-timeout-selection Q2 revision 2 gate; batch 2 closed. All content chair-derived.**
+
+**(1) Revision 2** (author C: `n_kept` anchor re-pinned to `[0,9,1276,303,0]` from pinned inputs; `rate_table_M.csv` pinned reported-only; §10 restated on one bin set; `1579/1588` in supported bins).
+
+**(2) Fresh gate** (`exec/r-timeout-selection/DESIGN_GATE_Q2_computability_rev2.md`): **F5 and the AMBER CLOSED** (both independently reproduced); all pins and tallies exact (`ΣY = 89,456`; D1-gate `4,071`; pool `200,100`/`99,014`/`6,000`; kept `p0 [10.0025, 15.987]`, `M [1.33e5, 1.63e6]`); **NEW F6 RED (registration-completeness only):** Phase A's "822 timeout dicts" vs the pinned `n_timeout [206,302,216,81,15]` which is the 820 SNR-stage population (the 2 CRB-stage records would shift bins 2/3 by +1).
+
+**(3) Chair decision (flagged).** Closed by an APPEND-ONLY CHAIR ERRATUM in the draft (`n_timeout` = the 820 SNR-stage records; the 2 CRB-stage records reported separately; the post-disposition revision counter is untouched — the draft's "`max_revisions 2`" counted pre-launch design revisions); **Q2 LAUNCH deferred to the morning docket as [DO] R18** (zero compute; expected GREEN).
+
+**(4) Batch-2 CLOSE.** Nothing running locally; cluster jobs `6790794` (S0-C), `6790859` (sealed m1), `6790465` (GATE-ACC) unattended, R4b prepared; runbook 43 §7 written; morning docket R1–R18 + artifact `3cd5efee` current.
+
+**(5) Compute tonight.** Cluster `≈ 22 CPU-h` allocated (S0-C `20` + R4 comparand `2`) + m1/GATE-ACC in flight; local `≈ 1 CPU-h`. Top-tier identities across the night: chair + 5 prereg/verifier roles (`≤ 3` concurrent). Sonnet agents `≈ 110`.
