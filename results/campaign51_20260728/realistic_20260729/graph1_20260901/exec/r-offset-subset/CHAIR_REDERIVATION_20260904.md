@@ -52,3 +52,24 @@ registered stratum. Verifier to rule; does not touch C4/C3c/C7.
 F2 iiib_1d and joint_r1 have no ln L matrices under the launch block → their materiality is empty
 and the 2-of-3 replicate rule for materiality could not be evaluated (separation replicates 3/3).
 Data-contract amendment for the author.
+
+## ERRATUM (end-verification D13/D12/D14, 2026-09-04 ~02:20 CEST) — the chair inverted the C2 label
+`C2_hosted_exact = True` means HOSTED (75/76 true in-catalogue events are True; False = the 606
+exact-zero dark class). S = 15 True / 67 False → **S is 82 % exact-zero DARK vs bulk 36 %**. The chair's
+"S 18 % dark" read the hosted fraction as the dark fraction. Consequences:
+- Flag F1 is WITHDRAWN: the code removed exactly the registered enriched level (False = dark, n = 606);
+  Δ_strat = +0.156 is the registered number (removing the whole dark class moves mean_h 0.666 → 0.822,
+  past truth — a statement about the dark class, not about S). Removing the hosted level instead gives −0.066.
+- The physical picture is CORRECTED: the 82 offset-carrying events are high-z (median 0.85), low-SNR
+  DARK events with NO catalogue candidate in the cone (C7 bottom decile = C3c bottom decile = the
+  159 n_cand = 0 events, hence the identical Δ = 0.0343; D14). They are pure completion-leg events.
+  This is directly the dark-class completion-leg residual of row #347 (74 % production-only),
+  localized to the high-z, zero-candidate tail — and consistent with cone loss being immaterial
+  (those events have no host to lose) and with C1 (true in-catalogue status) being null.
+- D12: Holm was applied at m = 10 (C10b NOT-TESTED excluded) vs the draft's m = 11; C1 p_holm 0.325
+  either way; no verdict changes.
+- Booking unchanged: INTERMEDIATE by the literal (vacuous) 2D/1D trigger; primary SUBSET-IDENTIFIED
+  disclosed; separation replicates 3/3 for C2, C3c, C4, C7.
+Candidate mechanism for Graph 2 (corrected): the completion leg at high z, where the catalogue has
+no candidate at all, pulls h down — the completion-denominator / missing-completion balance for
+zero-candidate cones, not a catalogue-leg weight issue.

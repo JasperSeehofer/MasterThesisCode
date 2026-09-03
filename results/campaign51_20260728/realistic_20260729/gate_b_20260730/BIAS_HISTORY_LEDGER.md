@@ -3606,3 +3606,15 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(5) Flags.** **F1** the C2 materiality stratum removed the `level == False` (`606` dark) events although S is enriched in True — enrichment-direction rule suspect for `OR < 1` (verifier asked); **F2** replicate families lack `ln L` → materiality 2-of-3 not evaluable (separation replicates `3/3`).
 
 **(6) Morning docket §7 added** (R14–R17, R9′; D6–D10). End-verifier requested.
+
+## Row #363 — 2026-09-04 ~02:25 CEST — **m-offset-subset end-verified; ERRATUM D13 (label inversion). All content chair-derived.**
+
+**(1) End-verifier appendix** "BATCH 2 — m-offset-subset" (`exec/END_VERIFICATION_20260903.md`): influence vector reproduced to `1e-15`, minimal `k = 82` and oracle `Δ_S = 0.046234` exact, every AUC/OR/Holm p and the top-z decile `Δ = +0.086106` with null CI99 `[−0.00909, +0.01075]` reproduced; C2 stratum `Δ = +0.155678` reproduced.
+
+**(2) ERRATUM D13 (changes a claim).** The chair **INVERTED the C2 label** — `C2_hosted_exact = True` is HOSTED; S = `15` True / `67` False → **the 82 offset-carrying events are `82 %` exact-zero DARK** (zero catalogue candidates; C7 and C3c bottom deciles are the same 159 `n_cand = 0` events, D14) vs `36 %` in the bulk. Chair flag F1 **WITHDRAWN** (the code removed the registered enriched level; removing the whole dark class moves `mean_h 0.666 → 0.822`, past truth).
+
+**(3) Corrected physical picture.** High-z (median `0.85`), low-SNR, zero-candidate DARK events carry the 2D offset — the dark-class completion-leg residual of row #347 localized to its high-z tail; cone loss immaterial because these events have no host to lose; true in-catalogue status null.
+
+**(4) D12:** Holm at `m = 10` (C10b excluded), no verdict change. **Booking unchanged** (INTERMEDIATE by the vacuous 2D/1D trigger; primary SUBSET-IDENTIFIED disclosed; separation replicates `3/3`). Chair record erratum appended; morning docket R15 corrected; artifact republished.
+
+**(5) Graph 2 mechanism candidate (corrected):** the completion leg at high z for zero-candidate cones.

@@ -108,3 +108,30 @@ Re-derived from raw: production re-baseline CSV + `seed61000/prepared_cramer_rao
 - Note (context, not a discrepancy): δh_M = −0.091 magnitude > rail −0.063 — as the chair says, linear-response over-prediction; same class of mismatch as D4 (cone).
 
 Bookings: INTERMEDIATE (b) is the literal sole-firing row — supported. Rail disclosure 14.9 %/20.9 % carried (disposition_role None) — consistent with registration.
+
+---
+## BATCH 2 — m-offset-subset (appended 2026-09-04)
+
+Re-derived from raw: iiib re-baseline `event_likelihoods.csv` (`combined_with_bh`, 41 nodes, gradient weights, no floor needed — 0 zeros), `covariate_table_iiib.csv`, own Mann–Whitney/Fisher(Haldane)/Holm, own leave-outs and null draws (seed 20260904).
+
+| quantity | reader/chair | mine | match |
+|---|---|---|---|
+| influence vector (2D) | `influence_iiib.csv` | identical to 1e-15 (CSV sign = mean_h(−i) − full; ranks identical); top-10 = 576,94,46,172,201,160,1176,158,1482,55 | Y |
+| minimal k / oracle Δ_S | 82 / 0.046234 | 82 / 0.046234 | Y |
+| C4 AUC, p_raw | 0.8722, 6.24e-30 | 0.8722, 6.24e-30 | Y |
+| C10 / C7 / C3c AUC | 0.7410 / 0.2669 / 0.2923 | same | Y |
+| C2 OR (15,67,967,539) / C1 OR / C3 OR | 0.1280 / 2.0546 / 0.5595 | same | Y |
+| Holm p (C4,C10,C7,C3c,C2,C1) | 6.24e-29, 1.48e-12, 1.68e-12, 4.05e-10, 2.20e-15, 0.219 | reproduced with **m=10** | Y (see D12) |
+| top-z decile Δ, null CI99 | +0.08611, [−0.00909, +0.01075] | +0.086106, [−0.009089, +0.010751] | Y |
+| C2 stratum Δ (n=606) | +0.15568 | +0.155678 (remove level False); removing level True (982) gives −0.0655 | Y |
+| median z S / bulk | 0.85 / 0.48 | 0.849 / 0.481 | Y |
+
+**(4) C2 stratum — the code is RIGHT, the chair's F1 is WRONG.** `C2_hosted_exact=True` means hosted (75/76 in-catalogue events are True; False count = 606 = the registered exact-zero dark class). S is 15 True / 67 False → **S is 82 % exact-zero DARK vs bulk 36 %**, i.e. enriched in the False level. The script's rule (OR=0.128 < 1 → level False) removed exactly the registered enriched level; Δ_strat = +0.1557 is the registered number. The chair's line "S 18 % dark vs bulk 64 %" and the coordinator's premise invert the label (18 % is the HOSTED fraction). Consequences: F1 should be withdrawn; the chair's physical picture ("events the estimator labels hosted by exact-zero support") is inverted — S is dominated by exact-zero dark events (consistent with C7 fewer candidates, C3c lower f_cat, C1 null). Severity: changes a claim/interpretation, not the disposition.
+
+**(5) Booking.** Literal §5 INTERMEDIATE triggers: "primary 2D and 1D iiib families disagree in disposition" fires only because iiib_1d has no ln L matrix (materiality empty by contract) — vacuous. The reader's second trigger ("C10 SEPARATES but not MATERIAL") is a misreading: the row says "SEPARATES but **no** stratum is MATERIAL", and four strata are material. So INTERMEDIATE is the literal sole-firing outcome via a data-contract artefact; "SUBSET-IDENTIFIED before the trigger" is a fair disclosure, and iiib_1d's separation (C4 AUC 0.98) agrees in kind. Replicate rule 4.3: 3/3 for C2, C3c, C4, C7 — supported.
+
+**Discrepancies**
+- D12 (number): Holm run at m=10 (C10b untested, excluded); draft §4.1/§5 say m=11. With m=11: C1 0.325, others unchanged in verdict. No booking effect.
+- D13 (claim): chair F1 and the "hosted by exact-zero support" narrative — label inverted (above).
+- D14 (cosmetic): C7 and C3c bottom deciles are the SAME 159 events (overlap 159/159: n_cand=0 ⇒ f_cat=0), explaining the identical Δ=0.03431 the reader flagged as unexplained.
+- Note: C2 Δ=+0.156 with captured fraction 3.4 means removing the 606 dark events overshoots truth (0.666→0.822): the dark class as a whole pulls h down far beyond S — a population-level statement, not an S-specific one.
