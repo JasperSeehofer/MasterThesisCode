@@ -39,6 +39,14 @@ assign per agent from this routing table:
 
 State the chosen tiering (one line) when proposing a workflow so the author can veto overkill.
 
+**Cluster access discipline (2026-09-03, ledger row #357):** all agent cluster traffic goes
+through `cluster/agent_ssh.sh` (3-slot semaphore, local sleeps, backoff on a refused mux
+session). Closing the ControlMaster (`ssh -O exit|stop`), deleting `~/.ssh/cm-*`, `pkill ssh`,
+`sleep ≥ 60` inside a remote command, and parallel ssh fan-out from one command are BLOCKED by
+`.claude/hooks/ssh-guard.py`. A refused mux session means the server's session cap is full, not
+a dead master; the socket is OTP-authenticated and only the author can restore it. One
+cluster-ops agent per batch holds the cluster; readers and builders never ssh.
+
 **Subagent waiting (2026-08-20):** subagents must never end a turn to "wait for a completion
 notification" on a process the harness does not track — every wait is a blocking foreground
 command. Evidence: five parking incidents across three agents in one session.

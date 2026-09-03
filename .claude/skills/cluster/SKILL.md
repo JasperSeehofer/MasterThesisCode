@@ -172,5 +172,18 @@ Full guide with exact commands for every case: **`cluster/LAUNCHING_JOBS.md`**.
   `run_metadata.json:git_commit` is an ancestor of the eval commit **and** no
   Pipeline-Change trigger file changed since. When unsure, re-run.
 
+### ControlMaster discipline (2026-09-03 incident, ledger row #357 — ENFORCED by `.claude/hooks/ssh-guard.py`)
+- The `bwunicluster` socket is the session's ONLY authenticated cluster access (password + OTP,
+  author-only). Agents talk to the cluster ONLY through `cluster/agent_ssh.sh run '<cmd>'` and
+  `cluster/agent_ssh.sh poll <jobids> [secs]` (3-slot semaphore; sleeps run locally; backoff on
+  "Session open refused by peer").
+- "Session open refused by peer" / `mux_client_request_session` errors mean the server-side
+  session cap (sshd `MaxSessions` = 10) is full — NOT a dead master. Wait and retry. The
+  following are hook-blocked: closing the master with `-O exit`/`-O stop`, deleting `~/.ssh/cm-*`,
+  `pkill ssh`, `sleep ≥ 60` INSIDE a remote command, parallel ssh fan-out from one command.
+- One cluster-ops agent at a time per batch; readers/builders never ssh.
+- If `ssh -O check` says "No such file": the socket is gone; only the author can restore it
+  (`ssh bwunicluster` once, interactively). Report and stop.
+
 ### More detail
 `cluster/README.md` — full quickstart, troubleshooting (OOM/timeout/CUDA), script reference.
