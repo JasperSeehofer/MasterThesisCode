@@ -3480,3 +3480,11 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(3) Runbook 43 written:** `results/campaign51_20260728/RUNBOOK_NEXT_SESSION_43.md` (supersedes 42; §7 device transfer moot). The docket-2.2 STANDING grant **LAPSES at the author's next message**; nothing is running; `0` cluster CPU-h spent tonight; `≈0.5` local.
 
 **(4) Memory files filed:** `gate-reviewers-must-not-compute-registered-statistic` (feedback), `session-20260903-wave3-overnight` (project).
+
+## Row #349 — 2026-09-04 ~00:05 — **BATCH 2 grant.**
+
+**(1) Author words, verbatim** (after reading the morning docket): "the night hasent started yet haha / so you can easily do another big batch of research and feel free to also use the cluster!"
+
+**(2) Chair reading (flagged):** a **[DO]** for a second autonomous batch with **CLUSTER compute authorized** behind `/cluster` preflight READY and the registered caps; the docket's provisional readings R1–R13 remain CHAIR decisions under the row #325 grant (veto-able), NOT author rulings — the author saw them and said proceed. The docket-item-2.2 STANDING (launch inside caps after a green gate) is read as **RENEWED for this batch** by the author's cluster words; lapses at the author's next message.
+
+**(3) Batch-2 plan (chair):** (1) **R4 matched comparand** — production HEAD, `iiib`, `theta_sites 2.2`, `θ=(0,1)`, `h=0.73`, one cluster task, diff vs the S0-B truth node; (2) **sealed-mock stage m1** — HEAD re-score of the existing `closure_seed64000_h0p67` pool, both venues if cost allows (`52–72` core-h/venue, cap `75`/venue), behind a `d-sealed-register` dossier ratified-by-chair (flagged); (3) **S0-C** — S0-B θ-grid at `h ∈ {0.665, 0.73, 0.78}` (`≈6 CPU-h`) behind a PA-HIER addendum; (4) **Graph 2 seed registration `r-offset-subset`** (which `3–6 %` of events carry the 2D offset × the catalogue-hosted localisation) — zero-compute read on banked data; (5) **seed61000 timeout-log fetch** (cluster READ) → `rd-timeout-bin-seed61000`; (6) **R8 build node** — relative dark-class threshold; (7) **GATE-ACC reporting-only relaunch** on the cluster. **NOT in the batch:** S3 revision 2 (parked), completion replication cell R (R13), any evacuation/archive move (backlog). Tiering: chair + 2 top-tier prereg authors; all else sonnet.
