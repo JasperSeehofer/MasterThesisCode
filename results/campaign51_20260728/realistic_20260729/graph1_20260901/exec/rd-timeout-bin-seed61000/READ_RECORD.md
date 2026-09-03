@@ -214,3 +214,10 @@ NON-ISSUE; it is now a two-axis systematic candidate on the production pool.
    premise is stale).
 Consequence for the docket: R9 is downgraded from "two-axis new systematic" to "one-axis (M),
 ~1 %-of-draws selection whose H0 consequence is registered in r-timeout-selection Q1/Q2".
+
+## ERRATUM 2 (chair, 2026-09-04 ~03:05 CEST; from the Q2 gate rev1 F5)
+rate_table_M.csv's n_kept per M bin [0,9,1279,304,0] folds the 2 CRB-stage timeout records
+(M = 576074.30 → bin 2; M = 1950892.90 → bin 3) into "kept" (analyze.py:206,219). Kept-population
+counts from the pinned CRB CSV against the pinned bin edges are [0,9,1278,303,0] over all 1590 CRB
+rows and [0,9,1276,303,0] over the 1588 scored events. The SNR-stage timeout counts [206,302,216,81,15]
+reproduce exactly. No band outcome changes (bins 1→2 gradient unchanged at the σ level).

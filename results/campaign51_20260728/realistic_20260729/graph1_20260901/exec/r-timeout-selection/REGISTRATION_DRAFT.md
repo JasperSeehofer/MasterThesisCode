@@ -246,3 +246,51 @@ rows with fresh-RULE tags; invariants + structural blindness listed; pins with m
 costs zero-cluster with NOT-covered items separated and cost-banded from the G9/inject.sbatch timing
 basis; the D1 scope fence is binding; the read's p0 row correction is filed as a record action, not a
 physics claim. Line count ≤ 320.
+
+## REVISION 1 (Q2) — 2026-09-04, answering `DESIGN_GATE_Q2_computability.md` F1–F4 (append-only; supersedes the named passages above; no threshold or band touched)
+
+- **F2/F3 — ONE support rule for S2.3, fixed now.** A bin is SUPPORTED iff `n_kept(b) ≥ 10`; on the pinned
+  counts `0/9/1279/304/0` the supported set is **bins {2, 3} only** (two bins, not three). Events in any
+  UNSUPPORTED bin (bins 0, 4: none; bin 1: the 9 kept events) receive **`w_e = 1` — no re-weighting** — and the
+  single renormalisation `w_e ← w_e · 1588 / Σ_e w_e` runs over ALL 1588 events, so `g-closure` (ii) holds by
+  construction. Justification (one sentence): re-weighting 9 events from a 302-timeout bin would manufacture
+  a counterfactual from a share estimate with ~30 % Poisson error, and folding bin 1 into bin 2 would
+  silently change the pinned edges that S2.1/S2.2 and the timeout read share — `w_e = 1` does neither and is
+  disclosed as a BOUND. The S2.3 NOTE ("bins 0 and 4 … supported range") and §6 structural blindness (2)
+  ("bounded from bins 1–3") are corrected to: **"the counterfactual is a bound over bins 2–3 (1583 of 1588
+  events); bins 0, 1, 4 are unsupported and carry `w_e = 1`, disclosed."** `share_pool,det(b)` and
+  `share_kept(b)` are both computed over bins 2–3 only (renormalised to sum to 1 over that support) before
+  forming `w_b`. No builder choice remains on the PRIMARY statistic.
+- **F1 — missing pin added to §1:** `exec/r-offset-subset/influence_joint_r1.csv` (`event_idx, influence_2D,
+  influence_1D, rank`), md5 **`38f3f1813a3d460093763dd89019ca8a`** (verified on disk by this revision; the
+  gate note's `…8a4` carries a stray trailing character), 1588 rows — the k = 72 joint_r1 replicate input.
+  All other Q2 inputs are already pinned: the 1D replicate reads `influence_1D` from the pinned
+  `influence_iiib.csv`; the 822 timeout dicts and skip tallies come from the pinned log manifest; bin edges,
+  CRB CSV and both `event_likelihoods.csv` are pinned in §1. G-1 now STOPs on this file too.
+- **F4 — `|d_e|`'s role:** `ρ_S(log10 M, |d_e|)` is **REPORTED-ONLY** and does not gate the Q2-S2.2
+  disposition; the disposition is driven solely by `ρ_S(log10 M, d_e)` (permutation p) AND the top-k
+  Fisher/Holm composition test, exactly as the §5 row states.
+
+## REVISION 2 (Q2) — 2026-09-04, answering `DESIGN_GATE_Q2_computability_rev1.md` F5 + AMBER (append-only; no threshold or band touched)
+
+- **F5 — `g-byteid` n_kept anchor RE-PINNED to the pinned inputs.** The former target `0/9/1279/304/0` came from
+  `rd-timeout-bin-seed61000/rate_table_M.csv`, which folds the 2 CRB-stage timeout records (M = 576074.30 →
+  bin 2; M = 1950892.90 → bin 3) into "kept". Derivation of record, from §1's pins only: histogram of the CRB
+  CSV `M` column (md5 `9a1f2a14…`) over `seed61000_M_edges` (md5 `e24b07fe…`), restricted to the 1588 scored
+  events (event_idx {0..1589} − {1203, 1356} — the population every Σ w_e spans) → **`n_kept = [0, 9, 1276,
+  303, 0]`** (reproduced by this revision; over all 1590 CRB rows it is `[0, 9, 1278, 303, 0]`). `g-byteid`
+  now targets `[0, 9, 1276, 303, 0]` EXACTLY; `share_kept(b)` and the §REVISION-1 support rule use the same
+  1588-event histogram. `rate_table_M.csv` (md5 `b0d6284c06eb2f185158819d47123de5`) is retained REPORTED-ONLY
+  as the source of the read's `n_timeout` column (206/302/216/81/15, still the phase-A byte-id target for
+  timeouts); its `n_kept` column is NOT a target — it includes the 2 CRB-stage timeouts, disclosed. Supported
+  set unchanged: bins {2, 3} (1276 + 303 = 1579 re-weighted; bins 0/1/4 = 9 events at `w_e = 1`; the
+  REVISION-1 figure "1583 of 1588" is corrected to **1579 of 1588**).
+- **AMBER — §10 item (ii) restated on one bin set.** Pool a-stratum rows with SNR ≥ 20 (n = 7,548) bin as
+  `[76, 1217, 4387, 1852, 16]`: bin 2 alone = **58.1 %**, bins 2+3 = **82.7 %**; kept (scored 1588): bin 2 =
+  1276/1588 = **80.4 %**, bins 2+3 = 1579/1588 = **99.4 %**. The earlier sentence compared pool bins 2+3 with
+  kept bin 2 — corrected; the leak disclosure stands (still one pre-read of a `share_pool,det` input).
+
+**Erratum for the chair to carry to `rd-timeout-bin-seed61000/READ_RECORD.md`:** its per-bin `n_kept`
+(`rate_table_M.csv`, `selection_effect_note.csv`, denominators) includes the 2 CRB-stage timeout records as
+"kept"; on the pinned CRB CSV the kept counts are `[0, 9, 1278, 303, 0]` (1590 rows) / `[0, 9, 1276, 303, 0]`
+(1588 scored) — rates and gradients unchanged at the quoted precision.

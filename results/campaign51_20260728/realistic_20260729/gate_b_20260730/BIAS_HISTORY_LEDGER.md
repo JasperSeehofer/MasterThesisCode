@@ -3626,3 +3626,11 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(2) GREEN items:** S2.1 info map inputs and formula; S2.4 hypothesis line (all 822 timeout records carry full parameters); `max_revisions`/blindness line; every other pin re-verified (CRB, pool `707` files / `200,100` rows / `99,014` a-rows, bin edges, both `event_likelihoods` md5s, the log manifest).
 
 **(3) Chair decision.** Registration revision 1 (Q2) requested from author C (one bin-support rule, pins, `|d_e|` role; no thresholds touched); the gate→build→read chain reruns after it.
+
+## Row #365 — 2026-09-04 ~03:05 CEST — **r-timeout-selection Q2 revision 1 gate: F1–F4 closed, new F5 RED. All content chair-derived.**
+
+**(1) Revision 1** by author C (one support rule: bins `{2,3}`, `n_kept ≥ 10`; unsupported bins keep `w_e = 1` with one renormalisation to `Σ w_e = 1588`; `influence_joint_r1.csv` pinned md5 `38f3f1813a3d460093763dd89019ca8a`; `|d_e|` reported-only).
+
+**(2) Fresh gate** (`exec/r-timeout-selection/DESIGN_GATE_Q2_computability_rev1.md`): **F1–F4 CLOSED.** **NEW F5 RED** — the g-byteid `n_kept` anchor `[0,9,1279,304,0]` came from the unpinned `rate_table_M.csv`, which folds the 2 CRB-stage timeout records into "kept"; from the pinned CRB CSV + pinned bin edges the counts are `[0,9,1278,303,0]` (`1590` rows) / `[0,9,1276,303,0]` (`1588` scored); SNR-stage timeouts `[206,302,216,81,15]` reproduce exactly; supported-bin set unchanged; materiality `~0.0005` in share — **RED on reproducibility, not magnitude.** **AMBER:** the §10 pre-read sentence mixed bin sets (pool bin 2 alone `58.1 %`, bins 2+3 `82.7 %`; kept bin 2 `80.4 %`).
+
+**(3) Chair decision.** Revision 2 requested (re-pin the anchor to the scored-1588 derivation from pinned inputs; drop or pin `rate_table_M.csv`; fix §10); **ERRATUM 2** appended to `exec/rd-timeout-bin-seed61000/READ_RECORD.md` (`n_kept` per bin included the 2 CRB-stage timeouts; no band change).
