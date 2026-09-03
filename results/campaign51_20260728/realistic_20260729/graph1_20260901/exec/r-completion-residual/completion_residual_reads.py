@@ -8,12 +8,16 @@ number here is column arithmetic on already-produced CSVs and harness checkpoint
 
 Two modes:
 
-* ``--dry-run`` loads every input, runs the gates (g-population, the g-closure identity, the
-  g-byte-id instrument reproduction, the g-znorm spot check), prints row counts and anchors, and
-  exits 0 WITHOUT computing the registered statistic (T_prod, T_harn, Z, rho, or the disposition).
-* real mode (no ``--dry-run``) additionally computes the registered statistics of §2.4 and writes
-  the full JSON record (every per-event term, the closure residual, SE, Z, and the disposition
-  inputs of §4) to ``--out``.
+* ``--dry-run`` loads every input, runs the full §5 gate suite (g-population, g-znorm, g-closure
+  incl. class closure, g-closure/g-znorm on EVERY harness universe, g-byte-id instrument
+  reproduction) via :func:`collect_gate_report`, prints row counts and anchors, and exits 0
+  WITHOUT computing the registered statistic (T_prod, T_harn, Z, rho, delta_h_M, or the
+  disposition).
+* real mode (no ``--dry-run``) runs the SAME gate suite itself first (rev. 2 item 4) and refuses
+  to bank a disposition if any gate is red (writes the gate table + a ``NO_READ`` record instead);
+  when gates are green it additionally computes the registered statistics of §2.4 (including the
+  REPORTED-ONLY delta_h_M) and writes the full JSON record (every per-event term, the closure
+  residual, SE, Z, and the disposition inputs of §4) to ``--out``.
 
 Physics is not re-derived here: ``combine_log_likelihood`` (the T0 physics-floor zero-handling
 convention) is imported verbatim from
@@ -58,6 +62,7 @@ T0_MEAN_H_TARGET_IIIB_1D = 0.666987
 T0_MEAN_H_TOLERANCE = 1.0e-9
 GCLOSURE_TOLERANCE = 1.0e-9
 GPRECISION_TOLERANCE = 1.0e-3
+SIGMA_H_1D_REBASELINE_IIIB = 0.017526  # §2.4 delta_h_M denominator (re-baseline iiib 1D)
 
 
 def _md5(path: Path) -> str:
@@ -355,6 +360,147 @@ def check_gclosure(terms: pd.DataFrame) -> dict[str, Any]:
     }
 
 
+def check_class_closure(
+    terms: pd.DataFrame, crb: pd.DataFrame, tol: float = GCLOSURE_TOLERANCE
+) -> dict[str, Any]:
+    """Class-closure component of g-closure (§2.1/§5, rev. 2 item 3): the identity
+    ``S_all = pi_G*S_G + pi_Gbar*S_dark`` with pi from the class counts (0 unmatched events).
+
+    ``terms`` (:func:`compute_event_terms`'s output for one venue's full ``event_likelihoods.csv``)
+    carries both classes; the full score ``s_e`` is what §2.1 names in the identity (S_M/S_C are the
+    matched-channel/catalogue-leg DECOMPOSITION of s_e, not a second class-weighted quantity), so
+    ``S_G``/``S_dark`` are the class means of ``s_e`` and ``S_all`` is its population mean -- a
+    weighted-mean identity that is an algebraic tautology given correct class assignment, so a red
+    here localises an index/class-assignment defect (mirrors g-closure's own "an identity, so a miss
+    localises a storage-precision defect" framing), never a physics read.
+    """
+    dark_mask = crb["host_galaxy_index"].to_numpy() == -1
+    dark_idx = set(int(i) for i in np.nonzero(dark_mask)[0]) & set(terms.index)
+    cat_idx = set(terms.index) - dark_idx
+    n_total = len(terms)
+    n_dark = len(dark_idx)
+    n_cat = len(cat_idx)
+    if n_total == 0 or n_cat == 0 or n_dark == 0:
+        return {
+            "n_total": n_total,
+            "n_dark": n_dark,
+            "n_catalogue": n_cat,
+            "class_closure_green": False,
+            "note": "empty class or empty population -- cannot form pi_G/pi_Gbar",
+        }
+    pi_g = n_cat / n_total
+    pi_gbar = n_dark / n_total
+    s_g = float(terms.loc[sorted(cat_idx), "s_e"].mean())
+    s_dark = float(terms.loc[sorted(dark_idx), "s_e"].mean())
+    s_all = float(terms["s_e"].mean())
+    reconstructed = pi_g * s_g + pi_gbar * s_dark
+    residual = abs(s_all - reconstructed)
+    green = residual <= tol * (abs(s_all) + 1.0)
+    return {
+        "n_total": n_total,
+        "n_dark": n_dark,
+        "n_catalogue": n_cat,
+        "pi_G": pi_g,
+        "pi_Gbar": pi_gbar,
+        "S_G": s_g,
+        "S_dark": s_dark,
+        "S_all": s_all,
+        "reconstructed_S_all": reconstructed,
+        "class_closure_residual": residual,
+        "class_closure_green": bool(green),
+    }
+
+
+# ── §2.4 delta_h_M (REPORTED-ONLY, never verdict-bearing -- §0 item 1) ──────
+
+
+def compute_delta_h_m(t_prod: float, n_dark: int) -> dict[str, Any]:
+    """delta_h_M (§2.4, rev. 2 item 1): N_Gbar * T_prod / I_1D, I_1D = 1/sigma_h,1D^2 =
+    1/0.017526^2 (re-baseline iiib 1D). Linear-response, F-free. REPORTED-ONLY: this value plays
+    no role in any gate or disposition branch (§0 item 1) -- it is included in the output record
+    solely because §2.4's registered-statistics table names it as an output the read must produce.
+    """
+    i_1d = 1.0 / SIGMA_H_1D_REBASELINE_IIIB**2
+    delta_h_m = n_dark * t_prod / i_1d
+    return {
+        "N_Gbar": n_dark,
+        "sigma_h_1D": SIGMA_H_1D_REBASELINE_IIIB,
+        "I_1D": i_1d,
+        "delta_h_M": delta_h_m,
+        "reported_only": True,
+        "verdict_bearing": False,
+    }
+
+
+# ── §5 g-closure / g-znorm evaluated on EVERY harness universe (rev. 2 item 2) ─
+
+
+def check_harness_universe_gates(
+    harness_root: Path, population: int, cell: str, h_lo: float, h_hi: float
+) -> dict[str, Any]:
+    """g-closure + g-znorm on every harness universe that feeds T_harn (rev. 2 item 2).
+
+    §5 registers g-znorm's scope as "in both venues and in every harness universe"; the same
+    per-venue scope applies to the g-closure identity of §2.1, which up to rev. 1 was checked only
+    on the production venue. This function re-derives both gates independently, per universe, from
+    that universe's own ``event_likelihoods.csv`` (the same file
+    :func:`compute_harness_matched_channel_scores` reads for T_harn) -- a red on ANY universe is a
+    NO-READ trigger exactly as §4's NO-READ row prescribes ("g-closure red ... g-znorm red"),
+    surfaced via :func:`collect_gate_report`, never folded into the six-way disposition chain.
+    """
+    checkpoint_files = sorted(harness_root.glob(f"universe_seed*_{cell}.json"))
+    matched_seeds: list[int] = []
+    for f in checkpoint_files:
+        try:
+            c = json.loads(f.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if int(c["universe"]["n_draw_requested"]) == population:
+            matched_seeds.append(int(c["universe"]["seed"]))
+    matched_seeds.sort()
+
+    per_universe: list[dict[str, Any]] = []
+    all_green = True
+    for seed in matched_seeds:
+        csv_path = (
+            harness_root
+            / f"seed{seed}_{cell}"
+            / "simulations"
+            / "diagnostics"
+            / "event_likelihoods.csv"
+        )
+        if not csv_path.is_file():
+            per_universe.append({"seed": seed, "available": False, "universe_green": False})
+            all_green = False
+            continue
+        df = pd.read_csv(csv_path)
+        terms = compute_event_terms(df, h_lo, h_hi)
+        gclosure = check_gclosure(terms)
+        gznorm = check_gznorm(df)
+        universe_green = bool(gclosure["gclosure_green"] and gznorm["all_h_nodes_uniform"])
+        if not universe_green:
+            all_green = False
+        per_universe.append(
+            {
+                "seed": seed,
+                "available": True,
+                "gclosure_green": gclosure["gclosure_green"],
+                "max_closure_residual": gclosure["max_closure_residual"],
+                "gznorm_green": gznorm["all_h_nodes_uniform"],
+                "universe_green": universe_green,
+            }
+        )
+
+    count_matches_expected = len(matched_seeds) == N_HARNESS_UNIVERSES
+    return {
+        "n_universes_checked": len(matched_seeds),
+        "n_universes_expected": N_HARNESS_UNIVERSES,
+        "count_matches_expected": count_matches_expected,
+        "all_universes_gclosure_gznorm_green": bool(all_green and count_matches_expected),
+        "per_universe": per_universe,
+    }
+
+
 # ── §2.3 g-precision cross-check (optional, informational) ──────────────────
 
 
@@ -388,24 +534,41 @@ def check_gprecision(
     return {"nodes": found, "any_full_precision_source_found": any_checked}
 
 
-# ── dry-run ───────────────────────────────────────────────────────────────
+# ── shared gate collection: dry-run reporting AND real-mode self-gating ─────
+# (rev. 2 item 4: real mode must run this SAME suite itself, not trust a separate dry-run.)
 
 
-def run_dry_run(args: argparse.Namespace) -> dict[str, Any]:
-    """Load every input, run the gates, print anchors, and return the summary (exit 0, no
-    statistic computed)."""
-    report: dict[str, Any] = {"mode": "dry-run"}
+def collect_gate_report(
+    production_csv_path: Path,
+    production_crb_path: Path,
+    replicate_csv_path: Path | None,
+    harness_root: Path,
+    population: int,
+    h_lo: float,
+    h_hi: float,
+    crb_md5_expected: str,
+    catalogue_md5_expected: str,
+    h_true: float,
+) -> dict[str, Any]:
+    """Run every §5 gate on the given inputs: g-population (production + replicate), g-znorm
+    (production + replicate), g-closure incl. class closure (production + replicate), g-closure/
+    g-znorm on every harness universe (rev. 2 item 2), g-byte-id, and the T0 mean_h anchor.
+    Returns the full gate table plus an overall ``gates_green`` boolean and a ``NO_READ`` verdict
+    naming every gate that fired, matching §4's NO-READ trigger list exactly. Called identically
+    by :func:`run_dry_run` (reporting only) and :func:`compute_registered_statistics` (gating).
+    """
+    report: dict[str, Any] = {}
 
-    production_csv = pd.read_csv(args.production_csv)
-    production_crb = pd.read_csv(args.production_crb)
-    crb_md5_actual = _md5(args.production_crb)
+    production_csv = pd.read_csv(production_csv_path)
+    production_crb = pd.read_csv(production_crb_path)
+    crb_md5_actual = _md5(production_crb_path)
     report["production_crb_md5"] = {
-        "expected": args.crb_md5,
+        "expected": crb_md5_expected,
         "actual": crb_md5_actual,
-        "match": crb_md5_actual == args.crb_md5,
+        "match": crb_md5_actual == crb_md5_expected,
     }
     report["catalogue_md5_of_record"] = {
-        "expected": args.catalogue_md5,
+        "expected": catalogue_md5_expected,
         "note": (
             "not independently re-hashed here -- this script consumes only the CSVs the "
             "catalogue already fed into (event_likelihoods.csv, prepared_cramer_rao_bounds.csv); "
@@ -415,23 +578,35 @@ def run_dry_run(args: argparse.Namespace) -> dict[str, Any]:
     report["g_population_production"] = check_production_population(production_csv, production_crb)
     report["g_znorm_production"] = check_gznorm(production_csv)
 
-    if args.replicate_csv is not None and args.replicate_csv.is_file():
-        replicate_csv = pd.read_csv(args.replicate_csv)
+    terms_production = compute_event_terms(production_csv, h_lo, h_hi)
+    report["g_closure_production"] = check_gclosure(terms_production)
+    report["g_class_closure_production"] = check_class_closure(terms_production, production_crb)
+
+    replicate_available = replicate_csv_path is not None and replicate_csv_path.is_file()
+    if replicate_available:
+        assert replicate_csv_path is not None  # narrows for mypy
+        replicate_csv = pd.read_csv(replicate_csv_path)
         report["g_population_replicate"] = check_production_population(
             replicate_csv, production_crb
         )
         report["g_znorm_replicate"] = check_gznorm(replicate_csv)
+        terms_replicate = compute_event_terms(replicate_csv, h_lo, h_hi)
+        report["g_closure_replicate"] = check_gclosure(terms_replicate)
+        report["g_class_closure_replicate"] = check_class_closure(terms_replicate, production_crb)
     else:
         report["g_population_replicate"] = {"available": False}
-
-    terms = compute_event_terms(production_csv, args.h_lo, args.h_hi)
-    report["g_closure_production"] = check_gclosure(terms)
+        report["g_znorm_replicate"] = {"available": False}
+        report["g_closure_replicate"] = {"available": False}
+        report["g_class_closure_replicate"] = {"available": False}
 
     report["g_byte_id_harness"] = reproduce_harness_byte_id(
-        args.harness_root, args.population, CELL, args.h_lo, args.h_hi
+        harness_root, population, CELL, h_lo, h_hi
+    )
+    report["g_harness_universes"] = check_harness_universe_gates(
+        harness_root, population, CELL, h_lo, h_hi
     )
 
-    mean_h, h_grid = t0_mean_h(args.production_csv, "combined_no_bh")
+    mean_h, h_grid = t0_mean_h(production_csv_path, "combined_no_bh")
     # READOUT_RECORD.md's table quotes mean_h at 6 decimal places (0.666987) -- that display
     # precision, not a full-precision stash, is the only anchor of record (repro_summary.json and
     # the c0prime_eval JSONs do not carry a full-precision mean_h). A byte-for-bit comparison
@@ -459,9 +634,109 @@ def run_dry_run(args: argparse.Namespace) -> dict[str, Any]:
         "harness_checkpoints_matched": report["g_byte_id_harness"][
             "n_checkpoints_matched_population"
         ],
-        "h_stencil": [args.h_lo, args.h_hi],
-        "h_true": args.h_true,
+        "h_stencil": [h_lo, h_hi],
+        "h_true": h_true,
     }
+
+    # ── overall gates_green + NO-READ (§4's trigger list, rev. 2 items 2/4) ──
+    pop_prod = report["g_population_production"]
+    population_production_green = bool(
+        pop_prod["join_gate_green"]
+        and pop_prod["in_catalogue_matches_expected"]
+        and pop_prod["dark_matches_expected"]
+    )
+    if replicate_available:
+        pop_rep = report["g_population_replicate"]
+        population_replicate_green = bool(
+            pop_rep["join_gate_green"]
+            and pop_rep["in_catalogue_matches_expected"]
+            and pop_rep["dark_matches_expected"]
+        )
+        znorm_replicate_green = bool(report["g_znorm_replicate"]["all_h_nodes_uniform"])
+        closure_replicate_green = bool(report["g_closure_replicate"]["gclosure_green"])
+        class_closure_replicate_green = bool(
+            report["g_class_closure_replicate"]["class_closure_green"]
+        )
+    else:
+        # replicate is REPORTED/optional (§2.2) -- its absence is a disclosed skip, not a red gate.
+        population_replicate_green = True
+        znorm_replicate_green = True
+        closure_replicate_green = True
+        class_closure_replicate_green = True
+
+    znorm_production_green = bool(report["g_znorm_production"]["all_h_nodes_uniform"])
+    closure_production_green = bool(report["g_closure_production"]["gclosure_green"])
+    class_closure_production_green = bool(
+        report["g_class_closure_production"]["class_closure_green"]
+    )
+    harness_universes_green = bool(
+        report["g_harness_universes"]["all_universes_gclosure_gznorm_green"]
+    )
+    byte_id_green = bool(report["g_byte_id_harness"]["byte_id_count_green"])
+    t0_green = bool(report["t0_mean_h"]["reproduces_to_tolerance"])
+
+    gates_green = bool(
+        population_production_green
+        and population_replicate_green
+        and znorm_production_green
+        and znorm_replicate_green
+        and closure_production_green
+        and closure_replicate_green
+        and class_closure_production_green
+        and class_closure_replicate_green
+        and harness_universes_green
+        and byte_id_green
+        and t0_green
+    )
+
+    triggers: list[str] = []
+    if not population_production_green:
+        triggers.append("g-population (production)")
+    if not population_replicate_green:
+        triggers.append("g-population (replicate)")
+    if not znorm_production_green:
+        triggers.append("g-znorm (production)")
+    if not znorm_replicate_green:
+        triggers.append("g-znorm (replicate)")
+    if not closure_production_green:
+        triggers.append("g-closure (production, per-event identity)")
+    if not closure_replicate_green:
+        triggers.append("g-closure (replicate, per-event identity)")
+    if not class_closure_production_green:
+        triggers.append("g-closure (class closure, production)")
+    if not class_closure_replicate_green:
+        triggers.append("g-closure (class closure, replicate)")
+    if not harness_universes_green:
+        triggers.append("g-closure/g-znorm (harness universe)")
+    if not byte_id_green:
+        triggers.append("g-byte-id")
+    if not t0_green:
+        triggers.append("t0-mean-h anchor")
+
+    report["gates_green"] = gates_green
+    report["NO_READ"] = {"no_read": bool(triggers), "triggers": triggers}
+    return report
+
+
+# ── dry-run ───────────────────────────────────────────────────────────────
+
+
+def run_dry_run(args: argparse.Namespace) -> dict[str, Any]:
+    """Load every input, run the full §5 gate suite (:func:`collect_gate_report`), print anchors,
+    and return the summary (exit 0, no statistic computed)."""
+    report = collect_gate_report(
+        args.production_csv,
+        args.production_crb,
+        args.replicate_csv,
+        args.harness_root,
+        args.population,
+        args.h_lo,
+        args.h_hi,
+        args.crb_md5,
+        args.catalogue_md5,
+        args.h_true,
+    )
+    report["mode"] = "dry-run"
     return report
 
 
@@ -471,17 +746,49 @@ def run_dry_run(args: argparse.Namespace) -> dict[str, Any]:
 def compute_registered_statistics(
     production_csv_path: Path,
     production_crb_path: Path,
+    replicate_csv_path: Path | None,
     harness_root: Path,
     population: int,
     h_lo: float,
     h_hi: float,
+    crb_md5_expected: str,
+    catalogue_md5_expected: str,
+    h_true: float,
 ) -> dict[str, Any]:
     """Compute T_prod/Z_prod/T_harn/Z_harn/rho/delta_h_M (§2.4) and the §4 disposition.
 
     NOT invoked by the builder (standing rule 2: a different agent runs real mode). Implemented
     here so the launch-block script exists in full per the registration draft; the builder's
     BUILD_RECORD documents that only ``--dry-run`` was executed.
+
+    Rev. 2 item 4: real mode now runs the FULL §5 gate suite itself first, via the same
+    :func:`collect_gate_report` dry-run uses (g-population, g-znorm, g-closure incl. class
+    closure, the harness-universe closure/znorm sweep, g-byte-id, t0 mean_h) -- it no longer
+    relies on a temporally-separate dry-run having been green. If any gate is red, this function
+    refuses to bank a disposition: it returns the gate table + a ``NO_READ`` record instead (§4's
+    NO-READ row -- "nothing banked").
     """
+    gates = collect_gate_report(
+        production_csv_path,
+        production_crb_path,
+        replicate_csv_path,
+        harness_root,
+        population,
+        h_lo,
+        h_hi,
+        crb_md5_expected,
+        catalogue_md5_expected,
+        h_true,
+    )
+    if not gates["gates_green"]:
+        return {
+            "mode": "real",
+            "NO_READ": True,
+            "no_read_triggers": gates["NO_READ"]["triggers"],
+            "disposition": "NO-READ",
+            "gates": gates,
+        }
+
     production_csv = pd.read_csv(production_csv_path)
     production_crb = pd.read_csv(production_crb_path)
     terms = compute_event_terms(production_csv, h_lo, h_hi)
@@ -518,6 +825,14 @@ def compute_registered_statistics(
 
     rho = t_harn / t_prod if (abs(z_prod) > Z_BAND and t_prod) else None
 
+    # delta_h_M (§2.4, rev. 2 item 1): REPORTED-ONLY, never enters the disposition below.
+    delta_h_m = compute_delta_h_m(t_prod, int(len(dark_terms)))
+
+    # class-closure identity (§2.1, rev. 2 item 3), re-derived here (in addition to the
+    # pre-disposition gate check above) so its residual sits alongside the other per-event terms
+    # in the output record.
+    class_closure = check_class_closure(terms, production_crb)
+
     if abs(z_harn) > Z_BAND and rho is not None and rho >= RHO_ILLEGITIMATE:
         disposition = "ILLEGITIMATE"
     elif abs(z_harn) <= Z_BAND and abs(z_prod) <= Z_BAND:
@@ -538,6 +853,7 @@ def compute_registered_statistics(
 
     return {
         "mode": "real",
+        "NO_READ": False,
         "T_prod": t_prod,
         "SE_prod": se_prod,
         "Z_prod": z_prod,
@@ -549,6 +865,8 @@ def compute_registered_statistics(
         "T_full_harn_informational": t_full_harn_informational,
         "SE_full_harn_informational": se_full_harn_informational,
         "rho": rho,
+        "delta_h_M": delta_h_m,
+        "class_closure": class_closure,
         "disposition": disposition,
         "per_event_terms": {
             "s_M": dark_terms["s_M"].tolist(),
@@ -558,10 +876,7 @@ def compute_registered_statistics(
             "closure_residual": dark_terms["closure_residual"].tolist(),
             "event_idx": dark_terms.index.tolist(),
         },
-        "gates": {
-            "g_closure": check_gclosure(terms),
-            "g_byte_id_harness": byte_id,
-        },
+        "gates": gates,
         "harness_matched_channel_detail": harn_matched,
     }
 
@@ -592,25 +907,20 @@ def main(argv: list[str] | None = None) -> int:
     if args.dry_run:
         report = run_dry_run(args)
         print(json.dumps(report, indent=1, default=str))
-        gates_green = (
-            report["g_population_production"]["join_gate_green"]
-            and report["g_population_production"]["in_catalogue_matches_expected"]
-            and report["g_population_production"]["dark_matches_expected"]
-            and report["g_znorm_production"]["all_h_nodes_uniform"]
-            and report["g_closure_production"]["gclosure_green"]
-            and report["g_byte_id_harness"]["byte_id_count_green"]
-            and report["t0_mean_h"]["reproduces_to_tolerance"]
-        )
-        print(f"\nDRY-RUN gates all green: {gates_green}", file=sys.stderr)
+        print(f"\nDRY-RUN gates all green: {report['gates_green']}", file=sys.stderr)
         return 0
 
     result = compute_registered_statistics(
         args.production_csv,
         args.production_crb,
+        args.replicate_csv,
         args.harness_root,
         args.population,
         args.h_lo,
         args.h_hi,
+        args.crb_md5,
+        args.catalogue_md5,
+        args.h_true,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, indent=1))

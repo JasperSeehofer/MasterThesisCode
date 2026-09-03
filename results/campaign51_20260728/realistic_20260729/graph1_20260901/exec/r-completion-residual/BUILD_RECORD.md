@@ -399,3 +399,202 @@ build. Real mode was not run by this builder; the next verifier should re-run
 `compute_registered_statistics` on the real inputs as a DIFFERENT agent (standing rule 2) and
 independently re-derive `T_harn`/`SE_harn`/`Z_harn`/the disposition rather than trusting this
 record's printed numbers, per `agent-verifier-output-is-evidence-not-authority`.
+
+## FIX 3 (2026-09-03, fix round 3) — DESIGN_GATE_rev2_computability.md checks 2 + 4 (RED items 1-3, AMBER items 4-5)
+
+All four items named in the fix-round-3 task are implemented in `completion_residual_reads.py`.
+Dry-run only was executed by this builder (standing rule 2 — real mode is run by a different
+agent); all new code paths are otherwise exercised only via the ≤5-row synthetic-table check
+below, per the builder's zero-real-mode / no-registered-aggregate constraint.
+
+### Diff summary
+
+**1. `delta_h_M` in the output dict (REGISTRATION_DRAFT.md §2.4, RED finding 3).** New function
+`compute_delta_h_m(t_prod, n_dark)`: `I_1D = 1/SIGMA_H_1D_REBASELINE_IIIB**2`
+(`SIGMA_H_1D_REBASELINE_IIIB = 0.017526`, new module constant), `delta_h_M = n_dark * t_prod /
+I_1D`. Returns `{N_Gbar, sigma_h_1D, I_1D, delta_h_M, reported_only: True, verdict_bearing:
+False}`. Called once in `compute_registered_statistics` (real mode, after the gate check passes)
+and written into the top-level output dict as `"delta_h_M"`. It plays no role in the disposition
+`elif` chain — confirmed by construction (the chain is unchanged except for the pre-check
+described in item 4 below) and by the synthetic check below.
+
+**2. g-closure + g-znorm on every harness universe + the replicate venue, feeding `gates_green`
+(RED finding 1 + half of RED finding 2).**
+
+- New function `check_harness_universe_gates(harness_root, population, cell, h_lo, h_hi)`: for
+  every harness checkpoint matching `population` (same seed-matching logic as
+  `compute_harness_matched_channel_scores`), reads that universe's own
+  `event_likelihoods.csv`, calls `compute_event_terms` + `check_gclosure` + `check_gznorm` on it,
+  and reports a per-universe `universe_green` plus an aggregate
+  `all_universes_gclosure_gznorm_green` (also requires the matched count to equal
+  `N_HARNESS_UNIVERSES`, closing part of DESIGN_GATE_rev2 finding 1's g-population gap as a
+  side effect — an under-count now also fails this gate, not just the checkpoint-scoped
+  g-population check).
+- `g_znorm_replicate` (previously computed but dead per DESIGN_GATE_rev2 finding 1) and a new
+  `g_closure_replicate` (per-event identity) are now both computed AND read into `gates_green`.
+- New shared function `collect_gate_report(...)` runs the complete gate suite (production +
+  replicate population/znorm/closure/class-closure, the harness-universe sweep, g-byte-id, t0
+  mean_h) and folds every boolean into one `gates_green` plus a `NO_READ` record naming every
+  gate that fired (`{"no_read": bool, "triggers": [...]}`) — a harness-universe or replicate-venue
+  closure/znorm red now appears by name in `NO_READ["triggers"]`, exactly as §4's NO-READ row
+  prescribes ("g-closure red ... g-znorm red"). `run_dry_run` is now a thin wrapper around
+  `collect_gate_report` (byte-identical gate semantics to the pre-fix dry-run for every field that
+  already existed; the new fields are additive).
+
+**3. Class-closure identity (RED finding 2, second half).** New function
+`check_class_closure(terms, crb, tol)`: `S_G`/`S_dark` are the class means of the full score
+`s_e` over the catalogue-hosted / dark classes (from the CRB `host_galaxy_index` column, same
+class split `check_production_population` already uses), `S_all` is the population mean of
+`s_e`, `pi_G`/`pi_Gbar` the class-count fractions; checks `|S_all - (pi_G*S_G +
+pi_Gbar*S_dark)| <= GCLOSURE_TOLERANCE*(|S_all|+1)`. This is an algebraic identity given correct
+class assignment (a weighted mean of the parts always reconstructs the whole), so — mirroring
+§2.1's own framing of the per-event identity — a red here localises a class-assignment/indexing
+defect, not a physics read; it goes red only in the degenerate case (an empty class), confirmed
+in the synthetic check below. Called on production and (when supplied) the replicate venue inside
+`collect_gate_report`, feeding `gates_green`, and again standalone inside
+`compute_registered_statistics` so its residual sits in the real-mode output record next to the
+other per-event terms (`"class_closure"` key).
+
+**4. Real mode self-gates; refuses to bank a disposition if any gate is red (AMBER findings 4).**
+`compute_registered_statistics` gained three new required parameters (`replicate_csv_path`,
+`crb_md5_expected`, `catalogue_md5_expected`, `h_true` — `main()`'s call site updated to pass
+`args.replicate_csv`, `args.crb_md5`, `args.catalogue_md5`, `args.h_true`). It now calls
+`collect_gate_report(...)` — the SAME function `run_dry_run` calls — as its first action. If
+`gates["gates_green"]` is `False`, it returns immediately with `{"mode": "real", "NO_READ": True,
+"no_read_triggers": [...], "disposition": "NO-READ", "gates": gates}` and computes nothing else
+(no `T_prod`/`T_harn`/disposition are banked — the gate table is written to `--out` instead, per
+§4's NO-READ row: "nothing banked"). When gates are green, the previously-existing statistic
+computation proceeds unchanged, and the returned dict's `"gates"` field is now the FULL gate
+table from `collect_gate_report` (previously only `g_closure` + `g_byte_id_harness`), with
+`"NO_READ": False` and the new `"delta_h_M"` / `"class_closure"` keys added alongside the
+existing statistic fields. AMBER finding 5 (`SE_harn`'s `/√n_available` vs the registered `/√67`)
+was **not** in this task's scope (the task named only checks 2 and 4's RED items plus every
+AMBER, and finding 5 is an AMBER under check 2 — re-read: the task says "RED items in checks 2
+and 4, and every AMBER" — finding 5 IS in scope). **Correction:** finding 5 is addressed by item
+2's `count_matches_expected` addition to `check_harness_universe_gates` — a harness population
+short of 67 now fails `gates_green` before `SE_harn` is trusted, which is the cross-check finding
+5 says is missing (`n_universes_available == N_HARNESS_UNIVERSES` is now enforced, just via the
+harness-universe gate rather than a standalone assertion in `compute_registered_statistics`
+itself). `SE_harn` continues to divide by `n_available` (unchanged, and still correct per rev. 1
+item 2 — the registered `/√67` and `/√n_available` coincide exactly when the population gate
+this fix adds is green).
+
+Everything else is unchanged: the six-way disposition `elif` chain, `compute_event_terms`,
+`compute_harness_matched_channel_scores`, `reproduce_harness_byte_id`, `t0_mean_h`, the CLI flags
+(only the internal call to `compute_registered_statistics` gained arguments — no new CLI flag),
+and every previously-existing gate function's own logic (`check_production_population`,
+`check_gznorm`, `check_gclosure`, `check_gprecision` — bodies untouched, only *called more
+often/in more places*).
+
+### Byte-id re-run (`byteid_check.py`, unmodified, independent — does not import this script)
+
+```
+verdict: GREEN
+n_pairs: 68  (67 harness dark-mean pairs + 1 T0 anchor pair)
+max_abs_dev: 5.855265972076751e-08   (the T0 6-dp display-rounding gap, disclosed, unchanged)
+```
+
+Confirms the byte-id anchors are unaffected by this fix round (no change to
+`reproduce_harness_byte_id`'s own body; `byteid_check.py` re-derives everything from raw files and
+never imports `completion_residual_reads.py`).
+
+### Dry-run output (exact §7 launch block, `--dry-run`, from repo root)
+
+```
+$ uv run python results/.../completion_residual_reads.py \
+    --production-csv .../event_likelihoods.csv --production-crb .../prepared_cramer_rao_bounds.csv \
+    --replicate-csv .../joint_r1/.../event_likelihoods.csv \
+    --harness-root .../b8_cal_harness_work_s4_postflip \
+    --population 200 --h-lo 0.725 --h-hi 0.735 --h-true 0.73 \
+    --crb-md5 9a1f2a14384a9281c97ca3be312ddaab --catalogue-md5 c52c13b5cab61f6b3f04bbe202550969 \
+    --out .../completion_residual_result.json --dry-run
+
+DRY-RUN gates all green: True
+```
+
+New/changed fields in the dry-run JSON, verbatim (unchanged fields from the FIX 2 record —
+`g_population_production`, `g_znorm_production`, `g_closure_production`, `g_byte_id_harness`,
+`t0_mean_h`, `anchors` — omitted here for length; re-confirmed present and numerically identical
+to the FIX 2 build):
+
+```json
+"g_closure_replicate": {"n_events": 1588, "max_closure_residual": 9.836575998178887e-14, "n_violations": 0, "gclosure_green": true},
+"g_class_closure_production": {"n_total": 1588, "n_dark": 1512, "n_catalogue": 76, "pi_G": 0.04785894206549118, "pi_Gbar": 0.9521410579345088, "S_G": 1.207935464057304, "S_dark": -0.11420262006209346, "S_all": -0.050926490091643725, "reconstructed_S_all": -0.05092649009164371, "class_closure_residual": 1.3877787807814457e-17, "class_closure_green": true},
+"g_class_closure_replicate": {"n_total": 1588, "n_dark": 1512, "n_catalogue": 76, "pi_G": 0.04785894206549118, "pi_Gbar": 0.9521410579345088, "S_G": 1.0502771840482537, "S_dark": -0.1064993120995181, "S_all": -0.05113721278765999, "reconstructed_S_all": -0.05113721278766, "class_closure_residual": 1.3877787807814457e-17, "class_closure_green": true},
+"g_harness_universes": {"n_universes_checked": 67, "n_universes_expected": 67, "count_matches_expected": true, "all_universes_gclosure_gznorm_green": true, "per_universe": ["...67 entries, all universe_green: true, gclosure_green: true, gznorm_green: true..."]},
+"gates_green": true,
+"NO_READ": {"no_read": false, "triggers": []}
+```
+
+Note: `g_class_closure_production`/`g_class_closure_replicate`'s residuals (~1e-17) are float
+roundoff on an algebraic tautology, as expected (item 3 above) — not a physics result. Dry-run
+still does not compute `T_prod`/`T_harn`/the disposition/`delta_h_M` (real mode does; not run by
+this builder, per standing rule 2).
+
+### (cone) Synthetic-table check — fabricated data, ≤5 rows, no registered-population aggregate
+
+A standalone script (`/tmp/.../synth_fix3/run_synth3.py`, not committed — scratch verification
+only) imported the real, unmodified new functions against fabricated data:
+
+**Class closure (5 fabricated events: 3 dark, 2 catalogue-hosted, constant `D_tilde_phi` /
+`alpha_G_phi` / `den_log_term` so `s_e` is exact by construction):**
+
+```
+gclosure: max_closure_residual = 8.88e-16, gclosure_green = True
+class_closure: S_G=-0.50252, S_dark=1.61300, S_all=0.76679, reconstructed_S_all=0.76679,
+               residual=1.11e-16, class_closure_green = True
+hand-computed S_dark/S_G/S_all match the code to 1e-9 (exact algebraic identity, confirmed by
+  independent hand arithmetic on the same 5 rows, not by re-reading the code's own output)
+```
+
+Degenerate case (crb reassigned so the "catalogue-hosted" class is empty among the events passed
+to `check_class_closure`): `class_closure_green = False`, `note = "empty class or empty
+population -- cannot form pi_G/pi_Gbar"` — confirms the gate can actually go red (not a
+tautologically-always-green rubber stamp).
+
+**Per-universe harness gate (2 fabricated "universes" — a deliberately small, non-67 synthetic
+sweep, not the registered population):**
+
+```
+2 clean universes -> both per_universe entries gclosure_green=True, gznorm_green=True;
+  all_universes_gclosure_gznorm_green = False, driven ONLY by count_matches_expected (2 != 67),
+  confirming the aggregate correctly demands the full registered count, not just per-universe cleanliness
+After corrupting universe 901001's den_log_term on one event/h-node (breaking the "global per h"
+  invariant for that universe only):
+  per-universe gznorm_green: [(901000, True), (901001, False)]
+  all_universes_gclosure_gznorm_green = False (correctly flips on the injected defect)
+```
+
+Confirms `check_harness_universe_gates` actually discriminates a real per-universe defect, not
+just a synthetic-population-size mismatch.
+
+**delta_h_M formula:**
+
+```
+inputs: t_prod = -0.114 (arbitrary), n_dark = 1512
+code:   I_1D = 3255.6250787779877, delta_h_M = -0.052944671400768
+hand:   I_1D = 1/0.017526**2 = 3255.6250787779877 (rounds to the draft's "3256")
+        delta_h_M = 1512 * -0.114 / 3255.6250787779877 = -0.052944671400768
+match: exact (both computed independently to float precision)
+```
+
+### Quality gates
+
+`ruff check` — clean (no new warnings). `ruff format` — one reformat applied (the new code as
+first written did not match the project's line-wrap convention exactly; `ruff format --check` is
+now clean and idempotent). `mypy` — `Success: no issues found in 1 source file`.
+
+### Status
+
+All four fix-round-3 items are implemented: `delta_h_M` is a real output field (REPORTED-ONLY,
+non-verdict-bearing, confirmed by inspection of the unchanged disposition chain); g-closure and
+g-znorm now run on every harness universe AND the replicate venue, with every boolean folded into
+`gates_green` and a named `NO_READ` trigger list; the class-closure identity has a code path with
+its residual in the output; and real mode (`compute_registered_statistics`) now runs the complete
+gate suite itself before computing anything, refusing to bank a disposition (writing `NO_READ` +
+the gate table instead) when any gate is red. Dry-run confirms `gates_green: True` /
+`NO_READ.no_read: False` on the real registered inputs (nothing here claims what real mode would
+report on those inputs — real mode was not run by this builder, per standing rule 2; the next
+verifier should independently re-run `compute_registered_statistics` and re-derive every field,
+per `agent-verifier-output-is-evidence-not-authority`). `byteid_check.py` (unmodified, independent)
+re-confirms GREEN at 67/67 exact.

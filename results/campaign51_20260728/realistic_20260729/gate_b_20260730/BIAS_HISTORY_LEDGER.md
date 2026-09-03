@@ -3454,3 +3454,9 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **D9** — cosmetic.
 
 **(3) Bookings the verifier lists as not literally supported** are each either withdrawn (byte-id discharge; "F at N=200"; "physics identical"; cone INTERMEDIATE) or amended as above.
+
+## Row #346 — 2026-09-03 ~22:45 — **m-completion-residual rounds 3–4. All content chair-derived.**
+
+**(1) Fix round 3** (sonnet builder): `delta_h_M` (reported-only, `I_1D = 1/0.017526² = 3255.6`) implemented; `g-closure` + `g-znorm` now evaluated on every one of the 67 harness universes and on the replicate venue and folded into `gates_green` with a NO_READ record; class-closure `S_all = π_G·S_G + π_Ḡ·S_dark` implemented (residuals `~1e-17` on both venues in dry-run); real mode now self-gates and refuses to bank on any red. byte-id GREEN `67/67` (unmodified checker). **Fresh gate** (`exec/r-completion-residual/DESIGN_GATE_rev3_computability.md`): checks 1–4, 6, 7 GREEN (formulas traced line-by-line; the 6 disposition rows 1:1 with code; synthetic checks reproduce by hand); overall **RED on check 5**: three draft-named gates still without code paths — **F1** the §5 harness-vs-production resolved-flags equality NO-READ trigger, **F3** the g-censoring rail-fraction disclosure, **F4** a dead g-precision cross-check.
+
+**(2) Fix round 4** launched (same shape: builder → fresh gate → disjoint read on GREEN). Chair note for the morning: the F1 flag-equality gate may legitimately fire NO-READ on real inputs (the S3 harness ran `mass_aware` per its own resolved flags; the production re-baseline ran the post-flip default) — if so, that is the registered outcome, not a defect. Chair ratification of `d-completion-register` under docket item 2.2 remains conditional on a GREEN gate.
