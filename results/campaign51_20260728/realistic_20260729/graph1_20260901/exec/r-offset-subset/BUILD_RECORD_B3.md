@@ -658,3 +658,219 @@ marked `ABSENT`.
 findings from `DESIGN_GATE_formula_rev2.md` (§B, §C, §D) and the one lower-severity gap
 (§E) are all implemented and wired per the table above; C9 and "reweighting not registered"
 are correctly absent by the draft's own design, not gaps.
+
+---
+
+## FIX 4 (builder round 4) — real-schema mapping + hard covariate/influence pre-flight
+
+Trigger: `DESIGN_GATE_formula_rev3.md` finding 4.2 (RED) — `offset_subset_reads.py` read
+bare `C1..C11` covariate ids and a per-family `{family}_in_S` influence flag, matching only
+the hand-built `SYNTH_*` fixture, never the real, already-built phase-A/B output
+(`covariate_table_{iiib,joint_r1}.csv`, `influence_{iiib,joint_r1}.csv`), and the failure
+mode if ever pointed at that real data was **silent**: every covariate skipped via
+`if cov not in table.columns: continue`, `disposition_for()` falling through to a false
+`DIFFUSE-IN-COVARIATES` with zero of eleven covariates actually tested. `REGISTRATION_DRAFT.md`
+"PIN CORRECTIONS" (2026-09-04 ~00:40 CEST) ratifies the schema of record as the BUILT files'
+own headers and requires (1) an explicit, asserted bare→real mapping and (2) a hard
+pre-flight: any registered covariate or influence column missing ⇒ `INSTRUMENT-DEFECT`,
+written to the JSON, exit non-zero, never a silent skip. No statistic, threshold, or
+disposition path was touched — every change is confined to the loading layer (`load_table`,
+`load_influence`, the new `detect_venue`/`check_covariate_schema`/`check_influence_base_schema`/
+`InstrumentDefectError`, and `main()`'s pre-flight wiring).
+
+### 1. Real headers, confirmed via `head -1` (never opened beyond the header line)
+
+```
+$ head -1 covariate_table_iiib.csv
+event_idx,C1_in_catalog,C4_z_gw,C5_log10_sky_area,C8_cone_outside,C10_log10_M,C10b_low_M_timeout_bins12,C11_log10_snr,C2_hosted_exact,C3_hosted_rel,C3c_log10_f_cat,C3c_censored,C6_mass_window_retention,C7_log10_n_cand_1d
+$ head -1 covariate_table_joint_r1.csv
+(identical schema to covariate_table_iiib.csv)
+$ head -1 influence_iiib.csv
+event_idx,influence_2D,influence_1D,rank
+$ head -1 influence_joint_r1.csv
+(identical schema to influence_iiib.csv)
+```
+
+`BUILD_RECORD_B2.md` "Output files" (phase B's own definition, a markdown build record, not
+a forbidden CSV): "`influence_2D`/`influence_1D` are the directional statistic d_e … positive
+= removing the event moves mean_h toward truth" — i.e. these columns already ARE d_e, not the
+raw `influence = mean_h(full) − mean_h(full−e)` the name suggests, and there is no `_in_S`
+column at all: S must be derived from the top-k rank over this column, never read from a
+banked flag (`REGISTRATION_DRAFT.md` §2: "S is defined by the BANKED k, not re-derived").
+
+Second structural fact used below: the built outputs are **one covariate table + one
+influence file per venue** (iiib, joint_r1), not the draft's single combined pair — so a
+single invocation of `offset_subset_reads.py` covers exactly one venue's two families
+(`iiib_2d`/`iiib_1d` or `jr1_2d`/`jr1_1d`). `detect_venue()` reads this off the `--table`/
+`--influence` filenames (both must name the same venue, else `INSTRUMENT-DEFECT`) and gates
+which two families are processed (`VENUE_FAMILIES`).
+
+### 2. The explicit, asserted mapping table (in code: `COVARIATE_COLUMN_MAP`)
+
+| registered id | real column (covariate_table_{iiib,joint_r1}.csv) |
+|---|---|
+| C1 | `C1_in_catalog` |
+| C2 | `C2_hosted_exact` |
+| C3 | `C3_hosted_rel` |
+| C3c | `C3c_log10_f_cat` |
+| C4 | `C4_z_gw` |
+| C5 | `C5_log10_sky_area` |
+| C6 | `C6_mass_window_retention` |
+| C7 | `C7_log10_n_cand_1d` |
+| C8 | `C8_cone_outside` |
+| C10 | `C10_log10_M` |
+| C10b | `C10b_low_M_timeout_bins12` |
+| C11 | `C11_log10_snr` |
+
+A module-level `assert set(COVARIATE_COLUMN_MAP) == set(HOLM_FAMILY) | set(REPORTED_ONLY)`
+guarantees the map can never silently drop a registered covariate out of the pre-flight.
+`C3c_censored` (present in the real file, not a registered covariate) is left untouched —
+harmless, not consumed anywhere.
+
+Influence side (`FAMILY_D_E_SOURCE_COL`): `iiib_2d`/`jr1_2d` → `influence_2D`;
+`iiib_1d`/`jr1_1d` → `influence_1D` — venue is selected by which per-venue file is loaded
+(§8 invokes the script once per venue), never by column name.
+
+### 3. Hard pre-flight (never a silent skip)
+
+`check_covariate_schema()` (called first thing inside `load_table`, before the index is even
+set) and `check_influence_base_schema()` (called first thing inside `load_influence`) each
+raise the new `InstrumentDefectError` — carrying a `message` and a structured `detail` dict —
+the instant a required real column is absent. `main()` wraps the whole load/pre-flight
+sequence in one `try/except InstrumentDefectError`: real mode writes
+`{"disposition": {"value": "INSTRUMENT-DEFECT", ..., "detail": ...}}` to `--out` and returns
+1; `--dry-run` prints the message and returns 1 without writing (dry-run never writes a file
+under any outcome, per its own contract). `main()` additionally recomputes
+`missing_covariates` after `load_table` returns as a belt-and-suspenders regression guard —
+now structurally unreachable as non-empty given `check_covariate_schema` already gated
+`load_table`, but kept so a future edit that weakens the schema pre-flight still cannot reach
+`build_report()`/`disposition_for()` with a partially-populated table (the exact silent
+DIFFUSE-IN-COVARIATES path finding 4.2 named). Verified live:
+
+```
+$ uv run python offset_subset_reads.py \
+    --table SYNTH_bad_schema_covariate_table.csv (C4_z_gw dropped) --table-sha256 <recomputed> \
+    --influence influence_iiib.csv --out /tmp/should_not_write.json --dry-run
+INSTRUMENT-DEFECT: covariate table missing required column(s) for registered covariate(s): C4 -> C4_z_gw
+exit code: 1, /tmp/should_not_write.json NOT written
+```
+
+### 4. §8 launch block, `--dry-run`, on the REAL committed inputs — exit 0, 1588/1588 per venue
+
+Hashes recomputed and matched against the committed `covariate_table.sha256` before
+running (G-4 gate exercised, not bypassed):
+
+```
+$ sha256sum covariate_table_iiib.csv covariate_table_joint_r1.csv
+90c92026bb7fecff46e5a55e1e2c67a33b424e4b71611ee0d0854576b189f7b0  covariate_table_iiib.csv
+fc2eebe7fa66afbe2e35b0dd09c889be790511a6f5dabce3338969c849fcdf3a  covariate_table_joint_r1.csv
+(matches the committed covariate_table.sha256 exactly)
+
+$ uv run python offset_subset_reads.py \
+    --table covariate_table_iiib.csv --table-sha256 90c92026bb7fecff46e5a55e1e2c67a33b424e4b71611ee0d0854576b189f7b0 \
+    --influence influence_iiib.csv --alpha 0.05 --auc-band 0.20 --or-band 3.0 --t-mat 0.008 \
+    --decile 0.10 --null-draws 1000 --null-seed 20260904 --out offset_subset_result_iiib.json --dry-run
+venue: iiib
+table: covariate_table_iiib.csv (1588 rows), sha256 OK
+influence: influence_iiib.csv (1588 rows)
+join: 1588 table rows / 1588 influence rows joined on event_idx; unmatched table-only=0, unmatched influence-only=0; join_complete=True
+logL columns present: False (h_grid n=0)
+  family iiib_2d: k=82
+  family iiib_1d: k=94
+dry-run OK
+$ echo exit=$?
+exit=0
+
+$ uv run python offset_subset_reads.py \
+    --table covariate_table_joint_r1.csv --table-sha256 fc2eebe7fa66afbe2e35b0dd09c889be790511a6f5dabce3338969c849fcdf3a \
+    --influence influence_joint_r1.csv --alpha 0.05 --auc-band 0.20 --or-band 3.0 --t-mat 0.008 \
+    --decile 0.10 --null-draws 1000 --null-seed 20260904 --out offset_subset_result_joint_r1.json --dry-run
+venue: jr1
+table: covariate_table_joint_r1.csv (1588 rows), sha256 OK
+influence: influence_joint_r1.csv (1588 rows)
+join: 1588 table rows / 1588 influence rows joined on event_idx; unmatched table-only=0, unmatched influence-only=0; join_complete=True
+logL columns present: False (h_grid n=0)
+  family jr1_2d: k=72
+  family jr1_1d: k=46
+dry-run OK
+$ echo exit=$?
+exit=0
+```
+
+Both runs: **1588/1588 joined, 0 unmatched either direction**; per-family `k` reproduces the
+registered banked k EXACTLY (82/94/72/46, §2/G-2(ii)) via the top-k-rank derivation, not a
+re-read of a banked flag; `logL columns present: False` confirms materiality correctly reports
+NOT-TESTED on this real data (the primary-family-only `logL_h*` data contract is still
+unmet by the built files — the already-disclosed, separate open item from finding 4.2/4.3,
+unchanged by this round). **Neither invocation touched a registered aggregate**: `--dry-run`
+loads, hash-checks, schema-checks, prints row/join/k counts, and exits — no AUC/OR/p/Δ_strat
+is computed. `--out` was never written (confirmed: no `offset_subset_result_*.json` file
+exists after either run).
+
+### 5. `SYNTH_make_synth.py` extension — real-suffixed-schema fixture + missing-column checks
+
+Appended a "FIX 4" section (after the untouched FIX 2/FIX 3 sections, which still pass
+byte-identically — re-run live, same output) that:
+
+1. Builds a 10-row synthetic table/influence pair using the REAL suffixed/generic schema
+   (`C1_in_catalog`, …, `influence_2D`/`influence_1D`/`rank`) and drives it through the real
+   `load_table`/`load_influence`/`detect_venue` functions — asserts the bare `C1`/`C4`
+   columns are correctly mapped and `{family}_in_S` is correctly derived from the top-k rank
+   (`S={0,1,2}` for k=3 by construction) for both native families, and that the OTHER venue's
+   families (`jr1_2d`) do not appear in the loaded influence frame.
+2. Drops `C4_z_gw` from the covariate fixture — asserts `load_table` raises
+   `InstrumentDefectError` naming `C4 -> C4_z_gw`, with the structured `detail` dict populated.
+3. Drops `influence_1D` from the influence fixture — asserts `load_influence` raises
+   `InstrumentDefectError` with `detail["missing_influence_columns"] == ["influence_1D"]`.
+4. Pairs an iiib table filename with a joint_r1 influence filename — asserts `detect_venue`
+   raises `InstrumentDefectError` rather than guessing.
+5. Runs the actual CLI (subprocess, mirroring the launch-block invocation exactly) with
+   `--dry-run` on the REAL, committed `covariate_table_{iiib,joint_r1}.csv` /
+   `influence_{iiib,joint_r1}.csv` pairs — asserts exit 0, the literal
+   "1588 table rows / 1588 influence rows joined" / "join_complete=True" strings, the exact
+   per-family `k` lines, and that the `--out` path is never created.
+
+Live run (`uv run python SYNTH_make_synth.py`), FIX 4 section only:
+
+```
+FIX 4 / happy path: venue='iiib', iiib_2d S=[0, 1, 2], iiib_1d S=[0, 1, 2], all 12 registered covariates present after schema mapping
+FIX 4 / missing covariate column: InstrumentDefectError raised as required: covariate table missing required column(s) for registered covariate(s): C4 -> C4_z_gw
+FIX 4 / missing influence column: InstrumentDefectError raised as required: influence vectors missing required column(s): ['influence_1D']
+FIX 4 / venue mismatch: InstrumentDefectError raised as required: cannot determine a single venue (iiib / joint_r1) from --table=covariate_table_iiib.csv and --influence=influence_joint_r1.csv; this script processes exactly one venue's covariate table + influence file per invocation (PIN CORRECTIONS item 1).
+FIX 4 / --dry-run (iiib, REAL inputs): exit 0, 1588/1588 joined, k={'iiib_2d': 82, 'iiib_1d': 94}, no file written
+FIX 4 / --dry-run (joint_r1, REAL inputs): exit 0, 1588/1588 joined, k={'jr1_2d': 72, 'jr1_1d': 46}, no file written
+FIX 4: all assertions passed (real-schema mapping, missing-column INSTRUMENT-DEFECT x2, venue mismatch, real-input --dry-run x2)
+```
+
+All FIX 2 and FIX 3 assertions in the same run still pass unchanged (their console lines are
+byte-identical to the prior round's, confirming zero regression to any statistic/threshold/
+disposition path).
+
+### 6. Quality gates
+
+```
+$ uv run ruff check offset_subset_reads.py SYNTH_make_synth.py
+All checks passed!
+$ uv run mypy offset_subset_reads.py
+Success: no issues found in 1 source file
+```
+
+`mypy` on `SYNTH_make_synth.py` surfaces 3 pre-existing errors (a `str`-vs-`Literal` verdict
+argument and two `float | None` subtractions), all inside the **untouched FIX 2/FIX 3 sections**
+this round did not edit — not introduced by FIX 4, and left as-is rather than hand-editing
+already-hand-verified build-record evidence lines outside this round's scope
+(`DESIGN_GATE_formula_rev3.md` hand-re-derived those exact assertions against the committed
+output; touching that code would invalidate that verification without being asked to).
+
+### 7. Real mode — explicitly NOT run
+
+Per the task boundary for this round, real mode (`offset_subset_reads.py` without
+`--dry-run`, against the real `covariate_table_*.csv`/`influence_*.csv`) was **not invoked**.
+`build_report()`'s cross-venue family loop (`FAMILIES`/`PRIMARY_FAMILY`/`REPLICATE_FAMILIES`
+spanning both `iiib_*` and `jr1_*`) still assumes a single load carries all four families,
+which the real per-venue file split does not support in one invocation — the same
+architecture gap `DESIGN_GATE_formula_rev3.md` §4.3 already disclosed, not solved by this
+round (out of scope: items 1-2 gate columns, not cross-venue orchestration) and not required
+for `--dry-run` to pass. Flagged for whoever authors the real-mode launch (author ruling
+needed on whether real mode runs twice, once per venue, with a combined third pass merging
+the two JSONs for the 2-of-3 replicate check, or the launch block itself is revised).
