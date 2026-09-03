@@ -80,10 +80,10 @@ source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 cd "$PROJECT_ROOT"
 
-EXPECTED_COMMIT="9336364c"
+EXPECTED_COMMIT="9336364c"  # minimum commit: the row-#325-era spec; ancestor check below (row #331 fix — strict equality broke on every later docs commit)
 ACTUAL_COMMIT="$(git rev-parse --short=8 HEAD)"
-if [[ "$ACTUAL_COMMIT" != "$EXPECTED_COMMIT" ]]; then
-    echo "STOP: HEAD mismatch (expected $EXPECTED_COMMIT, got $ACTUAL_COMMIT) -- re-sync before running" >&2
+if ! git merge-base --is-ancestor "$EXPECTED_COMMIT" HEAD; then
+    echo "STOP: HEAD ($ACTUAL_COMMIT) does not contain required commit $EXPECTED_COMMIT -- re-sync before running" >&2
     exit 1
 fi
 
