@@ -3618,3 +3618,11 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(4) D12:** Holm at `m = 10` (C10b excluded), no verdict change. **Booking unchanged** (INTERMEDIATE by the vacuous 2D/1D trigger; primary SUBSET-IDENTIFIED disclosed; separation replicates `3/3`). Chair record erratum appended; morning docket R15 corrected; artifact republished.
 
 **(5) Graph 2 mechanism candidate (corrected):** the completion leg at high z for zero-candidate cones.
+
+## Row #364 — 2026-09-04 ~02:40 CEST — **r-timeout-selection Q2 computability gate RED at registration level. All content chair-derived.**
+
+**(1) Gate result** (fresh sonnet; `exec/r-timeout-selection/DESIGN_GATE_Q2_computability.md`) **RED at the REGISTRATION level, no build attempted:** **(F2/F3)** the S2.3 primary statistic's bin-support rule `n_kept(b) ≥ 10` excludes bin 1 (`n_kept = 9`; g-byteid pins `n_kept = 0/9/1279/304/0`) while the draft's own NOTE and §6 item (2) treat bins 1–3 as supported — the weight for bin 1 is undefined and `g-closure Σ w_e = 1588` cannot be satisfied without an unregistered choice; **(F1)** `influence_joint_r1.csv` (needed for the `k = 72` replicate) has no §1 pin; **(F4)** `|d_e|`'s role in the S2.2 disposition unstated.
+
+**(2) GREEN items:** S2.1 info map inputs and formula; S2.4 hypothesis line (all 822 timeout records carry full parameters); `max_revisions`/blindness line; every other pin re-verified (CRB, pool `707` files / `200,100` rows / `99,014` a-rows, bin edges, both `event_likelihoods` md5s, the log manifest).
+
+**(3) Chair decision.** Registration revision 1 (Q2) requested from author C (one bin-support rule, pins, `|d_e|` role; no thresholds touched); the gate→build→read chain reruns after it.
