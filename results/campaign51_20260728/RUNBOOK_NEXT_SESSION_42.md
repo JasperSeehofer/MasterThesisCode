@@ -18,9 +18,16 @@ watchers that DIED with the old session — §1 is the very first thing to do.
    --work-root <ABSOLUTE work root> --N 200 --cell S --seed-block 901000 --n-universes 100
    --max-wall-s 86400 > exec/m-s3-postflip-coverage/cellS_inv2.log 2>&1 &` (checkpoints skip
    automatically). Cell T is COMPLETE (25/25, row #326) — do not touch its work.
-2. **S0-B production (CLUSTER, survives):** job **6779532** (array 0-4, 5 registered θ-nodes;
-   the first submission 6779448 failed 5/5 at 11s on a strict-equality HEAD pin, fixed to an
-   ancestor check and resubmitted — rows #330-#331). Re-arm a sacct watcher. On completion: retrieval + the PA-HIER-33 /
+2. **S0-B production: COMPLETE (rows #330–#332).** Job 6779532, 5/5 COMPLETED; out-root
+   `graph1_20260901/exec/m-s0b-production/s0b_run_20260902` on the cluster (925M). Chair-verified:
+   production Σφ/Σ_4D loaded, registered config verbatim, single-h design → the ~7.5-min/node cost
+   is EXPECTED (the §7.2 anchor priced a 41-node grid; misapplied in item 10 — disclosed).
+   **FIRST SCIENCE ACTION for this session: the S0-B read** — retrieve (rsync -aL + md5, exclude
+   injection-pool symlinks), then the registered reads: g-score-null |Z|≤3 (rows #225/#251/#287),
+   score_b_re secant per PA-HIER-31(d) (denominator 0.066), score_s per the standing convention,
+   B0-B disposition per §2.1(e) (LEVER-DEAD-AT-N iff |Z_b|≤3 AND |Z_lns|≤3; materiality
+   |b̂|<0.0165; power σ_b<0.0661) — mechanical dispositions only; **d-photoz-leverage returns to
+   the author with the numbers**. Reader = fresh sonnet agent; chair re-derives decisive numbers. Re-arm a sacct watcher. On completion: retrieval + the PA-HIER-33 /
    score_b_re reads (g-score-null |Z|≤3 gate per rows #225/#251/#287) → d-photoz-leverage
    dossier to the author. Cost anchor: 74.7–101.4 CPU-h across 5 tasks (~15–23 CPU-h each).
 3. SSH is authenticated as of handoff; `ControlPersist` expires ~8h (OTP, author-only re-auth).
