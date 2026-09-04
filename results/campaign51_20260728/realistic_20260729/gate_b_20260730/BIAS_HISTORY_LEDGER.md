@@ -3798,3 +3798,11 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(3) GATE-ACC `6790465` still PENDING.**
 
 **(4) A bounded background poll** via the wrapper is armed on `6794615`.
+
+## Row #383 — 2026-09-04 ~15:15 CEST — **r-timeout-selection Q1 PARKED after 3 design rounds.** All content chair-derived.
+
+**(1) Q1 rev-2 gate** (revision-aware; `exec/r-timeout-selection/DESIGN_GATE_Q1_computability_rev2.md`; 9 checks, 7 GREEN incl. the per-draw source, `s_query :2276`, the 25-site table (all 25 line numbers reproduce; 7 spot-checked), closure `423`, manifest pin `6ae9c109…`, `[A13]`, bands/blindness) — **RED on two data-grounded items:** **(1)** the 707-attempt population rule is falsified on disk — the `a9f29e82` in-pool subpopulation (60 files, `seed51000`, task ids `0–59`) is entirely old-format by the registered current-format test; crashed task `234` (SLURM CANCELLED) has its CSV in `POOL_MANIFEST.md5`; task ids collide across seed dirs with no seed component in the flat pool filenames; **(2)** the registered PRIMARY denominator site (`_mass_trunc_denominator_inner_m_integral :869` via `:901`/`:944`) is never dispatched by the frozen T0 anchor (`_use_mass_trunc = False` in all 41 + 41 `run_metadata` files; `host_mass_kernel auto → gaussian`); the dispatched branch is `_bh_mass_denominator_inner_m_integral` (`:6835`/`:6901`/`:6979`), marked secondary.
+
+**(2) CHAIR DECISION (flagged).** Q1 **PARKED bounded-undetermined** after 3 pre-launch design rounds (post-disposition counter `0`); returns as **[RULE] R20** (pool population of record; denominator branch of record; or accept Q2 as the answer). Q2 (row #374) stands as the H0-relevant answer.
+
+**(3) Morning docket §8 added** (R19 Q2 material; R20 Q1 parked; R21 production-window S0-B re-run on byte-identity; R22 S0-C reading; R23 r-highz-completion retro-ratification; backlog: pre-commit hook was uninstalled, GATE-ACC pending since yesterday).

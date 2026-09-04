@@ -424,3 +424,24 @@ proxy) + denominator (`:901`/`:944` via proxy) + `:2058` (`S̄_φ`, proxy); the 
 `combined_with_bh` from these and confirms, per dispatch path actually used by the re-baseline (scalar vs
 batch; `mass_trunc`; `catalogue_leg_1d_mass_aware`; candidate dump off), which of the "asserted" rows were
 reached — a mismatch between the asserted flag set and the run's `run_metadata`/log flag lines = INSTRUMENT.
+
+## CHAIR DECISION (2026-09-04 ~15:10 CEST): Q1 PARKED — returns to the author as [RULE] R20
+After three pre-launch design rounds, the rev-2 gate (DESIGN_GATE_Q1_computability_rev2.md, 7/9 GREEN)
+leaves two findings that are facts about the pool and the production path, not registration wording:
+1. The pool injection_pool_mix200k_20260728 is a heterogeneous stack: the a9f29e82 in-pool
+   subpopulation (60 files, seed51000, task ids 0–59) is entirely OLD-format by the registered
+   'current-format' test; a crashed attempt (task 234, SLURM CANCELLED, no completion line) has its
+   CSV in POOL_MANIFEST.md5; task ids collide across independently submitted seed dirs and the flat
+   pool filenames carry no seed component. No mechanical rule reconstructs "the 707 attempts" from
+   the build logs without an author ruling on what the pool's population of record is.
+2. The registered PRIMARY denominator-leg site (_mass_trunc_denominator_inner_m_integral :869 via
+   :901/:944, gated on _use_mass_trunc) is never dispatched by the frozen T0 anchor: all 41+41
+   run_metadata files have _use_mass_trunc = False (normalization_mode absolute_marginal,
+   host_mass_kernel auto → gaussian). The dispatched branch is _bh_mass_denominator_inner_m_integral
+   (:6835/:6901/:6979), which the registration marks secondary.
+Consequence: Q1 cannot be launched as registered. Q2 (row #374) already answers the H0-relevant
+question at the population level (POPULATION-MISMATCH-MATERIAL, Δmean_h −0.011). Q1 is parked
+bounded-undetermined pending R20: (a) the pool population of record (stack-as-is vs the 707 current-
+format files vs a rebuilt homogeneous pool — the latter is the same [DO] as the longer-timeout pool),
+(b) the denominator branch of record for the p_det-conditioning statistic (the dispatched gaussian
+branch). Design revision counter for Q1: 3 pre-launch rounds; post-disposition counter 0.
