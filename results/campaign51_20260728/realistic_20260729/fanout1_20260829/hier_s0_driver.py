@@ -94,6 +94,40 @@ H_GEN: float = H_TRUE  # 0.73 -- the mirror-universe truth h (constants.H)
 H_BOUNDS: tuple[float, float] = (0.50, 0.86)
 assert min(H_GRID_41) >= H_BOUNDS[0] and max(H_GRID_41) <= H_BOUNDS[1]
 
+
+def parse_h_bounds(spec: str) -> tuple[float, float]:
+    """Parse a ``--h-bounds LO,HI`` CLI value into a ``(lo, hi)`` tuple.
+
+    Parameters
+    ----------
+    spec : str
+        Comma-separated ``"LO,HI"`` string, e.g. ``"0.60,0.86"``.
+
+    Returns
+    -------
+    tuple[float, float]
+        The parsed ``(lo, hi)`` bounds, with ``lo < hi``.
+
+    Raises
+    ------
+    argparse.ArgumentTypeError
+        If ``spec`` is not exactly two comma-separated floats with
+        ``lo < hi``.
+    """
+    parts = spec.split(",")
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError(
+            f"--h-bounds must be 'LO,HI' (two comma-separated floats), got {spec!r}"
+        )
+    try:
+        lo, hi = float(parts[0]), float(parts[1])
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"--h-bounds values must be floats: {spec!r}") from exc
+    if not lo < hi:
+        raise argparse.ArgumentTypeError(f"--h-bounds requires LO < HI, got {spec!r}")
+    return (lo, hi)
+
+
 # bc/b0i venue flags, copied verbatim from p3_b0_identity_test.py:
 #   ARM_FLAGS["bc"] = {"catalogue_numerator_survival": "off",
 #                       "catalogue_global_selection": "phi"}
@@ -578,6 +612,7 @@ def run_theta_node(
     catalogue_leg_1d_mass_aware: str = "off",
     theta_zwindow: str = "off",
     z_window_k: float = 1.0,
+    h_bounds: tuple[float, float] = H_BOUNDS,
 ) -> tuple[Path, float]:
     """Evaluate one theta node (prereg §2.1 S0-A/S0-R row row; KW-Q1 reuses this
     for the FT config at h_values=(0.725, 0.735)).
@@ -628,6 +663,11 @@ def run_theta_node(
     unconditionally to every node, including the truth node -- the truth
     node is a no-op under the flag per GATE T-ID (the theta-transformed
     window is the identity at theta=(0,1)).
+
+    ``h_bounds`` (builder task, ``--h-bounds`` CLI flag) is forwarded
+    verbatim to ``run_mirror_seed_inprocess``/``BayesianStatistics.
+    evaluate()``. Default :data:`H_BOUNDS` (0.50, 0.86) is byte-identical to
+    every pre-flag invocation.
     """
     theta_engaged = theta_b != 0.0 or theta_s != 1.0
     smear_flag = _resolve_smear(theta_engaged, theta_sites, smear)
@@ -648,7 +688,7 @@ def run_theta_node(
     common_kwargs: dict[str, Any] = dict(
         candidate_dump_dir=candidate_dump_dir,
         h_values=h_values,
-        h_bounds=H_BOUNDS,
+        h_bounds=h_bounds,
         theta_b=theta_b,
         theta_s=theta_s,
         theta_sites=theta_sites,
@@ -1050,6 +1090,7 @@ def run_arm_seed_s0a(
     catalogue_leg_1d_mass_aware: str = "off",
     theta_zwindow: str = "off",
     z_window_k: float = 1.0,
+    h_bounds: tuple[float, float] = H_BOUNDS,
 ) -> list[NodeResult]:
     """S0-A: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.0 (truth-theta=(0,1)).
 
@@ -1119,6 +1160,7 @@ def run_arm_seed_s0a(
             catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
             theta_zwindow=theta_zwindow,
             z_window_k=z_window_k,
+            h_bounds=h_bounds,
         )
         wall = time.time() - t0
         ln_l = read_event_ln_l(diag_csv, read_h, es_null_det=es_null_det)
@@ -1161,6 +1203,7 @@ def run_arm_seed_s0r(
     catalogue_leg_1d_mass_aware: str = "off",
     theta_zwindow: str = "off",
     z_window_k: float = 1.0,
+    h_bounds: tuple[float, float] = H_BOUNDS,
 ) -> list[NodeResult]:
     """S0-R: one seed, the theta-cross at h=H_GEN, sigma_z_scale=1.5 (DISCLOSED NULL, see module docstring).
 
@@ -1216,6 +1259,7 @@ def run_arm_seed_s0r(
             catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
             theta_zwindow=theta_zwindow,
             z_window_k=z_window_k,
+            h_bounds=h_bounds,
         )
         wall = time.time() - t0
         ln_l = read_event_ln_l(diag_csv, read_h, es_null_det=es_null_det)
@@ -1251,6 +1295,7 @@ def run_seed_s0c(
     catalogue_leg_1d_mass_aware: str = "off",
     theta_zwindow: str = "off",
     z_window_k: float = 1.0,
+    h_bounds: tuple[float, float] = H_BOUNDS,
 ) -> dict[str, Any]:
     """S0-C: one seed, theta=(0,1), the full 41-node H_GRID_41 (costing probe, prereg §2.1).
 
@@ -1277,7 +1322,7 @@ def run_seed_s0c(
         seed,
         galaxy_catalog=handler,
         h_values=H_GRID_41,
-        h_bounds=H_BOUNDS,
+        h_bounds=h_bounds,
         selection_in_completion_numerator=BC_COMPLETION_CELL,
         completion_event_measure=BC_EVENT_MEASURE,
         catalogue_numerator_survival=BC_CATALOGUE_NUMERATOR_SURVIVAL,
@@ -1317,6 +1362,7 @@ def run_seed_s0c(
         "per_h_delta_s": deltas,
         "mean_marginal_h_cost_s": (float(np.mean(deltas[1:])) if len(deltas) > 1 else None),
         "first_h_cost_s": deltas[0] if deltas else None,
+        "h_bounds": list(h_bounds),
     }
 
 
@@ -2176,6 +2222,7 @@ def _run_one_seed_worker(
         str,
         str,
         float,
+        tuple[float, float],
     ],
 ) -> Any:
     """Top-level (picklable) worker: run one seed's cells for the given arm.
@@ -2213,6 +2260,9 @@ def _run_one_seed_worker(
     (all three -- GATE T-ID makes the theta-transformed window a no-op at
     S0-C's truth-only theta, so unconditional forwarding is correct there
     too).
+    Extended again (builder task, byte-identical at the trailing
+    :data:`H_BOUNDS` default) with ``h_bounds``, forwarded verbatim to
+    run_arm_seed_s0a/s0r/run_seed_s0c (all three).
     """
     (
         arm,
@@ -2232,6 +2282,7 @@ def _run_one_seed_worker(
         catalogue_leg_1d_mass_aware,
         theta_zwindow,
         z_window_k,
+        h_bounds,
     ) = args
     if not mp.current_process()._identity:  # noqa: SLF001 -- see docstring above
         _pin_worker_affinity(cpu_budget)
@@ -2253,6 +2304,7 @@ def _run_one_seed_worker(
                 catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
                 theta_zwindow=theta_zwindow,
                 z_window_k=z_window_k,
+                h_bounds=h_bounds,
             )
         elif arm == "S0-R":
             results = run_arm_seed_s0r(
@@ -2271,6 +2323,7 @@ def _run_one_seed_worker(
                 catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
                 theta_zwindow=theta_zwindow,
                 z_window_k=z_window_k,
+                h_bounds=h_bounds,
             )
         elif arm == "S0-C":
             return {
@@ -2284,6 +2337,7 @@ def _run_one_seed_worker(
                     catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
                     theta_zwindow=theta_zwindow,
                     z_window_k=z_window_k,
+                    h_bounds=h_bounds,
                 ),
             }
         else:
@@ -2348,6 +2402,7 @@ def run_arm(
     catalogue_leg_1d_mass_aware: str = "off",
     theta_zwindow: str = "off",
     z_window_k: float = 1.0,
+    h_bounds: tuple[float, float] = H_BOUNDS,
 ) -> dict[str, Any]:
     out_root.mkdir(parents=True, exist_ok=True)
     jobs = max(1, min(jobs, len(seeds)))
@@ -2371,6 +2426,7 @@ def run_arm(
             catalogue_leg_1d_mass_aware,
             theta_zwindow,
             z_window_k,
+            h_bounds,
         )
         for seed in seeds
     ]
@@ -2424,6 +2480,7 @@ def run_arm(
         "catalogue_leg_1d_mass_aware": catalogue_leg_1d_mass_aware,
         "theta_zwindow": theta_zwindow,
         "z_window_k": z_window_k,
+        "h_bounds": list(h_bounds),
         "node_dir_suffix": _node_dir_suffix(
             theta_sites,
             smear,
@@ -3034,6 +3091,16 @@ def main() -> int:
         "score_s_raw is always emitted regardless. S0-A/S0-R only. Writes "
         "<arm>_score_output.json and <arm>_score.md.",
     )
+    ap.add_argument(
+        "--h-bounds",
+        type=parse_h_bounds,
+        default=H_BOUNDS,
+        dest="h_bounds",
+        help=f"'LO,HI' h_bounds forwarded to run_mirror_seed_inprocess/evaluate() for every "
+        f"node/arm (S0-A/S0-R/S0-C alike). Default {H_BOUNDS!r} (unset) is BYTE-IDENTICAL to "
+        "every pre-flag invocation. Recorded verbatim under 'h_bounds' in the arm's output JSON "
+        "(and, for S0-C, in each seed's per_seed entry) for provenance.",
+    )
     args = ap.parse_args()
 
     # T1.4 (row #255 tree 2 node T1.4, Richardson s-arm): mutate the
@@ -3155,6 +3222,7 @@ def main() -> int:
         catalogue_leg_1d_mass_aware=args.catalogue_leg_1d_mass_aware,
         theta_zwindow=args.theta_zwindow,
         z_window_k=args.z_window_k,
+        h_bounds=args.h_bounds,
     )
     result["smoke"] = bool(args.smoke)
     result["event_cap"] = event_cap

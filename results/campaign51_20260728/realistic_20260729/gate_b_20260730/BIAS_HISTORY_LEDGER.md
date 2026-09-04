@@ -3734,3 +3734,11 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(4) Facts.** The pool's detected population is richer in high-M than the timeout-surviving kept population; the truncation biases the estimate UP by `~0.011`, partially masking the `−0.064` offset; the remedy is a longer waveform-timeout / rescue re-run (draft §8 [DO] C, `5–140 GPU-h`) — author's word.
 
 **(5) Q1 chain launched** (pool build logs fetched, row #370).
+
+## Row #375 — 2026-09-04 ~12:20 CEST — **b-hbounds-flag build.** Record: `exec/d-photoz-leverage/HBOUNDS_FLAG_BUILD_RECORD.md`. All content chair-derived.
+
+**(1) `--h-bounds LO,HI` flag added** (default = the module constant `(0.50, 0.86)` → byte-identical without the flag: `--score-only` outputs on the retrieved S0-B run diff empty before/after); `h_bounds` threaded through `run_theta_node`/`run_arm_seed_s0a/s0r`/`run_seed_s0c`/the worker tuple/`run_arm` for all arms and venues; resolved value recorded in the output payloads; `git diff --stat` = this file only (`+70/−2`).
+
+**(2) `cluster/graph1_s0b_truth_hbounds060.sbatch` written** (`NODES=(truth)`, `--array=0-0`, `--h-bounds 0.60,0.86`, out-root `$WS/graph1_s0b_truth_hbounds060_20260904`, `PIN_COMMIT` placeholder for the ancestor pin), **NOT submitted.**
+
+**(3) Hook check (clerk-verified before commit).** `ruff check` and `ruff format --check` on the driver: clean. `mypy` on the driver: **15 errors**, confirmed via `git stash` A/B comparison to be **identical before and after** the diff (same 3 call sites, same messages) — pre-existing, unrelated to this change.
