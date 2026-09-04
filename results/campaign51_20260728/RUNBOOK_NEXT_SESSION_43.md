@@ -97,3 +97,5 @@ timeout Q2 READ: POPULATION-MISMATCH-MATERIAL −0.011 (#374, R19); Q1 PARKED af
 Next session: (1) poll 6794615 / 6794421 / 6790465 via cluster/agent_ssh.sh; retrieve; the R4b diff;
 the m1 binary read (dossier exec/r-sealed-mock/); (2) docket R19–R24 to the author; (3) end-verification
 appendix "MORNING BATCH" (requested; check it landed); (4) b-highz-bnum-factor after R24.
+
+(Session-close note, 16:55 CEST: SSH keepalive loop still running locally (scratchpad ssh_keepalive.sh, 4-min touch); jobs 6794615 (queued), 6794421 (m1, ~24/41 done), 6790465 (pending) unretrieved; nothing else running. Author rulings R19–R24 pending, non-blocking.)
