@@ -3840,3 +3840,19 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(5) Discrepancies: none decisive.** **D15** cosmetic (S0-C cites the `c0prime_off` count `562` where the R4b figure `594–1083` applies — erratum appended to `READOUT_RECORD.md`); **D16** note (the high-z G-1 identity is scoped to `P_dark`; over all `1588` events it fails by up to `16.7` nats as expected — stated in `CHAIR_REDERIVATION`).
 
 **(6) Runbook 43 §8 written** (morning-batch state + next-session order).
+
+## Row #387 — 2026-09-04 ~13:20 CEST (local clock) — **Sealed-mock stage (m1) READ: both registered cells fire; no chair call (R25). Chronicler for the 09-03 SSH drop FILED.** Records: `exec/r-sealed-mock/READ_RECORD_m1.md` (+ verifier §6), `exec/batch2_cluster_ops/OPS_RECORD_m1_retrieval.md`, docket §9 (R25–R28), runbook 43 §9. All content chair-derived.
+
+**(1) Job 6794421** (iiib, array 0–40) COMPLETED 41/41, `57.63` core-h (cap 75; dossier §1 item 6 condition ≤ 60 met → joint_r1 sibling NOT submitted, R26). Retrieved whitelisted set only (`event_likelihoods.csv` md5 `ed3d5479…`, 41 posteriors, 41 `run_metadata`, `GIT_COMMIT_AT_RUN`); `posteriors_with_bh_mass/` (3.3 GB) left on the cluster.
+
+**(2) Gates:** G-1 GREEN against the CORRECTED pool pin (registered text RED — `depth15_50k`/500 vs actual `mix200k_20260728`/707; chair override before submission → **R28**; the 0.73 re-baseline run links the same pool, manifest list-md5 identical, so the anchor is same-pool); G-2 ancestor form GREEN (tasks 0–4 at `8f933e7b`, 5–40 at `d9e50179`, both `darksiren_emri/`-quiet vs `081b1f28`); resolved flags `13/13` (11 from `cli_args`, `catalogue_numerator_survival="phi" ACTIVE` in all 41 logs, `mass_filter_sigma` code default); g-population 1343 (+2 empty); g-censoring **RED → BOUND** (mass at 0.600: `0.0439` 2D / `0.0259` 1D); physics floor no-op.
+
+**(3) Statistic (T0 scorer, validated on the row #302 anchors to 1e-6):** 2D MAP `0.630`, mean `0.627674`, σ `0.014006`; 1D `0.630` / `0.631084` / `0.013939`. Distances: `|mean−0.6659| = 2.73σ`, `|MAP−0.665| = 2.50σ` (1D `2.58σ`/`2.51σ`); `|mean−0.67| = 3.02σ`/`2.79σ`. Mass at h ≤ 0.63: `71 %`/`62 %`; σ_h `24 %`/`20 %` narrower than the re-baseline at N = 1588.
+
+**(4) Cell reading:** the registered table fires BOTH ways — TUNED (all four ≤ 3σ inequalities hold) and NOT-TUNED-AT-RAIL (edge mass > 1e-3; the row's head phrase "mass concentrated at/below 0.63" also holds while its > 3σ formalisation fails). INTERMEDIATE ("neither") does not cover it. **The chair banks nothing; R25 (disposition, chair recommends the rail clause dominant with the σ-distance reported), R27 (cell-table erratum before (m2)).**
+
+**(5) Verifier (top-tier, independent scorer):** every number reproduces; four wording defects fixed in the record; the pool-pin override and the commit split surfaced (both now disclosed).
+
+**(6) Chronicler (09-03 session) filed to the garden** (`main` `009d0ea`): W-TOOL-47 (ControlMaster destroyed on a misdiagnosed MaxSessions refusal), P-20260903-mtc-1 (guard hook + semaphore wrapper), incident row, values-charter row #340, registry, briefing-feedback, W-CTX-03 (the afternoon CEST stamps on rows #367–#386 are mis-labelled; they landed before 11:07 local).
+
+**(7) Cluster at close:** 6794615 (S0-B truth node) and 6790465 (GATE-ACC) PENDING; ControlMaster alive; keepalive running.

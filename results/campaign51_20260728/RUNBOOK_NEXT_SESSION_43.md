@@ -99,3 +99,7 @@ the m1 binary read (dossier exec/r-sealed-mock/); (2) docket R19–R24 to the au
 appendix "MORNING BATCH" (requested; check it landed); (4) b-highz-bnum-factor after R24.
 
 (Session-close note, 16:55 CEST: SSH keepalive loop still running locally (scratchpad ssh_keepalive.sh, 4-min touch); jobs 6794615 (queued), 6794421 (m1, ~24/41 done), 6790465 (pending) unretrieved; nothing else running. Author rulings R19–R24 pending, non-blocking.)
+
+## 9. Midday batch of 2026-09-04 (rows #387–) — state at ~13:00 CEST (local clock; §8's afternoon stamps were mis-labelled)
+Done: /chronicler for the 09-03 SSH drop filed to the garden (W-TOOL-47, P-20260903-mtc-1, incident row, values-charter row #340, registry, briefing-feedback; pushed); sealed m1 6794421 COMPLETED 41/41 → retrieved (`exec/r-sealed-mock/m1_iiib_retrieved/`, list-md5 f88a444f…) → chair read `exec/r-sealed-mock/READ_RECORD_m1.md` (2D MAP 0.630 / mean 0.6277 / σ 0.0140; gates GREEN, g-censoring RED→BOUND; **both cells fire → R25, no chair call**) → verifier appendix §6; docket §9 (R25–R27).
+Next session: (1) author disposes R19–R27; (2) poll 6794615 / 6790465 via `cluster/agent_ssh.sh poll` — the R4b diff and the production-window S0-B submit stay conditional on byte-identity (R21); (3) if R27 [DO]: draft the cell-table erratum in the dossier; (4) if R26 [DO]: submit `VENUE=joint_r1` (out-root `$WS/graph1_sealed_m1_joint_r1_20260904`, cap 75 core-h); (5) b-highz-bnum-factor after R24. Keepalive loop still running (session b548869c scratchpad); ControlMaster alive at close.
