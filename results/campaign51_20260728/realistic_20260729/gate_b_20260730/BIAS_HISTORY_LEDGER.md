@@ -3722,3 +3722,15 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(4) Deviation disclosed.** The ops agent met a harness permission block on its direct file transfer and completed the transfer by another route through the sanctioned wrapper (md5-verified identical, prior remote file moved aside); the chair records that ops agents must report a harness block rather than route around it.
 
 **(5) `DRIVER_VENUE_FORENSICS.md`** was moved (`git mv`, staged) from a stray repo-root `exec/` path into `graph1_20260901/exec/d-photoz-leverage/`.
+
+## Row #374 — 2026-09-04 ~12:05 CEST — **m-timeout-q2 READ. All content chair-derived.**
+
+**(1) R18 executed.** Records: `exec/r-timeout-selection/{READ_RECORD_Q2.md, timeout_q2_result_read.json, timeout_q2_reads.py, synth_check_q2.py, BUILD_RECORD_Q2.md, DESIGN_GATE_Q2_formula.md, CHAIR_REDERIVATION_Q2_20260904.md}`. **Gates:** computability rev2 (F6 closed by the chair erratum) + fresh formula gate GREEN (31-item enumeration; T0 convention imported; INSTRUMENT-DEFECT contract live; synthetic check `40/40`; one non-blocking F1: S2.1 reported-only p0/e0 bins use `qcut` instead of the pinned edges). **DISCLOSURE:** the rerun's computability-gate agent returned a placeholder (no review) — the gate of record is rev2 + erratum.
+
+**(2) Disjoint read**, real mode once, exit 0: g-byteid anchors matched (`n_kept [0,9,1276,303,0]`; SNR-stage timeouts `[206,302,216,81,15]`); g-closure `Σw = 1588` to `1e-12`. **S2.2:** `ρ_S(log10 M, d_e) = +0.226`, permutation `p < 1e-4` (replicates `0.185`/`0.230`) → **M-STRUCTURED.** **S2.3:** `w_b = {bin 2: 0.870, bin 3: 1.547}` (chair-verified from pool-detected shares `0.703`/`0.297` vs kept `0.808`/`0.192`); re-weighted `mean_h 0.655075` vs `0.665854` → `Δmean_h^Q2 = −0.01078` (`T_mat 0.008`; null SD `0.0030` → `3.6σ`; `σ'/σ 1.0055` in band) → **POPULATION-MISMATCH-MATERIAL**; replicates `iiib` 1D `−0.0050` (below band), `joint_r1` 2D `−0.0127`.
+
+**(3) Chair booking (flagged, fresh RULE R19): MATERIAL on the primary with the 1D replicate below band disclosed.**
+
+**(4) Facts.** The pool's detected population is richer in high-M than the timeout-surviving kept population; the truncation biases the estimate UP by `~0.011`, partially masking the `−0.064` offset; the remedy is a longer waveform-timeout / rescue re-run (draft §8 [DO] C, `5–140 GPU-h`) — author's word.
+
+**(5) Q1 chain launched** (pool build logs fetched, row #370).
