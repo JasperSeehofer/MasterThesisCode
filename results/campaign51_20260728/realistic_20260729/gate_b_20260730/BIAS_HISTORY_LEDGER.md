@@ -3672,3 +3672,17 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(2) Design.** Term-freeze counterfactual (`K_dark`'s centred term profiles replaced by `R`-median profiles, one term at a time and all at once; shares with disclosed non-additivity), frozen T0 convention imported; stencil score excess per term; harness control on the 67 n200 cell-S universes (`12,060` scored / `4,826` zero-candidate / pooled top-z decile `1,207` incl. `1,148` zero-candidate) with between-universe jackknife SE; bands `0.5/0.2`, `|Z| 3`, `ρ_S 0.5/0.2`, non-additivity `0.6`; two-tier dispositions (TERM-OWNS / DIFFUSE-IN-TERMS / INTERMEDIATE; ESTIMATOR-INTERNAL / PRODUCTION-ONLY / FLOOR-CONSISTENT / UNPOWERED-CONTROL); anchors row #302 `mean_h`, `K` leave-out `+0.086106`; cost `≈ 0.05 CPU-h`, zero cluster. Pending author RULEs R-a–R-d listed in the draft.
 
 **(3) CHAIR DECISION (flagged, under the renewed standing):** `d-highz-register` **RATIFIED-BY-CHAIR conditional on the gates**; gate → build (`b-highz-decomp`) → formula gate → disjoint read launched (4 sonnet agents).
+
+## Row #370 — 2026-09-04 ~10:30 CEST — **Morning cluster ops.** Record: `exec/batch2_cluster_ops/OPS_RECORD_morning.md`. All content chair-derived.
+
+**(1) S0-C job `6790794` 10/10 COMPLETED**; retrieved `h_0p665` + `h_0p780` (62 files each, `~0.97 GB` each, md5 MATCH `124/124`) → **S0-C read launched** (PA-HIER-34, CONDITIONAL-ON-R4).
+
+**(2) Sealed m1 `6790859`: 41/41 FAILED** at the sbatch guard "injections link resolves to `run_20260729_seed64000_h0p67/simulations/injections`, not the canonical pool" — root cause: that path is a **REAL DIRECTORY** (pre-dates the pool-symlink convention), so a readlink identity check is structurally unsatisfiable. **CHAIR DECISION (flagged):** the guard is replaced by a CONTENT check (per-file md5 manifest of the injections dir vs `POOL_MANIFEST.md5`, `707` files, list md5 `75f4030d…`); resubmission only if the manifests are identical (ops agent running).
+
+**(3) GATE-ACC `6790465` PENDING throughout** (never ran; reason being queried).
+
+**(4) R4b job `6794207`** (production CLI + `theta_sites 2.2` + `mass_aware off` + `survival_2d off`) **COMPLETED `5m53s`**, retrieved 11 files md5 MATCH; diff vs the S0-B truth node: `D̃φ`/`αφ`/`den_log_term` exact, `B_num` to `1e-14` — but `L_cat_no_bh`/`L_cat_with_bh` differ on `1083/1081` events (`max_rel 1.0`), `combined_no_bh`/`with_bh` on `896/735` → **NOT byte-identical:** the 2D-survival pin does **NOT** explain the S0-B driver's difference from production; the difference is in the catalogue numerator leg (which candidates enter / per-candidate value). Code-level forensics launched (`driver build_iiib_venue` vs the production CLI resolution, field by field).
+
+**(5) Pool build logs for `r-timeout-selection` Q1 fetched** (`3509` log files, `41 MB`, manifest) → **Q1 unblocked.**
+
+**(6) Cluster repo fast-forwarded** `06a12422 → 8f933e7b` (4 untracked collisions moved aside to `cluster/_pull_collisions_20260904/`).
