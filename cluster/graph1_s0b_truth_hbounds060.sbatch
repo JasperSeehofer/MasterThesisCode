@@ -19,7 +19,7 @@
 # default, zero-behaviour-change proof) this sbatch depends on.
 #
 # NOT SUBMITTED by this build task — builder scope only (no cluster access).
-# PIN_COMMIT below is a placeholder: the ops agent submitting this job must
+# d9e50179 below is a placeholder: the ops agent submitting this job must
 # replace it with the short commit hash of the commit that lands the
 # --h-bounds flag (this sbatch's own commit or a descendant), per the
 # ancestor-check pattern already used by graph1_m_s0b_production.sbatch
@@ -43,7 +43,7 @@ source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 cd "$PROJECT_ROOT"
 
-EXPECTED_COMMIT="PIN_COMMIT"  # placeholder -- ops agent fills in after the --h-bounds commit lands (ancestor check, not strict equality; see header)
+EXPECTED_COMMIT="d9e50179"  # placeholder -- ops agent fills in after the --h-bounds commit lands (ancestor check, not strict equality; see header)
 ACTUAL_COMMIT="$(git rev-parse --short=8 HEAD)"
 if ! git merge-base --is-ancestor "$EXPECTED_COMMIT" HEAD; then
     echo "STOP: HEAD ($ACTUAL_COMMIT) does not contain required commit $EXPECTED_COMMIT -- re-sync before running" >&2

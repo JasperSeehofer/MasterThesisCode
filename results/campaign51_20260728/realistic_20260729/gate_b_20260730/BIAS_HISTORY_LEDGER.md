@@ -3788,3 +3788,13 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(2) Fresh formula reviewer** (`DESIGN_GATE_formula_rev2.md`) **RED:** finding B only half closed — the `+0.086106` G-2(ii) anchor is registered as the leave-out of the full top-z decile K (`159` events) but the code asserts the `144`-event `K_dark` leave-out against it (a false INSTRUMENT-DEFECT or a mis-certified quantity in real mode); two further gaps: the harness control is read on the 2D channel only (§4.3 says both), and the §5 cross-family replicate rule (same owning term in `joint_r1` 2D; 1D `Δ_B` same sign; a miss → INTERMEDIATE) is unimplemented.
 
 **(3) Round 3** (fix → fresh re-gate → disjoint read) launched.
+
+## Row #382 — 2026-09-04 ~14:50 CEST — **S0-B truth-node test at the production window submitted; sealed m1 progressing.** Record: `exec/batch2_cluster_ops/OPS_RECORD_hbounds.md`. All content chair-derived.
+
+**(1) Cluster repo fast-forwarded** `8f933e7b → d9e50179`; `cluster/graph1_s0b_truth_hbounds060.sbatch` pinned to `d9e50179` on both sides (md5 `9d38c636…`); S0-B truth node at the production window (`--h-bounds 0.60,0.86`) **SUBMITTED as job `6794615`** — PENDING through three 9-minute polls (fairshare floor; short jobs queue behind backfill); note: the sbatch's `OUT_ROOT` is repo-relative under `$PROJECT_ROOT/results/…/exec/d-photoz-leverage/graph1_s0b_truth_hbounds060_20260904` rather than `$WS` (retrieval path adjusted accordingly). Steps 3–5 (retrieve, diff vs R4/R4b, conditional 5-node production-window submission) not yet run.
+
+**(2) Sealed m1 `6794421`:** 13 tasks COMPLETED (exit 0), 1 RUNNING, rest PENDING, no failures.
+
+**(3) GATE-ACC `6790465` still PENDING.**
+
+**(4) A bounded background poll** via the wrapper is armed on `6794615`.
