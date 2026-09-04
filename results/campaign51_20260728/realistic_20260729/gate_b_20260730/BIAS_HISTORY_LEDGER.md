@@ -3646,3 +3646,11 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(4) Batch-2 CLOSE.** Nothing running locally; cluster jobs `6790794` (S0-C), `6790859` (sealed m1), `6790465` (GATE-ACC) unattended, R4b prepared; runbook 43 §7 written; morning docket R1–R18 + artifact `3cd5efee` current.
 
 **(5) Compute tonight.** Cluster `≈ 22 CPU-h` allocated (S0-C `20` + R4 comparand `2`) + m1/GATE-ACC in flight; local `≈ 1 CPU-h`. Top-tier identities across the night: chair + 5 prereg/verifier roles (`≤ 3` concurrent). Sonnet agents `≈ 110`.
+
+## Row #367 — 2026-09-04 09:15 CEST — **Morning grant: R1–R18 disposed as tagged; SSH restored; sealed m1 FAILED.**
+
+**(1) Author words, verbatim:** "all approved, granted, ratified — go autonomous, ssh is back".
+
+**(2) Chair reading** (per the CLAUDE.md approval-scope convention: listed items only, by tag): the morning docket's R1–R18 are disposed as tagged — **[DO]s APPROVED** (R4 comparand re-evaluation → now R4b; R8 build; R9/R9′ timeout registrations incl. the pool build-log fetch; R18 Q2 launch), **[RULE]s RATIFIED** with the chair's provisional readings as the rulings of record (R1 S3 DEFECT-SIGNATURE booked, no S5, follow-up register node; R2 S3 revision 2 PARKED; R3 panel-clause amendment option A; R5 deferred behind R4; R6 cone IMMATERIAL-FLOOR-SHARE, `q-cone-loss` SETTLED-refuted; R7 blindness mitigation ACCEPTED; R10 addendum charter A-0 ratified (branches J–N); R11 row #273 erratum; R12 completion INTERMEDIATE (b), attribution behind R4; R13 no replication cell; R14 `f_cat` as continuous covariate, exact-zero kept with disclosed fragility, migration not performed; R15 offset-subset primary SUBSET-IDENTIFIED (high-z zero-candidate dark events), Graph 2 mechanism node opened; R16 R4b first; R17 retrievals), **STANDING items GRANTED** (the batch-2 standing renewed for this batch: launch inside caps after a green gate). SSH ControlMaster restored by the author at `~09:10`; keepalive loop restarted; all agent access via `cluster/agent_ssh.sh`.
+
+**(3) First poll** (chair, via the wrapper): **sealed m1 job `6790859` FAILED at `~12 s` on all 41 tasks** (an sbatch STOP guard; cause being read by the ops agent; NOT resubmitted); S0-C `6790794` and GATE-ACC `6790465` states pending the ops report.
