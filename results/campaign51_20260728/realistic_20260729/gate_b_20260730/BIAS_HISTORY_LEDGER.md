@@ -3686,3 +3686,15 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(5) Pool build logs for `r-timeout-selection` Q1 fetched** (`3509` log files, `41 MB`, manifest) → **Q1 unblocked.**
 
 **(6) Cluster repo fast-forwarded** `06a12422 → 8f933e7b` (4 untracked collisions moved aside to `cluster/_pull_collisions_20260904/`).
+
+## Row #371 — 2026-09-04 ~11:00 CEST — **S0-C read. All content chair-derived.**
+
+**(1) S0-C** (PA-HIER-34; job `6790794` `h = 0.665/0.78` + reused `6779532` `h = 0.73`; `exec/r-s0c-hgrid/{READOUT_RECORD.md, readout_data.json}`, sonnet reader): g-precision STOP gate passed (`h = 0.73` secants reproduced to the digit); all gates GREEN (`g-score-null |Z| > 3` at all three `h` — the production read per the amended clause; C-C identity `449` events max dev `0` at all `h`; GATE ENG `46–62 %` moved; `g-znorm` selection tables md5-identical across the 5 nodes per `h`; provenance commit `06a12422`, ancestor of `081b1f28`, driver diff-quiet; `N = 1588`, `0` NaN).
+
+**(2) Derivative at `0.73`** (3-point non-uniform Lagrange, `Δ₋ 0.065` / `Δ₊ 0.050`): `no_bh b_re D̄ = +2.703 ± 0.366` (`Z_D 7.40`, linear) → **RESOLVED**; `no_bh lns D̄ = 0.007 ± 0.009` (`Z_D 0.72`) → **NOT-RESOLVED**; `with_bh b_re 2.98 ± 0.37` (`Z 8.1`) **RESOLVED**; `with_bh lns` `Z 3.5` but linearity fails → **INDETERMINATE**.
+
+**(3) `Δh_θ = −S̄/D̄`:** `b_re 0.2523 ± 0.029` (chair re-derived `0.68219/2.70341 = 0.2523` ✓), with-BH `0.249 ± 0.027` → **MATERIAL-IN-h by the letter**; `lns` one-sided bound `|Δh| ≥ 0.95` report-only.
+
+**(4) Chair facts.** `Δh_θ ≈ 0.25` is `~4×` the offset and outside the grid — the b-axis score at truth is not an h-degeneracy and the s-axis score is h-flat; the θ-pull is not mappable to an h displacement at this order.
+
+**(5) All dispositions STAND-INSTRUMENT-ONLY, CONDITIONAL-ON-R4 not lifted** (R4b not byte-identical; driver forensics running). Dossier `exec/d-photoz-leverage/DOSSIER_20260903.md` AMENDMENT 2 added.

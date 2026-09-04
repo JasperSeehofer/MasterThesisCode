@@ -1,0 +1,117 @@
+{
+  "node": "r-s0c-hgrid",
+  "reader": "S0-C READER (verdict-free)",
+  "registration": "REGISTRATION_ADDENDUM_PA-HIER-34.md",
+  "status": "CONDITIONAL-ON-R4 -- condition NOT lifted (R4b catalogue leg diverges, see conditional_clause)",
+  "existence_contract": {
+    "job_6779532_h0.73": {
+      "state": "present (retrieved, reused, not rerun)",
+      "path": "graph1_20260901/retrieved/s0b_run_20260902/s0a_seed900101/node_{truth,b_plus_re,b_minus_re,s_plus,s_minus}_iiib_sites2.2_nosmear/simulations/diagnostics/event_likelihoods.csv",
+      "rows": 1588
+    },
+    "job_6790794_h0.665_h0.78": {
+      "state": "present (retrieved 2026-09-04, md5-verified 124/124 files MATCH)",
+      "path": "graph1_20260901/retrieved/s0c_hgrid_20260904/{h_0p665,h_0p780}/",
+      "sacct": "6790794_0..9 COMPLETED 10/10 (OPS_RECORD_morning.md item 1)"
+    },
+    "N_common_across_15_cells": 1588,
+    "driver_unchanged_since_081b1f28": {
+      "git_diff_stat_081b1f28_to_local_HEAD_06a12422": "empty",
+      "merge_base_is_ancestor_081b1f28_06a12422": true
+    },
+    "R4b_comparand_job_6794207": {
+      "state": "present, retrieved, MATCH md5 11/11 files",
+      "result": "NOT byte-identical to S0-B truth node: catalogue-leg columns (L_cat_no_bh, L_cat_with_bh, num_log_term_*, combined_*) diverge on 594-1083/1588 rows, up to relative 1.0 on L_cat_*; non-catalogue legs (D_tilde_phi, alpha_G_phi, den_log_term, B_num*) match to float noise",
+      "source": "OPS_RECORD_morning.md item 5"
+    }
+  },
+  "conditional_clause": {
+    "quote": "R4b-vs-S0-B-truth diff ... Verdict: NOT byte-identical. ... the catalogue-leg columns ... diverge on the majority of rows (594-1083 of 1588 rows over the 1e-9 threshold, up to relative 1.0 on L_cat_*) -- consistent with R4b's driver-pinned deviation ... actually changing the catalogue numerator computation relative to S0-B truth (OPS_RECORD_morning.md item 5)",
+    "consequence_per_addendum_5.4": "condition does NOT lift; every disposition below stands as a measurement on the S0-B instrument only; no h-bound is asserted to enter d-residual-attribution item 3 (that step is explicitly withheld by the addendum's own rule, not a reader judgment)"
+  },
+  "g_precision_h073_reproduction": {
+    "no_bh_score_b_re": {"mean": -0.6821949230162926, "sem": 0.12934097170524397, "Z": -5.274391509683036, "target": [-0.6822, 0.1293, -5.274], "match": true},
+    "no_bh_score_lns": {"mean": -0.032661020938818085, "sem": 0.004543795759902115, "Z": -7.188047761090759, "target": [-0.0327, 0.0045, -7.188], "match": true},
+    "with_bh_score_b_re": {"mean": -0.7412324804513475, "sem": 0.11948362651803969, "Z": -6.203632263701302, "target": [-0.7412, 0.1195, -6.204], "match": true},
+    "with_bh_score_lns": {"mean": -0.03682412308221403, "sem": 0.005022000949825846, "Z": -7.3325599596891795, "target": [-0.0368, 0.0050, -7.333], "match": true},
+    "note": "all four targets reproduced from the raw event_likelihoods.csv, never the driver cache; STOP condition (cannot reproduce) not triggered"
+  },
+  "gates": {
+    "g_score_null_per_h": {
+      "0.665": {"Z_b_re": -5.914229622556072, "Z_lns": -7.928256243492403},
+      "0.73":  {"Z_b_re": -5.274391509683036, "Z_lns": -7.188047761090759},
+      "0.78":  {"Z_b_re": -4.869321193243272, "Z_lns": -7.499492008359874},
+      "note": "|Z|>3 at all 3 h; per PA-HIER-31(h)/dossier item 1 this is the production measurement, not a control -- REPORTED per addendum, panel STOP text not applied (unruled, quoted verbatim in the addendum)"
+    },
+    "cc_identity_per_h": {
+      "0.665": {"n_cc": 449, "max_abs_dev_combined_no_bh": 0.0},
+      "0.73":  {"n_cc": 449, "max_abs_dev_combined_no_bh": 0.0},
+      "0.78":  {"n_cc": 449, "max_abs_dev_combined_no_bh": 0.0},
+      "verdict": "GREEN at all 3 h"
+    },
+    "gate_eng_per_h_per_off_truth_node": {
+      "threshold": ">=10% of events move >=1e-6 relative on combined_no_bh vs truth",
+      "0.665": {"b_plus_re": 0.6203, "b_minus_re": 0.5705, "s_plus": 0.5945, "s_minus": 0.5611},
+      "0.73":  {"b_plus_re": 0.5693, "b_minus_re": 0.5126, "s_plus": 0.5378, "s_minus": 0.5050},
+      "0.78":  {"b_plus_re": 0.5264, "b_minus_re": 0.4666, "s_plus": 0.5000, "s_minus": 0.4578},
+      "verdict": "GREEN (pass) at all 3 h, all 4 off-truth nodes"
+    },
+    "g_znorm_selection_tables_md5_per_h": {
+      "0.665": {"md5": "ca3003a38a932747f913b4a9aa63c670", "identical_across_5_nodes": true},
+      "0.73":  {"md5": "e68ab9578501a1c54008a6132eda7ec3", "identical_across_5_nodes": true},
+      "0.78":  {"md5": "f0b06a0e436cd7f3b7bddf9abb3f9e40", "identical_across_5_nodes": true},
+      "verdict": "GREEN at all 3 h"
+    },
+    "provenance": {
+      "commit_h0.665": "06a12422c07623c53acfa1ca268dda2c7017dc3d",
+      "commit_h0.78": "06a12422c07623c53acfa1ca268dda2c7017dc3d",
+      "ancestor_check_081b1f28_is_ancestor_of_06a12422": true,
+      "diff_quiet_darksiren_emri_and_driver_081b1f28_to_06a12422": "empty",
+      "verdict": "GREEN, config verbatim vs job 6779532 except the single --h-nodes flag"
+    },
+    "g_population": {"N_common_expected": 1588, "N_common_observed": 1588, "nan_drops": 0, "verdict": "GREEN"}
+  },
+  "derivative_3point_stencil_at_h0.73": {
+    "spacing": {"delta_minus": 0.065, "delta_plus": 0.050},
+    "primary_channel_no_bh": {
+      "b_re": {"Dbar": 2.7034145966029914, "SEM": 0.3655367705706979, "Z_D": 7.395739127372217, "Cbar": -11.04074083530749, "linearity_ok": true},
+      "lns":  {"Dbar": 0.006668524171136452, "SEM": 0.009222325382426387, "Z_D": 0.7230848939513309, "Cbar": -1.2572865786359608, "linearity_ok": false}
+    },
+    "secondary_with_bh": {
+      "b_re": {"Dbar": 2.981707527982365, "SEM": 0.3659633730223586, "Z_D": 8.147557236008417, "Cbar": -6.540831167896118, "linearity_ok": true},
+      "lns":  {"Dbar": 0.034664245893511914, "SEM": 0.009921474048497764, "Z_D": 3.493860461063295, "Cbar": -0.47353491188261926, "linearity_ok": false}
+    },
+    "units": "nats per unit theta per unit h"
+  },
+  "h_displacement_mapping": {
+    "no_bh_b_re": {
+      "S_bar_0.73": -0.6821949230162926, "dh": 0.25234565348338095,
+      "SE_delta_method": 0.029309221055224502, "SE_bootstrap_B2000_seed20260904": 0.030356890387587793,
+      "bootstrap_3sigma_band": [0.1629208429567102, 0.3459125947250601],
+      "fraction_of_offset_-0.0641": -3.9367496643273157
+    },
+    "no_bh_lns": {
+      "S_bar_0.73": -0.032661020938818085,
+      "derivative_unresolved": true,
+      "one_sided_bound_report_only": 0.9512318339890495
+    },
+    "with_bh_b_re": {
+      "S_bar_0.73": -0.7412324804513475, "dh": 0.24859328874315115,
+      "SE_delta_method": 0.026769296278576715, "SE_bootstrap": 0.027458749905484504,
+      "bootstrap_3sigma_band": [0.17712101346699, 0.3336297412419535],
+      "fraction_of_offset_-0.0641": -3.87821043281047
+    },
+    "with_bh_lns": {
+      "S_bar_0.73": -0.03682412308221403, "dh": 1.0623085006763806,
+      "note": "RESOLVED by Z_D but linearity check FAILS -- demoted to INDETERMINATE by the addendum's own falsifier rule (Sec 8)"
+    }
+  },
+  "dispositions": {
+    "T_mat": 0.008,
+    "no_bh_b_re":  {"sec5_1": "RESOLVED",   "sec5_2": "MATERIAL-IN-h",  "conditional_on_r4": "STANDS-INSTRUMENT-ONLY, condition not lifted"},
+    "no_bh_lns":   {"sec5_1": "NOT-RESOLVED","sec5_2": "n/a (report-only one-sided bound |dh|>=0.951)", "conditional_on_r4": "STANDS-INSTRUMENT-ONLY, condition not lifted"},
+    "with_bh_b_re":{"sec5_1": "RESOLVED",   "sec5_2": "MATERIAL-IN-h",  "conditional_on_r4": "STANDS-INSTRUMENT-ONLY, condition not lifted"},
+    "with_bh_lns": {"sec5_1": "RESOLVED",   "sec5_2": "INDETERMINATE (linearity-check falsifier)", "conditional_on_r4": "STANDS-INSTRUMENT-ONLY, condition not lifted"},
+    "all_gates": "GREEN (no INSTRUMENT-DEFECT triggered on any axis/channel/h)"
+  }
+}
