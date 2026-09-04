@@ -3780,3 +3780,11 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(1) Revision 2** by author C (draft `426` lines): a 25-row `p_det` call-site table (17 with-BH, 8 without-BH) with enclosing function, mass-quadrature status, reachability on the registered path and treatment — **PRIMARY path** `:6450`/`:2276` (`s_query`), `:7246`/`:7288` (`mz_sel` proxy), `:901`/`:944` (mass-trunc denominator proxy), `:2058` (`S̄_φ`); flag-conditional rows (`:6901`/`:6979` `mass_trunc off`; `:7150` `mass-aware on`; `:5567` dump) must be asserted in their registered state; `:8954–:9181` test-only, never reached; all 8 without-BH sites = composition leg only; plus a "CONSOLIDATED Q1 TEXT OF RECORD" paragraph inserted at the top of the Q1 block (the one non-appended edit, chair-instructed) pointing to the superseding REVISION 1 items.
 
 **(2) Q1 chain rerun launched** with a revision-aware gate prompt (findings citing only the original §4 are invalid; `≥ 8` real checks required; a fresh rev2 gate file).
+
+## Row #381 — 2026-09-04 ~14:35 CEST — **r-highz-completion round 2. All content chair-derived.**
+
+**(1) Builder closed** findings A (flag threaded), C (exclusion count asserted at all 3 loaders), D (both INTERMEDIATE carve-outs; the reviewer's counter-examples now yield INTERMEDIATE), E (harness SE as one joint delete-one-universe jackknife); real-input `--dry-run` exit 0 (`606/144/231`; `493/111/191`; manifest; closure `2.7e-15`).
+
+**(2) Fresh formula reviewer** (`DESIGN_GATE_formula_rev2.md`) **RED:** finding B only half closed — the `+0.086106` G-2(ii) anchor is registered as the leave-out of the full top-z decile K (`159` events) but the code asserts the `144`-event `K_dark` leave-out against it (a false INSTRUMENT-DEFECT or a mis-certified quantity in real mode); two further gaps: the harness control is read on the 2D channel only (§4.3 says both), and the §5 cross-family replicate rule (same owning term in `joint_r1` 2D; 1D `Δ_B` same sign; a miss → INTERMEDIATE) is unimplemented.
+
+**(3) Round 3** (fix → fresh re-gate → disjoint read) launched.

@@ -144,3 +144,77 @@ exercises the identical call graph (`run_term_freeze` -> disposition) end-to-end
 
 `uv run ruff check` -- All checks passed. `uv run ruff format` -- 1 file left unchanged (already
 formatted). `uv run mypy highz_decomp_reads.py` -- Success: no issues found in 1 source file.
+
+## 8. FIX 2 -- DESIGN_GATE_formula.md round-2 fixes (RED A/B/C, AMBER D/E)
+
+Sonnet/medium builder, fix round 2, 2026-09-04. Responds to `DESIGN_GATE_formula.md` (fresh
+integration/formula reviewer, verdict RED, three confirmed RED code-level defects + one AMBER
+statistical-formula ambiguity + a second AMBER band-table gap). All five addressed; the two
+informational findings (F: reported-only ratios not materialized, G: `stencil_slope` nearest-node
+tolerance) were left as noted residual risk per the reviewer's own recommendation (non-blocking,
+no code change forced).
+
+- **Finding A (RED, `--nonadditivity-max` dead flag) -- FIXED.** `production_ownership_disposition`
+  now takes `nonadditivity_max: float = 0.6` as a genuine parameter (script ~line 753); the hardcoded
+  `0.6` literal in the TERM-OWNS test is replaced by it. `run_production_family` takes
+  `nonadditivity_max` and passes it through; `main()`'s call site passes `args.nonadditivity_max`.
+  The `out["bands"]["nonadditivity_max"]` metadata write is now the same value actually applied, not
+  a decorative echo. SYNTH-tested: same shares/`r_over_abs_delta_F=0.7` case gives `INTERMEDIATE` at
+  the default `0.6` band and `TERM-OWNS(B)` at a widened `0.8` band.
+- **Finding B (RED, G-2(i)/(ii) anchors unchecked) -- FIXED.** Added `assert_g2i_mean_h_anchor()`
+  and `assert_g2ii_delta_k_anchor()` (standalone, testable functions, ~line 773), called from
+  `run_production_family` right after `mean_h_full` and `delta_K_dark_leaveout` are computed. Both
+  raise `InstrumentDefect` on a mismatch against `G2_MEAN_H_FULL`/`G2_MEAN_H_TOL` and
+  `G2_DELTA_K_IIIB_2D`/`G2_DELTA_K_TOL` respectively (the latter iiib-2D-only, a no-op for jr1/1D
+  per the registered anchor's scope). SYNTH-tested pass and INSTRUMENT-DEFECT-raise paths for both.
+- **Finding C (RED, G-2(iii) exclusion count discarded, latent `KeyError`) -- FIXED.** All three
+  `_load_matrix()` call sites (`run_production_family`, `run_K_hosted_leaveout`,
+  `run_harness_universe`) now unpack the full 4-tuple and call
+  `assert_g2iii_no_physics_floor_exclusion(n_excluded, label)` BEFORE any `event_idx`-keyed lookup
+  runs, so a nonzero exclusion count is a clean `InstrumentDefect`, not an uncaught `KeyError`
+  further down. SYNTH-tested pass (`n_excluded=0`) and raise (`n_excluded=2`) paths.
+- **Finding D (AMBER, two missing INTERMEDIATE band-table carve-outs) -- FIXED.**
+  `production_ownership_disposition` now checks, before the literal TERM-OWNS test: (i) the top TWO
+  shares both `>= share_own` with `r < 0` (using the draft's own `r/Delta_F = 1 - sum(shares)` sign
+  convention); (ii) two-or-more sign-opposed terms with `|s_t| > 1` each (`min(shares) < 0 <
+  max(shares)` and every `|s|>1`). Both route to `INTERMEDIATE`. SYNTH-tested against the reviewer's
+  own counter-examples verbatim: `s_B=0.55, s_g=0.52` (`r_over_abs_delta_F=0.07`) and `s_B=3.0,
+  s_g=-2.0` (`r_over_abs_delta_F=0.0`) both now assert to `INTERMEDIATE` (previously `TERM-OWNS(B)`
+  for both).
+- **Finding E (AMBER, harness `SE_F^harn` quadrature-of-parts vs joint jackknife) -- FIXED.** `main()`
+  no longer combines `SE_B^harn`/`SE_g^harn` in quadrature. Instead it builds the per-universe SUM
+  array `t'_{B,u} + t'_{g,u}` (same event order, since B and g stencil slopes are computed from the
+  same `K_dark_u`/`R_u` event sets) and runs `harness_pool_score` once, directly, on that summed
+  series -- the literal "delete-one-universe jackknife SE of `S_F^harn`" reading Sec.4.3 registers.
+  `S_F_harn` itself is numerically unchanged (the sum is exact either way); only `SE_F_harn` (and
+  therefore `Z_harn`) changes. No SYNTH-level regression test was added for this one (it needs >=2
+  universes with a shared per-universe nuisance to show a quadrature/joint gap, which the current
+  <=10-row SYNTH fixture's single-freeze-event construction doesn't carry) -- the fix is a direct,
+  reviewed rewrite of the pooling call site, unit-consistent with the unchanged, still-tested
+  `harness_pool_score()` function itself.
+- **Findings F, G (informational) -- not changed**, per the reviewer's own "non-blocking" / "no
+  action forced" recommendation. Reader-side note carried forward: `--out`'s JSON already has
+  `Delta_F`, `delta_K_dark_leaveout` and `G2_DELTA_K_IIIB_2D`, so the Sec.2.3/2.4 concordance ratios
+  can be computed by hand; the Sec.2.4 stencil-consistency check needs `I_HEAD`, undefined anywhere
+  in the draft or script, so it cannot be added without a fresh author definition.
+
+### FIX 2 checklist (all items from DESIGN_GATE_formula.md)
+
+| item | status |
+|---|---|
+| (A) `--nonadditivity-max` threaded into `production_ownership_disposition` | done |
+| (B) G-2(i) mean_h anchor gate (1e-9) | done |
+| (B) G-2(ii) `Delta_K,dark` iiib-2D anchor gate (`+0.086106`, 1e-6) | done |
+| (C) G-2(iii) physics-floor exclusion count checked at all 3 `_load_matrix` call sites, no `KeyError` path | done |
+| (D) INTERMEDIATE carve-out: both shares >= 0.5 with r < 0 | done |
+| (D) INTERMEDIATE carve-out: sign-opposed terms, `\|s\|>1` each | done |
+| (D) reviewer counter-examples (`s_B=0.55,s_g=0.52`; `s_B=3.0,s_g=-2.0`) now assert INTERMEDIATE in SYNTH | done |
+| (E) harness `SE_F^harn`: joint delete-one-universe jackknife of the summed series, not quadrature-of-parts | done |
+| Thresholds / all other paths byte-identical | confirmed (no other numeric literal touched) |
+| `--dry-run` on the real Sec.8 launch block: exit 0, counts 606/144/231, manifest matched | confirmed (rerun this round; transcript identical to Sec.4 above plus the new `Findings A-D counter-examples` SYNTH-OK suffix) |
+| `--out` still not written by `--dry-run`; real mode still never invoked by this builder | confirmed |
+| ruff / mypy clean | confirmed (`ruff check`: All checks passed; `mypy`: Success, no issues found) |
+
+`git status --porcelain` for this file remains untracked (`??`) at the end of this round -- no commit
+made by this builder (out of scope for a fix-round build task; the disjoint reader / node owner
+commits when ready).
