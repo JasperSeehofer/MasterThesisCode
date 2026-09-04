@@ -95,3 +95,16 @@ real data: O(1) degeneracy with the population z-evolution -- hierarchical margi
 required (shape sensitivity: r(z) 0.53 to 1.39 moves the dark-class score by -0.60 on bins 2-5).
 
 Rows #137/#138 are retired as citations (kept on the record, no longer the basis for row 16's grade).
+
+## Row 8 (timeout selection) -- UPDATE 2026-09-04 (append-only, row 8 grade not edited)
+
+Per `MORNING_DOCKET_20260904.md` R9/R9' and ledger rows #355/#358/#364-#366 (readout ratified
+2026-09-04, ledger row #367):
+
+Timeouts are absent from p_det (both budgets are 90 s; the 30 s/90 s injection/simulation asymmetry
+row 8's title names is a stale premise). The registered per-draw SNR-stage timeout rate is
+**0.92 %** (822/89,456). The loss is binned by (M, e0, p0): the M-axis shape shows **97-100 % loss**
+below ~2e5 M-sun and above ~3.3e6 M-sun, with **80 %** of kept events concentrated in one bin; the
+p0 axis is the D1 bound, not a timeout effect (withdrawn as a timeout-selection axis per branch L's
+read, `GRAPH1_ADDENDUM_PROPOSAL_20260903.md`). Registered follow-ups `r-timeout-selection` Q1/Q2 are
+open (rows #355/#358/#364-#366). Row 8's grade (**CAMPAIGN**) is unchanged by this update.

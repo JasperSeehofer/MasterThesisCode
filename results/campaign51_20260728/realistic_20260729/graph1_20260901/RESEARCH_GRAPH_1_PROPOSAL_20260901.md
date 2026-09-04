@@ -533,3 +533,27 @@ Left as-is (not one-line fixes, not requested for this revision):
   actual computation, not an edit to this document.
 - NOTE 10 (v- node max_revisions asymmetry) — applied instead, in
   INFRA_AUTONOMOUS_RESEARCH_PROPOSAL_20260901.md section 2.4 (see that file's own REVISION 1 note).
+
+## AMENDMENT 2 (R3, ratified 2026-09-04)
+
+Per `MORNING_DOCKET_20260904.md` R3 and ledger row #367 (author "all approved, granted, ratified"):
+
+**§2 panel row, g-score-null:** the row now reads — runs on CONTROL venues; on a production venue
+the truth-node score IS the registered read (PA-HIER-31(h)); a red there is a measurement, not an
+instrument red; instrument certification of record stays row #287.
+
+**§1.0 claim-layer writebacks:**
+
+- `c-rphi-mismatch` — RETIRED (row #301).
+- `c-a4-structural` — VERIFIED (row #325).
+- `q-a4-provisional` — SETTLED.
+- `q-cone-loss` — SETTLED-refuted; `c-residual-floor-consistent` loses its geometric candidate
+  (R6, rows #344/#345).
+- `m-completion-residual` — INTERMEDIATE (b), ρ = 0.26 with T_prod −0.197 ± 0.019 (R12, row #347).
+- `q-postflip-calibration` — NOT killed; S3 booked DEFECT-SIGNATURE at N=200; S5 not launched;
+  revision 2 PARKED (R1/R2, rows #335/#345).
+- `c-theta-pull-venue-physics` — stays CONJECTURED with a LIVE registered read attached;
+  interpretation behind R4/R4b (rows #336/#345/#355).
+- Addendum charter A-0 (branches J–N) — RATIFIED (R10, row #339 + `GRAPH1_ADDENDUM_PROPOSAL_20260903.md`).
+- Graph 2 seed `r-offset-subset` read — primary SUBSET-IDENTIFIED: high-z zero-candidate dark
+  events (R15, rows #362/#363).

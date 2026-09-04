@@ -178,3 +178,11 @@ takes no position on it.
 - `results/campaign51_20260728/realistic_20260729/tree2_20260830/candidate_dump_run/s0a_seed{900101..900104}/node_truth_ft/simulations/diagnostics/event_likelihoods.csv` and `s0a_full_output.json` (venue-mismatch evidence, §3)
 - `results/campaign51_20260728/realistic_20260729/tree2_20260830/PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md` (lines 401–403, R8 — cited, not re-quoted in full here)
 - Analysis script: `results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/rd-parity-decomp/parity_decomp.py`
+
+## ERRATUM (ratified 2026-09-04, R11)
+
+"Consistent in kind with E19" -- E19 is the floor for the zero-candidate subpopulation
+(Δln L = 0 exactly on 19/461 events); the 44.7 %-class residual sits entirely in the 442 events
+that gained candidates under z_window_k = 4 (EXPLAINED-BY-DESIGN, row #342).
+
+(Note, chair 2026-09-04: the "ERRATUM (ratified 2026-09-04, R11)" section appended above belongs to the row #273 record `tree2_20260830/T1_3_ZWINDOW_P1_READOUT_RECORD.md`, where it has also been appended; it is kept here as a cross-reference.)

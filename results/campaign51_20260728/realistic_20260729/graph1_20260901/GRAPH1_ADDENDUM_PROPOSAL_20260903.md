@@ -360,3 +360,16 @@ independent and run in parallel (three sonnet identities); 5–6 are one top-tie
 - `fanout1_20260829/PREREGISTRATION_CMEM_A1_20260829.md` section 7; `B2_1_CMEM_A1_RECORD.md` line 108;
   `fanout1_20260829/COMPUTE_LEDGER.md` line 49; GitHub #23 body (COM-01/03/04, "Do NOT change code
   while campaign runs"); `RUNBOOK_NEXT_SESSION_38.md` line 57.
+
+## RATIFICATION (2026-09-04)
+
+Per `MORNING_DOCKET_20260904.md` and ledger row #367 (author "all approved, granted, ratified"):
+
+- A-0 — RATIFIED.
+- A-J1 reads done: J.1 EXPLAINED-BY-DESIGN; J.2 NOT-EVALUABLE-pending-comparand → superseded by
+  R4/R4b.
+- K read done: not diffuse; 3–6 % subset; superseded by `r-offset-subset`.
+- L.1/L.2 done, with the p0 axis withdrawn (D1 bound) and the M axis ~1 %/draw (rows #342/#355/#358).
+- `r-sealed-mock` dossier ratified-by-chair; m1 job 6790859 FAILED at a guard (row #367, under
+  investigation).
+- `r-b0-finite-moment`: close on C-A (row #342).

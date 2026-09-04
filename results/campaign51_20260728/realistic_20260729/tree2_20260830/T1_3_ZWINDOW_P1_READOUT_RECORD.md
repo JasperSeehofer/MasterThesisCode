@@ -168,3 +168,11 @@ the c-weighted convention correctly capture the combined-channel secant expectat
 before any re-run; S0-B stays unlaunched.
 
 Full numeric payload: `t1_3_p1_readout.json` (same directory).
+
+## ERRATUM (ratified 2026-09-04, docket R11; ledger rows #342/#367)
+The GATE PARITY residual (max rel diff 3.9 %–44.7 % across seeds) was described above as "consistent
+in kind with the E19 comparand residual". Corrected: E19 is the floor for the ZERO-CANDIDATE
+subpopulation only — under theta_zwindow = on, Δln L = 0 exactly on the 19/461 events that gained
+no candidate; the 44.7 %-class residual sits entirely in the 442/461 events that gained catalogue
+candidates under z_window_k = 4, with Δln L ≥ 0 and no exceptions, and every non-candidate
+intermediate column bit-identical (rd-parity-decomp, ledger row #342: EXPLAINED-BY-DESIGN).

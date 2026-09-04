@@ -22,3 +22,9 @@ Returns to the author as [RULE] R14: what "catalogue-hosted" MEANS for class-con
 (exact-zero support vs a materiality threshold vs a per-event catalogue-leg fraction as a continuous
 covariate). The r-offset-subset registration (batch 2) is instructed to carry BOTH labels and the
 continuous fraction as covariates, so the question gets a measurement rather than a convention.
+
+## RULING R14 (ratified 2026-09-04)
+
+f_cat = L_cat_no_bh/combined_no_bh is registered as a continuous covariate in every new
+class-conditioned read; the exact-zero label is kept for backward comparability with its fragility
+disclosed; the 24-site migration is NOT performed.
