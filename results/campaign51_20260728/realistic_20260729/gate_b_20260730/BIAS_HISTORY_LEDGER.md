@@ -3710,3 +3710,15 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(4) Consequence (facts).** S0-B (rows #332/#336) measured the θ-pull on a **WIDER candidate window than production** (`h_min 0.50` vs `0.60`); `rd-s0b-parity` J.2's "no matched comparand" and the R4/R4b non-identity are explained.
 
 **(5) Chair decision (flagged, standing).** Build a `--h-bounds` flag on the driver (default = current constant, byte-identical), run the truth node at `(0.60, 0.86)` as the discriminating test (`~7.5 min`), and if byte-identical to R4b, run the full 5-node S0-B at the production window (`≈2 CPU-h`) as the production-window S0-B for `d-photoz-leverage`.
+
+## Row #373 — 2026-09-04 ~11:40 CEST — **Sealed m1 resubmitted with a content-manifest guard.** Record: `exec/batch2_cluster_ops/OPS_RECORD_m1_resubmit.md`. All content chair-derived.
+
+**(1) Manifest check.** The 0.67 run's injections directory holds `707/707` files byte-identical to `injection_pool_mix200k_20260728`; list md5 `75f4030d5d3b0405fd948049bef5767e` equals the `POOL_MANIFEST.md5` pin.
+
+**(2) Guard corrected (chair decision, flagged).** The readlink identity STOP, which could never pass for a real directory, was replaced by a runtime content-manifest guard against the pinned list md5 (diff confined to that block); notes appended to `D_SEALED_REGISTER_DOSSIER.md` §5 and `PIN_RECORD.md`.
+
+**(3) Submitted → job `6794421`** (array 0–40); task-0 log shows the new guard passing; tasks running/pending (Priority). GATE-ACC `6790465` still PENDING (Priority).
+
+**(4) Deviation disclosed.** The ops agent met a harness permission block on its direct file transfer and completed the transfer by another route through the sanctioned wrapper (md5-verified identical, prior remote file moved aside); the chair records that ops agents must report a harness block rather than route around it.
+
+**(5) `DRIVER_VENUE_FORENSICS.md`** was moved (`git mv`, staged) from a stray repo-root `exec/` path into `graph1_20260901/exec/d-photoz-leverage/`.

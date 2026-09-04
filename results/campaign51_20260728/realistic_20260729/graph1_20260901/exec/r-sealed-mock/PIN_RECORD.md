@@ -124,3 +124,17 @@ numbers for the chair; not resolving the internal inconsistency here.
 `cluster/graph1_sealed_m1_headstack.sbatch` pool-expectation lines corrected to
 `injection_pool_mix200k_20260728` / 707 files (diff in `SUBMIT_RECORD_m1.md`); all other lines
 byte-identical.
+
+## GUARD CORRECTION (chair, 2026-09-04)
+
+The identity check (`readlink -f injections` vs `readlink -f $POOL`) in
+`cluster/graph1_sealed_m1_headstack.sbatch` can never pass: the 0.67 run's `injections` is a
+real directory of symlinks, not a symlink. Replaced with a content guard: per-file md5 manifest
+of the injections dir, list-md5'd, compared to a pinned `EXPECTED_POOL_LIST_MD5`.
+
+Re-measured this session (cluster-ops, read-only): 707 files; manifest list-md5 =
+`75f4030d5d3b0405fd948049bef5767e` — EXACT match to `exec/r-timeout-selection/POOL_MANIFEST.md5`
+(707 lines, same list-md5). Content-identical to the canonical pool
+`injection_pool_mix200k_20260728`. Guard block replaced in the sbatch (diff in
+`SUBMIT_RECORD_m1.md`); submitted `EXPECTED_POOL_LIST_MD5=75f4030d5d3b0405fd948049bef5767e`,
+`EXPECTED_CRB67_MD5=8e9253fef42f574c569a04a3e19299ab`, `VENUE=iiib`.

@@ -263,3 +263,20 @@ count 707; `injection_pool_mix200k_20260728` file count 707 (match); pool file-l
 count unchanged from the §5 pin (`8e9253fef42f574c569a04a3e19299ab`, 1345 data rows). Full
 transcript: `PIN_RECORD.md` (appended) and
 `exec/batch2_cluster_ops/SUBMIT_RECORD_m1.md`.
+
+## GUARD CORRECTION (chair, 2026-09-04)
+
+Chair ruling: the §PIN CORRECTION's `readlink`-based identity STOP can never pass — the 0.67
+run's `simulations/injections` entry is a real directory of per-file symlinks into
+`injection_pool_mix200k_20260728`, not a single symlink, so `readlink -f` on the directory
+returns the directory's own path and will never equal `readlink -f $POOL`. **The identity guard
+is replaced by a CONTENT guard**: the injections directory's per-file md5 manifest (`ls -1 *.csv
+| sort | xargs md5sum`, same format as `POOL_MANIFEST.md5`) must list-md5 to a pinned value,
+passed at submit time as `EXPECTED_POOL_LIST_MD5`. Verified this session by cluster-ops
+(`cluster/agent_ssh.sh`, read-only): 707/707 files present in the injections dir; the computed
+manifest list-md5 is `75f4030d5d3b0405fd948049bef5767e` — an EXACT match to the pinned reference
+`exec/r-timeout-selection/POOL_MANIFEST.md5` (also 707 lines, same list-md5). **Content-identical
+to the canonical pool.** `cluster/graph1_sealed_m1_headstack.sbatch` edited accordingly (identity
+block only, replaced with the content-guard block + a new `EXPECTED_POOL_LIST_MD5` required-env
+check; every other line byte-identical — diff recorded in `SUBMIT_RECORD_m1.md`). Submitted with
+`EXPECTED_POOL_LIST_MD5=75f4030d5d3b0405fd948049bef5767e`, `VENUE=iiib`.

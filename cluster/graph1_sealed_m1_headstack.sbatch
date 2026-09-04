@@ -29,8 +29,14 @@
 #   pool:  $WORKSPACE/injection_pool_mix200k_20260728 (PIN CORRECTION, chair 2026-09-04: the
 #          registration's expectation of injection_pool_depth15_50k was a factual error; the
 #          0.67 run's own injections link resolves to this pool -- 707 files, measured at
-#          first touch), STOP if the file count != 707, and STOP if
-#          the 0.67 run dir's own simulations/injections link resolves elsewhere.
+#          first touch), STOP if the file count != 707. GUARD CORRECTION (chair, 2026-09-04):
+#          the 0.67 run's simulations/injections entry is a REAL DIRECTORY of symlinks (not a
+#          symlink itself), so a readlink-based identity check against $POOL can never pass --
+#          replaced by a CONTENT check: the per-file md5 manifest of that directory (ls -1
+#          *.csv | sort | xargs md5sum, same format as POOL_MANIFEST.md5) must list-md5 to
+#          EXPECTED_POOL_LIST_MD5 (pinned 75f4030d5d3b0405fd948049bef5767e, verified identical
+#          to results/.../exec/r-timeout-selection/POOL_MANIFEST.md5, 707/707 files, 2026-09-04
+#          content-diff pass). STOP on mismatch.
 #   cat.:  darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv md5 c52c13b5...
 #
 # VENUE switch: VENUE=iiib (default) | VENUE=joint_r1 (adds --observed_catalogue with the
@@ -43,10 +49,12 @@
 # GIT_COMMIT_AT_RUN.txt records H_code.
 #
 # Required env (set by the submitter via --export=ALL,...):
-#   RUN_DIR            -- $WORKSPACE/graph1_sealed_m1_iiib_20260904  (or ..._joint_r1_20260904)
-#   EXPECTED_CRB67_MD5 -- md5 of the 0.67 pool's prepared_cramer_rao_bounds.csv (first-touch pin)
-#   VENUE              -- optional, iiib (default) | joint_r1
-#   PROJECT_ROOT       -- optional; falls back to $HOME/darksiren-emri
+#   RUN_DIR                 -- $WORKSPACE/graph1_sealed_m1_iiib_20260904  (or ..._joint_r1_20260904)
+#   EXPECTED_CRB67_MD5      -- md5 of the 0.67 pool's prepared_cramer_rao_bounds.csv (first-touch pin)
+#   EXPECTED_POOL_LIST_MD5  -- list-md5 of the 0.67 run's injections-dir content manifest (GUARD
+#                              CORRECTION, chair 2026-09-04; pinned 75f4030d5d3b0405fd948049bef5767e)
+#   VENUE                   -- optional, iiib (default) | joint_r1
+#   PROJECT_ROOT            -- optional; falls back to $HOME/darksiren-emri
 
 #SBATCH --job-name=graph1-sealed-m1-headstack
 #SBATCH --partition=cpu_il
@@ -65,6 +73,7 @@ cd "$PROJECT_ROOT"
 : "${RUN_DIR:?RUN_DIR not set}"
 : "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) -- run cluster/setup.sh first}"
 : "${EXPECTED_CRB67_MD5:?EXPECTED_CRB67_MD5 not set -- take the first-touch pin (dossier sec 2) and pass it on --export}"
+: "${EXPECTED_POOL_LIST_MD5:?EXPECTED_POOL_LIST_MD5 not set -- pass the pinned pool content-manifest list-md5 on --export (GUARD CORRECTION, chair 2026-09-04)}"
 VENUE="${VENUE:-iiib}"
 
 TID="${SLURM_ARRAY_TASK_ID:?array job required (--array=0-40)}"
@@ -111,12 +120,17 @@ if [[ "$POOL_COUNT" -ne 707 ]]; then
     echo "STOP: injection pool file count $POOL_COUNT != 707 (PIN CORRECTION, chair 2026-09-04: injection_pool_mix200k_20260728 measured count)" >&2
     exit 1
 fi
-if [[ -e "$CRB_SRC/simulations/injections" ]]; then
-    RUN67_POOL="$(readlink -f "$CRB_SRC/simulations/injections")"
-    if [[ "$RUN67_POOL" != "$(readlink -f "$POOL")" ]]; then
-        echo "STOP: the 0.67 run's own injections link resolves to $RUN67_POOL, not the canonical pool $POOL -- pool mismatch, report" >&2
+# GUARD CORRECTION (chair, 2026-09-04): $CRB_SRC/simulations/injections is a REAL DIRECTORY
+# of per-file symlinks into $POOL (not a symlink itself), so a readlink-based identity check
+# can never pass. Replaced by a CONTENT check: the injections dir's per-file md5 manifest must
+# list-md5 to the pinned EXPECTED_POOL_LIST_MD5 (same format as POOL_MANIFEST.md5).
+if [[ -d "$CRB_SRC/simulations/injections" ]]; then
+    ACTUAL_POOL_LIST_MD5=$(cd "$CRB_SRC/simulations/injections" && ls -1 *.csv | sort | xargs md5sum | md5sum | awk '{print $1}')
+    if [[ "$ACTUAL_POOL_LIST_MD5" != "$EXPECTED_POOL_LIST_MD5" ]]; then
+        echo "STOP: 0.67 run's injections-dir content manifest list-md5 mismatch (expected $EXPECTED_POOL_LIST_MD5, got $ACTUAL_POOL_LIST_MD5) -- pool content diverges from the canonical pool, report" >&2
         exit 1
     fi
+    echo "pool content-manifest pin OK: $ACTUAL_POOL_LIST_MD5"
 fi
 ln -sfn "$POOL" "$RUN_DIR/simulations/injections"
 
