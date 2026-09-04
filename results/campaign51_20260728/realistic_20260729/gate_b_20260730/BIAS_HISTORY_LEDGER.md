@@ -3826,3 +3826,17 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(3) Dispositions.** Tier 1 **TERM-OWNS(B)**; tier 2 **ESTIMATOR-INTERNAL candidate**.
 
 **(4) Chair booking (flagged, fresh RULE R24).** The high-z zero-candidate pull is `93 %` the h-slope of the `B_num` completion-numerator term (`p_det × S̄_φ` for zero-candidate events), immaterial in `g`, zero in the denominator; the self-consistent harness reproduces it with the same term — illegitimate under R12's convention, floor-consistent under author D's R-b reading (a calibrated estimator's h-slope for information-poor high-z dark events); the mapping is the author's. Row #347's `26 %` harness share is a different statistic (score at truth vs leave-out h-slope) — reconciliation is the next registered question; follow-up node `b-highz-bnum-factor` (split `p_det` vs `S̄_φ` inside `B_num`) proposed, not launched. Docket R24 added.
+
+## Row #386 — 2026-09-04 ~16:50 CEST — **END-VERIFICATION of the morning reads.** Record: `exec/END_VERIFICATION_20260903.md` "MORNING BATCH" (top-tier verifier). All content chair-derived.
+
+**(1) m-timeout-q2** re-derived from raw (CRB, `707` pool CSVs, cluster logs, `ln L`, influence): `n_kept`/`n_timeout` anchors, pool a-stratum bins `[76,1217,4387,1852,16]`, `w_b 0.870130`/`1.546912`, re-weighted `mean_h 0.655075149`, `Δ −0.010778911`, `σ'/σ 1.005522`, null SD `0.0029895`, `ρ_S 0.226246` — all identical; both dispositions fire literally.
+
+**(2) S0-C:** Lagrange coefficients `−6.68896`/`−4.61538`/`+11.30435` (`Σ 0`, `Σc·h 1`); `S̄(h) −0.88124`/`−0.68219`/`−0.56083`; `D̄ 2.70341 ± 0.36554` (`Z 7.396`); `Δh_θ 0.2523` (registered covariance-form SE `0.029` confirmed by bootstrap); linearity falsifier as booked; dispositions fire literally; CONDITIONAL-ON-R4 correctly held.
+
+**(3) m-highz-completion:** term-freeze implemented independently from §2.1–2.5: populations `606/159/144/15/231`; `Δ_F +0.064320`, `Δ_B 0.059585`, `Δ_g 0.001912`, `r 0.002824`, `s_B 0.9264`, `Δ_D 1e-15`, `Δ_K 0.086106`, `Δ_K,dark 0.078911`, null CI99 `[0.00686, 0.01530]`, `S_B −0.7467 ± 0.0270`, `S_g −0.0369 ± 0.0010`; harness universe `901000` per-term deltas = JSON; both tiers fire literally.
+
+**(4) Chair booking supported by §5 verbatim;** the FLOOR-CONSISTENT alternative is not a reachable §5 row (needs `|Z_harn| ≤ 3 ∧ Δ_F inside CI99`) — it is the §9 R-b convention veto, correctly labelled.
+
+**(5) Discrepancies: none decisive.** **D15** cosmetic (S0-C cites the `c0prime_off` count `562` where the R4b figure `594–1083` applies — erratum appended to `READOUT_RECORD.md`); **D16** note (the high-z G-1 identity is scoped to `P_dark`; over all `1588` events it fails by up to `16.7` nats as expected — stated in `CHAIR_REDERIVATION`).
+
+**(6) Runbook 43 §8 written** (morning-batch state + next-session order).

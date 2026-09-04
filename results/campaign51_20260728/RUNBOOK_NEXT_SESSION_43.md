@@ -83,3 +83,17 @@ Batch 2 closed. Open in the morning, in this order: (1) author OTP login → `cl
 the chair erratum; rerun the gate→build→read chain, zero compute); (3) Q1 after the pool build-log
 fetch. Everything else is recorded; nothing is running locally. Keepalive loop: kill it
 (`pgrep -f ssh_keepalive.sh`) — it only logs FAIL until the socket is restored.
+
+## 8. Morning batch of 2026-09-04 (rows #367–#385) — state at ~16:40 CEST
+Author disposed R1–R18 as tagged ("all approved, granted, ratified"). Executed: ratification writebacks
+(#368); r-highz-completion registered → 4 gate rounds → READ: TERM-OWNS(B), harness reproduces
+(ESTIMATOR-INTERNAL candidate) → RULE R24 (#369, #378, #381, #384, #385); S0-C read (#371; Δh_θ
+saturates; conditional on R21); S0-B driver difference found = H_BOUNDS (0.50, 0.86) vs production
+0.60 (#372) → --h-bounds flag (#375) → truth-node test job 6794615 (QUEUED at close; #382) → if
+byte-identical to R4b, submit cluster/graph1_s0b_production_window.sbatch (5 nodes) and re-read;
+timeout Q2 READ: POPULATION-MISMATCH-MATERIAL −0.011 (#374, R19); Q1 PARKED after 3 design rounds
+(#383, R20); sealed m1 resubmitted 6794421 with a content guard (#373; tasks completing); GATE-ACC
+6790465 still PENDING; R8 build → RULE R14 (#350); pre-commit hook installed (#376).
+Next session: (1) poll 6794615 / 6794421 / 6790465 via cluster/agent_ssh.sh; retrieve; the R4b diff;
+the m1 binary read (dossier exec/r-sealed-mock/); (2) docket R19–R24 to the author; (3) end-verification
+appendix "MORNING BATCH" (requested; check it landed); (4) b-highz-bnum-factor after R24.

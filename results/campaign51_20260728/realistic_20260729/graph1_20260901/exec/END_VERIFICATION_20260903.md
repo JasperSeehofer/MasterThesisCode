@@ -135,3 +135,46 @@ Re-derived from raw: iiib re-baseline `event_likelihoods.csv` (`combined_with_bh
 - D13 (claim): chair F1 and the "hosted by exact-zero support" narrative — label inverted (above).
 - D14 (cosmetic): C7 and C3c bottom deciles are the SAME 159 events (overlap 159/159: n_cand=0 ⇒ f_cat=0), explaining the identical Δ=0.03431 the reader flagged as unexplained.
 - Note: C2 Δ=+0.156 with captured fraction 3.4 means removing the 606 dark events overshoots truth (0.666→0.822): the dark class as a whole pulls h down far beyond S — a population-level statement, not an S-specific one.
+
+---
+## MORNING BATCH (appended 2026-09-04) — m-timeout-q2 · S0-C · m-highz-completion
+
+### (1) m-timeout-q2 — re-derived from CRB + 707 pool CSVs + cluster logs + iiib ln L + influence CSV
+| quantity | reader/chair | mine | match |
+|---|---|---|---|
+| n_kept / n_timeout_snr per bin | [0,9,1276,303,0] / [206,302,216,81,15] | same (raw log hits 1640 = .out/.err duplicates of 820) | Y |
+| pool a-stratum SNR≥20 per bin | [76,1217,4387,1852,16] | same (200,100 rows, 99,014 a) | Y |
+| w_b {2,3} | 0.870130 / 1.546912 | 0.870130 / 1.546912 | Y |
+| re-weighted mean_h, Δ, σ'/σ | 0.655075149, −0.010778911, 1.005522 | identical | Y |
+| null SD (permute w_e, seed 20260904) | 0.0029895 | 0.0029895 (ddof=0) / 0.0029910 (ddof=1) | Y |
+| ρ_S(log10 M, d_e) | 0.226246 | 0.226246 | Y |
+Dispositions: S2.2 M-STRUCTURED (p_perm 1e-4 < 0.01 ∧ Holm 1.7e-9 < 0.05) and S2.3 POPULATION-MISMATCH-MATERIAL (0.01078 ≥ T_mat 0.008) fire literally on the iiib-2D row. The chair's "INTERMEDIATE across channels" is a disclosure, not a §5 row (rows are iiib-2D only). No discrepancy. Note: 9 bin-1 events carry unit weight (disclosed BOUND) — correct per REVISION 1.
+
+### (2) S0-C — re-derived from the 15 node CSVs (h = 0.665 / 0.73 / 0.78)
+| quantity | reader | mine | match |
+|---|---|---|---|
+| Lagrange coefficients (h₋, h₀, h₊) | (addendum §4.3) | −6.68896, −4.61538, +11.30435 (Σ=0, Σc·h=1) | Y |
+| S̄(h) no_bh b_re | — | −0.88124 / −0.68219 / −0.56083 | — |
+| D̄, SEM, Z (no_bh b_re) | 2.7034, 0.3655, 7.396 | 2.70341, 0.36554, 7.396 | Y |
+| Δh_θ (no_bh b_re) | 0.2523 (SE 0.0293 delta / 0.0304 boot) | 0.2523; naive no-cov delta SE 0.0588 — the registered covariance form gives the reader's 0.029, bootstrap 0.030 confirms | Y |
+| other axes: D̄/Z | lns 0.00667/0.72; wbh b_re 2.982/8.15; wbh lns 0.0347/3.49 | identical | Y |
+| linearity |½C̄Δh| ≤ |D̄| | b_re yes; wbh lns fails | no_bh b_re: C̄ = −11.04 → 1.39 ≤ 2.70 PASS; wbh lns: C̄ = −0.476 → 0.253 > 0.035 FAIL | Y |
+Dispositions RESOLVED / NOT-RESOLVED / MATERIAL-IN-h / INDETERMINATE fire literally; CONDITIONAL-ON-R4 correctly held (R4b diverges — consistent with my D3 above: the S0-B truth node ≠ production baseline). Saturation (Δh_θ ≈ 0.25 ≫ 0.064 offset) correctly disclosed as not band-bearing. No discrepancy.
+
+### (3) m-highz-completion — term-freeze implemented independently from §2.1–2.5 text
+| quantity (iiib 2D) | reader/chair | mine | match |
+|---|---|---|---|
+| P_dark / K / K_dark / K_hosted / R | 606/159/144/15/231 (z_R ≤ 0.541) | same | Y |
+| Δ_F (B+g frozen to R-median) | +0.064320 | +0.064320 | Y |
+| Δ_B / Δ_g / r / r/|Δ_F| | 0.059585 / 0.001912 / 0.002824 / 0.0439 | identical | Y |
+| s_B / s_g | 0.9264 / 0.0297 | identical | Y |
+| Δ_D identity | 0.0 | 1e-15 | Y |
+| Δ_K / Δ_K,dark / concordance | 0.086106 / 0.078911 / 0.916 | identical; K_hosted leave-out +0.0047 | Y |
+| null CI99 (1000 draws from P_dark\K) | [0.006855, 0.015303] | identical | Y |
+| S_B, S_g (stencil, Welch SE) | −0.747±0.027, −0.0369±0.0010 | −0.7467±0.0270, −0.0369±0.0010 | Y |
+| harness U901000 (18/27) Δ_B/Δ_g/Δ_F | 0.042909/0.002462/0.044390 | identical; stencil excess S_B −0.913, S_g −0.038 | Y |
+Tier 1 TERM-OWNS(B): Δ_F outside CI99 ✓, s_B 0.93 ≥ 0.5 largest ✓, |r|/|Δ_F| 0.044 ≤ 0.6 ✓ — fires literally. Tier 2 ESTIMATOR-INTERNAL candidate: |Z_harn| 81 > 3 ✓, ρ_S 1.035 ≥ 0.5 ✓, s_B^harn 0.956 ≥ 0.5 same sign ✓ — fires literally; UNPOWERED (SE 0.010 < 0.1) no.
+
+**Chair booking check.** "ESTIMATOR-INTERNAL candidate by R12's convention; mapping to the author (R24)" is supported by §5's harness table verbatim, including the registered consequence "b-highz-bnum-factor MANDATORY before any /physics-change intake". The chair's alternative "FLOOR-CONSISTENT" reading is NOT a reachable §5 row (it requires |Z_harn| ≤ 3 ∧ Δ_F inside CI99, both false); it exists only as the §9 R-b veto of R12's convention, which the draft reserved to the author — so presenting it as a mapping choice is correct provided it is labelled a convention veto, not a table outcome.
+
+**Discrepancies (this batch):** none decisive. D15 (cosmetic): S0-C readout quotes my D3 count as "562/1588" for the R4 condition but the R4b diff itself reports 594–1083 rows — two different comparands (c0prime_off vs the R4b job); both statements are true, the addendum §5.4 should cite the R4b figure. D16 (note): highz G-1 closure holds on P_dark only (max 3.6e-15); over all 1588 events the identity fails by up to 16.7 nats (catalogue leg present) — the gate is correctly scoped, worth stating explicitly.

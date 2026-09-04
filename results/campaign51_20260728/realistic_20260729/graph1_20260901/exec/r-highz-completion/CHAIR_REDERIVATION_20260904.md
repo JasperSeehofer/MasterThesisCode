@@ -47,3 +47,5 @@ h-slope of the leave-out); reconciling the two is the next registered question.
 Next node (proposal, not launched): b-highz-bnum-factor (author D's conditional follow-up) — split
 B_num into its p_det factor and its S̄_φ factor at the integrand level (catalogue-dependent) to name
 which factor's z-weighting carries the slope.
+
+## NOTE D16 (end-verification, 2026-09-04): the G-1 closure identity holds on P_dark only (max 3.6e-15); over all 1588 events (hosted included) the two-term identity fails by up to 16.7 nats, as expected — the gate is correctly scoped to zero-candidate events; stated explicitly here.

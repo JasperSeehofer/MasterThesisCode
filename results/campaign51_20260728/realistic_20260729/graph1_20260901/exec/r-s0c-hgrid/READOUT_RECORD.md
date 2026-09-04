@@ -115,3 +115,5 @@ No INSTRUMENT-DEFECT disposition reached on any row.
    remain for the chair/author.
 
 *No recommendation. Verdict-free per role.*
+
+## ERRATUM D15 (end-verification, 2026-09-04): the R4 condition cites "562/1588" (the c0prime_off comparand count); the R4b diff reports 594–1083 differing rows — different comparands, both true; the CONDITIONAL-ON-R4 clause should cite the R4b figure.
