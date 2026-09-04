@@ -3698,3 +3698,15 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(4) Chair facts.** `Δh_θ ≈ 0.25` is `~4×` the offset and outside the grid — the b-axis score at truth is not an h-degeneracy and the s-axis score is h-flat; the θ-pull is not mappable to an h displacement at this order.
 
 **(5) All dispositions STAND-INSTRUMENT-ONLY, CONDITIONAL-ON-R4 not lifted** (R4b not byte-identical; driver forensics running). Dossier `exec/d-photoz-leverage/DOSSIER_20260903.md` AMENDMENT 2 added.
+
+## Row #372 — 2026-09-04 ~11:20 CEST — **S0-B driver-venue forensics: root cause found.** Record: `exec/d-photoz-leverage/DRIVER_VENUE_FORENSICS.md` (sonnet). All content chair-derived.
+
+**(1) Field-by-field comparison** of `hier_s0_driver.py build_iiib_venue`/`run_theta_node` (`081b1f28`) vs the production `--evaluate` resolution (R4b run): `catalogue_numerator_survival_2d`/`_center`, `catalogue_leg_1d_mass_aware`, mass_filter geometry/k, `theta_sites`/smear, `normalization_mode`, `host_z_kernel`, handler `M_min`/`M_max`/`z_max` all SAME; `allow_low_pdet_coverage` differs (validation-only).
+
+**(2) DECISIVE.** The driver forwards the module constant `H_BOUNDS = (0.50, 0.86)` to every node, lowering `cosmological_model.h.lower_limit` from the production default `0.60` to `0.50` before `evaluate()`; `h.lower_limit` feeds `get_redshift_outer_bounds` (`bayesian_statistics.py:5729–5737`), whose `z_min = dist_to_redshift(d_L − 3σ, h_min)` sets the candidate ball-tree window — a which-candidates-enter field.
+
+**(3) Data signature.** `L_cat_no_bh` differs on `1002/1588` events — `157` driver `≠ 0` with R4b `= 0` (never the reverse), `906` both-nonzero (median ratio `1.01`, heavy tail); the differing events have median `~81` candidates vs `1` for the identical ones — a window-width effect. The driver's own comment justifies the widening only for a full-grid caller.
+
+**(4) Consequence (facts).** S0-B (rows #332/#336) measured the θ-pull on a **WIDER candidate window than production** (`h_min 0.50` vs `0.60`); `rd-s0b-parity` J.2's "no matched comparand" and the R4/R4b non-identity are explained.
+
+**(5) Chair decision (flagged, standing).** Build a `--h-bounds` flag on the driver (default = current constant, byte-identical), run the truth node at `(0.60, 0.86)` as the discriminating test (`~7.5 min`), and if byte-identical to R4b, run the full 5-node S0-B at the production window (`≈2 CPU-h`) as the production-window S0-B for `d-photoz-leverage`.
