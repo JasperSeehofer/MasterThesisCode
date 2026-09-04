@@ -149,22 +149,36 @@ pool row's contribution by `ρ(M_z(row))` before `p_det`/`d_hor` are built) — 
 that also touches the numerator leg's `detection_probability_obj` (§6 below) and must not be conflated with
 option (i) silently.
 
-**F4 (feeds the g-formula gate) — at least 8 distinct call sites of the with/without-BH p_det interpolators
-exist in `bayesian_statistics.py`; the registration does not say which are "inside a mass quadrature."**
-`g-formula` states: *"the `P_complete` factor enters ONLY inside `p_det` calls within mass quadratures (never
-the 1D no-BH numerator survival, never the catalogue candidate survival at fixed observed M) — the verifier
-lists every call site the script reaches."* Direct `grep -n` in this pass finds
-`detection_probability_with_bh_mass_interpolated` called at lines 901, 944, 1741, 2058, 3029, 5567 (six sites)
-and `detection_probability_without_bh_mass_interpolated_zero_fill` at 1284, 1440, 1770, 3066 (four sites) —
-ten call sites of two method names, spread across the with-BH numerator, the without-BH numerator, the
-completion denominators (both variants), and `precompute_global_catalog_selection`. Distinguishing "inside a
-mass quadrature" from "at fixed observed M" or "the 1D leg" among ten same-named-method call sites cannot be
-done by wrapping the method generically on the `SimulationDetectionProbability` object (a single wrap would
-touch all ten); it requires call-site-specific instrumentation, which in turn requires each site to be
-individually classified — work the registration defers entirely to "the verifier," with no enumeration
-started here. This is squarely what the launch instruction's own precedent (`exec/r-offset-subset/`'s
-`DESIGN_GATE_formula*.md` chain, which went through 5 revisions before closing) suggests is hard to get right
-on the first attempt; Q1 has not started that chain at all yet.
+**F4 (feeds the g-formula gate) — CORRECTED IN THIS PASS: at least 25, not 10, distinct call sites of the
+with/without-BH p_det interpolators exist in `bayesian_statistics.py`; the registration does not say which
+are "inside a mass quadrature."** `g-formula` states: *"the `P_complete` factor enters ONLY inside `p_det`
+calls within mass quadratures (never the 1D no-BH numerator survival, never the catalogue candidate survival
+at fixed observed M) — the verifier lists every call site the script reaches."* An earlier pass of this same
+review under-enumerated this finding as "ten call sites of two method names" (six + four); re-running the
+`grep -n` in this pass and manually excluding docstring/comment mentions (verified line-by-line, not by
+pattern alone) finds the true counts are roughly **double** that: `detection_probability_with_bh_mass_interpolated`
+is actually *called* (not merely mentioned in prose) at lines 901, 944, 1741, 2058, 3029, 5567, 6450, 6901,
+6979, 7150, 7246, 7288, 9021, 9037, 9111, 9123, 9181 — **17 sites** (lines 7220 and 7277 are docstring prose
+referencing the method name, correctly excluded, not calls) — and
+`detection_probability_without_bh_mass_interpolated_zero_fill` at 1284, 1440, 1770, 3066, 7697, 8533, 8954,
+8973 — **8 sites** (lines 1222 and 1361 are docstring prose, correctly excluded). **25 real call sites of two
+method names**, not ten, spread across at least the with-BH numerator, the without-BH numerator, the
+completion denominators (both variants), `precompute_global_catalog_selection`, and several more functions in
+the 6900–9200 line range (host-conditioned p_det helpers, catalogue-candidate survival at fixed observed M,
+and at least one Gauss-Hermite host-marginalization routine) that the original six/four-site list omitted
+entirely. Distinguishing "inside a mass quadrature" from "at fixed observed M" or "the 1D leg" among 25
+same-named-method call sites cannot be done by wrapping the method generically on the
+`SimulationDetectionProbability` object (a single wrap would touch all 25); it requires call-site-specific
+instrumentation, which in turn requires each site to be individually classified — work the registration
+defers entirely to "the verifier," with no enumeration started here, and the true enumeration burden is
+materially larger than even this gate's own first-pass count suggested. This is squarely what the launch
+instruction's own precedent (`exec/r-offset-subset/`'s `DESIGN_GATE_formula*.md` chain, which went through 5
+revisions before closing) suggests is hard to get right on the first attempt; Q1 has not started that chain
+at all yet. **Fix:** the eventual `g-formula` verifier's call-site list must be generated mechanically (e.g.
+`grep -n` filtered to exclude comment/docstring lines and cross-checked against an AST-based call-site walk),
+not hand-enumerated — this finding's own correction is a demonstration of exactly the failure mode (a
+plausible-looking hand count that undershot the true figure by more than half) that a mechanical enumeration
+step exists to prevent.
 
 **F5 — g-closure(i)'s registered ZeroDivisionError figure is the wrong scope; independently re-derived in
 this pass.** §6 states the closure `89,456 − 3,488 (ZeroDiv) − 85,584 = 384`, citing `3,488` as "ZeroDiv."
@@ -250,7 +264,8 @@ regenerate it without the self-row) before Phase A treats "verify md5s" as a har
   F3's blockage, not a defect of its own.
 - **g-formula:** cannot be evaluated as GREEN or RED in the abstract (Q1's own `DESIGN_GATE_formula.md` has
   not been written — Phase B has not started) but F4 flags a concrete, non-trivial enumeration burden
-  (≥10 call sites, 2 method names, 4 semantic roles) that the eventual formula gate must resolve before any
+  (25 call sites, corrected in this pass from a first-count of 10; 2 method names; at least 5 semantic
+  roles) that the eventual formula gate must resolve before any
   real-mode run, consistent with the launch instruction's own emphasis that "one invocation covers everything
   the dispositions need."
 - **g-hardware:** GREEN, local half; deferred half correctly scoped to the chair.
@@ -268,9 +283,10 @@ this is a real, non-trivial-sized ambiguity, not a rounding question; (F3) S1.3'
 asks for a `ρ(M_z)`-weighted `D'(h)`, but the one function the registration names for `D(h)` is confirmed, by
 direct code read including its own inline comment, to have no mass axis at all — the function that does is
 private, unnamed, and reached through a different, unnamed caller. F4 is the same gap seen from the
-`g-formula` gate's side: at least ten call sites of the two p_det interpolator methods exist, spread across
-four different semantic roles, and nothing in the registration starts the enumeration the gate itself
-demands. F5 (arithmetic label error, STOP threshold not crossed) and F6 (an unpinned, self-referentially-
+`g-formula` gate's side: 25 call sites of the two p_det interpolator methods exist (this pass corrected an
+earlier hand-count of 10 by re-verifying every match line-by-line against comment/docstring false positives),
+spread across at least five semantic roles, and nothing in the registration starts the enumeration the gate
+itself demands. F5 (arithmetic label error, STOP threshold not crossed) and F6 (an unpinned, self-referentially-
 failing manifest) are real but non-blocking — fix them alongside F1–F4, not as gating items on their own.
 Everything else — S1.4's form (contingent only on the numerator-leg AMBER, not the denominator RED), the
 disposition tables' form, `max_revisions`, the blindness line, and every independently-reproduced pin — is

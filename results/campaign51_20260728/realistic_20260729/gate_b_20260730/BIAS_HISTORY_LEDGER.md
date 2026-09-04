@@ -3766,3 +3766,11 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(3) Fresh formula reviewer RED:** (A) the new `--nonadditivity-max` flag is dead (`0.6` hard-coded in the disposition); (B) the G-2(i)/(ii) anchors (full-sample `mean_h`; `Δ_K = +0.086106`) are defined but never asserted; (C) the physics-floor exclusion count from `_load_matrix` is dropped at all 3 call sites (a `KeyError` instead of INSTRUMENT-DEFECT if it ever fired); (D) two INTERMEDIATE sub-cases of the §5 band table missing (both shares `≥ 0.5` with `r < 0`; sign-opposed `|s| > 1`) — counter-examples produced TERM-OWNS. **Verified GREEN:** T0 import, `InstrumentDefect` on missing input, hand-re-derived synthetic closure/term-freeze/residual.
 
 **(4) Round 2** (fix → fresh re-gate → disjoint read) launched.
+
+## Row #379 — 2026-09-04 ~13:50 CEST — **Q1 re-gate consumed the original §4 (rerun prompt defect); 25 p_det call sites found. All content chair-derived.**
+
+**(1) Process defect.** The Q1 chain rerun's computability gate re-reviewed the ORIGINAL §4 text and re-reported F1–F3 (the REVISION 1 (Q1) section is appended at the end of the draft and was not consumed — a process defect of the rerun prompt, which did not name the revision).
+
+**(2) One real finding.** The `p_det` call-site enumeration is **25 sites** (17 with-BH: `901, 944, 1741, 2058, 3029, 5567, 6450, 6901, 6979, 7150, 7246, 7288, 9021, 9037, 9111, 9123, 9181`; 8 without-BH: `1284, 1440, 1770, 3066, 7697, 8533, 8954, 8973`), **not the 10** in REVISION 1's table; the gate record was updated in place (`exec/r-timeout-selection/DESIGN_GATE_Q1_computability.md`).
+
+**(3) Chair decision.** Q1 REVISION 2 requested from author C (full 25-site table with roles and the registered-path rule; a consolidated "text of record" paragraph at the top of the Q1 section so reviewers see the superseding items first); the chain reruns with a revision-aware gate prompt.
