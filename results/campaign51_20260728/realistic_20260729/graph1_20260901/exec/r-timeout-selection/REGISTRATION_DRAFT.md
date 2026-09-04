@@ -104,6 +104,8 @@ Adjudication of the three-valued rows: top-tier, verdict-free, returns to the au
 
 ## 4. Registered statistics
 
+**CONSOLIDATED Q1 TEXT OF RECORD (after REVISION 1–2; paragraph inserted by REVISION 2 (Q1), the only non-appended edit, coordinator-instructed).** The sentences of this §4 Q1 block and of §6 are superseded where they conflict with: REVISION 1 (Q1) item 1 (S1.1 source = the per-draw `TimeoutError` warning line, `main.py:1293-1302`/build-commit `:1143`; the aggregate line is the closure tally only); item 2 (S1.1 population = the 707 attempts in `POOL_MANIFEST.md5`, 363 excluded and disclosed; closure = Σ aggregate ≡ deduped per-draw over the 707); item 3 (denominator leg on `_mass_trunc_denominator_inner_m_integral` `:869` via the duck-typed proxy `detection_probability`; `D'(h)` dropped from the primary, thinned-pool composition leg secondary); item 4 (numerator via `completion_mass_factor_g_sel`'s `s_query` `:2276`; rule: `P_complete` on every with-BH p_det query inside a mass quadrature on the registered path, none elsewhere — REVISION 2 (Q1) table of all 25 call sites); item 5 (g-closure(i) = 89,456 − 3,449 − 85,584 = 423; build-log `MANIFEST.md5` pin `6ae9c109…` with its one self-referential failing row; §8 item A discharged). Bands, thresholds and dispositions of §5 are unchanged.
+
 **Q1 — `q-timeout-selection-pdet`**
 - **S1.1 (existence, banded):** pool timeout tally by M bin from the pool build log (needs §8 item A). Read:
   `P_complete^pool(b)`; also the pool-side per-draw rate. If item A is refused: S1.1 = NOT-EVALUABLE, disclosed.
@@ -378,3 +380,47 @@ the header's `max_revisions 2` remains unspent by Q1/Q2 design rounds.
    failure — the self-referential `./MANIFEST.md5` row (`d41d8cd9…`, the empty-file hash written before the
    manifest existed), a benign construction artefact; any other failure = STOP. §8 item A is thereby
    DISCHARGED (fetch present); item B (GPU type per node) remains open.
+
+## REVISION 2 (Q1) — 2026-09-04, answering the re-gate's 25-site recount (append-only; no threshold or band touched)
+
+**Rule of record:** `P_complete(M_z)` multiplies a with-BH p_det query iff the query sits inside a mass
+quadrature/expectation on the registered S1.3 path (the production dispatch: `BayesianStatistics.p_Di` →
+`completion_mass_factor_g_sel` (`s_query`), and `_starmap_host_batches` → `single_host_likelihood_batch` /
+`single_host_likelihood` → the mass_trunc inner integral and the `mz_sel` expectation, all via the proxy
+object); no without-BH query is modified (M-marginal survivals move only through the thinned-pool composition
+leg); sites never reached by the read are listed so the [A13] engagement assertion can prove they were not
+dispatched. The REVISION 1 10-row table is superseded by this 25-row table.
+
+| line | enclosing function (top-level) | accessor | mass quadrature? | reached by the registered read? | treatment |
+|---|---|---|---|---|---|
+| `:901` | `_mass_trunc_denominator_inner_m_integral` (called `:8053`, `single_host_likelihood`) | with_bh | YES (G-L in ln M) | YES if `mass_trunc` on (builder asserts the re-baseline flag) | proxy — PRIMARY denominator leg |
+| `:944` | `…_inner_m_integral_batch` (batch kernel twin) | with_bh | YES | YES (production batch dispatch) | proxy — PRIMARY |
+| `:1741` | `_smeared_global_pdet_expectation` | with_bh | NO (fixed catalogue `M_g`, z nodes) | YES (Σ_glob precompute) | none (outside quadrature) — REPORTED sensitivity only |
+| `:2058` | `precompute_phi_marginal_survival` | with_bh | YES (`M_grid` × z → `S̄_φ`) | YES (precompute) | proxy |
+| `:3029` | `precompute_global_catalog_selection` | with_bh | NO (fixed `M_g`) | YES | none |
+| `:5567` | `BayesianStatistics._collect_candidate_dump_rows` | with_bh | NO | only with the candidate dump on | inert (diagnostic) |
+| `:6450` | `BayesianStatistics.p_Di` (completion leg, `:6470` calls `g_sel`) | with_bh | YES (G-node quadrature) | YES | proxy / `s_query'` — PRIMARY numerator leg |
+| `:6901` | `_bh_mass_denominator_inner_m_integral` (`:8057` else-branch) | with_bh | YES (Gaussian-prior form) | only if `mass_trunc` OFF | proxy (reached-or-not asserted) |
+| `:6979` | `…_inner_m_integral_batch` | with_bh | YES | only if `mass_trunc` OFF | proxy (asserted) |
+| `:7150` | `catalogue_leg_1d_mass_aware_factor` (`:7670/:7732/:8487/:8509`) | with_bh | NO (per-candidate at catalogue `M_g`) | only if `catalogue_leg_1d_mass_aware` resolves ON (builder asserts) | none |
+| `:7246` | `_mz_sel_2d_expectation` (`:7966/:8013`) | with_bh | YES (host BH-mass kernel expectation, `mz_sel`) | YES (adopted [P3-2D] default) | proxy — PRIMARY catalogue-leg 2D |
+| `:7288` | `_mz_sel_2d_expectation_batch` | with_bh | YES | YES (batch) | proxy — PRIMARY |
+| `:9021` | `single_host_likelihood_integration_testing` (numerator, M×z) | with_bh | YES | NEVER (test-only kernel) | none |
+| `:9037` | same (denominator) | with_bh | YES | NEVER | none |
+| `:9111` | same | with_bh | — | NEVER | none |
+| `:9123` | same | with_bh | YES | NEVER | none |
+| `:9181` | same (vectorised denominator) | with_bh | YES | NEVER | none |
+| `:1284` | `precompute_completion_denominator` (`D(h)`) | without_bh | NO | YES | composition leg (secondary) |
+| `:1440` | `precompute_missing_completion_denominator` | without_bh | NO | YES | composition leg |
+| `:1770` | `_smeared_global_pdet_expectation` | without_bh | NO | YES | composition leg |
+| `:3066` | `precompute_global_catalog_selection` (Σ_φ) | without_bh | NO | YES | composition leg |
+| `:7697` | `single_host_likelihood` (`denominator_integrant_without_bh_mass`) | without_bh | NO | YES (scalar kernel) | composition leg |
+| `:8533` | `single_host_likelihood_batch` (`_z_prior_pdf_at`) | without_bh | NO | YES (batch kernel) | composition leg |
+| `:8954` | `single_host_likelihood_integration_testing` (numerator) | without_bh | NO | NEVER | none |
+| `:8973` | same (denominator) | without_bh | NO | NEVER | none |
+
+Registered path summary: PRIMARY `δ_e(h)` = numerator (`:6450`/`:2276` via `s_query'`, `:7246`/`:7288` via
+proxy) + denominator (`:901`/`:944` via proxy) + `:2058` (`S̄_φ`, proxy); the g-formula verifier re-assembles
+`combined_with_bh` from these and confirms, per dispatch path actually used by the re-baseline (scalar vs
+batch; `mass_trunc`; `catalogue_leg_1d_mass_aware`; candidate dump off), which of the "asserted" rows were
+reached — a mismatch between the asserted flag set and the run's `run_metadata`/log flag lines = INSTRUMENT.

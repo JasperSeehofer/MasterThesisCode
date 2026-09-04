@@ -3774,3 +3774,9 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(2) One real finding.** The `p_det` call-site enumeration is **25 sites** (17 with-BH: `901, 944, 1741, 2058, 3029, 5567, 6450, 6901, 6979, 7150, 7246, 7288, 9021, 9037, 9111, 9123, 9181`; 8 without-BH: `1284, 1440, 1770, 3066, 7697, 8533, 8954, 8973`), **not the 10** in REVISION 1's table; the gate record was updated in place (`exec/r-timeout-selection/DESIGN_GATE_Q1_computability.md`).
 
 **(3) Chair decision.** Q1 REVISION 2 requested from author C (full 25-site table with roles and the registered-path rule; a consolidated "text of record" paragraph at the top of the Q1 section so reviewers see the superseding items first); the chain reruns with a revision-aware gate prompt.
+
+## Row #380 — 2026-09-04 ~14:15 CEST — **r-timeout-selection Q1 revision 2. All content chair-derived.**
+
+**(1) Revision 2** by author C (draft `426` lines): a 25-row `p_det` call-site table (17 with-BH, 8 without-BH) with enclosing function, mass-quadrature status, reachability on the registered path and treatment — **PRIMARY path** `:6450`/`:2276` (`s_query`), `:7246`/`:7288` (`mz_sel` proxy), `:901`/`:944` (mass-trunc denominator proxy), `:2058` (`S̄_φ`); flag-conditional rows (`:6901`/`:6979` `mass_trunc off`; `:7150` `mass-aware on`; `:5567` dump) must be asserted in their registered state; `:8954–:9181` test-only, never reached; all 8 without-BH sites = composition leg only; plus a "CONSOLIDATED Q1 TEXT OF RECORD" paragraph inserted at the top of the Q1 block (the one non-appended edit, chair-instructed) pointing to the superseding REVISION 1 items.
+
+**(2) Q1 chain rerun launched** with a revision-aware gate prompt (findings citing only the original §4 are invalid; `≥ 8` real checks required; a fresh rev2 gate file).
