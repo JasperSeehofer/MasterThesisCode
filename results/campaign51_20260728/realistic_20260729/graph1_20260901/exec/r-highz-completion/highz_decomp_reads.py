@@ -256,6 +256,9 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--z-gate", type=float, required=True)
     p.add_argument("--se-unpowered", type=float, required=True)
     p.add_argument("--nonadditivity-max", type=float, default=0.6)  # DESIGN_GATE finding B
+    p.add_argument(
+        "--g1d-tol", type=float, default=1e-6
+    )  # PIN CORRECTION 4: G-1d absolute band on |den_log_term - ln D_tilde_phi|
     p.add_argument("--out", type=Path, default=None)
     p.add_argument("--dry-run", action="store_true")
     p.add_argument(
@@ -487,8 +490,14 @@ def load_term_columns(csv_path: Path, event_filter: np.ndarray | None = None) ->
     return df
 
 
-def gate_g1_closure(df: pd.DataFrame, label: str) -> dict[str, float]:
-    """G-1(a)-(e), on every row passed in. Raises InstrumentDefect on any miss."""
+def gate_g1_closure(df: pd.DataFrame, label: str, g1d_tol: float = 1e-6) -> dict[str, float]:
+    """G-1(a)-(e), on every row passed in. Raises InstrumentDefect on any miss.
+
+    ``g1d_tol`` (default 1e-6, PIN CORRECTION 4) is the absolute band on
+    ``|den_log_term - ln D_tilde_phi|``; the 7-s.f. storage precision of the
+    ``D_tilde_phi``/``g_frac`` display columns cannot pass a tighter band by
+    construction (REGISTRATION_DRAFT.md PIN CORRECTION 4).
+    """
     n_rows = len(df)
     if n_rows == 0:
         raise InstrumentDefect(f"G-1 ({label}): empty frame")
@@ -519,9 +528,9 @@ def gate_g1_closure(df: pd.DataFrame, label: str) -> dict[str, float]:
     if rel_g.max() > 5e-7:
         raise InstrumentDefect(f"G-1d ({label}): g_frac relative residual {rel_g.max():.3e} > 5e-7")
     resid_den = np.abs(den - np.log(d_tilde))
-    if resid_den.max() > 1e-8:
+    if resid_den.max() > g1d_tol:
         raise InstrumentDefect(
-            f"G-1d ({label}): |den_log_term - ln D_tilde_phi| {resid_den.max():.3e} > 1e-8"
+            f"G-1d ({label}): |den_log_term - ln D_tilde_phi| {resid_den.max():.3e} > {g1d_tol:.3e}"
         )
 
     # (e) D_tilde_phi / den_log_term event-independence, per node.
@@ -1163,6 +1172,19 @@ def run_synth_check() -> None:
     except InstrumentDefect:
         pass
 
+    # PIN CORRECTION 4: --g1d-tol threading. A 5e-7 residual on
+    # |den_log_term - ln D_tilde_phi| (the disclosed 7-s.f.-precision scale,
+    # REGISTRATION_DRAFT.md PIN CORRECTION 4: real full-iiib max 4.407e-7)
+    # must pass at the registered default (1e-6) and fail at the old 1e-8 band.
+    g1d_df = synth_df.copy()
+    g1d_df["D_tilde_phi"] = np.exp(0.1 - 5e-7)
+    gate_g1_closure(g1d_df, "SYNTH-g1d-tol-default", g1d_tol=1e-6)
+    try:
+        gate_g1_closure(g1d_df, "SYNTH-g1d-tol-tight", g1d_tol=1e-8)
+        raise AssertionError("SYNTH: G-1d should have raised InstrumentDefect at g1d_tol=1e-8")
+    except InstrumentDefect:
+        pass
+
     # ---- Finding A: --nonadditivity-max actually reaches the disposition ----
     a_shares = {"B": 0.9, "g": 0.05}
     disp_default = production_ownership_disposition(
@@ -1350,13 +1372,15 @@ def run_synth_check() -> None:
 # --------------------------------------------------------------------------
 
 
-def _five_row_slice_closure(csv_path: Path, table: pd.DataFrame, h_true: float) -> float:
+def _five_row_slice_closure(
+    csv_path: Path, table: pd.DataFrame, h_true: float, g1d_tol: float = 1e-6
+) -> float:
     """5-row real-slice closure check (design-gate computability category)."""
     p_dark_events = table.index[table["C7_log10_n_cand_1d"].to_numpy() == 0.0].to_numpy()
     slice_events = np.sort(p_dark_events)[:5]
     df = load_term_columns(csv_path, slice_events)
     df = df[np.isclose(df["h"], h_true)]
-    stats = gate_g1_closure(df, "5-row real slice")
+    stats = gate_g1_closure(df, "5-row real slice", g1d_tol=g1d_tol)
     return stats["max_closure_residual"]
 
 
@@ -1412,13 +1436,14 @@ def run_production_family(
     share_own: float,
     share_diffuse: float,
     nonadditivity_max: float,
+    g1d_tol: float = 1e-6,
 ) -> ProductionFamilyResult:
     channel_label = CHANNEL_LABEL[channel]
     separable_terms: tuple[str, ...] = _separable_terms_for_channel(channel)
 
     # G-1 closure over EVERY P_dark row, this venue (Sec.6).
     df_p_dark = load_term_columns(csv_path, pops.P_dark)
-    g1 = gate_g1_closure(df_p_dark, f"{venue}/{channel_label} P_dark full")
+    g1 = gate_g1_closure(df_p_dark, f"{venue}/{channel_label} P_dark full", g1d_tol=g1d_tol)
 
     h_grid, event_idx_full, logL, n_excluded = _load_matrix(csv_path, channel)
     # Finding C: check BEFORE any event_idx-keyed lookup below can hit a
@@ -1728,8 +1753,11 @@ def main(argv: list[str] | None = None) -> None:
         f"(anchor {HARNESS_POOLED_ANCHORS['n_scored']})"
     )
 
-    max_resid = _five_row_slice_closure(args.logl_iiib, table_iiib, args.h_true)
+    max_resid = _five_row_slice_closure(
+        args.logl_iiib, table_iiib, args.h_true, g1d_tol=args.g1d_tol
+    )
     print(f"[gate G-1] 5-row real-slice max closure residual: {max_resid:.3e} (band 1e-9)")
+    print(f"[gate G-1d] resolved --g1d-tol: {args.g1d_tol:.3e}")
 
     run_synth_check()
 
@@ -1761,6 +1789,7 @@ def main(argv: list[str] | None = None) -> None:
                 share_own=args.share_own,
                 share_diffuse=args.share_diffuse,
                 nonadditivity_max=args.nonadditivity_max,
+                g1d_tol=args.g1d_tol,
             )
 
     delta_K_hosted = {
@@ -1995,6 +2024,7 @@ def main(argv: list[str] | None = None) -> None:
             "nonadditivity_max": args.nonadditivity_max,
         },
         "run_metadata": {
+            "g1d_tol": args.g1d_tol,
             "h_true": args.h_true,
             "decile": args.decile,
             "stencil": list(stencil),

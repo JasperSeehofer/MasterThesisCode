@@ -311,3 +311,75 @@ fix-round items (1)-(3) in the launch instructions, which map 1:1 onto H/I/J.
 `git status --porcelain` for this file remains untracked (`??`) at the end of this round -- no commit
 made by this builder (out of scope for a fix-round build task; the disjoint reader / node owner
 commits when ready).
+
+## FIX 4 (builder, 2026-09-04): PIN CORRECTION 4 — `--g1d-tol` CLI flag
+
+**Scope: ONE change** — the hard-coded G-1d band (`|den_log_term - ln D_tilde_phi| > 1e-8`,
+formerly line ~522) is replaced by a CLI flag `--g1d-tol` (default `1e-6`, per PIN CORRECTION 4),
+threaded through `gate_g1_closure` and every caller (`_five_row_slice_closure`,
+`run_production_family`, `main`'s per-family loop). The resolved value is recorded in `--out`'s
+`run_metadata.g1d_tol` and printed by `--dry-run`/real mode alike (`[gate G-1d] resolved
+--g1d-tol: ...`). The `g_frac` relative gate (5e-7, unrelated to this pin) and every other
+threshold/formula is byte-identical — `git diff` shows only the flag + threading + the new SYNTH
+assertion.
+
+### New SYNTH assertion
+
+A synthetic table with `D_tilde_phi` perturbed to give a residual of exactly `5e-7` on
+`|den_log_term - ln D_tilde_phi|` (the disclosed 7-s.f.-storage scale; the real full-iiib table
+reads 4.407e-7, PIN CORRECTION 4) now asserts: PASSES at `g1d_tol=1e-6` (the registered default),
+RAISES `InstrumentDefect` at `g1d_tol=1e-8` (the old band). Exercised automatically by
+`run_synth_check()`, which runs inside both `--dry-run` and `--synth`.
+
+### `--dry-run` on the real Sec.8 launch block (`--g1d-tol 1e-6` appended)
+
+Exit **0**. Same pin/population/count/manifest output as FIX 3's record, plus the new line:
+
+```
+[gate G-1] 5-row real-slice max closure residual: 2.665e-15 (band 1e-9)
+[gate G-1d] resolved --g1d-tol: 1.000e-06
+[SYNTH OK] closure identity, disposition rows (production 4 + harness 6), G-1 pass/fail path, Findings A-D counter-examples, Finding H K-vs-K_dark leaveout, Finding I channel term selection, Finding J replicate-rule pass/miss
+[dry-run] gates + byte-id anchors only, no --out written, no registered aggregate computed.
+```
+
+`--synth <path>` (all other launch-block flags supplied, since argparse still requires them) run
+separately: exit 0, identical `[SYNTH OK]` line.
+
+### G-1d-alone gate report, full iiib + jr1 P_dark tables (gate-only, not a registered aggregate)
+
+Per the task instruction, ran `gate_g1_closure`'s underlying residual computation (via a scratch
+script that imports `highz_decomp_reads.py` and calls `load_covariate_table` /
+`construct_populations` / `load_term_columns` — no code path in the committed file was added for
+this; it is a read-only report over the same public functions the gate already uses) over every
+`P_dark` row of both venues, both channels (the `SEVEN_SF_COLUMNS` are channel-independent, so
+the residual is identical across channels within a venue, as expected):
+
+| venue | channel | n_rows | max &#124;den_log_term − ln D̃φ&#124; | max g_frac rel. resid. |
+|---|---|---|---|---|
+| iiib | combined_no_bh | 24846 | 4.407370e-07 | 4.763011e-07 |
+| iiib | combined_with_bh | 24846 | 4.407370e-07 | 4.763011e-07 |
+| jr1 | combined_no_bh | 20213 | 4.102515e-07 | 4.763011e-07 |
+| jr1 | combined_with_bh | 20213 | 4.102515e-07 | 4.763011e-07 |
+
+iiib matches PIN CORRECTION 4's disclosed 4.407e-7 exactly. Both venues: `< 1e-6` (passes the new
+default) and `> 1e-8` (would still fail the old band) — confirms the fix is necessary and
+sufficient at the registered tolerance. No `Delta_F`, `Delta_t`, share, `S_t`, `S_F`, or harness
+pooled value was computed by this report (gate residuals only).
+
+### FIX 4 checklist
+
+| item | status |
+|---|---|
+| `--g1d-tol` CLI flag added, default `1e-6` | done |
+| threaded to `gate_g1_closure` and all 4 call sites (2 SYNTH, `_five_row_slice_closure`, `run_production_family`) | done |
+| resolved value recorded in `--out` `run_metadata.g1d_tol` and printed under `--dry-run` | done |
+| `g_frac` relative gate (5e-7) and every other threshold byte-identical | confirmed (`git diff` scoped to the flag + threading + new SYNTH block only) |
+| SYNTH assertion: 5e-7 residual passes at default, fails at `--g1d-tol 1e-8` | done |
+| REGISTRATION_DRAFT.md §8 launch block: `--g1d-tol 1e-6` appended; PIN CORRECTION 4 launch-block note added | done |
+| `--dry-run` on the real launch block: exit 0 | confirmed |
+| G-1d-alone gate report over full iiib/jr1 tables (gate, not a registered aggregate) | done — see table above |
+| ruff check / ruff format --check / mypy | confirmed (`ruff check`: All checks passed; `ruff format --check`: 1 file already formatted; `mypy`: Success, no issues found) |
+| Real mode | NOT run (per task instruction) |
+
+`git status --porcelain` for this file remains untracked (`??`) at the end of this round — no
+commit made by this builder (out of scope for a fix-round build task).

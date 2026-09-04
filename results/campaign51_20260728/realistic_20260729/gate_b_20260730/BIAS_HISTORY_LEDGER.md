@@ -3816,3 +3816,13 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(3) Chair diagnosis + PIN CORRECTION 4** (appended to the draft): `D_tilde_phi` is a 7-s.f. display column (`bayesian_statistics.py:5467`; disclosed by the computability gate as a consistency-only column), so a `1e-8` band cannot pass by construction (storage precision `~5e-7`); **G-1d band corrected to `1e-6` absolute** on `ln D̃φ`, exposed as `--g1d-tol`; the full-precision G-1 closure (`1e-9`) and every disposition threshold unchanged.
 
 **(4) Round 4** (flag + mini re-gate + read) launched.
+
+## Row #385 — 2026-09-04 ~16:25 CEST — **m-highz-completion READ. All content chair-derived.**
+
+**(1) Round 4.** G-1d band corrected to `1e-6` (`--g1d-tol`; PIN CORRECTION 4; the reviewer hand-derived the 7-s.f. → `5e-7` bound and confirmed only that plumbing changed; real residuals `4.41e-7` `iiib` / `4.10e-7` `joint_r1`). Disjoint read, real mode once, exit 0, every pin/gate PASS (G-1 closure `3.6e-15`; G-2(ii) `Δ_K 0.0861064` vs anchor `0.086106`; 0 exclusions; G-3 a–e).
+
+**(2) Numbers** (chair re-derived, MATCH): `iiib` 2D `Δ_F = +0.06432` (freezing the 144 `K_dark` events' term profiles to the low-z reference removes the ENTIRE `−0.0641` offset); `Δ_B +0.05959`, `Δ_g +0.00191` → `s_B 0.926`, `s_g 0.030`, non-additivity `4.4 %` (band `0.6`); `Δ_D ≡ 0` (denominator identity); `Δ_K 0.0861`/`Δ_K,dark 0.0789` (concordance `0.92`); replicates: `iiib` 1D `s_B 1.0`, `joint_r1` 2D `s_B 0.928` (`Δ_F 0.047`), `joint_r1` 1D `1.0`. Score excess (nats/h): `B −0.747 ± 0.027` (`Z −27.7`), `g −0.037 ± 0.001` (`Z −37.7`). **Harness** (67 universes, 2D): `S_B −0.776 ± 0.010`, `S_g −0.035 ± 0.0005`; `S_F −0.811 ± 0.010`, `Z −81.3`; `ρ_S = 1.035` (`B 1.039`, `g 0.958`); `s_B^harn 0.956`; 14 railed universes disclosed; 1D pooled `S_B −0.776`. Replicate rule: TERM-OWNS(B) in all four families, no downgrade.
+
+**(3) Dispositions.** Tier 1 **TERM-OWNS(B)**; tier 2 **ESTIMATOR-INTERNAL candidate**.
+
+**(4) Chair booking (flagged, fresh RULE R24).** The high-z zero-candidate pull is `93 %` the h-slope of the `B_num` completion-numerator term (`p_det × S̄_φ` for zero-candidate events), immaterial in `g`, zero in the denominator; the self-consistent harness reproduces it with the same term — illegitimate under R12's convention, floor-consistent under author D's R-b reading (a calibrated estimator's h-slope for information-poor high-z dark events); the mapping is the author's. Row #347's `26 %` harness share is a different statistic (score at truth vs leave-out h-slope) — reconciliation is the next registered question; follow-up node `b-highz-bnum-factor` (split `p_det` vs `S̄_φ` inside `B_num`) proposed, not launched. Docket R24 added.

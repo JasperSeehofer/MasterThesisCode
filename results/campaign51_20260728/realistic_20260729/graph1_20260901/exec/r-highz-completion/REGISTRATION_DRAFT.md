@@ -220,6 +220,7 @@ uv run python results/campaign51_20260728/realistic_20260729/graph1_20260901/exe
   --h-true 0.73 --decile 0.10 --stencil 0.725 0.730 0.735 \
   --null-draws 1000 --null-seed 20260904 \
   --share-own 0.5 --share-diffuse 0.2 --rho-hi 0.5 --rho-lo 0.2 --z-gate 3.0 --se-unpowered 0.1 \
+  --g1d-tol 1e-6 \
   --out results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-highz-completion/highz_result_read.json
 ```
 Argparse of the built script must equal this block token-for-token (design-gate item); `--dry-run` appended
@@ -273,3 +274,8 @@ band on a 7-s.f. column cannot pass by construction (relative storage precision 
 G-1d band = 1e-6 (absolute, on ln D̃φ; 2× the 7-s.f. storage bound), exposed as the launch-block flag
 `--g1d-tol 1e-6`. The full-precision closure G-1 (round_trip columns, band 1e-9) is unchanged. No
 disposition threshold is touched.
+
+**PIN CORRECTION 4 — launch block (builder, fix round 4, 2026-09-04):** `--g1d-tol 1e-6` appended
+to the §8 launch block (default matches; CLI flag threaded through `gate_g1_closure` and every
+caller); standalone gate-only report over the full iiib/jr1 P_dark tables reproduces 4.407e-7
+(iiib) / 4.103e-7 (jr1), both < 1e-6 and > 1e-8 — see BUILD_RECORD.md "FIX 4".
