@@ -264,3 +264,12 @@ item 2. **What makes this un-launchable now:** (a) populations, bands and the R1
 orchestrator-derived — R-a/R-b/R-c pending; (b) `highz_decomp_reads.py` does not exist; (c) the `p_Di` line
 numbers are HEAD, not `1ec9514d` — the gate re-pins them; (d) the brief's "p_det term" is declared NOT
 separable (MECHANISM_NOTE §5) — the author may reject the reduced term set.
+
+## PIN CORRECTION 4 (chair, 2026-09-04 ~15:40 CEST; gate tolerance, not a disposition threshold)
+The real-mode read halted on G-1d over the full iiib 1D P_dark table: |den_log_term − ln D̃φ| =
+4.407e-7 > the registered 1e-8. The design gate had already disclosed that `g_frac` and `D_tilde_phi`
+are 7-s.f. display columns (bayesian_statistics.py:5467) and are "consistency gates" only; a 1e-8
+band on a 7-s.f. column cannot pass by construction (relative storage precision ~5e-7). Correction:
+G-1d band = 1e-6 (absolute, on ln D̃φ; 2× the 7-s.f. storage bound), exposed as the launch-block flag
+`--g1d-tol 1e-6`. The full-precision closure G-1 (round_trip columns, band 1e-9) is unchanged. No
+disposition threshold is touched.

@@ -3806,3 +3806,13 @@ Class-count anchor mismatch RESOLVED as DIAGNOSTIC-ONLY (`exec/m-s0b-production/
 **(2) CHAIR DECISION (flagged).** Q1 **PARKED bounded-undetermined** after 3 pre-launch design rounds (post-disposition counter `0`); returns as **[RULE] R20** (pool population of record; denominator branch of record; or accept Q2 as the answer). Q2 (row #374) stands as the H0-relevant answer.
 
 **(3) Morning docket §8 added** (R19 Q2 material; R20 Q1 parked; R21 production-window S0-B re-run on byte-identity; R22 S0-C reading; R23 r-highz-completion retro-ratification; backlog: pre-commit hook was uninstalled, GATE-ACC pending since yesterday).
+
+## Row #384 — 2026-09-04 ~15:45 CEST — **r-highz-completion round 3 GREEN; real read halted on a display-precision band. All content chair-derived.**
+
+**(1) Round 3.** Builder closed rev2's findings (G-2(ii) now asserts the `159`-event K leave-out via a shared leave-out helper, with the `144`-event `Δ_K,dark` reported separately plus a concordance ratio; harness read on both channels with 1D pooled S/SE reported; the §5 replicate rule implemented as a cross-family post-step that can downgrade the booked `iiib`/2D disposition to INTERMEDIATE with reasons recorded, and the harness comparison keyed on the booked value); fresh reviewer (`DESIGN_GATE_formula_rev3.md`) **GREEN** — independently re-implemented the leave-out on the extended fixture (`Δ_K −6.488e-4` vs `Δ_K,dark −4.988e-4`), traced all disposition-critical harness quantities to the 2D channel only, `--dry-run` pins/counts exact.
+
+**(2) Disjoint read** (`READ_RECORD.md`): every file pin, all 8 population pins, the manifest, G-3d and the 5-row G-1 closure PASSED; the run then **HALTED** (exit 1, typed INSTRUMENT-DEFECT) on **G-1d** over the full `iiib` 1D `P_dark` table: `|den_log_term − ln D̃φ| = 4.407e-7 > 1e-8`. No statistic computed, no `--out`.
+
+**(3) Chair diagnosis + PIN CORRECTION 4** (appended to the draft): `D_tilde_phi` is a 7-s.f. display column (`bayesian_statistics.py:5467`; disclosed by the computability gate as a consistency-only column), so a `1e-8` band cannot pass by construction (storage precision `~5e-7`); **G-1d band corrected to `1e-6` absolute** on `ln D̃φ`, exposed as `--g1d-tol`; the full-precision G-1 closure (`1e-9`) and every disposition threshold unchanged.
+
+**(4) Round 4** (flag + mini re-gate + read) launched.

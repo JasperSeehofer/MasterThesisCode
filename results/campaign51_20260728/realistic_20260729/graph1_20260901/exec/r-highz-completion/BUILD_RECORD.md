@@ -218,3 +218,96 @@ no code change forced).
 `git status --porcelain` for this file remains untracked (`??`) at the end of this round -- no commit
 made by this builder (out of scope for a fix-round build task; the disjoint reader / node owner
 commits when ready).
+
+## 9. FIX 3 (responds to `DESIGN_GATE_formula_rev2.md`, round 3)
+
+Findings A, C, D, E from `DESIGN_GATE_formula.md` were reconfirmed CLOSED by the fresh rev2 reviewer
+and needed no further work. This round addresses Finding H (RED, blocking) and Findings I, J (AMBER,
+completeness gaps the reviewer flagged as gating for `--out`'s trustworthiness), plus the explicit
+fix-round items (1)-(3) in the launch instructions, which map 1:1 onto H/I/J.
+
+- **Item (1) / Finding H (RED, G-2(ii) anchored the wrong population's leave-out) -- FIXED.** The
+  `+0.086106` anchor (`REGISTRATION_DRAFT.md` Sec.1/Sec.6) is registered as the leave-out of the
+  FULL top-z-decile `K` (159 events in iiib), not the 144-event `K_dark` subset FIX 2 fed into the
+  gate. `run_production_family` now computes `delta_K_leaveout` (masking `pops.K`) via a new shared
+  helper, `leaveout_delta_mean_h()` (same formula the old inline code used, generalised over the
+  event set), and asserts THAT against `G2_DELTA_K_IIIB_2D`/`G2_DELTA_K_TOL` in
+  `assert_g2ii_delta_k_anchor` (renamed parameter, docstring updated to spell out the distinction).
+  `delta_K_dark_leaveout` (144-event, masking `pops.K_dark`) is computed separately, via the same
+  helper, and kept as the Sec.2.3 reported-only concordance object -- never anchor-gated. Both fields
+  are now on `ProductionFamilyResult` and in `--out`'s `production_families.*` entries, plus a new
+  `concordance_K_dark_over_K_reported_only` ratio (closes `DESIGN_GATE_formula.md` Finding F for
+  free, as the rev2 reviewer recommended, non-blocking). `run_K_hosted_leaveout` was refactored onto
+  the same `leaveout_delta_mean_h()` helper (was a near-identical inline duplicate before).
+  SYNTH-tested: `make_synth_fixture()` gained a 7th, K_hosted-style tilt (event 3, slope=3.0,
+  present in `K_idx={3,4,5}` but absent from `K_dark_idx={4,5}`; does not touch the pre-existing
+  `s_B/s_g/r` assertions, which only ever look at `K_dark_idx`/`R_idx`); the new assertion computes
+  both leave-outs through the identical `leaveout_delta_mean_h()` code path used in real mode and
+  confirms they differ by > 1e-5 (two orders above `G2_DELTA_K_TOL`) -- exactly the gap a
+  wrong-population anchor would either false-`INSTRUMENT-DEFECT` on or silently paper over.
+- **Item (2) / Finding I (AMBER, harness control never read the 1D channel) -- FIXED.**
+  `run_harness_universe` now takes a `channel` argument (default `"combined_with_bh"`, so existing
+  2D call sites are unaffected) and selects its separable terms via a new shared helper,
+  `_separable_terms_for_channel(channel)` (`("B","g")` for 2D, `("B",)` for 1D) -- the same helper
+  `run_production_family` now uses too, replacing its old inline ternary (one source of truth for
+  "which terms does this channel have"). `main()` builds `harness_reads_by_channel` over both
+  `CHANNELS`, runs the population read once per (universe, channel) pair (population construction
+  itself is channel-independent; only the `_load_matrix`-sourced `logpost_full`/term arrays differ),
+  and pools the 1D channel's `S_B^harn`/`SE_B^harn` (delete-one-universe jackknife, same
+  `harness_pool_score()`) into new `--out` fields (`harness.channel_1D_pooled_S`,
+  `channel_1D_pooled_SE_jackknife`, `channel_1D_n_universes_railed`). Disposition machinery is
+  UNCHANGED per the launch instructions: `pooled_sizes`, `S_F_harn`/`SE_F_harn`/`Z_harn`/`rho_S`, and
+  `harness_disposition` all still come from the 2D channel read only (`harness_reads =
+  harness_reads_by_channel["combined_with_bh"]`), matching `REGISTRATION_DRAFT.md` Sec.5's harness
+  table, which conditions only on the 2D quantities. Cost: doubles the harness-universe read loop
+  (67 -> 134 `_load_matrix` calls), well inside the Sec.7 cost budget's stated 40x headroom.
+  SYNTH-tested: `_separable_terms_for_channel("combined_with_bh") == ("B","g")` and
+  `_separable_terms_for_channel("combined_no_bh") == ("B",)` asserted directly (no CSV needed --
+  the harness-universe read itself requires real per-universe diagnostics files, out of scope for
+  the <=10-row SYNTH fixture; the channel-to-term-set mapping it depends on is what's exercised).
+- **Item (3) / Finding J (AMBER, Sec.5 Replicate rule not implemented) -- FIXED.** New
+  `apply_replicate_rule(families)`, called once in `main()` after all four production families
+  (`iiib`/`jr1` x 2D/1D) are computed. Implements the rule as written: TERM-OWNS(t) must hold with
+  the SAME t in `iiib`/2D and `jr1`/2D (`_owning_term()` parses `"TERM-OWNS(X)"` -> `"X"`; vacuous,
+  no downgrade, if `iiib`/2D itself isn't TERM-OWNS); each venue's 1D `Delta_B` must have the same
+  sign as that venue's own 2D `Delta_B` (`np.sign` equality, both venues checked independently). A
+  miss on any sub-condition downgrades the BOOKED `iiib`/2D disposition to `INTERMEDIATE` (raw,
+  per-family `disposition` fields in `--out` are left untouched -- the booked value and the specific
+  reason(s) for any downgrade are recorded separately, in a new `--out` top-level `replicate_rule`
+  section: `family`, `raw_disposition`, `booked_disposition`, `downgraded`, `reasons`). The booked
+  (not raw) disposition is now what feeds `prod_owning_term`/`s_t_harn_owning` on the harness side --
+  a replicate miss means the TERM-OWNS claim itself should not be trusted for the harness comparison
+  either. SYNTH-tested with hand-built `ProductionFamilyResult`/`TermFreezeResult` stand-ins (no CSV,
+  no aggregate): a passing 4-family set (same t, matching signs) books unchanged and undowngraded; a
+  same-t-mismatch miss (`jr1`/2D owns `g` instead of `B`) downgrades to `INTERMEDIATE` with a
+  non-empty `reasons` list; a sign-mismatch miss (`iiib`/1D `Delta_B` negative against a positive
+  `iiib`/2D `Delta_B`) also downgrades; and the vacuous case (`iiib`/2D not TERM-OWNS) passes its raw
+  disposition through unchanged.
+- **No other items found** in `DESIGN_GATE_formula_rev2.md` beyond Findings H, I, J (Findings A, C,
+  D, E reconfirmed closed; F, G reconfirmed non-blocking/no-action, unchanged this round).
+
+### FIX 3 checklist
+
+| item | status |
+|---|---|
+| (1) G-2(ii) anchor now checks the 159-event `K` leave-out (`delta_K_leaveout`), not `K_dark` | done |
+| (1) `delta_K_dark_leaveout` (144-event) kept as separate Sec.2.3 reported-only object, never anchor-gated | done |
+| (1) `concordance_K_dark_over_K_reported_only` ratio added to `--out` (closes Finding F, non-blocking bonus) | done |
+| (1) SYNTH fixture extended with a K≠K_dark case (event 3, K_hosted-style tilt); leave-outs assert to differ (>1e-5) | done |
+| (2) `run_harness_universe` reads BOTH channels (`channel` arg, default 2D, back-compat) | done |
+| (2) 1D channel pooled per-universe S/SE reported in `--out` (`harness.channel_1D_*`) | done |
+| (2) disposition machinery (pooled_sizes, S_F_harn, Z_harn, rho_S, harness_disposition) unchanged, 2D-only | done |
+| (2) SYNTH: `_separable_terms_for_channel` asserted correct for both channels | done |
+| (3) `apply_replicate_rule`: TERM-OWNS(t) same-t check across iiib/jr1 2D | done |
+| (3) `apply_replicate_rule`: 1D `Delta_B` same-sign-as-2D check, both venues | done |
+| (3) a miss downgrades the BOOKED iiib/2D disposition to INTERMEDIATE, reason(s) recorded in `--out.replicate_rule` | done |
+| (3) booked (not raw) disposition feeds `prod_owning_term` for the harness-side comparison | done |
+| (3) SYNTH: pass case + same-t-miss case + sign-miss case + vacuous case, all asserted | done |
+| Thresholds byte-identical (no existing numeric literal touched) | confirmed |
+| `--dry-run` on the real Sec.8 launch block: exit 0, counts 606/144/231, manifest matched, `[SYNTH OK]` prints the 3 new suffixes | confirmed (rerun this round) |
+| `--out` still not written by `--dry-run`; real mode still never invoked by this builder | confirmed |
+| ruff / mypy clean | confirmed (`ruff check`: All checks passed; `ruff format --check`: 1 file already formatted; `mypy`: Success, no issues found) |
+
+`git status --porcelain` for this file remains untracked (`??`) at the end of this round -- no commit
+made by this builder (out of scope for a fix-round build task; the disjoint reader / node owner
+commits when ready).
