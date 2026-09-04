@@ -304,3 +304,77 @@ restated as "share_to(b) of the 820 SNR-stage timeouts (+2 CRB-stage, reported)"
 max_revisions 2 counted the two pre-launch registration revisions; the revision counter for
 post-disposition re-registration (charter §1.13) is untouched (0 consumed). LAUNCH of Q2 is deferred
 to the morning docket as [DO] R18 (zero compute; gate expected GREEN on this erratum).
+
+## REVISION 1 (Q1) — 2026-09-04, answering `DESIGN_GATE_Q1_computability.md` F1–F6 (append-only; supersedes the named passages; no threshold or band touched)
+
+**Revision counter.** Pre-launch design-gate revisions (this and the Q2 revisions above) are computability
+fixes made BEFORE any registered read; they do NOT consume the charter's post-disposition revision counter —
+the header's `max_revisions 2` remains unspent by Q1/Q2 design rounds.
+
+1. **S1.1 source (F1).** The M-binnable pool-side timeout record is the per-draw `TimeoutError` catch warning
+   (`main.py:1293-1302` at HEAD; logged as `[main.py:1143 - injection_campaign()] Injection waveform/SNR
+   computation timed out (>90s, N total). Skipping event... params={'M': …, 'p0': …}` at the pool-build
+   commit) — its `M` key is M_z, binned on the pinned edges. 5,040 raw lines in the fetch = 2,520 unique
+   events after removing the `.err`/application-log duplicate (dedupe on timestamp + params string). The
+   per-task aggregate line (`main.py:1349-1352`, "… N timeouts @ 90s") is the **g-closure tally only**.
+2. **Pool-side population rule (F2).** S1.1's numerator AND denominator use **exactly the 707 task attempts
+   whose CSV is in `POOL_MANIFEST.md5`**, matched mechanically by (seed dir, `SLURM` task id) from
+   `run_metadata_*.json` ↔ `injection_h_0p73_task_<id>.csv`; the other 363 attempts (326 old-format
+   completion lines + 37 crashed, = 1,070 − 707; consistent with the pool's `code_rev` split
+   `f6449051`/`a9f29e82`) are EXCLUDED and their counts disclosed. Justification: only those 707 attempts'
+   completions are in the denominator, so only their timeouts belong in the numerator. g-closure target:
+   Σ of the 707 tasks' aggregate "N timeouts" = the count of deduplicated per-draw lines in the same 707
+   logs, EXACTLY (STOP on mismatch). Disclosed figures over all attempts: aggregate Σ over the 1,033
+   complete-line tasks = 2,475 vs per-draw lines over all 1,070 attempts = 2,520; the 45 are attributed to
+   the 37 crashed attempts (per-draw lines logged, no tally line) — reported, never used.
+3. **S1.3 denominator leg (F3) — re-registered.** `precompute_completion_denominator`
+   (`bayesian_statistics.py:1170-1324`) has NO mass axis: its integrand (`:1284`) is the M-marginal
+   `S(d_L)` × `dVc/(1+z)`; an M-dependent `P_complete` cannot enter it as a quadrature factor (the
+   mass-integrated rate is the z-independent constant of `:1292-1297`). `D'(h)` is therefore **dropped from
+   the primary**. The with-BH per-host denominator that DOES carry a mass quadrature is
+   `_mass_trunc_denominator_inner_m_integral(z, detection_probability, host_phiS, host_qS, host_M, sigma_lnM,
+   Z_M, h)` (`:869`; batch twin `:944`), called from `denominator_integrant_with_bh_mass` (`:8048-8058`) —
+   a Gauss–Legendre integral in ln M over the host prior, p_det queried at `:901`. **Zero-edit insertion
+   point:** its `detection_probability: Any` parameter is duck-typed — the instrument passes a PROXY object
+   wrapping the production `SimulationDetectionProbability` whose
+   `detection_probability_with_bh_mass_interpolated(d_L, phi, theta, M_z, **kw)` returns
+   `p_det × P_complete(M_z)` (bin-step in M_z on the pinned edges) and whose every other attribute/method
+   delegates unchanged. The primary `δ_e(h)` is the per-event change of `ln combined_with_bh` re-assembled
+   from the proxy-evaluated numerator (item 4) and this per-host denominator. The M-marginal
+   `D(h)`/`S(d_L)` **composition leg** is SECONDARY: a rejection-thinned pool copy (row kept with probability
+   `ρ(M_z)/max ρ`, seed `20260904`, a derived directory à la `d1_sand/make_sand_pools.py`, tagged
+   `instrumentation`) fed to an unmodified `SimulationDetectionProbability` + `precompute_completion_denominator`;
+   it is identically zero when S1.2 = SHARED (`ρ ≡ 1`) and is REPORTED alongside.
+4. **Numerator leg + call-site table (F4).** Registered insertion mechanisms, zero edits under `darksiren_emri/`:
+   (a) `completion_mass_factor_g_sel(z_nodes, d_L_gpc, d_L_fraction, det_M_z, proj_d_L_to_M, sigma_cond_M, *,
+   s_query: Callable[[d_L, M_z, z], survival], n_hermite, adaptive)` (`:2276`) — the instrument injects
+   `s_query' = lambda d, m, z: s_query(d, m, z) · P_complete(m)`; (b) the proxy object of item 3 for every
+   other with-BH site. Rule (supersedes the §6 g-formula clause "never the catalogue candidate survival at
+   fixed observed M"): `P_complete(M_z)` multiplies **every with-BH p_det query** — a completed-only
+   selection applies to any source of mass M_z, catalogue candidate or completion node alike (MFG 2019: one
+   selection function for the whole inclusion criterion) — and **no without-BH query** (M-marginal
+   survivals move only through pool composition, item 3 secondary). Registered table for the g-formula gate:
+
+   | site | enclosing function | accessor | inside a mass quadrature? | role | mechanism |
+   |---|---|---|---|---|---|
+   | `:901` | `_mass_trunc_denominator_inner_m_integral` | with_bh | YES (G-L in ln M, host prior) | per-host denominator | proxy |
+   | `:944` | `…_inner_m_integral_batch` | with_bh | YES | batch twin | proxy |
+   | `:1284` | `precompute_completion_denominator` | without_bh | NO (z-only) | `D(h)` | composition leg only |
+   | `:1440` | `precompute_missing_completion_denominator` | without_bh | NO | missing-completion `D` | composition leg only |
+   | `:1741` | `_smeared_global_pdet_expectation` | with_bh | NO (fixed catalogue `M_g`, z nodes) | Σ_glob with-BH | proxy |
+   | `:1770` | `_smeared_global_pdet_expectation` | without_bh | NO | Σ_glob no-BH | composition leg only |
+   | `:2058` | `precompute_phi_marginal_survival` | with_bh | YES (`M_grid` × z grid → `S̄_φ`) | φ-marginal survival | proxy |
+   | `:3029` | `precompute_global_catalog_selection` | with_bh | NO (fixed `M_g`) | Σ_glob,wbh | proxy |
+   | `:3066` | `precompute_global_catalog_selection` | without_bh | NO | Σ_φ | composition leg only |
+   | `:5567` | `_collect_candidate_dump_rows` | with_bh | NO (scalar, per candidate) | DIAGNOSTIC dump, not likelihood-bearing | proxy (inert) |
+   | `:2276` | `completion_mass_factor_g_sel` (`s_query`) | with_bh via Callable | YES (Hermite in `x_M`) | completion-leg `g_sel` numerator | `s_query'` |
+
+   The gate verifier must confirm, by the engagement assertion of S1.4, that the proxy is reached at each
+   with-BH site production actually dispatches ([A13]) and that `combined_with_bh` re-assembles to 1e-9.
+5. **g-closure(i) arithmetic (F5) + manifest pin (F6).** Corrected: SNR-stage ZeroDivisionError = **3,449**
+   (the 3,488 of `MECHANISM_NOTE.md` §3 is SNR + 39 CRB-stage); residual = **89,456 − 3,449 − 85,584 = 423**
+   (STOP threshold 1,000 unchanged). New §1 pin: `gate_b_20260730/injection_pool_mix200k_20260728_buildlogs_fetch_20260904/MANIFEST.md5`,
+   md5 **`6ae9c1098c1c3325504e4904b2fc4d50`**, 3,510 lines; `md5sum -c` must report 3,509 OK and exactly ONE
+   failure — the self-referential `./MANIFEST.md5` row (`d41d8cd9…`, the empty-file hash written before the
+   manifest existed), a benign construction artefact; any other failure = STOP. §8 item A is thereby
+   DISCHARGED (fetch present); item B (GPU type per node) remains open.
