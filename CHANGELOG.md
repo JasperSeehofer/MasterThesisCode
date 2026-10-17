@@ -7,6 +7,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (data locations — off-site copy + workspace `emri2`, 2026-10-17)
+- **Cluster data now has two copies of record:** workspace `emri2` (the `emri` contents moved there
+  2026-09-23, before `emri` expired) and the Hetzner Storage Box (`hbox`), which holds the whole
+  workspace except `work/` and two caches, checksum-verified 2026-10-17.
+- **`~/emri-archive/` (159 GB, formerly the laptop's sole copy) deleted** after checksum
+  verification — its four seed600 venues are on `hbox` + `bwuni`.
+- Docs aligned: `DATA_INVENTORY.md` (workspace-lifetime table, Device Registry `hbox` tag,
+  dedup/dev-box tables, storage-decision status), `cluster/datasets.yaml` `meta.workspace`,
+  `cluster/README.md`, status header on `cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md`.
+- Not changed: the cluster scripts still default to the workspace name `emri`.
+
 ### Changed ([PHYSICS] mass-aware 1D catalogue leg — production default, 2026-08-31)
 - **`darksiren_emri/bayesian_inference/bayesian_statistics.py` — `catalogue_leg_1d_mass_aware`
   flag default flipped to `auto`** (the auto-to-engaged pattern established by

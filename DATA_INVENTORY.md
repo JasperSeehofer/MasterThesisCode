@@ -20,11 +20,19 @@ production run (regenerating injections AND events with the merged code) superse
 - Local stale working dirs archived under `simulations/_RETIRED_20260620_pre_massfix_lcat/`.
 - New entries will be appended to the Dataset Registry + Evaluation Log as the campaign lands.
 
-### Cluster workspace lifetime (`emri`)
+### Cluster workspace lifetime (`emri` → `emri2`)
 
 | checked | expiry | action |
 |---|---|---|
 | 2026-07-25 | ~~2026-08-31~~ → **2026-09-23** (`ws_extend emri 60`; **0 extensions left — LAST one used**) | no further extensions possible: copy all final results off the workspace to persistent storage BEFORE 2026-09-23 |
+| 2026-09-23 | `emri` expired 18:19:41 — its contents were **moved beforehand** into the new workspace **`emri2`** (`/pfs/work9/workspace/scratch/st_ac147838-emri2`, allocated 16:01:58) | done — no transfer off the cluster was needed for the deadline |
+| 2026-10-16 | `emri2`: **2026-11-22 15:01:58**, 3 extensions left | extend before expiry (`ws_extend emri2 60`); when the extensions run out, allocate a new workspace and move the contents again. The workspace is one of the **two copies of record** (with `hbox`, see the Device Registry), so it must never lapse. Reminder: garden to-do `todo-20261017-02`, due 2026-11-15 |
+
+Cluster paths written `/pfs/work9/workspace/scratch/st_ac147838-emri/…` elsewhere in this file
+predate the move; the same directories now live under `…/st_ac147838-emri2/…` with the same
+layout (symlinks inside the run directories were rewritten to the `emri2` paths during the move).
+The cluster scripts still default to the workspace name `emri` (`cluster/cluster.env`,
+`preflight.sh`, `setup.sh` and the per-campaign `.sbatch` files) — not yet updated.
 
 ### De-rail evidence backup (2026-07-02)
 
@@ -396,7 +404,8 @@ holds if two rows name two different devices.
 | Tag | Device | Identity | Capacity / free | Backed up? |
 |---|---|---|---|---|
 | `thinkpad` | dev laptop (the machine this repo is checked out on) | hostname `thinkpadseehofer`, machine-id `4140d149…`, NVMe `UMIS RPETJ1T24MHP2QDQ` s/n `SS1D71506X1LC51B069S`, rootfs UUID `2786115f-…` | 931 GB single partition · 160 GB free (2026-09-02) | **NO** |
-| `bwuni` | bwUniCluster 3.0 workspace `emri` | `/pfs/work9/workspace/scratch/st_ac147838-emri/` | scratch | **NO** — and **expires 2026-09-23, 0 extensions left** |
+| `bwuni` | bwUniCluster 3.0 workspace `emri2` (was `emri` until 2026-09-23) | `/pfs/work9/workspace/scratch/st_ac147838-emri2/` | scratch | **NO** — expires 2026-11-22, 3 extensions left (2026-10-16); rolled forward by hand, see the workspace-lifetime table |
+| `hbox` | Hetzner Storage Box (off-site, EU) — account and host are recorded in the garden vault, not here | `archive/darksiren-emri/` on the box (ssh/rsync, port 23) | 1 TB · 698 GB free (2026-10-17) | it **is** the off-site copy; a single provider, not itself backed up |
 | `ext-1` | *(not yet acquired)* | — | — | — |
 
 **⚠️ There is currently exactly ONE local device.** `thinkpad` has a single NVMe with a single
@@ -405,6 +414,15 @@ true — `results/_archive/` vs `~/emri-archive/`, or repo vs `~/data-backups/`,
 on one disk. This is precisely the illusion that the 2026-09-02 dedup dissolved (161 GB recovered
 by deleting a "second copy" that protected nothing). **Redundancy starts existing when `ext-1`
 exists.**
+
+**Update 2026-10-17 — off-device redundancy now exists.** The whole cluster workspace except
+`work/` (104 GB, reproducible selection-table cache) and the `uv-cache/`/`xdg/` caches — 163
+directories, 563.5 GiB — was copied to `hbox` under `archive/darksiren-emri/cluster/` on
+2026-10-16/17 and **checksum-verified against the cluster** (`rsync -c`, every file, 2026-10-17).
+Tool: garden `wiki/meta/runbooks/darksiren-data/sync-to-box.sh` (tiers from the 2026-09-23
+inventory; `push`/`verify` modes). So everything that lives in the workspace now has two copies
+on two providers (`bwuni` + `hbox`). Locally there is still exactly one device; `ext-1` was not
+bought.
 
 **Tagging drift found on adoption (2026-09-02).** Applying device tags to the pre-existing entries
 immediately surfaced three rows asserting local copies that are gone — the whole `simulations/`
@@ -444,19 +462,39 @@ The **repo-side copies were deleted**; `~/emri-archive/` is retained as the copy
 
 Free space went 1.0 GB → **160 GB**, past the 50 GB floor, without discarding any science data.
 
+**Update 2026-10-17 — `~/emri-archive/` deleted; copies of record are now `hbox` + `bwuni`.**
+The four venues above turned out to be still present in the cluster workspace (moved into
+`emri2` on 2026-09-23 with everything else). After the `hbox` copy, `~/emri-archive/` was
+compared against it file by file (`rsync -c`, 2026-10-17): every file checksum matched; the only
+differences were directory times and symlink targets (`…-emri/…` on the laptop vs `…-emri2/…` on
+the cluster — paths, not data). The author then deleted `~/emri-archive/` (ruled 2026-10-17).
+
+| Venue | Copies of record (2026-10-17) | Size |
+|---|---|---|
+| `run_20260628_seed600` | `hbox` + `bwuni` | 56 GB |
+| `run_20260726_seed600_ab_absmarg` | `hbox` + `bwuni` | 35 GB |
+| `run_20260726_seed600_ab_genmarg_zres` | `hbox` + `bwuni` | 35 GB |
+| `run_20260726_seed600_ab_vdeconv` | `hbox` + `bwuni` | 35 GB |
+
 ### What is on the dev box now (~526 GB project-related)
 
 | Path | Device | Size | Regenerable? | Second copy? | Retention call |
 |---|---|---|---|---|---|
 | `results/campaign51_20260728/realistic_20260729/` | `thinkpad` | 200 GB | from seed + cluster | cluster ws (**expires 2026-09-23**) | **HOT — do not touch.** Backs the live branch and rows #315–#317 |
 | `results/_archive/` (post-dedup) | `thinkpad` | 119 GB | from seed | partly cluster | warm; oldest seed1000/2000/3000 blocks are the first cull candidates |
-| `~/emri-archive/` | `thinkpad` | 159 GB | expensive (GPU re-sim) | **NONE** | **sole copy — highest-priority evacuation target** |
+| ~~`~/emri-archive/`~~ | ~~`thinkpad`~~ | 159 GB | expensive (GPU re-sim) | `hbox` + `bwuni` | **deleted 2026-10-17** after checksum verification — see the update under the dedup action above |
 | `darksiren_emri/galaxy_catalogue/GLADE+.txt` | `thinkpad` | 6.0 GB | re-downloadable from GLADE+ upstream | upstream | keep (needed to rebuild the reduced catalogue) |
 | `results/prod2d_closure_20260818/` | `thinkpad` | 14 GB | from seed | cluster ws (expiring) | warm |
 | `results/run_20260817_fusion_counterfactual/` | `thinkpad` | 13 GB | from seed | cluster ws (expiring) | warm; thread CLOSED (row #119) → cull candidate |
 | `results/run_20260804_frozeng/` | `thinkpad` | 6.5 GB | from seed | cluster ws (expiring) | warm |
 | `results/run_20260805_n2sel1d/` | `thinkpad` | 4.6 GB | from seed | cluster ws (expiring) | warm |
 | `results/run_20260620_seed500_phase50/` | `thinkpad` | 2.3 GB | n/a — **pre-2026-06-20 RETIRED era** | — | **cold — safe to delete** (retired by the mass-convention + L_cat banner above) |
+
+"cluster ws" in this table means workspace `emri2` since 2026-09-23 (the expiry dates above are
+the old `emri` ones); the cluster-side directories are also on `hbox` since 2026-10-17. Whether a
+given local tree has a matching cluster directory was not re-checked in that pass. The local
+`results/` trees themselves (`_archive/` 119 GB, `campaign51_20260728/realistic_20260729/`
+200 GB, …) were **not** copied to `hbox`; they fit in its free space if wanted.
 
 Size is dominated by `posteriors_with_bh_mass/` per-h JSONs (~150–250 MB each × 41 h-values per
 venue); the CRB CSVs and verdict JSONs that actually carry the claims are a rounding error by
@@ -475,6 +513,11 @@ place. Recommendation:
    everything that must come off the cluster before 2026-09-23 → `results/_archive/` warm blocks.
 3. **Pulling to another machine is not a substitute** unless that machine has ≥600 GB spare and
    is itself backed up; otherwise it just relocates the single-point-of-failure.
+
+**Status 2026-10-17.** The off-site need was met with `hbox` (Hetzner Storage Box, 1 TB) instead
+of an external disk, and the second copy is the cluster workspace, rolled forward before each
+expiry. Not done: `ext-1` (external disk) and the institutional archive below — both optional now,
+not deadline-driven.
 
 ### Off-device storage options (assessed 2026-09-02)
 
@@ -499,6 +542,9 @@ is the recommendation.
 device tag for it exists in the Device Registry. With the `emri` workspace expiring 2026-09-23,
 resolving this is time-critical: ask the bwHPC/KIT support desk what long-term research-data
 archive the account is entitled to, then add it to the Device Registry as its own tag.
+**Partly resolved (2026-09-23 audit, executed 2026-10-17):** the persistent off-cluster storage is
+`hbox`; the deadline pressure is gone. The institutional-archive question is still unasked and
+remains worth asking at leisure — `hbox` is one commercial provider, not a research archive.
 
 **Cheap wins available without buying anything** (~16 GB, author sign-off required — none are
 deletable by an agent unilaterally since `results/` is fully gitignored and therefore

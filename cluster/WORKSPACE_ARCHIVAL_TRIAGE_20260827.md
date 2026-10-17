@@ -1,5 +1,11 @@
 # Workspace Archival Triage — `emri` — 2026-08-27
 
+> **Status 2026-10-17 — resolved.** Before the 2026-09-23 expiry the workspace contents were
+> moved into a new workspace, `emri2`. The whole of `emri2` except `work/` (and two caches) was
+> then copied to the Hetzner Storage Box (`hbox`) and checksum-verified on 2026-10-17. Current
+> locations and copies of record: `DATA_INVENTORY.md` (workspace-lifetime table, Device Registry).
+> The triage below is kept as written.
+
 ## 0. Deadline (verified)
 
 - Workspace: `emri` → `/pfs/work9/workspace/scratch/st_ac147838-emri`

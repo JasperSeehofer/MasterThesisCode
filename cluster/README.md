@@ -183,6 +183,12 @@ Replace `WORKSPACE_PATH` with the output of `ws_find emri` on the cluster.
 
 > **Warning:** Workspace `emri` expires after 60 days. Copy results to
 > persistent storage before expiration. Check remaining time: `ws_list`.
+>
+> **Current state (2026-10-17):** the live workspace is **`emri2`** (the `emri`
+> workspace expired 2026-09-23 after its contents were moved). The persistent
+> off-cluster copy is the Hetzner Storage Box — tag `hbox` in
+> `DATA_INVENTORY.md` (Device Registry). The scripts in this directory still
+> default to the name `emri`.
 > Extend: `ws_extend emri 60`.
 
 ## Troubleshooting

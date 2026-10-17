@@ -21,7 +21,9 @@
 # rationale live in DATA_INVENTORY.md. Update when a new campaign lands.
 
 meta:
-  workspace: /pfs/work9/workspace/scratch/st_ac147838-emri   # ws_find emri
+  workspace: /pfs/work9/workspace/scratch/st_ac147838-emri2  # ws_find emri2 — moved from `emri` 2026-09-23; expires 2026-11-22 (2026-10-16), roll forward before expiry
+  workspace_previous: /pfs/work9/workspace/scratch/st_ac147838-emri  # expired 2026-09-23; paths below that name it now live under emri2, same layout
+  offsite_copy: "hbox:archive/darksiren-emri/cluster/"  # Hetzner Storage Box (DATA_INVENTORY.md Device Registry); whole workspace except work/, uv-cache/, xdg/; checksum-verified 2026-10-17
   dev_box_repo: /home/jasper/Repositories/darksiren-emri
   commission_base: {tag: commission-base, commit: b593f02, branch: physics/photoz-joint-normalisation}
   expected_catalog_cols: 8            # reduced_galaxy_catalogue.csv (redshift-flag retained, 479afdd+)
