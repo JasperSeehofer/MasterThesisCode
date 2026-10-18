@@ -82,7 +82,7 @@ SEED=$((BASE_SEED + 100 * TID))
 N_DRAWS=800
 F10C_REFERENCE_N=2000
 
-: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) — run cluster/setup.sh first}"
+: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (workspace name: cluster/cluster.env) — run cluster/setup.sh first}"
 OUT_ROOT="$WORKSPACE/p3_2d_rhs2_20260826/task${TID}"
 LOG_DIR="$WORKSPACE/p3_2d_rhs2_20260826/logs"
 mkdir -p "$OUT_ROOT" "$LOG_DIR"

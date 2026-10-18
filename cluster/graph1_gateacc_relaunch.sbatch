@@ -46,7 +46,7 @@ source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 cd "$PROJECT_ROOT"
 
-: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) — run cluster/setup.sh first}"
+: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (workspace name: cluster/cluster.env) — run cluster/setup.sh first}"
 
 OUT_ROOT="${OUT_ROOT:-$WORKSPACE/p3_2d_fleet_aprime_20260902}"
 LOG_DIR="$OUT_ROOT/logs"

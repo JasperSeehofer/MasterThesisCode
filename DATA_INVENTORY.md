@@ -31,8 +31,10 @@ production run (regenerating injections AND events with the merged code) superse
 Cluster paths written `/pfs/work9/workspace/scratch/st_ac147838-emri/…` elsewhere in this file
 predate the move; the same directories now live under `…/st_ac147838-emri2/…` with the same
 layout (symlinks inside the run directories were rewritten to the `emri2` paths during the move).
-The cluster scripts still default to the workspace name `emri` (`cluster/cluster.env`,
-`preflight.sh`, `setup.sh` and the per-campaign `.sbatch` files) — not yet updated.
+Since 2026-10-18 the cluster scripts read the workspace name from one place,
+`CLUSTER_WORKSPACE_NAME` in `cluster/cluster.env` (now `emri2`); rolling the workspace forward
+means changing that line. Scripts archived under `results/` still name `emri` — they are records
+of past runs and were left as written.
 
 ### De-rail evidence backup (2026-07-02)
 

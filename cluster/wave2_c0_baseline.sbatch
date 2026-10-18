@@ -38,7 +38,7 @@ source "$VENV_PATH/bin/activate"
 cd "$PROJECT_ROOT"
 
 : "${RUN_DIR:?RUN_DIR not set -- submit_wave2.sh must export it}"
-: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) -- run cluster/setup.sh first}"
+: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (workspace name: cluster/cluster.env) -- run cluster/setup.sh first}"
 
 mkdir -p "$RUN_DIR/simulations" "$RUN_DIR/logs"
 

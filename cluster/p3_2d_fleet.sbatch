@@ -67,7 +67,7 @@ TID="${SLURM_ARRAY_TASK_ID:?array job required (--array=0-23)}"
 BASE_SEED=900101
 SEED=$((BASE_SEED + TID))
 
-: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) — run cluster/setup.sh first}"
+: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (workspace name: cluster/cluster.env) — run cluster/setup.sh first}"
 # Out-root is overridable via `sbatch --export=ALL,OUT_ROOT=...` (PA-2DR, 2026-08-27).
 # The default is the ORIGINAL banked 2026-08-25 fleet. A re-run MUST pass its own
 # OUT_ROOT: PA-CA-11's idempotency guard skips any (arm, seed) whose meta already

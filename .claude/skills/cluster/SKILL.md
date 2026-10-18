@@ -32,8 +32,10 @@ in `cluster/cluster.env`.
   parallel or "frozen" work — instead branch and **tag** (e.g. `commission-base`);
   archaeology returns via `git checkout <tag>`. (A redundant `mtc-eval` worktree
   was retired 2026-07-01 for exactly this reason.)
-- **Workspace:** `ws_find emri` → `/pfs/work9/workspace/scratch/st_ac147838-emri`.
-  bwHPC workspaces **expire** (extend: `ws_extend emri 60`); copy finals off before then.
+- **Workspace:** `ws_find emri2` → `/pfs/work9/workspace/scratch/st_ac147838-emri2` (was `emri` until it
+  expired 2026-09-23). The name lives in ONE place, `CLUSTER_WORKSPACE_NAME` in `cluster/cluster.env`;
+  `modules.sh` resolves `$WORKSPACE` from it — never hardcode the path or name in a new script.
+  bwHPC workspaces **expire** (extend: `ws_extend emri2 60`); copy finals off before then.
 - **uv:** `~/.local/bin/uv`. First-time env: `cluster/setup.sh`.
 
 ### ⚠️ Gotchas (each has bitten before)
@@ -143,7 +145,7 @@ Output root:  $WORKSPACE/run_YYYYMMDD_seedS/
   · live: `tail -f $WORKSPACE/run_*/logs/*.out`
 - **Resubmit only failed array tasks:** `bash cluster/resubmit_failed.sh <JOBID> <RUN_DIR> <BASE_SEED> <STEPS>`
 - **Retrieve results:**
-  `rsync -avz bwunicluster:$(ssh bwunicluster 'ws_find emri')/run_YYYYMMDD_seedS/ ./results/`
+  `rsync -avz bwunicluster:$(ssh bwunicluster 'ws_find emri2')/run_YYYYMMDD_seedS/ ./results/`
 - **Local evaluate** (dev box, CPU): `uv run python -m darksiren_emri <dir> --evaluate --h_value 0.73 --num_workers N`
 
 ### Launching jobs & writing new ones

@@ -12,7 +12,7 @@
 #   $WORKSPACE/run_equatorial_revert_YYYYMMDD/simulations/posteriors/
 #
 # Rsync back (from local machine):
-#   rsync -avz bwunicluster:$(ssh bwunicluster 'ws_find emri')/run_equatorial_revert_*/simulations/posteriors/ \
+#   rsync -avz bwunicluster:$(ssh bwunicluster 'ws_find emri2')/run_equatorial_revert_*/simulations/posteriors/ \
 #         ./results/equatorial_revert_posteriors/
 
 set -euo pipefail
@@ -30,7 +30,7 @@ fi
 # ---------------------------------------------------------------------------
 
 # Production seed200 run — source of the migrated CSVs and their backups
-SRC_RUN="/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200"
+SRC_RUN="$WORKSPACE/run_20260401_seed200"   # was a literal emri path; the run moved to emri2 with the workspace
 SRC_SIM="$SRC_RUN/simulations"
 
 # Fresh diagnostic run directory

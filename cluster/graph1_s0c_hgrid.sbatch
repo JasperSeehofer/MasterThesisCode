@@ -39,7 +39,7 @@
 # Submit (from the cluster, after preflight READY and git pull --ff-only):
 #   source cluster/modules.sh && sbatch cluster/graph1_s0c_hgrid.sbatch
 # Required env: PROJECT_ROOT optional (falls back to $HOME/darksiren-emri); WORKSPACE from
-# modules.sh (ws_find emri).
+# modules.sh (workspace name: cluster/cluster.env).
 
 #SBATCH --job-name=graph1-s0c-hgrid
 #SBATCH --partition=cpu_il
@@ -55,7 +55,7 @@ source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 cd "$PROJECT_ROOT"
 
-: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) -- run cluster/setup.sh first}"
+: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (workspace name: cluster/cluster.env) -- run cluster/setup.sh first}"
 
 DRIVER="$PROJECT_ROOT/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_driver.py"
 

@@ -7,6 +7,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (cluster workspace name in one place, 2026-10-18)
+- **`cluster/cluster.env` `CLUSTER_WORKSPACE_NAME` is now the only place the workspace is named**
+  (`emri` → `emri2`). `modules.sh` (and so every job's `$WORKSPACE`), `setup.sh`, `preflight.sh`,
+  `campaign_orchestrator.sh` and `scripts/bias_investigation/run_multi_truth_sweep.sh` read it;
+  `preflight.sh` and the orchestrator no longer fall back to a hardcoded `emri` name/path but stop
+  with an error. `submit_phase4{4,5}_eval.sh` / `submit_equatorial_revert_eval.sh` take their source
+  run from `$WORKSPACE`. The `.sbatch` "WORKSPACE not resolved" messages point at `cluster.env`.
+- Why: the hardcoded name broke every job lookup when `emri` expired 2026-09-23 and the data moved
+  to `emri2`; with one variable the next roll-forward is a one-line change.
+- Docs: `cluster/README.md` (incl. the roll-forward procedure), `cluster/LAUNCHING_JOBS.md`, the
+  cluster skill, `DATA_INVENTORY.md`. Scripts archived under `results/` left as written.
+
 ### Changed (data locations — off-site copy + workspace `emri2`, 2026-10-17)
 - **Cluster data now has two copies of record:** workspace `emri2` (the `emri` contents moved there
   2026-09-23, before `emri` expired) and the Hetzner Storage Box (`hbox`), which holds the whole
@@ -16,7 +28,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Docs aligned: `DATA_INVENTORY.md` (workspace-lifetime table, Device Registry `hbox` tag,
   dedup/dev-box tables, storage-decision status), `cluster/datasets.yaml` `meta.workspace`,
   `cluster/README.md`, status header on `cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md`.
-- Not changed: the cluster scripts still default to the workspace name `emri`.
+- Cluster scripts: see the 2026-10-18 entry above.
 
 ### Changed ([PHYSICS] mass-aware 1D catalogue leg — production default, 2026-08-31)
 - **`darksiren_emri/bayesian_inference/bayesian_statistics.py` — `catalogue_leg_1d_mass_aware`

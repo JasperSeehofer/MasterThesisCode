@@ -19,7 +19,7 @@
 REPO="${CLUSTER_REPO:-$HOME/darksiren-emri}"
 [ -f "$REPO/cluster/cluster.env" ] && . "$REPO/cluster/cluster.env" 2>/dev/null
 REPO="${CLUSTER_REPO:-$HOME/darksiren-emri}"
-WS_NAME="${CLUSTER_WORKSPACE_NAME:-emri}"
+WS_NAME="${CLUSTER_WORKSPACE_NAME:-}"   # set in cluster/cluster.env; no default — a stale literal is what broke on 2026-09-23
 EXPECT_COLS="${EMRI_EXPECTED_CATALOG_COLS:-8}"
 WARN_DAYS="${EMRI_WORKSPACE_WARN_DAYS:-14}"
 TAG="${EMRI_COMMISSION_TAG:-commission-base}"

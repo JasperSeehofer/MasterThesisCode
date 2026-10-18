@@ -32,11 +32,13 @@ fi
 # =========================================================================
 echo ""
 echo "=== Step 3/4: Workspace ==="
-WORKSPACE="$(ws_find emri 2>/dev/null || true)"
+WS_NAME="${CLUSTER_WORKSPACE_NAME:-$( . "$PROJECT_ROOT/cluster/cluster.env" >/dev/null 2>&1; echo "${CLUSTER_WORKSPACE_NAME:-}")}"
+[[ -n "$WS_NAME" ]] || { echo "ERROR: CLUSTER_WORKSPACE_NAME not set in cluster/cluster.env" >&2; exit 1; }
+WORKSPACE="$(ws_find "$WS_NAME" 2>/dev/null || true)"
 if [[ -z "$WORKSPACE" ]]; then
-    echo "  Allocating workspace 'emri' (60 days)..."
-    ws_allocate emri 60
-    WORKSPACE="$(ws_find emri)"
+    echo "  Allocating workspace '$WS_NAME' (60 days)..."
+    ws_allocate "$WS_NAME" 60
+    WORKSPACE="$(ws_find "$WS_NAME")"
 fi
 export WORKSPACE
 echo "  Workspace: $WORKSPACE"

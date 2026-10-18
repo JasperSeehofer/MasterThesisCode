@@ -53,7 +53,7 @@ source "$VENV_PATH/bin/activate"
 cd "$PROJECT_ROOT"
 
 : "${BASE_RUN_DIR:?BASE_RUN_DIR not set}"
-: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) -- run cluster/setup.sh first}"
+: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (workspace name: cluster/cluster.env) -- run cluster/setup.sh first}"
 
 TID="${SLURM_ARRAY_TASK_ID:?array job required (--array=0-15)}"
 

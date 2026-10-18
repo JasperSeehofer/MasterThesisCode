@@ -74,7 +74,7 @@
 #
 # Required env (set by cluster/submit_wave3.sh via --export=ALL,...):
 #   PROJECT_ROOT -- (optional; falls back to $HOME/darksiren-emri)
-# WORKSPACE is resolved by cluster/modules.sh (ws_find emri); RUN_DIR is NOT an input -- it is
+# WORKSPACE is resolved by cluster/modules.sh (workspace name: cluster/cluster.env); RUN_DIR is NOT an input -- it is
 # computed below from WORKSPACE + the per-task venue name (out-root names fixed by
 # results/_archive/archive_run_wave2.sh's "wave 3" ITEMS block -- do not rename):
 #   task 0 (iiib):     $WORKSPACE/run_20260830_wave3_c0prime_off_iiib
@@ -94,7 +94,7 @@ source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 cd "$PROJECT_ROOT"
 
-: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) -- run cluster/setup.sh first}"
+: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (workspace name: cluster/cluster.env) -- run cluster/setup.sh first}"
 
 TID="${SLURM_ARRAY_TASK_ID:?array job required (--array=0-1)}"
 

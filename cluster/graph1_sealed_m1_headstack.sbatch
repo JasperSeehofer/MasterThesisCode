@@ -71,7 +71,7 @@ source "$VENV_PATH/bin/activate"
 cd "$PROJECT_ROOT"
 
 : "${RUN_DIR:?RUN_DIR not set}"
-: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) -- run cluster/setup.sh first}"
+: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (workspace name: cluster/cluster.env) -- run cluster/setup.sh first}"
 : "${EXPECTED_CRB67_MD5:?EXPECTED_CRB67_MD5 not set -- take the first-touch pin (dossier sec 2) and pass it on --export}"
 : "${EXPECTED_POOL_LIST_MD5:?EXPECTED_POOL_LIST_MD5 not set -- pass the pinned pool content-manifest list-md5 on --export (GUARD CORRECTION, chair 2026-09-04)}"
 VENUE="${VENUE:-iiib}"
