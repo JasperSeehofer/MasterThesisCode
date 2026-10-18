@@ -191,11 +191,10 @@ Replace `WORKSPACE_PATH` with the output of `ws_find emri2` on the cluster.
 > `DATA_INVENTORY.md` (Device Registry). The scripts in this directory
 > read the name from `CLUSTER_WORKSPACE_NAME` in `cluster/cluster.env`.
 >
-> **Rolling the workspace forward:** `ws_extend` while extensions last; when
-> they run out, `ws_allocate` a new workspace, move the contents into it,
-> change `CLUSTER_WORKSPACE_NAME` in `cluster/cluster.env`, commit, and
-> `git pull` on the cluster. Update the workspace-lifetime table in
-> `DATA_INVENTORY.md`.
+> **Rolling the workspace forward:** `preflight.sh` says when (extend while
+> extensions last; once none are left it warns on every run; under 14 days
+> with none left it blocks). The move procedure is "Workspace lifecycle" in
+> `.claude/skills/cluster/SKILL.md`; `cluster/workspace_check.sh` verifies it.
 > Extend: `ws_extend emri2 60`.
 
 ## Troubleshooting

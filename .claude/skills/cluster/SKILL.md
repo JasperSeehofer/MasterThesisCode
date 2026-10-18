@@ -35,8 +35,54 @@ in `cluster/cluster.env`.
 - **Workspace:** `ws_find emri2` → `/pfs/work9/workspace/scratch/st_ac147838-emri2` (was `emri` until it
   expired 2026-09-23). The name lives in ONE place, `CLUSTER_WORKSPACE_NAME` in `cluster/cluster.env`;
   `modules.sh` resolves `$WORKSPACE` from it — never hardcode the path or name in a new script.
-  bwHPC workspaces **expire** (extend: `ws_extend emri2 60`); copy finals off before then.
+  bwHPC workspaces **expire** — when to extend and how to move: "Workspace lifecycle" below.
 - **uv:** `~/.local/bin/uv`. First-time env: `cluster/setup.sh`.
+
+### Workspace lifecycle — when and how to roll forward
+**Why it matters.** The workspace is one of the **two copies of record** of every cluster run;
+the other is the off-site Storage Box (`hbox` in `DATA_INVENTORY.md`), which is only as current
+as its last sync — a run banked since then exists **only** here. An expired workspace is deleted
+with no recovery. On 2026-09-23 `emri` was moved 2½ h before deletion because nobody had noticed
+the extensions had run out — that is what the check below is for.
+
+**When — checked automatically by `preflight.sh` (`[WORKSPACE]`) on every run.** It reads
+`remaining time`, `expiration date` and `available extensions` from `ws_list`
+(threshold `EMRI_WORKSPACE_WARN_DAYS` = 14 in `cluster/cluster.env`):
+
+| State | Preflight | Do |
+|---|---|---|
+| ≥ 14 d left, extensions > 0 | ok | nothing |
+| < 14 d left, extensions > 0 | **NOT READY** | `ws_extend <name> 60` |
+| 0 extensions left | **WARN** on every run | schedule the move — do it while ≥ 14 d remain, never on the last day |
+| < 14 d left, 0 extensions | **NOT READY** | move now (below) |
+
+Under one day `ws_list` reports only hours; the check counts that as 0 days.
+
+**How — the move** (on the cluster, inside tmux: `TERM=xterm-256color tmux new -s move`;
+`ws_allocate` and `mv` are the author's call — agents propose, run the checks, and wait):
+1. Nothing may write to the old workspace during the move: `squeue -u $USER` must be empty.
+2. Allocate the next name (`emri2` → `emri3` → …): `ws_allocate emri3 60`. In `ws_list`, both
+   workspaces should show the same `filesystem name` — then `mv` is a rename and instant;
+   otherwise it copies (hours, and needs the space).
+3. Move everything, dotfiles included:
+   `OLD=$(ws_find emri2); NEW=$(ws_find emri3); shopt -s dotglob; mv "$OLD"/* "$NEW"/`
+4. Re-point absolute symlinks that still name the old path:
+   `bash ~/darksiren-emri/cluster/workspace_check.sh --rewrite-links "$OLD"`
+   (links whose target does not exist under the new workspace are kept and listed).
+5. On the dev box: `CLUSTER_WORKSPACE_NAME="emri3"` in `cluster/cluster.env` (the only place the
+   name lives; `modules.sh` derives `$WORKSPACE` from it); `cluster/datasets.yaml`
+   `meta.workspace` (previous one → `workspace_previous`); a new row in the `DATA_INVENTORY.md`
+   workspace-lifetime table and the `bwuni` Device Registry row. Commit, push, then `git pull`
+   in `~/darksiren-emri` on the cluster.
+6. Verify: `bash ~/darksiren-emri/cluster/workspace_check.sh` must end `VERDICT: OK ✓` — old
+   workspace empty, no symlink into another workspace, `datasets.yaml` matches the live path,
+   config committed. Then run the preflight.
+7. Leave the emptied old workspace to expire on its own.
+
+The `hbox` copy is unaffected by a move (it is laid out by directory name, not by workspace
+path). Refresh it after new campaigns with the garden vault's `sync-to-box.sh`
+(`push <name> all`, then `verify <name> all`).
+Agents run the check as `cluster/agent_ssh.sh run 'bash ~/darksiren-emri/cluster/workspace_check.sh'`.
 
 ### ⚠️ Gotchas (each has bitten before)
 1. **venv needs modules.** `.venv/bin/python` is linked to the module-provided

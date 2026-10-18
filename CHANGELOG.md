@@ -7,6 +7,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added (workspace lifecycle check, 2026-10-18)
+- **`cluster/workspace_check.sh`** (new, read-only by default): name in `cluster.env` resolves;
+  expiry/extensions; other workspaces still holding data (unfinished move); symlinks pointing into
+  another workspace; `datasets.yaml` `meta.workspace` vs the live path; config committed.
+  `--rewrite-links <old-ws-path>` re-points absolute links after a move (only where the target
+  exists under the new workspace). Exit 0 OK / 1 problems / 2 usage.
+- **`cluster/preflight.sh` `[WORKSPACE]`** now reads `available extensions` and `expiration date`:
+  < 14 d with extensions → NOT READY "extend"; 0 extensions → WARN on every run "schedule the move";
+  < 14 d with 0 extensions → NOT READY "move now". Fixed: under one day `ws_list` reports only hours,
+  which the old check read as "unknown" and never warned on. Lists other workspaces.
+- **Cluster skill:** new "Workspace lifecycle — when and how to roll forward" section (the rule
+  table and the 7-step move); `cluster/README.md` points to it.
+
 ### Changed (cluster workspace name in one place, 2026-10-18)
 - **`cluster/cluster.env` `CLUSTER_WORKSPACE_NAME` is now the only place the workspace is named**
   (`emri` → `emri2`). `modules.sh` (and so every job's `$WORKSPACE`), `setup.sh`, `preflight.sh`,

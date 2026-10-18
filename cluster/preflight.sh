@@ -115,18 +115,42 @@ GLADE=$(find "$REPO/darksiren_emri/galaxy_catalogue" -maxdepth 1 -name 'GLADE+.t
 [ -n "$GLADE" ] && echo "        GLADE+.txt: present ($(du -h "$GLADE" | cut -f1))" || echo "        GLADE+.txt: absent (fine — only needed to regenerate the reduced csv)"
 
 # --- [WORKSPACE] ---------------------------------------------------------------
-echo "[WORKSPACE] '$WS_NAME'"
-WS_PATH=$(ws_find "$WS_NAME" 2>/dev/null)
+# When to extend / move (the rule; procedure = "Workspace lifecycle" in .claude/skills/cluster/SKILL.md):
+#   < WARN_DAYS left, extensions > 0  -> NOT READY: ws_extend now
+#   0 extensions left                 -> WARN on every run: this expiry is final, schedule the move
+#   < WARN_DAYS left, 0 extensions    -> NOT READY: move to a new workspace now
+echo "[WORKSPACE] '${WS_NAME:-<unset>}'  (CLUSTER_WORKSPACE_NAME, cluster/cluster.env)"
+WS_PATH=""
+[ -n "$WS_NAME" ] && WS_PATH=$(ws_find "$WS_NAME" 2>/dev/null)
 if [ -n "$WS_PATH" ]; then
-    DAYS=$(ws_list "$WS_NAME" 2>/dev/null | grep -i 'remaining time' | grep -oE '[0-9]+ days?' | head -1 | grep -oE '[0-9]+')
+    WS_INFO=$(ws_list "$WS_NAME" 2>/dev/null)
+    REM=$(printf '%s\n' "$WS_INFO" | grep -i 'remaining time' | head -1 | sed 's/^[^:]*: *//')
+    DAYS=$(printf '%s\n' "$REM" | grep -oE '[0-9]+ days?' | grep -oE '[0-9]+' | head -1)
+    [ -z "$DAYS" ] && [ -n "$REM" ] && DAYS=0          # "remaining time : 5 hours" = under a day
+    EXT=$(printf '%s\n' "$WS_INFO" | grep -i 'available extensions' | head -1 | grep -oE '[0-9]+' | head -1)
+    EXP=$(printf '%s\n' "$WS_INFO" | grep -i 'expiration date' | head -1 | sed 's/^[^:]*: *//')
     echo "        path=$WS_PATH"
-    echo "        remaining=${DAYS:-?} days"
+    echo "        remaining=${DAYS:-?} days  expires=${EXP:-?}  extensions_left=${EXT:-?}"
     if [ -n "$DAYS" ] && [ "$DAYS" -lt "$WARN_DAYS" ] 2>/dev/null; then
-        echo "        WARNING: expires in <$WARN_DAYS days — ws_extend $WS_NAME 60 and copy results to persistent storage"
-        note_problem "workspace expiring (<$WARN_DAYS d)"
+        if [ "${EXT:-1}" -gt 0 ] 2>/dev/null; then
+            echo "        ACTION: extend now — ws_extend $WS_NAME 60"
+            note_problem "workspace expires in ${DAYS} d — ws_extend $WS_NAME 60"
+        else
+            echo "        ACTION: MOVE NOW — 0 extensions left (cluster skill, 'Workspace lifecycle')"
+            note_problem "workspace expires in ${DAYS} d with 0 extensions — move to a new workspace now"
+        fi
+    elif [ "${EXT:-}" = 0 ]; then
+        echo "        NOTE: 0 extensions left — expiry ${EXP:-?} is final; schedule the move"
+        note_warning "workspace '$WS_NAME' has 0 extensions left — final expiry ${EXP:-?}; schedule the move (cluster skill, 'Workspace lifecycle')"
     fi
+    WS_OTHERS=$(ws_list 2>/dev/null | sed -n 's/^id: *//p' | grep -vx "$WS_NAME" | tr '\n' ' ')
+    if [ -n "$WS_OTHERS" ]; then
+        echo "        other workspaces: $WS_OTHERS— after a move, run cluster/workspace_check.sh"
+    fi
+elif [ -z "$WS_NAME" ]; then
+    echo "        CLUSTER_WORKSPACE_NAME unset — cluster/cluster.env missing or stale"; note_problem "workspace name unset"
 else
-    echo "        NOT FOUND — run cluster/setup.sh (ws_allocate)"; note_problem "workspace missing"
+    echo "        NOT FOUND — wrong name in cluster/cluster.env, or run cluster/setup.sh (ws_allocate)"; note_problem "workspace missing"
 fi
 
 # --- [QUEUE] -------------------------------------------------------------------
