@@ -16,6 +16,12 @@ of the hypothesis rows: `wiki/meta/hypothesis-ledger.md`.*
 > the unmerged branch `fix/p32d-classg-venue-repair` (HEAD `d201d9e4`, 2026-09-04). The whole
 > `graph1_20260901/` tree — 77 commits — **does not exist on `main` at all**. STATE.md still says
 > T-1 is "still unrun", which remains true, but it predates the entire m1 exercise.
+>
+> **Update 2026-10-19 (M65 Round 2).** The m1 docket tree this file cites
+> (`graph1_20260901/exec/r-sealed-mock/`, the morning docket, the addendum, the m1 ops records)
+> now travels with this file by path allowlist, together with the m1 likelihood CSV and the 41
+> posterior JSONs; the author ruled (2026-10-19) that `main` is first fast-forwarded to
+> `fix/p32d-classg-venue-repair` (tip `387cf33f`) and this branch lands on top.
 
 ## Hard core
 
@@ -53,16 +59,45 @@ Thread-level, **written 2026-08-11 by the author** (vault: `wiki/meta/hypothesis
 2. **Precision** — if the real-data photo-z kernel degrades σ_h to the host-known limit (×3.3–×6.8)
    or worse, every precision claim is **restated as mock-internal** and the manuscript's headline σ
    is withdrawn.
-3. **Time-bound** — if no blind-mock verdict exists by **2026-09-23**, the thread ships as a
+3. **Time-bound** — if no blind-mock verdict exists by **2026-12-15**, the thread ships as a
    **methods** paper with the closure reported as *unblinded*, rather than as an H₀ measurement.
    *(Date borrowed from the workspace copy-off deadline already on the books, not derived from the
    physics — amendable.)*
+   *(Date history: written 2026-08-11 as **2026-09-23**; extended 2026-09-21; re-dated to
+   **2026-12-15** by author ruling 2026-10-19 — see Status of (3). The rest of the text is the
+   author's, unchanged.)*
 
 **Status of (3) as of 2026-09-21:** extended by author ruling on card `overnight-report-2026-09-21`
 (*"Explicit extension: run T-1 + adjudicate m1 firs[t]"*), conditioned on running T-1 **and**
 adjudicating the m1 docket first. M65 has adjudicated m1 (see Current claims); **T-1 could not be
 run** (see Active experiment), so the extension's stated precondition cannot be met as written.
 Returned to the author as a `go-kill` review card by M65.
+
+**Status of (3) as of 2026-10-19 — dated rulings (author, via Answer Wire):**
+
+- **2026-10-18** (`ask-20261018-w174804a1ed` Q2): **Continue.** The retrospective recommended a
+  formal pause; the author chose to continue. The open kill-gate card `m65-r1-darksiren-manyfold`
+  is superseded by this ruling.
+- **2026-10-19** (`ask-20261018-w223027afac`):
+  **R1** pipeline-first — `M38-cluster-session-unlock` builds first, then agents run T-1 on the
+  cluster; **R2** the T-1 deadline is extended to **2026-12-15** (second extension; no third
+  without a new ruling); **R3** this thread's branch may land on `main` by the author's tap;
+  **R4** `/cartographer`, `/commission` and `/project-init` stay live.
+- **2026-10-19** (`ask-20261018-w224256df6b`): **R25** — m1 banked **INTERMEDIATE** (parent
+  wording); **R27** — draft the (m2) erratum with the rail clause winning a both-fire, ratified
+  before any draw; pool option P2 first, P1 fallback.
+- **2026-10-19** (`ask-20261018-w231446a3b9`): **R28 ratified** as a registration erratum — the
+  pool is the 707-file `injection_pool_mix200k_20260728`, list-md5
+  `75f4030d5d3b0405fd948049bef5767e` (= md5 of the tracked
+  `graph1_20260901/exec/r-timeout-selection/POOL_MANIFEST.md5`; also pinned in
+  `cluster/datasets.yaml`), contents identical to the 0.73 baseline pool. **R24 — no code change
+  before T-1**: the freeze pins the `darksiren_emri/` tree `71acb98b0fd8a0f9d3aad9595eb9fc084cae0b6d`
+  (identical at the freeze `081b1f28`, at m1 and at `387cf33f`); R24 (the B_num term) is a
+  disclosed limitation, taken up after the blind result. Hazard: `main` before the fast-forward
+  holds an older tree (`91446066…`), so (m2) must never be cut from pre-fast-forward `main`.
+
+**The 2026-12-15 gate fires as written unless the author rules otherwise.** If no blind-mock
+verdict exists by then, (3) applies: methods paper, closure reported as unblinded.
 
 ## Current claims
 
@@ -83,7 +118,9 @@ Returned to the author as a `go-kill` review card by M65.
 In this campaign's framing T-1 is the **sealed (m2) run**. It has never been launched: the only
 sealed-mock exec directory on the branch is `r-sealed-mock` (m1); no `(m2)` directory exists.
 
-**Gate 1 — no cluster credential (infrastructure).** T-1 requires a fresh GPU EMRI simulation
+**Gate 1 — no cluster credential (infrastructure). As of 2026-10-19 this gate is
+`M38-cluster-session-unlock`, ruled first in the arc (R1 pipeline-first) and due about
+2026-11-20**; T-1 runs on the cluster after it lands. *(R1 text, 2026-09-21:)* T-1 requires a fresh GPU EMRI simulation
 campaign at a newly sealed `h_inj` on bwUniCluster 3.0 (SLURM, `gres=gpu:1`, CUDA 12 —
 `cluster/simulate.sbatch`), then a CPU eval array
 (`results/redteam_20260726/PHYSICS_METHODOLOGY_REVIEW.md` §4: *"Cost: one simulation campaign +
@@ -97,6 +134,8 @@ until ratified"*, pending an erratum that adds a both-fire precedence rule and a
 for σ_measured < σ_anchor. **This gate is independent of the credential**: even with cluster access
 tonight, T-1 could not legitimately launch. Ratifying R27 is an author action that unblocks T-1's
 governance side regardless of when the credential lands.
+*(2026-10-19: unchanged and still the author's. The direction of R27 is ruled — rail clause wins
+— but the erratum is not yet drafted or ratified; the governance package is mission M162.)*
 
 **Do not book m1 as T-1.** m1 is a sealed *mock* at an alternative truth, sharing T-1's design but
 not its blinding: its truth (h = 0.67) is public and legible in the run directory name
