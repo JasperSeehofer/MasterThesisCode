@@ -222,3 +222,20 @@ H_code = ______ · prior = ______ · pool option = ______ · commitment = ______
 7. Whether the read node is a top-tier decisive verifier (proposal §5.3: yes for the unseal read).
 
 Cost tonight: 0. Tiering (addendum §5.3): (m1)/(m2) arrays sonnet/low; unseal read top-tier.
+
+## Erratum notice (appended 2026-10-19, mission M162; this draft's text above is unchanged)
+
+For stage (m2) this draft is amended by `ERRATUM_m2_R27_R28.md`, which is **DRAFT FOR
+RATIFICATION**. It amends:
+- §8 G-1: the pool of record is `injection_pool_mix200k_20260728`, 707 files, content-manifest
+  list-md5 `75f4030d5d3b0405fd948049bef5767e` (R28 ratified 2026-10-19), not
+  `injection_pool_depth15_50k` / 500;
+- §6: cell precedence, with the rail clause winning a tie (R27) and "several ⇒ INTERMEDIATE" (the
+  R25 precedent);
+- §6/§8: a width-discrepancy treatment for σ_measured vs σ_anchor (R27);
+- §4 and §8 G-2: a strict freeze with tree `71acb98b…` and dirty count 0 (R24);
+- §3: P2 first with a paired invariance gate, P1 fallback;
+- §9: the (m2) disposition rows;
+- §10: the freeze slots.
+The procedure is `UNSEAL_CEREMONY_m2.md`; the pre-registration is `PREREG_EXP-MTC-T1.md`. Until
+the erratum is ratified, no (m2) draw or launch (docket R27).

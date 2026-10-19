@@ -280,3 +280,15 @@ to the canonical pool.** `cluster/graph1_sealed_m1_headstack.sbatch` edited acco
 block only, replaced with the content-guard block + a new `EXPECTED_POOL_LIST_MD5` required-env
 check; every other line byte-identical — diff recorded in `SUBMIT_RECORD_m1.md`). Submitted with
 `EXPECTED_POOL_LIST_MD5=75f4030d5d3b0405fd948049bef5767e`, `VENUE=iiib`.
+
+## (m2) ERRATUM POINTER (mission M162, 2026-10-19)
+
+R27 asked for an erratum "as a dossier section". It is drafted as
+`exec/r-sealed-mock/ERRATUM_m2_R27_R28.md`, with rule blocks E1–E8 and the T1-SEAL-PARAMS block.
+Its companions are `POOL_OPTION_MEMO_m2.md`, `UNSEAL_CEREMONY_m2.md` and
+`PREREG_EXP-MTC-T1.md`.
+- Status: DRAFT FOR RATIFICATION on review card `m162-r1-t1-governance`. The rule-block sha256s
+  are in `.planning/research/THREAD.md` § "T-1 package hashes".
+- It resolves CONVENTIONS defects D-1 (precedence), D-2 (rail = banked bound, not NO-READ) and
+  D-3 (σ treatment) for (m2), once ratified.
+- It does not re-open (m1), which is banked INTERMEDIATE (R25).

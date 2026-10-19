@@ -28,7 +28,7 @@ meta:
   commission_base: {tag: commission-base, commit: b593f02, branch: physics/photoz-joint-normalisation}
   expected_catalog_cols: 8            # reduced_galaxy_catalogue.csv (redshift-flag retained, 479afdd+)
   retirement_banner: "DATA_INVENTORY.md — all pre-2026-06-20 (pre mass-convention + L_cat fixes) CRBs/injections/posteriors are RETIRED"
-  updated: 2026-08-28
+  updated: 2026-10-19   # R28 pool-identity correction (M162)
 
 # --- STAGE 1: injection pools (feed the P_det detection-probability estimator) ---
 # p_det is h-invariant (detection-horizon survival), so a single-h pool suffices;
@@ -40,7 +40,7 @@ injections:
     h_ref: 0.73
     files: 500
     events: 50000
-    status: "CURRENT (campaign canonical)"
+    status: "NOT the pool of the 2026-07-29 campaign runs (R28 erratum, 2026-10-19) — superseded for m1/anchor/(m2) by mix200k_20260728"
     note: >
       Depth-1.5 single-h campaign pool (issue #20), generated 2026-07-03 as two
       250x100 batches (job 5741287 seeds 47000-47249 @ da88c50, job 5742478
@@ -49,6 +49,18 @@ injections:
       identical across those commits (the diff touched only the sim-loop quick
       gate), so the loader's mixed-code_rev WARNING is expected and benign.
       Rows carry z_cut/code_rev provenance columns (stale-pool gate).
+  - id: mix200k_20260728
+    path: "$WS/injection_pool_mix200k_20260728"
+    h_ref: 0.73
+    files: 707                      # injection_h_0p73_task_*.csv, 200,100 rows
+    content_manifest_list_md5: 75f4030d5d3b0405fd948049bef5767e   # ls -1 *.csv | sort | xargs md5sum | md5sum  (STOP-gated pin; = md5 of exec/r-timeout-selection/POOL_MANIFEST.md5)
+    filename_list_md5: a1dffdf561c51c8c778dce115c5fb371          # md5 of the sorted filename list only — a label, never compared to the pin above
+    status: "CURRENT — pool of record for run_20260729_seed61000 (0.73 anchor), run_20260729_seed64000_h0p67 (m1) and the (m2) sealed run (R28 ratified 2026-10-19, ask-20261018-w231446a3b9)"
+    note: >
+      Pool identity per the R28 registration erratum (graph1_20260901/exec/r-sealed-mock/
+      ERRATUM_m2_R27_R28.md E-1; PIN_RECORD.md; D_SEALED_REGISTER_DOSSIER.md GUARD CORRECTION).
+      Pins last measured 2026-09-04 on workspace emri; NOT re-read since the emri -> emri2 move —
+      re-read requested (POOL_OPTION_MEMO_m2.md section 5, R-2) before T-1.
   - id: seed43000_Mz
     path: "$WS/injection_20260620-213449_seed43000/simulations/injections"
     files: 560
