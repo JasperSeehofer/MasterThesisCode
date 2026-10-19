@@ -1,0 +1,162 @@
+{
+ "id": "m162-r1-t1-governance",
+ "title": "M162 R1 — T-1 governance package: the m2 erratum, the sealed draw, the pool option and the pre-registration, for ratification before any draw",
+ "date": "2026-10-19",
+ "mission": "M162",
+ "status": "open",
+ "kind": [
+  "ruling",
+  "ruling",
+  "ruling",
+  "ruling",
+  "ruling",
+  "ruling"
+ ],
+ "summary": "Everything T-1 needs on paper now exists and is hashed. Nothing has been drawn, simulated or run. The m2 erratum implements your rulings: the rail clause wins a tie, 'several' means INTERMEDIATE (as in R25), the 707-file pool (R28), and the frozen tree 71acb98b with dirty count 0 (R24). It also adds a σ-width check and the dated default of 2026-12-15. Two problems surfaced while drafting, and both are on the card: the draft's P2 invariance gate could never pass as written (Q2, fixed by pairing seeds), and kill criterion 1 contradicts the draft's TRANSFER = PASS row (Q4). Ratifying this card does not launch T-1; that still needs M38's window, the M65 landing and the pin re-reads (Q5).",
+ "questions": [
+  {
+   "text": "Q1 [RULE] R27 tie rule + σ treatment (erratum E-2/E-3). The cells are tested in a fixed order: gates, then the RAIL CLAUSE WINS (banked AT-RAIL bound), then exactly one band cell, otherwise INTERMEDIATE ('none or several', your R25 precedent). If σ_measured/σ_expected falls outside [0.8, 1.25], the cell is assigned again at σ_expected, and a change makes it INTERMEDIATE (σ-sensitive). Cost of 'rail wins': a TUNED-shaped posterior with a fat lower tail reads AT-RAIL-LOW, not TUNED. Ratify?",
+   "kind": "ruling",
+   "chips": [
+    {
+     "label": "Ratify E-2 and E-3",
+     "consequence": "The m2 cell rule is fixed and hashed (THREAD.md). D-1 and D-3 are closed for (m2). Gate 2 of T-1 is cleared once Q1b–Q4 are answered."
+    },
+    {
+     "label": "Ratify E-2, change the σ band",
+     "consequence": "Precedence is fixed. Say the band you want in free text; E-3 is redrafted and re-hashed before any draw."
+    },
+    {
+     "label": "Reject — redraft",
+     "consequence": "No draw. M162 redrafts the erratum against your note."
+    },
+    {
+     "label": "Other — I'll say in free text",
+     "consequence": "Nothing is ratified; the package stays a draft and no (m2) draw can happen."
+    }
+   ],
+   "recommend": "Ratify E-2 and E-3"
+  },
+  {
+   "text": "Q1b [RULE] When the rail clause fires (an edge-node mass > 1e-3, or a MAP on an edge node), is the read a BANKED BOUND (the m1 dossier's reading, needed for 'rail wins' to book a cell) or NO-READ (the 09-03 draft's reading)? This closes defect D-2.",
+   "kind": "ruling",
+   "chips": [
+    {
+     "label": "Banked bound",
+     "consequence": "AT-RAIL-LOW/HIGH is a cell with its own consequence row. NO-READ stays reserved for gate failures."
+    },
+    {
+     "label": "NO-READ",
+     "consequence": "A rail spends the seal with nothing banked, and for kill criterion 3 it counts as no verdict. E-2 step 2 is redrafted."
+    },
+    {
+     "label": "Other — I'll say in free text",
+     "consequence": "Nothing is ratified; the package stays a draft and no (m2) draw can happen."
+    }
+   ],
+   "recommend": "Banked bound"
+  },
+  {
+   "text": "Q2 [RULE] Pool memo (P2 first, as you ruled). The draft's unpaired 20-task gate cannot pass at 1e-3: the MC noise is ~0.1, so it would always force P1. The fix: pair the small h=0.67 pool with the same seeds as 20 tasks of the 707-file pool of record, require ≥95 % row matches (P2-0), then apply the 1e-3 gate on the matched rows. P1 (≤250 GPU-h, so ≤500 tasks, ~71 % of the record pool) lives inside the sealed run directory: no naming shim, no code change. Ratify?",
+   "kind": "ruling",
+   "chips": [
+    {
+     "label": "Ratify the paired P2 / P1 design",
+     "consequence": "E-5 binds. P2 runs and is gated before the draw (≈10 GPU-h); P1 only if P2 fails."
+    },
+    {
+     "label": "Ratify, but P1 at 707-task parity",
+     "consequence": "P1's cap rises to ≈354 GPU-h (a fresh [DO] on spend); E-5 is re-hashed."
+    },
+    {
+     "label": "Other — I'll say in free text",
+     "consequence": "Nothing is ratified; the package stays a draft and no (m2) draw can happen."
+    }
+   ],
+   "recommend": "Ratify the paired P2 / P1 design"
+  },
+  {
+   "text": "Q3 [RULE] The pre-registration EXP-MTC-T1, the unseal ceremony and the dated default. The author draws and unseals on the cluster login node. Agents monitor by squeue/sacct only and read only the whitelisted outputs, and the moments are committed before the unseal. By 2026-12-15 (Europe/Berlin), a banked cell (including INTERMEDIATE or AT-RAIL) counts as a verdict. NO-READ, or no unseal, fires kill criterion 3 (methods paper, closure unblinded). No third extension without a new ruling. Ratify?",
+   "kind": "ruling",
+   "chips": [
+    {
+     "label": "Ratify",
+     "consequence": "The prereg is frozen (append-only from here) and the vault row EXP-MTC-T1 stands. The dated default is binding."
+    },
+    {
+     "label": "Ratify, but INTERMEDIATE is no verdict",
+     "consequence": "Only TUNED, TRANSFER, UNBIASED or AT-RAIL avoid kill criterion 3 by the date. E-7 is re-hashed."
+    },
+    {
+     "label": "Other — I'll say in free text",
+     "consequence": "Nothing is ratified; the package stays a draft and no (m2) draw can happen."
+    }
+   ],
+   "recommend": "Ratify"
+  },
+  {
+   "text": "Q4 [RULE] Kill criterion 1 says T-1 closing 'anywhere other than the sealed h_inj' reverts the adoption. TRANSFER closes at h_inj − 0.064, yet the 09-03 draft books it 'T-1 PASSED'. That conflict must be fixed before the draw. Does a TRANSFER result fire kill criterion 1?",
+   "kind": "ruling",
+   "chips": [
+    {
+     "label": "No — TRANSFER passes anti-tuning",
+     "consequence": "Criterion 1 targets tuning to 0.73. The h-independent −0.064 offset stays a separately tracked bias (R24) that already bars any closure-at-truth claim for the realistic stack."
+    },
+    {
+     "label": "Yes — only UNBIASED passes",
+     "consequence": "Literal reading: a TRANSFER result reverts the generator_marginal adoption and withdraws the closure claim."
+    },
+    {
+     "label": "Other — I'll say in free text",
+     "consequence": "Nothing is ratified; the package stays a draft and no (m2) draw can happen."
+    }
+   ],
+   "recommend": "No — TRANSFER passes anti-tuning"
+  },
+  {
+   "text": "Q5 [DO] Read-only cluster reads before T-1 (pool memo §5): R-1 N_tasks/cost of the seed61000 simulate; R-2 pin re-reads on emri2 (pool list-md5, CRB, catalogue; none re-read since the move); R-3 the pool-of-record seeds for the P2 pairing. They run in M38's window via cluster/agent_ssh.sh, one ops agent, or by you. A mismatch is a STOP.",
+   "kind": "ruling",
+   "chips": [
+    {
+     "label": "Approve (M38 window)",
+     "consequence": "The first M38 window runs R-1..R-3 read-only, and the results are appended to the package."
+    },
+    {
+     "label": "I'll run them myself",
+     "consequence": "The commands are in POOL_OPTION_MEMO_m2.md §5; paste the output back."
+    },
+    {
+     "label": "Other — I'll say in free text",
+     "consequence": "Nothing is ratified; the package stays a draft and no (m2) draw can happen."
+    }
+   ],
+   "recommend": "Approve (M38 window)"
+  }
+ ],
+ "links": [
+  {
+   "label": "What you are asked to ratify — the short version (react)",
+   "href": "/app/previews/m162-r1-t1-governance/RATIFICATION.md"
+  },
+  {
+   "label": "The erratum — binding text, rule blocks E1–E8 (react)",
+   "href": "/app/previews/m162-r1-t1-governance/ERRATUM_m2_R27_R28.md"
+  },
+  {
+   "label": "Pool option memo — P2 paired gate, P1 fallback (react)",
+   "href": "/app/previews/m162-r1-t1-governance/POOL_OPTION_MEMO_m2.md"
+  },
+  {
+   "label": "Pre-registration EXP-MTC-T1 (react)",
+   "href": "/app/previews/m162-r1-t1-governance/PREREG_EXP-MTC-T1.md"
+  },
+  {
+   "label": "Unseal ceremony (context)",
+   "href": "/app/previews/m162-r1-t1-governance/UNSEAL_CEREMONY_m2.md"
+  },
+  {
+   "label": "Executor report (context)",
+   "href": "/app/previews/m162-r1-t1-governance/REPORT-R1.md"
+  }
+ ]
+}
