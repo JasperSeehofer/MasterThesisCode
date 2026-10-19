@@ -66,6 +66,18 @@ injections:
     files: 519
     mass_convention: source-frame   # pre-fix
     status: RETIRED (source-frame; was the old symlinked default)
+  - id: mix200k_20260728
+    path: "$WS/injection_pool_mix200k_20260728"
+    files: 707
+    list_md5: 75f4030d5d3b0405fd948049bef5767e   # md5 of the per-file manifest, tracked at results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-timeout-selection/POOL_MANIFEST.md5
+    status: "PINNED for the sealed-mock line (m1, and T-1/(m2) unless re-ruled)"
+    note: >
+      R28, ratified 2026-10-19 by the author (Answer Wire ask-20261018-w231446a3b9) as a
+      registration erratum: the m1 dossier registered `injection_pool_depth15_50k` (500 files),
+      but the 0.67 run's `injections` link resolves here (707 files); the 0.73 anchor run
+      run_20260729_seed61000 links the same pool (same list-md5), so the anchor comparison is
+      same-pool. Contents identical to the 0.73 baseline pool. See READ_RECORD_m1.md (G-1 pins)
+      and PIN_RECORD.md in graph1_20260901/exec/r-sealed-mock/.
 
 # --- STAGE 2: Cramer-Rao bounds (from GPU EMRI simulation) -----------------------
 # cramer_rao_bounds.csv = raw merge; prepared_cramer_rao_bounds.csv = SNR-filtered.
