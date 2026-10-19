@@ -96,3 +96,19 @@ results/campaign51_20260728/realistic_20260729/d1_sand/pool_p0window/
 
 # Cluster-staging realization data (multi-GB, seed-reproducible; provenance in *.meta.json)
 results/campaign51_20260728/realistic_20260729/realizations_staged/*.csv
+
+# retrieved cluster data (multi-GB, cluster is the copy of record) — 2026-08-28
+results/campaign51_20260728/realistic_20260729/headreadout_20260827/
+results/_archive/
+
+# wave-2/3 retrieved 2D posterior JSONs are >100 MB each (per-event arrays) — keep local, not in git
+results/campaign51_20260728/realistic_20260729/wave*_2026*/*/posteriors_with_bh_mass/
+results/campaign51_20260728/realistic_20260729/tree2_20260830/full_verification_20260831/work/
+results/campaign51_20260728/realistic_20260729/graph1_20260901/retrieved/
+results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/m-t5-armR-c0prime/eval/retrieved_run/
+results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/b-hprior-fix/byteid_eval/run_20260902_graph1_c0prime_byteid_postdecouple_iiib/
+results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/b-hprior-fix/byteid_eval/run_20260902_graph1_c0prime_byteid_postdecouple_joint_r1/
+results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/b-hprior-fix/wing_read/logs/
+results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/b-hprior-fix/wing_read/simulations/
+results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/m-s0b-byteid/comparison/byteid_cell_run/
+results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/m-s0b-byteid/local_discharge_run/

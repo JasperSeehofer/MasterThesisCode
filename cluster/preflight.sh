@@ -19,7 +19,7 @@
 REPO="${CLUSTER_REPO:-$HOME/darksiren-emri}"
 [ -f "$REPO/cluster/cluster.env" ] && . "$REPO/cluster/cluster.env" 2>/dev/null
 REPO="${CLUSTER_REPO:-$HOME/darksiren-emri}"
-WS_NAME="${CLUSTER_WORKSPACE_NAME:-emri}"
+WS_NAME="${CLUSTER_WORKSPACE_NAME:-}"   # set in cluster/cluster.env; no default — a stale literal is what broke on 2026-09-23
 EXPECT_COLS="${EMRI_EXPECTED_CATALOG_COLS:-8}"
 WARN_DAYS="${EMRI_WORKSPACE_WARN_DAYS:-14}"
 TAG="${EMRI_COMMISSION_TAG:-commission-base}"
@@ -27,6 +27,8 @@ CATALOG="$REPO/darksiren_emri/galaxy_catalogue/reduced_galaxy_catalogue.csv"
 
 PROBLEMS=()
 note_problem() { PROBLEMS+=("$1"); }
+WARNINGS=()
+note_warning() { WARNINGS+=("$1"); }
 
 echo "======================================================================"
 echo " EMRI CLUSTER PREFLIGHT  —  $(hostname)  —  $(date '+%Y-%m-%d %H:%M %Z')"
@@ -113,18 +115,42 @@ GLADE=$(find "$REPO/darksiren_emri/galaxy_catalogue" -maxdepth 1 -name 'GLADE+.t
 [ -n "$GLADE" ] && echo "        GLADE+.txt: present ($(du -h "$GLADE" | cut -f1))" || echo "        GLADE+.txt: absent (fine — only needed to regenerate the reduced csv)"
 
 # --- [WORKSPACE] ---------------------------------------------------------------
-echo "[WORKSPACE] '$WS_NAME'"
-WS_PATH=$(ws_find "$WS_NAME" 2>/dev/null)
+# When to extend / move (the rule; procedure = "Workspace lifecycle" in .claude/skills/cluster/SKILL.md):
+#   < WARN_DAYS left, extensions > 0  -> NOT READY: ws_extend now
+#   0 extensions left                 -> WARN on every run: this expiry is final, schedule the move
+#   < WARN_DAYS left, 0 extensions    -> NOT READY: move to a new workspace now
+echo "[WORKSPACE] '${WS_NAME:-<unset>}'  (CLUSTER_WORKSPACE_NAME, cluster/cluster.env)"
+WS_PATH=""
+[ -n "$WS_NAME" ] && WS_PATH=$(ws_find "$WS_NAME" 2>/dev/null)
 if [ -n "$WS_PATH" ]; then
-    DAYS=$(ws_list "$WS_NAME" 2>/dev/null | grep -i 'remaining time' | grep -oE '[0-9]+ days?' | head -1 | grep -oE '[0-9]+')
+    WS_INFO=$(ws_list "$WS_NAME" 2>/dev/null)
+    REM=$(printf '%s\n' "$WS_INFO" | grep -i 'remaining time' | head -1 | sed 's/^[^:]*: *//')
+    DAYS=$(printf '%s\n' "$REM" | grep -oE '[0-9]+ days?' | grep -oE '[0-9]+' | head -1)
+    [ -z "$DAYS" ] && [ -n "$REM" ] && DAYS=0          # "remaining time : 5 hours" = under a day
+    EXT=$(printf '%s\n' "$WS_INFO" | grep -i 'available extensions' | head -1 | grep -oE '[0-9]+' | head -1)
+    EXP=$(printf '%s\n' "$WS_INFO" | grep -i 'expiration date' | head -1 | sed 's/^[^:]*: *//')
     echo "        path=$WS_PATH"
-    echo "        remaining=${DAYS:-?} days"
+    echo "        remaining=${DAYS:-?} days  expires=${EXP:-?}  extensions_left=${EXT:-?}"
     if [ -n "$DAYS" ] && [ "$DAYS" -lt "$WARN_DAYS" ] 2>/dev/null; then
-        echo "        WARNING: expires in <$WARN_DAYS days — ws_extend $WS_NAME 60 and copy results to persistent storage"
-        note_problem "workspace expiring (<$WARN_DAYS d)"
+        if [ "${EXT:-1}" -gt 0 ] 2>/dev/null; then
+            echo "        ACTION: extend now — ws_extend $WS_NAME 60"
+            note_problem "workspace expires in ${DAYS} d — ws_extend $WS_NAME 60"
+        else
+            echo "        ACTION: MOVE NOW — 0 extensions left (cluster skill, 'Workspace lifecycle')"
+            note_problem "workspace expires in ${DAYS} d with 0 extensions — move to a new workspace now"
+        fi
+    elif [ "${EXT:-}" = 0 ]; then
+        echo "        NOTE: 0 extensions left — expiry ${EXP:-?} is final; schedule the move"
+        note_warning "workspace '$WS_NAME' has 0 extensions left — final expiry ${EXP:-?}; schedule the move (cluster skill, 'Workspace lifecycle')"
     fi
+    WS_OTHERS=$(ws_list 2>/dev/null | sed -n 's/^id: *//p' | grep -vx "$WS_NAME" | tr '\n' ' ')
+    if [ -n "$WS_OTHERS" ]; then
+        echo "        other workspaces: $WS_OTHERS— after a move, run cluster/workspace_check.sh"
+    fi
+elif [ -z "$WS_NAME" ]; then
+    echo "        CLUSTER_WORKSPACE_NAME unset — cluster/cluster.env missing or stale"; note_problem "workspace name unset"
 else
-    echo "        NOT FOUND — run cluster/setup.sh (ws_allocate)"; note_problem "workspace missing"
+    echo "        NOT FOUND — wrong name in cluster/cluster.env, or run cluster/setup.sh (ws_allocate)"; note_problem "workspace missing"
 fi
 
 # --- [QUEUE] -------------------------------------------------------------------
@@ -184,14 +210,67 @@ if [ -n "$WS_PATH" ]; then
         fi
     fi
     echo "        (semantic map + provenance: cluster/datasets.yaml ; retirement status: DATA_INVENTORY.md)"
+
+    # --- unregistered-dataset check (mechanical — a documented "remember to
+    # update the inventory" convention already existed and failed: ~30 run
+    # dirs / ~250GB went uninventoried for a month, see
+    # cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md. This is the fix: every
+    # readiness check cross-references the live workspace listing against
+    # the two registry files. `ls`-level only — no `du`, stays fast.
+    echo "        --- registry cross-check (workspace dirs vs datasets.yaml + DATA_INVENTORY.md) ---"
+    REG_FILES="$REPO/cluster/datasets.yaml $REPO/DATA_INVENTORY.md"
+    UNREG=()
+    for d in "$WS_PATH"/*/; do
+        [ -d "$d" ] || continue
+        b=$(basename "$d")
+        case "$b" in work|scripts) continue;;  # scratch cache / repo checkout, not a dataset
+        esac
+        grep -qF -- "$b" $REG_FILES 2>/dev/null || UNREG+=("$b")
+    done
+    echo "        UNREGISTERED (present in workspace, absent from BOTH registries): ${#UNREG[@]}"
+    for u in "${UNREG[@]}"; do echo "          - $u"; done
+    if [ ${#UNREG[@]} -gt 0 ]; then
+        note_warning "${#UNREG[@]} unregistered dataset dir(s) in '$WS_NAME' — register in cluster/datasets.yaml + DATA_INVENTORY.md"
+    fi
+
+    # Inverse: registry entries naming a $WS/<dir> that no longer exists.
+    # Skip brace-expansion tokens (e.g. "seed{1000,2000}_x") — extracting a
+    # clean candidate from those needs a real parser; a truncated prefix
+    # match against real dirs is treated as "not actually dangling" below.
+    DANGLING=()
+    CANDIDATES=$(grep -ohE '\$WS/[A-Za-z0-9_./-]+' $REG_FILES 2>/dev/null \
+        | sed -E 's#^\$WS/##; s#/.*$##' | sort -u)
+    for c in $CANDIDATES; do
+        [ -n "$c" ] || continue
+        [ -d "$WS_PATH/$c" ] && continue
+        # a real dir starting with this candidate => c was a truncated
+        # brace-expansion artifact, not a genuine dangling reference.
+        find "$WS_PATH" -maxdepth 1 -type d -name "${c}*" 2>/dev/null | grep -q . && continue
+        DANGLING+=("$c")
+    done
+    echo "        DANGLING (registered but no longer present in '$WS_NAME'): ${#DANGLING[@]}"
+    for x in "${DANGLING[@]}"; do echo "          - $x"; done
 fi
 
 # --- [VERDICT] -----------------------------------------------------------------
 echo "----------------------------------------------------------------------"
 if [ ${#PROBLEMS[@]} -eq 0 ]; then
-    echo " VERDICT: READY ✓"
+    if [ ${#WARNINGS[@]} -eq 0 ]; then
+        echo " VERDICT: READY ✓"
+    else
+        # Unregistered datasets are a bookkeeping defect, not an operational
+        # blocker (nothing about submitting/monitoring/retrieving is broken) —
+        # so this does NOT flip to NOT READY, but it must not be silently
+        # ignorable either. See [DATASETS] above for the actual list.
+        echo " VERDICT: READY ✓ (WARN: ${#WARNINGS[@]} issue(s))"
+        for w in "${WARNINGS[@]}"; do echo "   • $w"; done
+    fi
 else
     echo " VERDICT: NOT READY — ${#PROBLEMS[@]} issue(s):"
     for p in "${PROBLEMS[@]}"; do echo "   • $p"; done
+    if [ ${#WARNINGS[@]} -gt 0 ]; then
+        echo " ALSO: ${#WARNINGS[@]} warning(s):"
+        for w in "${WARNINGS[@]}"; do echo "   • $w"; done
+    fi
 fi
 echo "======================================================================"
