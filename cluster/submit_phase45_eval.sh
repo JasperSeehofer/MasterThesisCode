@@ -11,7 +11,7 @@ source "$CLUSTER_DIR/modules.sh"
 
 [[ -n "${WORKSPACE:-}" ]] || { echo "ERROR: \$WORKSPACE not set." >&2; exit 1; }
 
-SRC_RUN="/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200"
+SRC_RUN="$WORKSPACE/run_20260401_seed200"   # was a literal emri path; the run moved to emri2 with the workspace
 NEW_RUN="$WORKSPACE/run_phase45_$(date +%Y%m%d)"
 NEW_SIM="$NEW_RUN/simulations"
 

@@ -1,0 +1,15 @@
+{
+ "pool_n": 20834171,
+ "z_min": 0.0019522462096801,
+ "z_max": 1.583359,
+ "z_error_min": 0.0005317263419419,
+ "z_error_max": 0.0854412044014384,
+ "n_z_error_le_0": 0,
+ "n_z_error_lt_1e-6": 0,
+ "n_z_error_lt_1e-4": 0,
+ "median_z_error_over_1pz": 0.03303880690776963,
+ "n_rows_z_ge_1.5": 10,
+ "n_M_nonfinite_or_le0": 0,
+ "n_degenerate_at_truth": 0,
+ "load_s": 46.97799205780029
+}

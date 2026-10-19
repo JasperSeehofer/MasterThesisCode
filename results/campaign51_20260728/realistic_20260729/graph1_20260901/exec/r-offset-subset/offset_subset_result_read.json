@@ -1,0 +1,904 @@
+{
+  "meta": {
+    "table_path_iiib": "results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-offset-subset/covariate_table_iiib.csv",
+    "table_sha256_iiib": "90c92026bb7fecff46e5a55e1e2c67a33b424e4b71611ee0d0854576b189f7b0",
+    "influence_path_iiib": "results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-offset-subset/influence_iiib.csv",
+    "logl_path_iiib": "results/campaign51_20260728/realistic_20260729/graph1_20260901/retrieved/run_20260902_graph1_headrebaseline_iiib/simulations/diagnostics/event_likelihoods.csv",
+    "table_path_jr1": "results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-offset-subset/covariate_table_joint_r1.csv",
+    "table_sha256_jr1": "fc2eebe7fa66afbe2e35b0dd09c889be790511a6f5dabce3338969c849fcdf3a",
+    "influence_path_jr1": "results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-offset-subset/influence_joint_r1.csv",
+    "logl_path_jr1": "results/campaign51_20260728/realistic_20260729/graph1_20260901/retrieved/run_20260902_graph1_headrebaseline_joint_r1/simulations/diagnostics/event_likelihoods.csv",
+    "alpha": 0.05,
+    "auc_band": 0.2,
+    "or_band": 3.0,
+    "t_mat": 0.008,
+    "decile": 0.1,
+    "null_draws": 1000,
+    "null_seed": 20260904,
+    "n_events_iiib": 1588,
+    "n_events_jr1": 1588,
+    "primary_family": "iiib_2d",
+    "logl_columns_present": true,
+    "missing_covariates": []
+  },
+  "family_k": {
+    "iiib_2d": 82,
+    "iiib_1d": 94,
+    "jr1_2d": 72,
+    "jr1_1d": 46
+  },
+  "separation": {
+    "iiib_2d": {
+      "C1": {
+        "kind": "binary",
+        "n_s": 82,
+        "n_b": 1506,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 2.0546476725904044,
+        "p_raw": 0.1083181981787085,
+        "p_holm": 0.21943809543383846,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C2": {
+        "kind": "binary",
+        "n_s": 82,
+        "n_b": 1506,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.12804670303378313,
+        "p_raw": 2.4418489081000387e-16,
+        "p_holm": 2.1976640172900348e-15,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C3": {
+        "kind": "binary",
+        "n_s": 82,
+        "n_b": 1506,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.5594717318342876,
+        "p_raw": 0.07314603181127949,
+        "p_holm": 0.21943809543383846,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C3c": {
+        "kind": "continuous",
+        "n_s": 82,
+        "n_b": 1506,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.29231448190975934,
+        "p_raw": 6.7450418166255e-11,
+        "p_holm": 4.0470250899752996e-10,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C4": {
+        "kind": "continuous",
+        "n_s": 82,
+        "n_b": 1506,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.8721617594662002,
+        "p_raw": 6.2358456087706514e-30,
+        "p_holm": 6.235845608770651e-29,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C5": {
+        "kind": "continuous",
+        "n_s": 82,
+        "n_b": 1506,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.6474994331616623,
+        "p_raw": 6.6594653660808835e-06,
+        "p_holm": 2.6637861464323534e-05,
+        "holm_significant": true,
+        "band_pass": false,
+        "verdict": "WEAK"
+      },
+      "C6": {
+        "kind": "continuous",
+        "n_s": 15,
+        "n_b": 967,
+        "n_nan": 606,
+        "effect_name": "AUC",
+        "effect": 0.3238538435022406,
+        "p_raw": 1.5465520615301533e-10,
+        "p_holm": 7.732760307650767e-10,
+        "holm_significant": true,
+        "band_pass": false,
+        "verdict": "WEAK"
+      },
+      "C7": {
+        "kind": "continuous",
+        "n_s": 82,
+        "n_b": 1506,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.26693227091633465,
+        "p_raw": 2.401244026416997e-13,
+        "p_holm": 1.6808708184918978e-12,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C8": {
+        "kind": "binary",
+        "n_s": 7,
+        "n_b": 69,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.37777777777777777,
+        "p_raw": 0.5843966309597877,
+        "p_holm": 0.5843966309597877,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C10": {
+        "kind": "continuous",
+        "n_s": 82,
+        "n_b": 1506,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.740971075049396,
+        "p_raw": 1.8560131878785567e-13,
+        "p_holm": 1.4848105503028454e-12,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C10b": {
+        "kind": "binary",
+        "n_s": 0,
+        "n_b": 0,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": NaN,
+        "p_raw": NaN,
+        "p_holm": null,
+        "holm_significant": null,
+        "band_pass": false,
+        "verdict": "NOT-TESTED"
+      },
+      "C11": {
+        "kind": "continuous",
+        "n_s": 82,
+        "n_b": 1506,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.22948854986557835,
+        "p_raw": 1.445810809255162e-16,
+        "p_holm": null,
+        "holm_significant": null,
+        "band_pass": true,
+        "verdict": "REPORTED-ONLY"
+      }
+    },
+    "iiib_1d": {
+      "C1": {
+        "kind": "binary",
+        "n_s": 94,
+        "n_b": 1494,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.5153274079448577,
+        "p_raw": 0.3163619010691945,
+        "p_holm": 0.9490857032075835,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C2": {
+        "kind": "binary",
+        "n_s": 94,
+        "n_b": 1494,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.06676199023440471,
+        "p_raw": 2.1437295696859164e-26,
+        "p_holm": 1.9293566127173246e-25,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C3": {
+        "kind": "binary",
+        "n_s": 94,
+        "n_b": 1494,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.0899206007744358,
+        "p_raw": 2.341498135660361e-08,
+        "p_holm": 9.365992542641444e-08,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C3c": {
+        "kind": "continuous",
+        "n_s": 94,
+        "n_b": 1494,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.21059414964823833,
+        "p_raw": 3.0722883021187645e-22,
+        "p_holm": 2.150601811483135e-21,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C4": {
+        "kind": "continuous",
+        "n_s": 94,
+        "n_b": 1494,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.9794853171551454,
+        "p_raw": 5.761005782034894e-55,
+        "p_holm": 5.761005782034894e-54,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C5": {
+        "kind": "continuous",
+        "n_s": 94,
+        "n_b": 1494,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.6847389558232931,
+        "p_raw": 1.7862387231472184e-09,
+        "p_holm": 8.931193615736092e-09,
+        "holm_significant": true,
+        "band_pass": false,
+        "verdict": "WEAK"
+      },
+      "C6": {
+        "kind": "continuous",
+        "n_s": 10,
+        "n_b": 972,
+        "n_nan": 606,
+        "effect_name": "AUC",
+        "effect": 0.5236625514403292,
+        "p_raw": 0.4823831354191699,
+        "p_holm": 0.9647662708383398,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C7": {
+        "kind": "continuous",
+        "n_s": 94,
+        "n_b": 1494,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.20651043891879575,
+        "p_raw": 7.91181807816243e-23,
+        "p_holm": 6.329454462529944e-22,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C8": {
+        "kind": "binary",
+        "n_s": 2,
+        "n_b": 74,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 1.2285714285714286,
+        "p_raw": 1.0,
+        "p_holm": 1.0,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C10": {
+        "kind": "continuous",
+        "n_s": 94,
+        "n_b": 1494,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.7157851263208864,
+        "p_raw": 2.107210229831498e-12,
+        "p_holm": 1.2643261378988989e-11,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C10b": {
+        "kind": "binary",
+        "n_s": 0,
+        "n_b": 0,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": NaN,
+        "p_raw": NaN,
+        "p_holm": null,
+        "holm_significant": null,
+        "band_pass": false,
+        "verdict": "NOT-TESTED"
+      },
+      "C11": {
+        "kind": "continuous",
+        "n_s": 94,
+        "n_b": 1494,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.13223817254834944,
+        "p_raw": 4.717592049597474e-33,
+        "p_holm": null,
+        "holm_significant": null,
+        "band_pass": true,
+        "verdict": "REPORTED-ONLY"
+      }
+    },
+    "jr1_2d": {
+      "C1": {
+        "kind": "binary",
+        "n_s": 72,
+        "n_b": 1516,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 1.6472934472934473,
+        "p_raw": 0.388217162176557,
+        "p_holm": 0.776434324353114,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C2": {
+        "kind": "binary",
+        "n_s": 72,
+        "n_b": 1516,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.10889885922378931,
+        "p_raw": 8.656052267462019e-18,
+        "p_holm": 7.790447040715817e-17,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C3": {
+        "kind": "binary",
+        "n_s": 72,
+        "n_b": 1516,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.16816874638972912,
+        "p_raw": 1.9012551747267473e-08,
+        "p_holm": 9.506275873633737e-08,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C3c": {
+        "kind": "continuous",
+        "n_s": 72,
+        "n_b": 1516,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.24196533274699503,
+        "p_raw": 5.4100856638906956e-14,
+        "p_holm": 3.787059964723487e-13,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C4": {
+        "kind": "continuous",
+        "n_s": 72,
+        "n_b": 1516,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.9065981383758429,
+        "p_raw": 1.7389371489100008e-31,
+        "p_holm": 1.738937148910001e-30,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C5": {
+        "kind": "continuous",
+        "n_s": 72,
+        "n_b": 1516,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.6349952360011727,
+        "p_raw": 0.00010632610969323754,
+        "p_holm": 0.00042530443877295015,
+        "holm_significant": true,
+        "band_pass": false,
+        "verdict": "WEAK"
+      },
+      "C6": {
+        "kind": "continuous",
+        "n_s": 15,
+        "n_b": 1080,
+        "n_nan": 493,
+        "effect_name": "AUC",
+        "effect": 0.3991358024691358,
+        "p_raw": 0.040085562701931005,
+        "p_holm": 0.12025668810579301,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C7": {
+        "kind": "continuous",
+        "n_s": 72,
+        "n_b": 1516,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.20717897977132807,
+        "p_raw": 1.3845580539388316e-17,
+        "p_holm": 1.1076464431510653e-16,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C8": {
+        "kind": "binary",
+        "n_s": 5,
+        "n_b": 71,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.5324675324675324,
+        "p_raw": 1.0,
+        "p_holm": 1.0,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C10": {
+        "kind": "continuous",
+        "n_s": 72,
+        "n_b": 1516,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.7403803869832893,
+        "p_raw": 5.150359027234325e-12,
+        "p_holm": 3.090215416340595e-11,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C10b": {
+        "kind": "binary",
+        "n_s": 0,
+        "n_b": 0,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": NaN,
+        "p_raw": NaN,
+        "p_holm": null,
+        "holm_significant": null,
+        "band_pass": false,
+        "verdict": "NOT-TESTED"
+      },
+      "C11": {
+        "kind": "continuous",
+        "n_s": 72,
+        "n_b": 1516,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.20737137203166228,
+        "p_raw": 4.409779586655403e-17,
+        "p_holm": null,
+        "holm_significant": null,
+        "band_pass": true,
+        "verdict": "REPORTED-ONLY"
+      }
+    },
+    "jr1_1d": {
+      "C1": {
+        "kind": "binary",
+        "n_s": 46,
+        "n_b": 1542,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 2.147586206896552,
+        "p_raw": 0.27583348984630557,
+        "p_holm": 0.7754610133636136,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C2": {
+        "kind": "binary",
+        "n_s": 46,
+        "n_b": 1542,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.0792810917358111,
+        "p_raw": 2.665810165436623e-14,
+        "p_holm": 2.3992291488929607e-13,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C3": {
+        "kind": "binary",
+        "n_s": 46,
+        "n_b": 1542,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.158694927363658,
+        "p_raw": 4.30862852769323e-06,
+        "p_holm": 2.154314263846615e-05,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C3c": {
+        "kind": "continuous",
+        "n_s": 46,
+        "n_b": 1542,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.231799469914848,
+        "p_raw": 2.933831220716851e-10,
+        "p_holm": 2.0536818545017957e-09,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C4": {
+        "kind": "continuous",
+        "n_s": 46,
+        "n_b": 1542,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.9151440816556702,
+        "p_raw": 7.384066349855008e-22,
+        "p_holm": 7.384066349855008e-21,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C5": {
+        "kind": "continuous",
+        "n_s": 46,
+        "n_b": 1542,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.6117690182146281,
+        "p_raw": 0.009690367002716575,
+        "p_holm": 0.0387614680108663,
+        "holm_significant": true,
+        "band_pass": false,
+        "verdict": "WEAK"
+      },
+      "C6": {
+        "kind": "continuous",
+        "n_s": 7,
+        "n_b": 1088,
+        "n_nan": 493,
+        "effect_name": "AUC",
+        "effect": 0.41898634453781514,
+        "p_raw": 0.25848700445453787,
+        "p_holm": 0.7754610133636136,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C7": {
+        "kind": "continuous",
+        "n_s": 46,
+        "n_b": 1542,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.18468392263012462,
+        "p_raw": 1.2624597986404467e-13,
+        "p_holm": 1.0099678389123573e-12,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C8": {
+        "kind": "binary",
+        "n_s": 4,
+        "n_b": 72,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": 0.6613756613756614,
+        "p_raw": 1.0,
+        "p_holm": 1.0,
+        "holm_significant": false,
+        "band_pass": false,
+        "verdict": "NULL"
+      },
+      "C10": {
+        "kind": "continuous",
+        "n_s": 46,
+        "n_b": 1542,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.7082135002537642,
+        "p_raw": 1.4438362877355599e-06,
+        "p_holm": 8.66301772641336e-06,
+        "holm_significant": true,
+        "band_pass": true,
+        "verdict": "SEPARATES"
+      },
+      "C10b": {
+        "kind": "binary",
+        "n_s": 0,
+        "n_b": 0,
+        "n_nan": 0,
+        "effect_name": "OR",
+        "effect": NaN,
+        "p_raw": NaN,
+        "p_holm": null,
+        "holm_significant": null,
+        "band_pass": false,
+        "verdict": "NOT-TESTED"
+      },
+      "C11": {
+        "kind": "continuous",
+        "n_s": 46,
+        "n_b": 1542,
+        "n_nan": 0,
+        "effect_name": "AUC",
+        "effect": 0.1947358033045734,
+        "p_raw": 1.6055103761975418e-12,
+        "p_holm": null,
+        "holm_significant": null,
+        "band_pass": true,
+        "verdict": "REPORTED-ONLY"
+      }
+    }
+  },
+  "materiality": {
+    "C2": {
+      "stratum_rule": "binary level == False (enriched via OR=0.128047 >= 1.0)",
+      "n_stratum": 606,
+      "delta_strat": 0.15567802253802687,
+      "delta_s_oracle": 0.046233861898376305,
+      "captured_fraction": 3.3671862168947246,
+      "null_percentile": 100.0,
+      "null_ci99": [
+        -0.026683216092332485,
+        0.03786705139126182
+      ],
+      "material": true,
+      "map_rail_full": false,
+      "map_rail_stratum": false,
+      "null_rail_fraction": 0.0,
+      "censoring_gate_red": false,
+      "n_missing": 0
+    },
+    "C3c": {
+      "stratum_rule": "bottom decile (159/1588, NaN excluded from stratum and bulk, n_missing=0)",
+      "n_stratum": 159,
+      "delta_strat": 0.03430655907270275,
+      "delta_s_oracle": 0.046233861898376305,
+      "captured_fraction": 0.7420223546998908,
+      "null_percentile": 100.0,
+      "null_ci99": [
+        -0.009089012063616429,
+        0.010750953417601893
+      ],
+      "material": true,
+      "map_rail_full": false,
+      "map_rail_stratum": false,
+      "null_rail_fraction": 0.0,
+      "censoring_gate_red": false,
+      "n_missing": 0
+    },
+    "C4": {
+      "stratum_rule": "top decile (159/1588, NaN excluded from stratum and bulk, n_missing=0)",
+      "n_stratum": 159,
+      "delta_strat": 0.08610643739130941,
+      "delta_s_oracle": 0.046233861898376305,
+      "captured_fraction": 1.8624106630022486,
+      "null_percentile": 100.0,
+      "null_ci99": [
+        -0.009089012063616429,
+        0.010750953417601893
+      ],
+      "material": true,
+      "map_rail_full": false,
+      "map_rail_stratum": false,
+      "null_rail_fraction": 0.0,
+      "censoring_gate_red": false,
+      "n_missing": 0
+    },
+    "C7": {
+      "stratum_rule": "bottom decile (159/1588, NaN excluded from stratum and bulk, n_missing=0)",
+      "n_stratum": 159,
+      "delta_strat": 0.03430655907270275,
+      "delta_s_oracle": 0.046233861898376305,
+      "captured_fraction": 0.7420223546998908,
+      "null_percentile": 100.0,
+      "null_ci99": [
+        -0.009089012063616429,
+        0.010750953417601893
+      ],
+      "material": true,
+      "map_rail_full": false,
+      "map_rail_stratum": false,
+      "null_rail_fraction": 0.0,
+      "censoring_gate_red": false,
+      "n_missing": 0
+    },
+    "C10": {
+      "stratum_rule": "top decile (159/1588, NaN excluded from stratum and bulk, n_missing=0)",
+      "n_stratum": 159,
+      "delta_strat": 0.0048933454121885545,
+      "delta_s_oracle": 0.046233861898376305,
+      "captured_fraction": 0.10583899357021709,
+      "null_percentile": 87.9,
+      "null_ci99": [
+        -0.009089012063616429,
+        0.010750953417601893
+      ],
+      "material": false,
+      "map_rail_full": false,
+      "map_rail_stratum": false,
+      "null_rail_fraction": 0.0,
+      "censoring_gate_red": false,
+      "n_missing": 0
+    }
+  },
+  "r14_class_label_line": {
+    "per_label": {
+      "C2": {
+        "label": "(a) hosted_exact",
+        "effect_name": "OR",
+        "effect": 0.12804670303378313,
+        "p_holm": 2.1976640172900348e-15,
+        "verdict": "SEPARATES",
+        "delta_strat": 0.15567802253802687,
+        "material": true
+      },
+      "C3": {
+        "label": "(b) hosted_rel",
+        "effect_name": "OR",
+        "effect": 0.5594717318342876,
+        "p_holm": 0.21943809543383846,
+        "verdict": "NULL"
+      },
+      "C3c": {
+        "label": "(c) log10_f_cat",
+        "effect_name": "AUC",
+        "effect": 0.29231448190975934,
+        "p_holm": 4.0470250899752996e-10,
+        "verdict": "SEPARATES",
+        "delta_strat": 0.03430655907270275,
+        "material": true
+      }
+    },
+    "separating": [
+      "C2",
+      "C3c"
+    ],
+    "r14_reading": "multiple class labels separate: ['C2', 'C3c']"
+  },
+  "gates": {
+    "g_population_iiib": {
+      "n_table_rows": 1588,
+      "n_influence_rows": 1588,
+      "n_unmatched_table_only": 0,
+      "n_unmatched_influence_only": 0,
+      "unmatched_table_only_event_idx": [],
+      "unmatched_influence_only_event_idx": [],
+      "join_complete": true
+    },
+    "g_population_jr1": {
+      "n_table_rows": 1588,
+      "n_influence_rows": 1588,
+      "n_unmatched_table_only": 0,
+      "n_unmatched_influence_only": 0,
+      "unmatched_table_only_event_idx": [],
+      "unmatched_influence_only_event_idx": [],
+      "join_complete": true
+    }
+  },
+  "iiib_1d_disposition_check": {
+    "iiib_1d_disposition": "INTERMEDIATE",
+    "iiib_1d_named_covariates": [
+      "C2",
+      "C3",
+      "C3c",
+      "C4",
+      "C7",
+      "C10"
+    ],
+    "primary_disposition_before_this_trigger": "SUBSET-IDENTIFIED",
+    "agrees_with_primary": false,
+    "note": "iiib_1d has no logL matrix of its own under the current data contract (primary-family-only, --logl-iiib feeds iiib_2d exclusively, per module docstring); its materiality is always empty, so its own disposition can only read DIFFUSE-IN-COVARIATES or INTERMEDIATE, never SUBSET-IDENTIFIED."
+  },
+  "secondaries": {
+    "spearman_d_e_vs_continuous": {
+      "C3c": {
+        "rho": -0.7290084508360731,
+        "p": 2.217009405077161e-263,
+        "n": 1588
+      },
+      "C4": {
+        "rho": 0.8971155751852419,
+        "p": 0.0,
+        "n": 1588
+      },
+      "C5": {
+        "rho": 0.2821298152309232,
+        "p": 1.9171292311136024e-30,
+        "n": 1588
+      },
+      "C6": {
+        "rho": 0.06232051875749637,
+        "p": 0.05089771318068824,
+        "n": 982
+      },
+      "C7": {
+        "rho": -0.6087870630089278,
+        "p": 1.1319509065356652e-161,
+        "n": 1588
+      },
+      "C10": {
+        "rho": 0.2262462478086218,
+        "p": 7.019619715859347e-20,
+        "n": 1588
+      },
+      "C11": {
+        "rho": -0.6297042560435819,
+        "p": 3.660847736972279e-176,
+        "n": 1588
+      }
+    },
+    "class_composition_S": {
+      "C1": {
+        "n_true": 7,
+        "n_false": 75,
+        "n_nan": 0
+      },
+      "C2": {
+        "n_true": 15,
+        "n_false": 67,
+        "n_nan": 0
+      },
+      "C3": {
+        "n_true": 11,
+        "n_false": 71,
+        "n_nan": 0
+      }
+    },
+    "truth_disagreement_2x2": {
+      "C2": {
+        "C1_true_and_cov_true": 75,
+        "C1_true_and_cov_false": 1,
+        "C1_false_and_cov_true": 907,
+        "C1_false_and_cov_false": 605
+      },
+      "C3": {
+        "C1_true_and_cov_true": 75,
+        "C1_true_and_cov_false": 1,
+        "C1_false_and_cov_true": 272,
+        "C1_false_and_cov_false": 1240
+      }
+    }
+  },
+  "disposition": {
+    "value": "INTERMEDIATE",
+    "named_covariates": [
+      "C2",
+      "C3c",
+      "C4",
+      "C7"
+    ],
+    "instrument_note": null
+  }
+}

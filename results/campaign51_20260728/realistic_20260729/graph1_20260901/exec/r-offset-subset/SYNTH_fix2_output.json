@@ -1,0 +1,29 @@
+{
+  "finding_A": {
+    "or_a": 5.0,
+    "s_bool_mean_within_S": 0.3333333333333333,
+    "old_buggy_enriched_level_would_be": false,
+    "fixed_enriched_level": true,
+    "n_stratum_fixed": 4,
+    "n_stratum_old_buggy_would_be": 26,
+    "stratum_rule": "binary level == True (enriched via OR=5 >= 1.0)"
+  },
+  "finding_B": {
+    "disposition": "INTERMEDIATE",
+    "named_covariates": []
+  },
+  "finding_C": {
+    "n_missing": 5,
+    "valid_n": 15,
+    "n_stratum": 2,
+    "stratum_rule": "top decile (2/15, NaN excluded from stratum and bulk, n_missing=5)",
+    "old_buggy_stratum_would_include_NaN_rows": true
+  },
+  "finding_D": {
+    "n_stratum": 3,
+    "null_rail_fraction": 0.775,
+    "censoring_gate_red": true,
+    "map_rail_full": false,
+    "would_set_instrument_note_in_build_report": true
+  }
+}

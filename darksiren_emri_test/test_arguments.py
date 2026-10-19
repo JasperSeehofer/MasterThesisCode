@@ -120,3 +120,65 @@ def test_fisher_cond_threshold_custom() -> None:
     """--fisher_cond_threshold should accept a custom float value."""
     args = Arguments.create([".", "--fisher_cond_threshold", "1e8"])
     assert args.fisher_cond_threshold == pytest.approx(1e8)
+
+
+# --- [HIER] theta-hook CLI plumbing (charter node P6/B1.2,
+# WAVE2_REGISTRATION_CHECK_20260829.md F-C; ledger rows #216, #221-#223) ---
+
+
+def test_theta_b_default_is_identity() -> None:
+    """Default --theta_b is 0.0 (the literal-skip identity, GATE T-ID)."""
+    args = Arguments.create(["."])
+    assert args.theta_b == pytest.approx(0.0)
+
+
+def test_theta_s_default_is_identity() -> None:
+    """Default --theta_s is 1.0 (the literal-skip identity, GATE T-ID)."""
+    args = Arguments.create(["."])
+    assert args.theta_s == pytest.approx(1.0)
+
+
+def test_theta_sites_default_is_all() -> None:
+    """Default --theta_sites is 'all', matching evaluate()'s own default."""
+    args = Arguments.create(["."])
+    assert args.theta_sites == "all"
+
+
+def test_theta_b_custom() -> None:
+    """--theta_b should accept a custom float value."""
+    args = Arguments.create([".", "--theta_b", "0.01"])
+    assert args.theta_b == pytest.approx(0.01)
+
+
+def test_theta_s_custom() -> None:
+    """--theta_s should accept a custom float value."""
+    args = Arguments.create([".", "--theta_s", "1.2"])
+    assert args.theta_s == pytest.approx(1.2)
+
+
+@pytest.mark.parametrize("site", ["all", "2.1", "2.2", "2.3"])
+def test_theta_sites_valid_choices(site: str) -> None:
+    """Each site value evaluate() accepts must parse at the CLI layer."""
+    args = Arguments.create([".", "--theta_sites", site])
+    assert args.theta_sites == site
+
+
+def test_theta_sites_invalid_rejected() -> None:
+    """An invalid --theta_sites value should cause SystemExit (argparse
+    choices=), mirroring evaluate()'s own ValueError guard
+    (bayesian_statistics.py ~3542-3600) at the CLI layer."""
+    with pytest.raises(SystemExit):
+        Arguments.create([".", "--theta_sites", "bogus"])
+
+
+def test_help_shows_theta_flags() -> None:
+    """--help output should include all three --theta_* flags."""
+    result = subprocess.run(
+        [sys.executable, "-m", "darksiren_emri", "--help"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert "--theta_b" in result.stdout
+    assert "--theta_s" in result.stdout
+    assert "--theta_sites" in result.stdout

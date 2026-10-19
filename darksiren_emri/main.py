@@ -211,6 +211,17 @@ def main() -> None:
             catalogue_numerator_survival_2d=arguments.catalogue_numerator_survival_2d,
             catalogue_numerator_survival_2d_center=arguments.catalogue_numerator_survival_2d_center,
             catalogue_global_selection=arguments.catalogue_global_selection,
+            mass_filter_geometry=arguments.mass_filter_geometry,
+            mass_filter_k=arguments.mass_filter_k,
+            sky_cone_k=arguments.sky_cone_k,
+            theta_b=arguments.theta_b,
+            theta_s=arguments.theta_s,
+            theta_sites=arguments.theta_sites,
+            theta_phi_divisor=arguments.theta_phi_divisor,
+            theta_zwindow=arguments.theta_zwindow,
+            z_window_k=arguments.z_window_k,
+            catalogue_leg_1d_mass_aware=arguments.catalogue_leg_1d_mass_aware,
+            candidate_dump_dir=arguments.candidate_dump_dir,
         )
 
     if arguments.snr_analysis:
@@ -1406,18 +1417,56 @@ def evaluate(
     # completion_numerator_data_measure.md §6; AMENDMENT A-5): "ratio"
     # (default) is byte-identical to the pre-flag path.
     completion_event_measure: str = "ratio",
-    # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test (stage
-    # 2) (results/campaign51_20260728/realistic_20260729/
-    # PREREGISTRATION_P3_2D_20260825.md §2(i)): "off" (default) is
-    # byte-identical to the pre-flag path.
-    catalogue_numerator_survival_2d: str = "off",
-    catalogue_numerator_survival_2d_center: str = "unset",
+    # [P3-2D] the with-BH catalogue-leg twin, ADOPTED in production (row
+    # #223 standing grant, charter node B7.3;
+    # PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md): "mz_sel"/"eff" (default)
+    # is the production with-BH catalogue numerator; explicit "off" is the
+    # pre-adoption COUNTERFACTUAL.
+    catalogue_numerator_survival_2d: str = "mz_sel",
+    catalogue_numerator_survival_2d_center: str = "eff",
     # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
     # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178):
     # "auto" (default) resolves to "phi" under absolute_marginal (production),
     # else "s3d" (byte-identical elsewhere). "s3d" is the explicit
     # COUNTERFACTUAL under absolute_marginal.
     catalogue_global_selection: str = "auto",
+    # Mass-window GEOMETRY instrument flag (charter node B5.1, results/
+    # campaign51_20260728/realistic_20260729/fanout1_20260829/
+    # PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+    # #220-#223): "linear"/1.5 (defaults) are byte-identical to the
+    # pre-flag path.
+    mass_filter_geometry: str = "linear",
+    mass_filter_k: float = 1.5,
+    # Sky-cone-radius instrument flag (PHYSICS_CHANGE_THETA_DIVISOR_
+    # 20260830.md §2.5; row #255 tree 2 node T1.1): 1.5 (default) is
+    # byte-identical to the pre-flag sigma_multiplier literal.
+    sky_cone_k: float = 1.5,
+    # [HIER] theta-hook CLI plumbing (charter node P6/B1.2,
+    # WAVE2_REGISTRATION_CHECK_20260829.md F-C; ledger rows #216,
+    # #221-#223): "(0.0, 1.0, 'all')" is the literal-skip identity, so the
+    # defaults are byte-identical to the pre-flag path.
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
+    theta_sites: str = "all",
+    # [HIER] site 2.3phi (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2;
+    # row #255 tree 2 node T1.1): "off" (default) is byte-identical.
+    theta_phi_divisor: str = "off",
+    # [HIER] theta-consistent candidate z-window instrument
+    # (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2; row #255 tree 2 node
+    # T1.3-zwin): "off"/1.0 (defaults) are byte-identical to the pre-flag
+    # path.
+    theta_zwindow: str = "off",
+    z_window_k: float = 1.0,
+    # [HIER T2.3] mass-aware 1D catalogue leg (row #255 tree 2 node T2.3,
+    # PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2): "auto" (default)
+    # resolves to "on" under the absolute_marginal phi stack — PRODUCTION
+    # since the 2026-08-31 Z-CONFIRMED flip (rows #284-#286); "off" = the
+    # pre-flip counterfactual.
+    catalogue_leg_1d_mass_aware: str = "auto",
+    # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
+    # guard, not a physics gate; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md
+    # §6): None (default) is byte-identical -- GATE BI.
+    candidate_dump_dir: str | None = None,
 ) -> None:
     from darksiren_emri.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1452,6 +1501,17 @@ def evaluate(
         catalogue_numerator_survival_2d=catalogue_numerator_survival_2d,
         catalogue_numerator_survival_2d_center=catalogue_numerator_survival_2d_center,
         catalogue_global_selection=catalogue_global_selection,
+        mass_filter_geometry=mass_filter_geometry,
+        mass_filter_k=mass_filter_k,
+        sky_cone_k=sky_cone_k,
+        theta_b=theta_b,
+        theta_s=theta_s,
+        theta_sites=theta_sites,
+        theta_phi_divisor=theta_phi_divisor,
+        theta_zwindow=theta_zwindow,
+        z_window_k=z_window_k,
+        catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
+        candidate_dump_dir=candidate_dump_dir,
     )
 
 

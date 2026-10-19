@@ -20,9 +20,11 @@ each session** — read it, and keep it current when the cluster layout changes.
 ssh bwunicluster 'bash -s' < cluster/preflight.sh
 ```
 It is read-only and prints one block: repo branch/commit/tag, venv usability,
-catalog schema, workspace expiry, queue (+ zombie jobs), and a live dataset scan.
-Only proceed when it says `VERDICT: READY ✓`. Paths/expectations live in
-`cluster/cluster.env`.
+catalog schema, workspace expiry, queue (+ zombie jobs), and a live dataset scan
+(including an unregistered/dangling registry cross-check, gotcha 11). Only proceed
+when it says `VERDICT: READY ✓` — a trailing `(WARN: ...)` is not a blocker, but
+resolve it before the next campaign compounds the backlog. Paths/expectations live
+in `cluster/cluster.env`.
 
 ### Canonical facts (verify with preflight, don't assume)
 - **SSH alias:** `bwunicluster` (works non-interactively / `BatchMode`).
@@ -30,9 +32,57 @@ Only proceed when it says `VERDICT: READY ✓`. Paths/expectations live in
   parallel or "frozen" work — instead branch and **tag** (e.g. `commission-base`);
   archaeology returns via `git checkout <tag>`. (A redundant `mtc-eval` worktree
   was retired 2026-07-01 for exactly this reason.)
-- **Workspace:** `ws_find emri` → `/pfs/work9/workspace/scratch/st_ac147838-emri`.
-  bwHPC workspaces **expire** (extend: `ws_extend emri 60`); copy finals off before then.
+- **Workspace:** `ws_find emri2` → `/pfs/work9/workspace/scratch/st_ac147838-emri2` (was `emri` until it
+  expired 2026-09-23). The name lives in ONE place, `CLUSTER_WORKSPACE_NAME` in `cluster/cluster.env`;
+  `modules.sh` resolves `$WORKSPACE` from it — never hardcode the path or name in a new script.
+  bwHPC workspaces **expire** — when to extend and how to move: "Workspace lifecycle" below.
 - **uv:** `~/.local/bin/uv`. First-time env: `cluster/setup.sh`.
+
+### Workspace lifecycle — when and how to roll forward
+**Why it matters.** The workspace is one of the **two copies of record** of every cluster run;
+the other is the off-site Storage Box (`hbox` in `DATA_INVENTORY.md`), which is only as current
+as its last sync — a run banked since then exists **only** here. An expired workspace is deleted
+with no recovery. On 2026-09-23 `emri` was moved 2½ h before deletion because nobody had noticed
+the extensions had run out — that is what the check below is for.
+
+**When — checked automatically by `preflight.sh` (`[WORKSPACE]`) on every run.** It reads
+`remaining time`, `expiration date` and `available extensions` from `ws_list`
+(threshold `EMRI_WORKSPACE_WARN_DAYS` = 14 in `cluster/cluster.env`):
+
+| State | Preflight | Do |
+|---|---|---|
+| ≥ 14 d left, extensions > 0 | ok | nothing |
+| < 14 d left, extensions > 0 | **NOT READY** | `ws_extend <name> 60` |
+| 0 extensions left | **WARN** on every run | schedule the move — do it while ≥ 14 d remain, never on the last day |
+| < 14 d left, 0 extensions | **NOT READY** | move now (below) |
+
+Under one day `ws_list` reports only hours; the check counts that as 0 days.
+
+**How — the move** (on the cluster, inside tmux: `TERM=xterm-256color tmux new -s move`;
+`ws_allocate` and `mv` are the author's call — agents propose, run the checks, and wait):
+1. Nothing may write to the old workspace during the move: `squeue -u $USER` must be empty.
+2. Allocate the next name (`emri2` → `emri3` → …): `ws_allocate emri3 60`. In `ws_list`, both
+   workspaces should show the same `filesystem name` — then `mv` is a rename and instant;
+   otherwise it copies (hours, and needs the space).
+3. Move everything, dotfiles included:
+   `OLD=$(ws_find emri2); NEW=$(ws_find emri3); shopt -s dotglob; mv "$OLD"/* "$NEW"/`
+4. Re-point absolute symlinks that still name the old path:
+   `bash ~/darksiren-emri/cluster/workspace_check.sh --rewrite-links "$OLD"`
+   (links whose target does not exist under the new workspace are kept and listed).
+5. On the dev box: `CLUSTER_WORKSPACE_NAME="emri3"` in `cluster/cluster.env` (the only place the
+   name lives; `modules.sh` derives `$WORKSPACE` from it); `cluster/datasets.yaml`
+   `meta.workspace` (previous one → `workspace_previous`); a new row in the `DATA_INVENTORY.md`
+   workspace-lifetime table and the `bwuni` Device Registry row. Commit, push, then `git pull`
+   in `~/darksiren-emri` on the cluster.
+6. Verify: `bash ~/darksiren-emri/cluster/workspace_check.sh` must end `VERDICT: OK ✓` — old
+   workspace empty, no symlink into another workspace, `datasets.yaml` matches the live path,
+   config committed. Then run the preflight.
+7. Leave the emptied old workspace to expire on its own.
+
+The `hbox` copy is unaffected by a move (it is laid out by directory name, not by workspace
+path). Refresh it after new campaigns with the garden vault's `sync-to-box.sh`
+(`push <name> all`, then `verify <name> all`).
+Agents run the check as `cluster/agent_ssh.sh run 'bash ~/darksiren-emri/cluster/workspace_check.sh'`.
 
 ### ⚠️ Gotchas (each has bitten before)
 1. **venv needs modules.** `.venv/bin/python` is linked to the module-provided
@@ -83,6 +133,40 @@ Only proceed when it says `VERDICT: READY ✓`. Paths/expectations live in
    `.bak` copy). The observed-CSV hash check is separate and unaffected. Prefer
    checking sidecar paths in any run that passes `OBSERVED_CATALOGUE` after a repo
    move.
+11. **Register the dataset when the run finishes, not later.** A month of campaigns
+    (~30 dirs, ~250 GB — csg_pilot, o4_shards, p3_2d/b0-identity/bat/cf/massab,
+    seed61000-65000, `realizations_20260729`) went uninventoried because "update the
+    inventory" was a remembered convention, not a check — see
+    `cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md`. `preflight.sh`'s `[DATASETS]`
+    block now cross-checks the live workspace listing against `cluster/datasets.yaml`
+    + `DATA_INVENTORY.md` and WARNs on anything unregistered — but the WARN only
+    fires on your *next* preflight run, i.e. after the gap already exists. Add the
+    registry entry as part of a run's completion, same commit/session as banking
+    the result.
+12. **`run_metadata*.json` (git_commit/seed/timestamp/args) is written by
+    `main.py`'s `_write_run_metadata`, ONLY when a job runs through
+    `python -m darksiren_emri`.** Every bespoke harness driver invoked directly
+    (`python <driver>.py` or `python -m darksiren_emri.validation.<module>`) —
+    which is what every post-2026-07-28 campaign in gotcha 11 actually did —
+    bypasses that entry point and gets no provenance file at all unless the
+    sbatch script calls it explicitly. Fix: `source cluster/write_provenance.sh`
+    then `write_provenance "$OUT_DIR" "<note>"` (one line, fail-soft, JSON out)
+    — already wired into `JOB_TEMPLATE.sbatch` and `p3_2d_fleet.sbatch`/
+    `p3_2d_rhs2.sbatch`/`venue_transfer.sbatch`. Copy the same line into any new
+    bespoke sbatch script; do not assume the template's sample
+    `python -m darksiren_emri` call at the bottom is what you're actually running.
+
+13. **Fairshare is already at the floor — and it is not a block (read 2026-08-29 from
+    `scontrol show config` + `sshare`).** Priority is `multifactor`: weights QOS 15000 ·
+    FairShare 10000 · Age 5000 (max 7 d) · JobSize 2500 (`PriorityFavorSmall=yes`);
+    `PriorityDecayHalfLife = 30 days`, no usage reset. Our account holds 1 share of the
+    `st` pool (NormShares 0.0038) against EffectvUsage 0.0085 — **~2.2× over-served**, so
+    the fairshare factor sits at ~0.004 (bottom of the ranking) and **additional usage can
+    barely lower it further**; jobs run on age + QOS + backfill. Consequences: (a) the
+    penalty is continuous, not a threshold — there is no "kicks in" moment left to avoid;
+    (b) backfill-friendly shapes win: many short array tasks, modest `--time`, never one
+    monolithic job; (c) recovery only comes from the 30-day decay — a quiet fortnight
+    halves the usage term. Argue each arm's size on scientific need, not on headroom.
 
 ### The pipeline & where artifacts land
 ```
@@ -107,7 +191,7 @@ Output root:  $WORKSPACE/run_YYYYMMDD_seedS/
   · live: `tail -f $WORKSPACE/run_*/logs/*.out`
 - **Resubmit only failed array tasks:** `bash cluster/resubmit_failed.sh <JOBID> <RUN_DIR> <BASE_SEED> <STEPS>`
 - **Retrieve results:**
-  `rsync -avz bwunicluster:$(ssh bwunicluster 'ws_find emri')/run_YYYYMMDD_seedS/ ./results/`
+  `rsync -avz bwunicluster:$(ssh bwunicluster 'ws_find emri2')/run_YYYYMMDD_seedS/ ./results/`
 - **Local evaluate** (dev box, CPU): `uv run python -m darksiren_emri <dir> --evaluate --h_value 0.73 --num_workers N`
 
 ### Launching jobs & writing new ones
@@ -135,6 +219,19 @@ Full guide with exact commands for every case: **`cluster/LAUNCHING_JOBS.md`**.
 - **Alignment check:** a dataset matches current code only if its
   `run_metadata.json:git_commit` is an ancestor of the eval commit **and** no
   Pipeline-Change trigger file changed since. When unsure, re-run.
+
+### ControlMaster discipline (2026-09-03 incident, ledger row #357 — ENFORCED by `.claude/hooks/ssh-guard.py`)
+- The `bwunicluster` socket is the session's ONLY authenticated cluster access (password + OTP,
+  author-only). Agents talk to the cluster ONLY through `cluster/agent_ssh.sh run '<cmd>'` and
+  `cluster/agent_ssh.sh poll <jobids> [secs]` (3-slot semaphore; sleeps run locally; backoff on
+  "Session open refused by peer").
+- "Session open refused by peer" / `mux_client_request_session` errors mean the server-side
+  session cap (sshd `MaxSessions` = 10) is full — NOT a dead master. Wait and retry. The
+  following are hook-blocked: closing the master with `-O exit`/`-O stop`, deleting `~/.ssh/cm-*`,
+  `pkill ssh`, `sleep ≥ 60` INSIDE a remote command, parallel ssh fan-out from one command.
+- One cluster-ops agent at a time per batch; readers/builders never ssh.
+- If `ssh -O check` says "No such file": the socket is gone; only the author can restore it
+  (`ssh bwunicluster` once, interactively). Report and stop.
 
 ### More detail
 `cluster/README.md` — full quickstart, troubleshooting (OOM/timeout/CUDA), script reference.

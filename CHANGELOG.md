@@ -7,6 +7,60 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added (workspace lifecycle check, 2026-10-18)
+- **`cluster/workspace_check.sh`** (new, read-only by default): name in `cluster.env` resolves;
+  expiry/extensions; other workspaces still holding data (unfinished move); symlinks pointing into
+  another workspace; `datasets.yaml` `meta.workspace` vs the live path; config committed.
+  `--rewrite-links <old-ws-path>` re-points absolute links after a move (only where the target
+  exists under the new workspace). Exit 0 OK / 1 problems / 2 usage.
+- **`cluster/preflight.sh` `[WORKSPACE]`** now reads `available extensions` and `expiration date`:
+  < 14 d with extensions → NOT READY "extend"; 0 extensions → WARN on every run "schedule the move";
+  < 14 d with 0 extensions → NOT READY "move now". Fixed: under one day `ws_list` reports only hours,
+  which the old check read as "unknown" and never warned on. Lists other workspaces.
+- **Cluster skill:** new "Workspace lifecycle — when and how to roll forward" section (the rule
+  table and the 7-step move); `cluster/README.md` points to it.
+
+### Changed (cluster workspace name in one place, 2026-10-18)
+- **`cluster/cluster.env` `CLUSTER_WORKSPACE_NAME` is now the only place the workspace is named**
+  (`emri` → `emri2`). `modules.sh` (and so every job's `$WORKSPACE`), `setup.sh`, `preflight.sh`,
+  `campaign_orchestrator.sh` and `scripts/bias_investigation/run_multi_truth_sweep.sh` read it;
+  `preflight.sh` and the orchestrator no longer fall back to a hardcoded `emri` name/path but stop
+  with an error. `submit_phase4{4,5}_eval.sh` / `submit_equatorial_revert_eval.sh` take their source
+  run from `$WORKSPACE`. The `.sbatch` "WORKSPACE not resolved" messages point at `cluster.env`.
+- Why: the hardcoded name broke every job lookup when `emri` expired 2026-09-23 and the data moved
+  to `emri2`; with one variable the next roll-forward is a one-line change.
+- Docs: `cluster/README.md` (incl. the roll-forward procedure), `cluster/LAUNCHING_JOBS.md`, the
+  cluster skill, `DATA_INVENTORY.md`. Scripts archived under `results/` left as written.
+
+### Changed (data locations — off-site copy + workspace `emri2`, 2026-10-17)
+- **Cluster data now has two copies of record:** workspace `emri2` (the `emri` contents moved there
+  2026-09-23, before `emri` expired) and the Hetzner Storage Box (`hbox`), which holds the whole
+  workspace except `work/` and two caches, checksum-verified 2026-10-17.
+- **`~/emri-archive/` (159 GB, formerly the laptop's sole copy) deleted** after checksum
+  verification — its four seed600 venues are on `hbox` + `bwuni`.
+- Docs aligned: `DATA_INVENTORY.md` (workspace-lifetime table, Device Registry `hbox` tag,
+  dedup/dev-box tables, storage-decision status), `cluster/datasets.yaml` `meta.workspace`,
+  `cluster/README.md`, status header on `cluster/WORKSPACE_ARCHIVAL_TRIAGE_20260827.md`.
+- Cluster scripts: see the 2026-10-18 entry above.
+
+### Changed ([PHYSICS] mass-aware 1D catalogue leg — production default, 2026-08-31)
+- **`darksiren_emri/bayesian_inference/bayesian_statistics.py` — `catalogue_leg_1d_mass_aware`
+  flag default flipped to `auto`** (the auto-to-engaged pattern established by
+  `--selection_in_completion_numerator`): resolves `on` under the `absolute_marginal` φ stack,
+  `off` silently everywhere else. Explicit `off` now stays available as the pre-flip mass-blind
+  counterfactual but is warned `COUNTERFACTUAL` at run time.
+- Why: the 1D catalogue leg paired a mass-blind numerator/weight with a mass-aware divisor,
+  producing an undeclared h-sloped prior — `Z(h) = 1.0999` with `d ln Z/dh = -0.189`/event. The
+  mass-aware form restores `Z` identical to 1.
+- Measured verdict: production iiib 55-node arm (job 6747032) — 1D MAP `0.600 -> 0.665`, mean
+  `0.6053 -> 0.66699`, floor mass `0.617 -> 1.8e-4` — Z-CONFIRMED inside the registered and
+  measured bands.
+- References: `PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md` §6.3 + AMENDMENT G-EXT + ARM (c)
+  RESULT RECORD; `BIAS_HISTORY_LEDGER.md` rows #282, #284–#286.
+- Sites touched: `bayesian_statistics.py`, `main.py`, `arguments.py`,
+  `validation/correspondence_1d.py`; worker fallbacks stay `off`; R14 test semantics amended +
+  3 new auto-resolution tests added.
+
 ### Added (validation harness — catalogue-leg selection cells, 2026-08-18)
 - **`darksiren_emri/validation/pp_coverage.py` — `selection_cell` extended with `cat1d` and
   `symmetric`** (instrumentation, [C-SYM]/[P3] front; prereg

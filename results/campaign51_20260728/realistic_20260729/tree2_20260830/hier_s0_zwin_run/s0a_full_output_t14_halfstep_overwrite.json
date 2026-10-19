@@ -1,0 +1,86 @@
+{
+  "arm": "S0-A",
+  "seeds_requested": [
+    900101,
+    900102,
+    900103,
+    900104
+  ],
+  "jobs": 1,
+  "cpu_per_job": 14,
+  "wall_s": 7976.42523765564,
+  "n_seeds_ok": 4,
+  "n_seeds_error": 0,
+  "errors": [],
+  "theta_sites": "2.2",
+  "smear": "off",
+  "config": "b0i",
+  "h_values": [
+    0.73
+  ],
+  "score_h": null,
+  "theta_phi_divisor": "on",
+  "sky_cone_k": 1.5,
+  "catalogue_leg_1d_mass_aware": "off",
+  "theta_zwindow": "on",
+  "z_window_k": 4.0,
+  "node_dir_suffix": "_sites2.2_nosmear_divisor_zwin_zk4",
+  "per_seed_summary": [
+    {
+      "seed": 900101,
+      "nodes": {
+        "s_plus_half": {
+          "elapsed_s": 830.0326027870178,
+          "n_events": 106
+        },
+        "s_minus_half": {
+          "elapsed_s": 750.166246175766,
+          "n_events": 106
+        }
+      }
+    },
+    {
+      "seed": 900102,
+      "nodes": {
+        "s_plus_half": {
+          "elapsed_s": 805.0325684547424,
+          "n_events": 120
+        },
+        "s_minus_half": {
+          "elapsed_s": 744.3346636295319,
+          "n_events": 120
+        }
+      }
+    },
+    {
+      "seed": 900103,
+      "nodes": {
+        "s_plus_half": {
+          "elapsed_s": 808.3246483802795,
+          "n_events": 105
+        },
+        "s_minus_half": {
+          "elapsed_s": 745.1449143886566,
+          "n_events": 105
+        }
+      }
+    },
+    {
+      "seed": 900104,
+      "nodes": {
+        "s_plus_half": {
+          "elapsed_s": 717.7776792049408,
+          "n_events": 130
+        },
+        "s_minus_half": {
+          "elapsed_s": 735.6030917167664,
+          "n_events": 130
+        }
+      }
+    }
+  ],
+  "note": "nodes=('s_plus_half', 's_minus_half') does not include a complete b-axis (b_plus,b_minus) or s-axis (s_plus,s_minus) pair -- scores/gates/verdict need at least one; this is expected for a --smoke run with 1-2 nodes and is NOT a registered read.",
+  "smoke": false,
+  "event_cap": null,
+  "registration": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/PREREGISTRATION_HIER_HTHETA_20260826.md"
+}

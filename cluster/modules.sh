@@ -32,9 +32,12 @@ _load_or_die devel/python/3.13.3-gnu-14.2
 # Workspace resolution (D-05)
 # ---------------------------------------------------------------------------
 
-WORKSPACE="$(ws_find emri 2>/dev/null || true)"
+# The name comes from cluster/cluster.env (read in a subshell so sourcing this file
+# exports nothing beyond $WORKSPACE); an exported CLUSTER_WORKSPACE_NAME overrides it.
+_ws_name="${CLUSTER_WORKSPACE_NAME:-$( . "$(dirname "${BASH_SOURCE[0]}")/cluster.env" >/dev/null 2>&1; echo "${CLUSTER_WORKSPACE_NAME:-}")}"
+WORKSPACE="$(ws_find "$_ws_name" 2>/dev/null || true)"
 if [[ -z "$WORKSPACE" ]]; then
-    echo "WARNING: Workspace 'emri' not found. Run cluster/setup.sh first." >&2
+    echo "WARNING: Workspace '${_ws_name:-<unset>}' not found (name from cluster/cluster.env). Run cluster/setup.sh first." >&2
 else
     export WORKSPACE
     echo "  Workspace: $WORKSPACE"

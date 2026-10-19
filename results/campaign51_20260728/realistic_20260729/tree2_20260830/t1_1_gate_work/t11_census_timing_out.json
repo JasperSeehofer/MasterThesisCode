@@ -1,0 +1,51 @@
+{
+ "catalogue_md5": "c52c13b5cab61f6b3f04bbe202550969",
+ "md5_s": 2.564744234085083,
+ "pool_load_s": 49.37048625946045,
+ "pool_n": 20834171,
+ "census_b=-0.02": {
+  "neg_centre_rows": 63036,
+  "neg_centre_frac": 0.003025606346420023,
+  "inverted_window_rows": 15618,
+  "inverted_window_frac": 0.0007496338587218085,
+  "neg_centre_w_share_upper": 0.004178092391131141,
+  "inverted_w_share_upper": 0.0010409079910178452,
+  "z_g_threshold_neg_centre": 0.020408163265306124,
+  "inverted_window_rows_s=1.0000": 15618,
+  "inverted_window_rows_s=0.7071": 18821
+ },
+ "census_b=-0.033": {
+  "neg_centre_rows": 215663,
+  "neg_centre_frac": 0.010351407790595556,
+  "inverted_window_rows": 51394,
+  "inverted_window_frac": 0.002466812814390359,
+  "neg_centre_w_share_upper": 0.015133553781692252,
+  "inverted_w_share_upper": 0.0033387202942727983,
+  "z_g_threshold_neg_centre": 0.03412616339193382,
+  "inverted_window_rows_s=1.0000": 51394,
+  "inverted_window_rows_s=0.7071": 60265
+ },
+ "z_lt_0.03_frac": 0.007530897197685476,
+ "completeness_load_s": 0.000400543212890625,
+ "smear200k_truth": {
+  "wall_s": 5.464268684387207,
+  "per_row_us": 27.321343421936035,
+  "scaled_to_pool_s": 569.2175408023405,
+  "S_min": 1.0,
+  "S_max": 1.0,
+  "n_nonfinite": 0,
+  "n_neg": 0,
+  "n_gt_1p1": 0
+ },
+ "smear200k_b_minus": {
+  "wall_s": 6.351761341094971,
+  "per_row_us": 31.758806705474854,
+  "scaled_to_pool_s": 661.6684096578098,
+  "S_min": -479.34275028362157,
+  "S_max": 1.0,
+  "n_nonfinite": 34,
+  "n_neg": 116,
+  "n_gt_1p1": 0
+ },
+ "total_s": 64.32128357887268
+}

@@ -1,0 +1,66 @@
+{
+  "finding_2d_1d_disagree": {
+    "iiib_2d_raw_disposition": "SUBSET-IDENTIFIED",
+    "iiib_1d_disposition": "DIFFUSE-IN-COVARIATES",
+    "agrees_with_primary": false,
+    "final_disposition": "INTERMEDIATE"
+  },
+  "finding_g_population_join": {
+    "n_table_rows": 5,
+    "n_influence_rows": 5,
+    "n_unmatched_table_only": 1,
+    "n_unmatched_influence_only": 1,
+    "unmatched_table_only_event_idx": [
+      4
+    ],
+    "unmatched_influence_only_event_idx": [
+      5
+    ],
+    "join_complete": false,
+    "instrument_note": "g-population RED: table/influence join incomplete -- 1 table row(s) with no influence match, 1 influence row(s) with no table match (0 unmatched required, SS6 g-population)"
+  },
+  "finding_weak_holm": {
+    "C1_p_raw": 0.001,
+    "C1_p_holm": 0.01,
+    "C1_holm_significant": true,
+    "C1_verdict": "WEAK",
+    "C2_p_raw": 0.006,
+    "C2_p_holm": 0.054,
+    "C2_holm_significant": false,
+    "C2_verdict": "NULL"
+  },
+  "finding_secondaries": {
+    "spearman_C4_rho": -0.9999999999999999,
+    "class_composition_S": {
+      "C1": {
+        "n_true": 2,
+        "n_false": 0,
+        "n_nan": 0
+      },
+      "C2": {
+        "n_true": 1,
+        "n_false": 1,
+        "n_nan": 0
+      },
+      "C3": {
+        "n_true": 0,
+        "n_false": 2,
+        "n_nan": 0
+      }
+    },
+    "truth_disagreement_2x2": {
+      "C2": {
+        "C1_true_and_cov_true": 1,
+        "C1_true_and_cov_false": 1,
+        "C1_false_and_cov_true": 1,
+        "C1_false_and_cov_false": 2
+      },
+      "C3": {
+        "C1_true_and_cov_true": 0,
+        "C1_true_and_cov_false": 2,
+        "C1_false_and_cov_true": 2,
+        "C1_false_and_cov_false": 1
+      }
+    }
+  }
+}

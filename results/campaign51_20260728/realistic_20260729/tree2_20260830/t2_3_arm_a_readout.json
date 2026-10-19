@@ -1,0 +1,293 @@
+{
+  "seeds": [
+    900101,
+    900102,
+    900103,
+    900104
+  ],
+  "h_grid": "H_GRID_41 (41 nodes)",
+  "h_true": 0.73,
+  "gate_tid": {
+    "900101": {
+      "n_rows_off": 348,
+      "n_rows_kwq1": 348,
+      "n_matched_event_h": 348,
+      "n_unmatched": 0,
+      "diffs": {
+        "combined_no_bh": {
+          "max_abs_diff": 0.0,
+          "n_compared": 348
+        },
+        "L_cat_no_bh": {
+          "max_abs_diff": 0.0,
+          "n_compared": 348
+        }
+      }
+    },
+    "900102": {
+      "n_rows_off": 368,
+      "n_rows_kwq1": 368,
+      "n_matched_event_h": 368,
+      "n_unmatched": 0,
+      "diffs": {
+        "combined_no_bh": {
+          "max_abs_diff": 0.0,
+          "n_compared": 368
+        },
+        "L_cat_no_bh": {
+          "max_abs_diff": 0.0,
+          "n_compared": 368
+        }
+      }
+    },
+    "900103": {
+      "n_rows_off": 348,
+      "n_rows_kwq1": 348,
+      "n_matched_event_h": 348,
+      "n_unmatched": 0,
+      "diffs": {
+        "combined_no_bh": {
+          "max_abs_diff": 0.0,
+          "n_compared": 348
+        },
+        "L_cat_no_bh": {
+          "max_abs_diff": 0.0,
+          "n_compared": 348
+        }
+      }
+    },
+    "900104": {
+      "n_rows_off": 364,
+      "n_rows_kwq1": 364,
+      "n_matched_event_h": 364,
+      "n_unmatched": 0,
+      "diffs": {
+        "combined_no_bh": {
+          "max_abs_diff": 0.0,
+          "n_compared": 364
+        },
+        "L_cat_no_bh": {
+          "max_abs_diff": 0.0,
+          "n_compared": 364
+        }
+      }
+    }
+  },
+  "gate_eng": {
+    "900101": {
+      "n_total_events_h073": 174,
+      "n_active_ncand_gt0": 128,
+      "n_dark_ncand_eq0": 46,
+      "frac_L_cat_no_bh_changed": 1.0,
+      "n_L_cat_no_bh_changed": 128,
+      "frac_combined_no_bh_changed": 0.9296875,
+      "n_combined_no_bh_changed": 119,
+      "dark_ncand0_combined_no_bh_bitidentical": true
+    },
+    "900102": {
+      "n_total_events_h073": 184,
+      "n_active_ncand_gt0": 130,
+      "n_dark_ncand_eq0": 54,
+      "frac_L_cat_no_bh_changed": 1.0,
+      "n_L_cat_no_bh_changed": 130,
+      "frac_combined_no_bh_changed": 0.9615384615384616,
+      "n_combined_no_bh_changed": 125,
+      "dark_ncand0_combined_no_bh_bitidentical": true
+    },
+    "900103": {
+      "n_total_events_h073": 174,
+      "n_active_ncand_gt0": 117,
+      "n_dark_ncand_eq0": 57,
+      "frac_L_cat_no_bh_changed": 1.0,
+      "n_L_cat_no_bh_changed": 117,
+      "frac_combined_no_bh_changed": 0.8547008547008547,
+      "n_combined_no_bh_changed": 100,
+      "dark_ncand0_combined_no_bh_bitidentical": true
+    },
+    "900104": {
+      "n_total_events_h073": 182,
+      "n_active_ncand_gt0": 111,
+      "n_dark_ncand_eq0": 71,
+      "frac_L_cat_no_bh_changed": 1.0,
+      "n_L_cat_no_bh_changed": 111,
+      "frac_combined_no_bh_changed": 0.963963963963964,
+      "n_combined_no_bh_changed": 107,
+      "dark_ncand0_combined_no_bh_bitidentical": true
+    }
+  },
+  "gate_eng_note": "active defined as n_cand_no_bh > 0 at h=0.73 from the T2.2 candidate-dump per_event_h_0_73.csv (candidate search precedes the flag's survival evaluation, so n_cand_no_bh is flag-independent by construction, section 7 structural-blindness item). Registered bar: >= 0.99 (L_cat_no_bh, per section 6.1) / R13's >= 0.90 (combined_no_bh).",
+  "z_check_on_arm": {
+    "900101": {
+      "r_Malm_unique": [
+        0.3827762
+      ],
+      "n_unique_r_Malm": 1,
+      "D_tilde_phi_unique_count": 1,
+      "alpha_G_phi_unique_count": 1
+    },
+    "900102": {
+      "r_Malm_unique": [
+        0.3827762
+      ],
+      "n_unique_r_Malm": 1,
+      "D_tilde_phi_unique_count": 1,
+      "alpha_G_phi_unique_count": 1
+    },
+    "900103": {
+      "r_Malm_unique": [
+        0.3827762
+      ],
+      "n_unique_r_Malm": 1,
+      "D_tilde_phi_unique_count": 1,
+      "alpha_G_phi_unique_count": 1
+    },
+    "900104": {
+      "r_Malm_unique": [
+        0.3827762
+      ],
+      "n_unique_r_Malm": 1,
+      "D_tilde_phi_unique_count": 1,
+      "alpha_G_phi_unique_count": 1
+    }
+  },
+  "z_check_note": "R2's Z=1 unit-test integral is a synthetic-fixture test (test suite, not rerunnable foreground-only from production CSVs without re-invoking evaluate() on a fixture catalogue); this reader instead confirms the per-h-node constancy of r_Malm/D_tilde_phi/alpha_G_phi across all events in the 'on' arm (a necessary condition: if Z != 1 were baked in per-event rather than a global normalisation constant, these would vary across events at fixed h, which they do not). Full R2 pass/fail is inherited from the builder's own test-suite run (section 20.5 of the presentation), not independently re-derived here (no code execution permitted).",
+  "per_seed": {
+    "900101": {
+      "off_mean_h": 0.6344366282724522,
+      "off_map_h": 0.6,
+      "off_sigma_h": 0.034944611414767214,
+      "off_n_events": 174,
+      "on_mean_h": 0.7313878296492786,
+      "on_map_h": 0.725,
+      "on_sigma_h": 0.06208274440724319,
+      "on_n_events": 174,
+      "delta_mean_h": 0.09695120137682645,
+      "delta_map_h": 0.125
+    },
+    "900102": {
+      "off_mean_h": 0.6463996294926385,
+      "off_map_h": 0.6,
+      "off_sigma_h": 0.042799181811711946,
+      "off_n_events": 184,
+      "on_mean_h": 0.7757618276104765,
+      "on_map_h": 0.82,
+      "on_sigma_h": 0.05577677033236624,
+      "on_n_events": 184,
+      "delta_mean_h": 0.129362198117838,
+      "delta_map_h": 0.21999999999999997
+    },
+    "900103": {
+      "off_mean_h": 0.6299811745524634,
+      "off_map_h": 0.6,
+      "off_sigma_h": 0.029244831713207103,
+      "off_n_events": 174,
+      "on_mean_h": 0.719494140296359,
+      "on_map_h": 0.7,
+      "on_sigma_h": 0.0649052619332298,
+      "on_n_events": 174,
+      "delta_mean_h": 0.08951296574389567,
+      "delta_map_h": 0.09999999999999998
+    },
+    "900104": {
+      "off_mean_h": 0.6235175305067345,
+      "off_map_h": 0.6,
+      "off_sigma_h": 0.024807089439336107,
+      "off_n_events": 182,
+      "on_mean_h": 0.7708953291601852,
+      "on_map_h": 0.82,
+      "on_sigma_h": 0.05945831744018519,
+      "on_n_events": 182,
+      "delta_mean_h": 0.1473777986534507,
+      "delta_map_h": 0.21999999999999997
+    }
+  },
+  "dark_class_per_seed": {
+    "900101": {
+      "n_events": 46,
+      "off_mean_h": 0.6489529228719634,
+      "on_mean_h": 0.6489529228719634,
+      "delta_mean_h": 0.0,
+      "off_map_h": 0.6,
+      "on_map_h": 0.6
+    },
+    "900102": {
+      "n_events": 54,
+      "off_mean_h": 0.6547328648771595,
+      "on_mean_h": 0.6547328648771595,
+      "delta_mean_h": 0.0,
+      "off_map_h": 0.6,
+      "on_map_h": 0.6
+    },
+    "900103": {
+      "n_events": 57,
+      "off_mean_h": 0.6370266963441175,
+      "on_mean_h": 0.6370266963441175,
+      "delta_mean_h": 0.0,
+      "off_map_h": 0.6,
+      "on_map_h": 0.6
+    },
+    "900104": {
+      "n_events": 71,
+      "off_mean_h": 0.6265249951965564,
+      "on_mean_h": 0.6265249951965564,
+      "delta_mean_h": 0.0,
+      "off_map_h": 0.6,
+      "on_map_h": 0.6
+    }
+  },
+  "matched_class_per_seed": {
+    "900101": {
+      "n_events": 128,
+      "off_mean_h": 0.6829369291820218,
+      "on_mean_h": 0.7919065841515139,
+      "delta_mean_h": 0.10896965496949218,
+      "off_map_h": 0.6,
+      "on_map_h": 0.86
+    },
+    "900102": {
+      "n_events": 130,
+      "off_mean_h": 0.7002416403320181,
+      "on_mean_h": 0.812473219864219,
+      "delta_mean_h": 0.11223157953220098,
+      "off_map_h": 0.63,
+      "on_map_h": 0.86
+    },
+    "900103": {
+      "n_events": 117,
+      "off_mean_h": 0.6807501023973325,
+      "on_mean_h": 0.8033371642167706,
+      "delta_mean_h": 0.12258706181943813,
+      "off_map_h": 0.61,
+      "on_map_h": 0.86
+    },
+    "900104": {
+      "n_events": 111,
+      "off_mean_h": 0.7050302531048979,
+      "on_mean_h": 0.8295867368267068,
+      "delta_mean_h": 0.12455648372180894,
+      "off_map_h": 0.6,
+      "on_map_h": 0.86
+    }
+  },
+  "summary": {
+    "delta_mean_h_per_seed": [
+      0.09695120137682645,
+      0.129362198117838,
+      0.08951296574389567,
+      0.1473777986534507
+    ],
+    "delta_mean_h_mean": 0.1158010409730027,
+    "delta_mean_h_sem": 0.013624047247328934,
+    "delta_map_h_per_seed": [
+      0.125,
+      0.21999999999999997,
+      0.09999999999999998,
+      0.21999999999999997
+    ],
+    "delta_map_h_mean": 0.16624999999999998,
+    "delta_map_h_sem": 0.031449364063522806
+  },
+  "verdict": "MASS-AWARE-MATERIAL",
+  "in_band": false,
+  "wall_time_s_this_reader": 0.47060561180114746
+}

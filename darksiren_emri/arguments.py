@@ -356,22 +356,22 @@ class Arguments:
 
     @property
     def catalogue_numerator_survival_2d(self) -> str:
-        """[P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test
-        (results/campaign51_20260728/realistic_20260729/
-        PREREGISTRATION_P3_2D_20260825.md §2(i)). 'off' (default) is
-        byte-identical to the pre-flag path; 'mz_sel' multiplies the WITH-BH
-        catalogue numerator's mass integrand by S_4D(d_L(z;h), x*M_z,det)
-        inside the candidate's own mass quadrature. Never a production
-        posterior.
+        """[P3-2D] the with-BH catalogue-leg twin, ADOPTED in production
+        (row #223 standing grant, charter node B7.3;
+        PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md). 'mz_sel' (default)
+        multiplies the WITH-BH catalogue numerator's mass integrand by
+        S_4D(d_L(z;h), x*M_z,det) inside the candidate's own mass
+        quadrature. Explicit 'off' is the pre-adoption COUNTERFACTUAL (no
+        per-candidate survival factor); never a production posterior.
         """
         return str(self._parsed_arguments.catalogue_numerator_survival_2d)
 
     @property
     def catalogue_numerator_survival_2d_center(self) -> str:
         """Centering sub-option for --catalogue_numerator_survival_2d='mz_sel'
-        ('raw'=host_M, 'eff'=host_M_eff). REQUIRED (no silent default) when
-        the twin is engaged; the choice is PENDING the pre-execution review
-        (PREREGISTRATION_P3_2D_20260825.md §2(i)).
+        ('raw'=host_M, 'eff'=host_M_eff). 'eff' (default) is the adopted
+        centering (A20_REVIEW_P3_2D_DESIGN_20260825.md F2). REQUIRED (no
+        silent default) when the twin is engaged; 'unset' is REFUSED.
         """
         return str(self._parsed_arguments.catalogue_numerator_survival_2d_center)
 
@@ -389,6 +389,148 @@ class Arguments:
         COUNTERFACTUAL under absolute_marginal.
         """
         return str(self._parsed_arguments.catalogue_global_selection)
+
+    @property
+    def mass_filter_geometry(self) -> str:
+        """Mass-window GEOMETRY instrument flag (charter node B5.1,
+        results/campaign51_20260728/realistic_20260729/fanout1_20260829/
+        PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+        #220-#223). 'linear' (default, PRODUCTION, byte-identical): the
+        existing --mass_filter_sigma interval-overlap window, unchanged in
+        form. 'log': the SAME window re-expressed in ln-space on both sides
+        (small-error correspondence on the GW side; the existing R&V15
+        ln-space budget BH_MASS_ERROR/BH_MASS on the candidate side -- no
+        re-derivation). Never a production posterior at 'log'.
+        """
+        return str(self._parsed_arguments.mass_filter_geometry)
+
+    @property
+    def mass_filter_k(self) -> float:
+        """Mass-window half-width in units of sigma (charter node B5.1,
+        same reference as ``mass_filter_geometry``). Decouples the mass
+        window's half-width from the sky-cone ``sigma_multiplier``. Default
+        1.5 matches the current coupled call-site value, so the default
+        pairing of both new flags is byte-identical to the pre-flag path.
+        """
+        return float(self._parsed_arguments.mass_filter_k)
+
+    @property
+    def theta_b(self) -> float:
+        """[HIER] theta-hook affine photo-z bias offset b (charter node
+        P6/B1.2, results/campaign51_20260728/realistic_20260729/
+        fanout1_20260829/WAVE2_REGISTRATION_CHECK_20260829.md F-C; ledger
+        rows #216, #221-#223). Puts the theta-hook on the production CLI
+        dispatch path so cluster ``--evaluate`` runs can reach
+        ``BayesianStatistics.evaluate()``'s ``theta_b``/``theta_s``/
+        ``theta_sites`` kwargs, which previously had no CLI surface (F-C:
+        zero ``--theta_*`` hits in this module). Default 0.0 is the
+        literal-skip identity (GATE T-ID): byte-identical to the pre-flag
+        path.
+        """
+        return float(self._parsed_arguments.theta_b)
+
+    @property
+    def theta_s(self) -> float:
+        """[HIER] theta-hook affine photo-z scale s (same reference as
+        ``theta_b``). Default 1.0 is the literal-skip identity (GATE T-ID):
+        byte-identical to the pre-flag path.
+        """
+        return float(self._parsed_arguments.theta_s)
+
+    @property
+    def theta_sites(self) -> str:
+        """[HIER] theta-hook site-selection OAT toggle (same reference as
+        ``theta_b``): which estimator site(s) ('all', '2.1', '2.2', '2.3')
+        receive theta; the rest are forced to their (0, 1) evaluation.
+        Validated identically to ``BayesianStatistics.evaluate()``
+        (bayesian_statistics.py ~3542-3600) so an invalid value is rejected
+        at the CLI layer with the same message. Default 'all' matches the
+        estimator's own default (still the identity at theta=(0,1)).
+        """
+        return str(self._parsed_arguments.theta_sites)
+
+    @property
+    def theta_phi_divisor(self) -> str:
+        """[HIER] site 2.3phi theta-consistent no-BH divisor instrument
+        (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2; row #255 tree 2 node
+        T1.1). 'off' (default, PRODUCTION, byte-identical): the no-BH
+        catalogue divisor stays Sigma_phi_point (or Sigma^3D under
+        --catalogue_global_selection s3d). 'on' arms the theta-consistent
+        ratio rho(theta) at the divisor -- INDEPENDENT of --theta_sites (so
+        it composes with --theta_sites 2.2); at theta=(0,1) the literal skip
+        applies (GATE T-ID). Forwarded to
+        ``BayesianStatistics.evaluate()``'s ``theta_phi_divisor`` kwarg,
+        which raises if ``--catalogue_global_selection`` does not resolve to
+        'phi' or ``--normalization_mode`` is not 'absolute_marginal'.
+        """
+        return str(self._parsed_arguments.theta_phi_divisor)
+
+    @property
+    def sky_cone_k(self) -> float:
+        """Sky-cone-radius instrument flag (PHYSICS_CHANGE_THETA_DIVISOR_
+        20260830.md §2.5, same reference as ``theta_phi_divisor``). Decouples
+        the sky search radius from ``mass_filter_k`` (which after B5.1
+        already governs ONLY the mass window). Default 1.5 matches the
+        pre-flag ``sigma_multiplier`` literal at the
+        ``get_possible_hosts_from_ball_tree`` call site -- byte-identical
+        candidate list and every downstream value.
+        """
+        return float(self._parsed_arguments.sky_cone_k)
+
+    @property
+    def theta_zwindow(self) -> str:
+        """[HIER] theta-consistent candidate z-window instrument
+        (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2; row #255 tree 2 node
+        T1.3-zwin). 'off' (default, PRODUCTION, byte-identical): the
+        candidate z-filter (get_possible_hosts_from_ball_tree) keeps its
+        bare form at z_window_k=1.0. 'on' replaces the galaxy-side centre/
+        width of that filter with the theta-transformed site-2.2 kernel.
+        Forwarded to ``BayesianStatistics.evaluate()``'s ``theta_zwindow``
+        kwarg; INDEPENDENT of ``--theta_sites``/``--theta_phi_divisor``.
+        """
+        return str(self._parsed_arguments.theta_zwindow)
+
+    @property
+    def z_window_k(self) -> float:
+        """Candidate z-window half-width in units of sigma_g/sigma_g^theta
+        (same reference as ``theta_zwindow``). Applies under BOTH
+        ``theta_zwindow`` states. Default 1.0 matches today's implicit
+        +/- 1 sigma_g literal -- byte-identical.
+        """
+        return float(self._parsed_arguments.z_window_k)
+
+    @property
+    def catalogue_leg_1d_mass_aware(self) -> str:
+        """[HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree
+        2 node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). 'off'
+        (default, PRODUCTION, byte-identical): sites N1/D1/W1 in
+        ``bayesian_statistics.py`` are unchanged. 'on' replaces the
+        WITHOUT-BH catalogue numerator's per-candidate survival by
+        S_4D(d_L(z;h), M_g(1+z)), Sigma_4D as the global divisor and
+        alpha_G_phi as the mixture weight. Forwarded to
+        ``BayesianStatistics.evaluate()``'s ``catalogue_leg_1d_mass_aware``
+        kwarg, which raises unless ``--catalogue_numerator_survival`` and
+        ``--catalogue_global_selection`` both resolve to 'phi' and
+        ``--theta_phi_divisor`` is 'off'.
+        """
+        return str(self._parsed_arguments.catalogue_leg_1d_mass_aware)
+
+    @property
+    def candidate_dump_dir(self) -> str | None:
+        """T2.2 (row #255 tree 2 node T2.2, A10) candidate-dump instrumentation.
+
+        None (default) is the production path and is BYTE-IDENTICAL to
+        pre-flag behaviour (GATE BI) -- nothing is read or written
+        differently. When set to a directory path, a READ-ONLY per-(event,
+        candidate) diagnostic serialiser writes
+        ``per_candidate_h_<label>.csv`` and ``per_event_h_<label>.csv``
+        there, built entirely from state ``p_Di`` already computes for a
+        normal run. See
+        results/campaign51_20260728/realistic_20260729/tree2_20260830/
+        B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md section 6.
+        """
+        val: str | None = self._parsed_arguments.candidate_dump_dir
+        return val
 
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
@@ -1003,32 +1145,33 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         "--catalogue_numerator_survival_2d",
         type=str,
         choices=["off", "mz_sel"],
-        default="off",
+        default="mz_sel",
         help=(
-            "[P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test "
-            "(stage 2) (results/campaign51_20260728/realistic_20260729/"
-            "PREREGISTRATION_P3_2D_20260825.md §2(i)). 'off' (default) is "
-            "byte-identical to the pre-flag path. 'mz_sel' multiplies the "
-            "WITH-BH catalogue numerator's mass integrand by "
-            "S_4D(d_L(z;h), x*M_z,det) inside the candidate's own mass "
-            "quadrature (the product-Gaussian identity); requires "
-            "--catalogue_numerator_survival_2d_center. Never a production "
-            "posterior."
+            "[P3-2D] the with-BH catalogue-leg twin, ADOPTED in production "
+            "(row #223 standing grant, charter node B7.3; "
+            "PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md). 'mz_sel' "
+            "(default) multiplies the WITH-BH catalogue numerator's mass "
+            "integrand by S_4D(d_L(z;h), x*M_z,det) inside the candidate's "
+            "own mass quadrature (the product-Gaussian identity); requires "
+            "--catalogue_numerator_survival_2d_center. Explicit 'off' is "
+            "the pre-adoption COUNTERFACTUAL (no per-candidate survival "
+            "factor). Never a production posterior when 'off'."
         ),
     )
     parser.add_argument(
         "--catalogue_numerator_survival_2d_center",
         type=str,
         choices=["unset", "raw", "eff"],
-        default="unset",
+        default="eff",
         help=(
             "Centering sub-option for --catalogue_numerator_survival_2d "
-            "mz_sel: 'raw' uses the unshifted host_M, 'eff' uses the "
-            "(Eddington-shifted, per --eddington_m) host_M_eff, as the "
-            "product-Gaussian mean fed to the S_4D quadrature. 'unset' "
-            "(default) is REFUSED (not a silent default) whenever "
-            "--catalogue_numerator_survival_2d mz_sel is given -- the "
-            "centering choice is PENDING the pre-execution review."
+            "mz_sel: 'raw' uses the unshifted host_M, 'eff' (default) uses "
+            "the (Eddington-shifted, per --eddington_m) host_M_eff, as the "
+            "product-Gaussian mean fed to the S_4D quadrature -- the "
+            "adopted centering (A20_REVIEW_P3_2D_DESIGN_20260825.md F2). "
+            "'unset' is REFUSED (not a silent default) whenever "
+            "--catalogue_numerator_survival_2d mz_sel is given explicitly "
+            "together with it."
         ),
     )
     parser.add_argument(
@@ -1049,6 +1192,177 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "the no-BH catalogue divisor is the separately fitted Sigma^3D "
             "(the pre-adoption production behaviour). The with-BH leg is "
             "deliberately untouched in either case."
+        ),
+    )
+    parser.add_argument(
+        "--mass_filter_geometry",
+        type=str,
+        choices=["linear", "log"],
+        default="linear",
+        help=(
+            "Mass-window GEOMETRY instrument flag (charter node B5.1, "
+            "results/campaign51_20260728/realistic_20260729/fanout1_20260829/"
+            "PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows "
+            "#220-#223). 'linear' (default, PRODUCTION) is byte-identical "
+            "to the pre-flag --mass_filter_sigma interval-overlap window. "
+            "'log' re-expresses the same window in ln-space on both sides "
+            "(small-error correspondence on the GW side; the existing R&V15 "
+            "ln-space budget BH_MASS_ERROR/BH_MASS on the candidate side -- "
+            "no re-derivation). Never a production posterior at 'log'."
+        ),
+    )
+    parser.add_argument(
+        "--mass_filter_k",
+        type=float,
+        default=1.5,
+        help=(
+            "Mass-window half-width in units of sigma, decoupled from the "
+            "sky-cone sigma_multiplier (charter node B5.1, same reference "
+            "as --mass_filter_geometry). Default 1.5 matches the current "
+            "coupled call-site value, so the default pairing of both new "
+            "flags is byte-identical to the pre-flag path."
+        ),
+    )
+    parser.add_argument(
+        "--theta_b",
+        type=float,
+        default=0.0,
+        help=(
+            "[HIER] theta-hook (charter node P6/B1.2, WAVE2_REGISTRATION_"
+            "CHECK_20260829.md F-C; ledger rows #216, #221-#223): affine "
+            "photo-z systematic offset b in z~ = z + b(1+z), applied at "
+            "estimator sites 2.1/2.2/2.3 (Ma, Hu & Huterer 2006, "
+            "arXiv:astro-ph/0506614, Sec. 2). Forwarded to "
+            "BayesianStatistics.evaluate()'s theta_b kwarg. Default 0.0 "
+            "pairs with --theta_s=1.0 as the literal-skip identity (GATE "
+            "T-ID): byte-identical to the pre-flag path. NEVER applied "
+            "generator-side (GATE GEN-FROZEN, PA-HIER-2)."
+        ),
+    )
+    parser.add_argument(
+        "--theta_s",
+        type=float,
+        default=1.0,
+        help=(
+            "[HIER] theta-hook scale s (same reference as --theta_b): "
+            "sigma~_eff = s * sigma_eff at estimator sites 2.1/2.2/2.3. "
+            "Forwarded to BayesianStatistics.evaluate()'s theta_s kwarg. "
+            "Default 1.0 pairs with --theta_b=0.0 as the literal-skip "
+            "identity (GATE T-ID): byte-identical to the pre-flag path."
+        ),
+    )
+    parser.add_argument(
+        "--theta_sites",
+        type=str,
+        choices=["all", "2.1", "2.2", "2.3"],
+        default="all",
+        help=(
+            "[HIER] theta-hook OAT site-selection toggle (same reference "
+            "as --theta_b): which estimator site(s) receive theta; the "
+            "others are forced to their (0, 1) evaluation. Forwarded to "
+            "BayesianStatistics.evaluate()'s theta_sites kwarg, which "
+            "validates against this same set (bayesian_statistics.py "
+            "~3542-3600). Site '2.3' requires --smear_global_selection "
+            "(the registered site is the smeared global-selection kernel); "
+            "evaluate() raises ValueError otherwise. Default 'all' matches "
+            "the estimator's own default."
+        ),
+    )
+    parser.add_argument(
+        "--theta_phi_divisor",
+        type=str,
+        choices=["off", "on"],
+        default="off",
+        help=(
+            "[HIER] site 2.3phi theta-consistent no-BH divisor instrument "
+            "(PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2; row #255 tree "
+            "2 node T1.1). 'off' (default, PRODUCTION) is byte-identical -- "
+            "no code path change. 'on' arms the ratio rho(theta) at the "
+            "no-BH catalogue divisor; INDEPENDENT of --theta_sites (composes "
+            "with --theta_sites 2.2 for the registered form). At theta=(0,1) "
+            "the literal skip applies (GATE T-ID). Requires "
+            "--catalogue_global_selection to resolve to 'phi' and "
+            "--normalization_mode absolute_marginal; evaluate() raises "
+            "ValueError otherwise."
+        ),
+    )
+    parser.add_argument(
+        "--sky_cone_k",
+        type=float,
+        default=1.5,
+        help=(
+            "Sky-cone-radius instrument flag (PHYSICS_CHANGE_THETA_DIVISOR_"
+            "20260830.md §2.5, same reference as --theta_phi_divisor). "
+            "Decouples the sky search radius from --mass_filter_k (which "
+            "after B5.1 governs ONLY the mass window). Default 1.5 matches "
+            "the pre-flag sigma_multiplier literal, so the default pairing "
+            "is byte-identical to the pre-flag path. Must be finite and > 0."
+        ),
+    )
+    parser.add_argument(
+        "--theta_zwindow",
+        type=str,
+        choices=["off", "on"],
+        default="off",
+        help=(
+            "[HIER] theta-consistent candidate z-window instrument "
+            "(PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2; row #255 tree "
+            "2 node T1.3-zwin). 'off' (default, PRODUCTION) is byte-identical "
+            "-- the candidate z-filter keeps its bare form at "
+            "--z_window_k 1.0. 'on' replaces the galaxy-side centre/width "
+            "of that filter by the theta-transformed site-2.2 kernel, so "
+            "the selection window and the kernel it selects for are the "
+            "same object at every theta; INDEPENDENT of --theta_sites and "
+            "--theta_phi_divisor (composes with either). At theta=(0,1) "
+            "the literal skip applies (GATE T-ID)."
+        ),
+    )
+    parser.add_argument(
+        "--z_window_k",
+        type=float,
+        default=1.0,
+        help=(
+            "Candidate z-window half-width in units of sigma_g/"
+            "sigma_g^theta (same reference as --theta_zwindow). Applies "
+            "under BOTH --theta_zwindow states. Default 1.0 matches "
+            "today's implicit +/- 1 sigma_g literal -- byte-identical. "
+            "Must be finite and > 0 (validated in "
+            "get_possible_hosts_from_ball_tree)."
+        ),
+    )
+    parser.add_argument(
+        "--catalogue_leg_1d_mass_aware",
+        type=str,
+        choices=["auto", "off", "on"],
+        default="auto",
+        help=(
+            "[HIER T2.3] mass-aware 1D catalogue leg (row #255 tree 2 node "
+            "T2.3; PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). 'auto' "
+            "(default, PRODUCTION since the 2026-08-31 Z-CONFIRMED flip, "
+            "rows #284-#286) engages 'on' under the absolute_marginal phi "
+            "stack and resolves 'off' elsewhere. 'on' "
+            "replaces the WITHOUT-BH catalogue numerator's "
+            "per-candidate survival S_bar_phi(z;h) by S_4D(d_L(z;h), "
+            "M_g(1+z)), Sigma_4D as the global divisor and alpha_G_phi as "
+            "the mixture weight. Requires --catalogue_numerator_survival and "
+            "--catalogue_global_selection to both resolve to 'phi' and "
+            "--theta_phi_divisor='off'; evaluate() raises ValueError "
+            "otherwise. 'off' = the pre-flip mass-blind counterfactual."
+        ),
+    )
+    parser.add_argument(
+        "--candidate_dump_dir",
+        type=str,
+        default=None,
+        help=(
+            "INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = "
+            "instrumentation guard, not a physics gate). Default None = OFF, "
+            "byte-identical production path (GATE BI). When set to a "
+            "directory path, a READ-ONLY per-(event, candidate) diagnostic "
+            "serialiser writes per_candidate_h_<label>.csv and "
+            "per_event_h_<label>.csv there (see "
+            "B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md §6). Diagnostic "
+            "only -- never a production posterior."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

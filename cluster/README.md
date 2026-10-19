@@ -31,7 +31,7 @@ Five commands from login to results:
 
 5. Retrieve results (from your local machine):
    ```bash
-   rsync -avz bwunicluster:$(ssh bwunicluster 'ws_find emri')/run_20260327_seed42/ ./results/
+   rsync -avz bwunicluster:$(ssh bwunicluster 'ws_find emri2')/run_20260327_seed42/ ./results/
    ```
 
 ## Pipeline Overview
@@ -89,14 +89,15 @@ This script performs four steps:
 1. **Loads environment modules:** `compiler/gnu/14.2`, `devel/cuda/12.8`,
    `devel/python/3.13.3-gnu-14.2`. GSL 2.6 is system-wide; no module needed.
 2. **Installs uv** (if not already present) to `~/.local/bin`.
-3. **Allocates a workspace:** `ws_allocate emri 60` (60-day expiration).
+3. **Allocates a workspace:** `ws_allocate <name> 60` (60-day expiration), where `<name>` is
+   `CLUSTER_WORKSPACE_NAME` in `cluster/cluster.env` (currently `emri2`).
 4. **Creates the Python environment:** `uv sync --extra gpu` installs all
    dependencies including CuPy and fastemriwaveforms with CUDA 12 support.
 
 The script is idempotent -- safe to re-run if anything changes.
 
 > **Warning:** bwHPC workspaces expire. The default allocation is 60 days.
-> Extend before expiration with `ws_extend emri 60`. Expired workspaces are
+> Extend before expiration with `ws_extend emri2 60`. Expired workspaces are
 > **permanently deleted** with no recovery. Check remaining time with `ws_list`.
 
 ## Running a Campaign
@@ -170,7 +171,7 @@ tail -f $WORKSPACE/run_*/logs/simulate_*.out
 From your local machine, use `scp`:
 
 ```bash
-scp -r bwunicluster:$(ssh bwunicluster 'ws_find emri')/run_20260327_seed42/ ./results/
+scp -r bwunicluster:$(ssh bwunicluster 'ws_find emri2')/run_20260327_seed42/ ./results/
 ```
 
 Or use `rsync` for incremental transfers (useful for large campaigns):
@@ -179,11 +180,22 @@ Or use `rsync` for incremental transfers (useful for large campaigns):
 rsync -avz bwunicluster:WORKSPACE_PATH/run_20260327_seed42/ ./results/
 ```
 
-Replace `WORKSPACE_PATH` with the output of `ws_find emri` on the cluster.
+Replace `WORKSPACE_PATH` with the output of `ws_find emri2` on the cluster.
 
-> **Warning:** Workspace `emri` expires after 60 days. Copy results to
+> **Warning:** Workspace `emri2` expires after 60 days. Copy results to
 > persistent storage before expiration. Check remaining time: `ws_list`.
-> Extend: `ws_extend emri 60`.
+>
+> **Current state (2026-10-17):** the live workspace is **`emri2`** (the `emri`
+> workspace expired 2026-09-23 after its contents were moved). The persistent
+> off-cluster copy is the Hetzner Storage Box — tag `hbox` in
+> `DATA_INVENTORY.md` (Device Registry). The scripts in this directory
+> read the name from `CLUSTER_WORKSPACE_NAME` in `cluster/cluster.env`.
+>
+> **Rolling the workspace forward:** `preflight.sh` says when (extend while
+> extensions last; once none are left it warns on every run; under 14 days
+> with none left it blocks). The move procedure is "Workspace lifecycle" in
+> `.claude/skills/cluster/SKILL.md`; `cluster/workspace_check.sh` verifies it.
+> Extend: `ws_extend emri2 60`.
 
 ## Troubleshooting
 

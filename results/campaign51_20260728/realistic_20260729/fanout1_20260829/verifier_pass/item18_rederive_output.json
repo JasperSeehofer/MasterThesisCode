@@ -1,0 +1,75 @@
+{
+  "a_runner_chain": {
+    "runner1_pd_concat_valueerror_found": true,
+    "runner1_root_is_empty_b_plus_list": true,
+    "runner1_rc1_lines": [
+      "END rc=1",
+      "END rc=1"
+    ],
+    "runner2_daemonic_assertionerror_found": true,
+    "runner2_nested_pool_site_evaluate_lineno": "4562",
+    "runner2_num_worker_errors": 4,
+    "runner2_rc1_lines": [
+      "END rc=1",
+      "END rc=1"
+    ],
+    "runner3_label_string": "jobs2",
+    "runner3_json_jobs_values_seen": [
+      "1"
+    ],
+    "runner3_rc0_count": 4,
+    "s0a_full_output_json_jobs_field": 1
+  },
+  "b_ssh_outage_c4": {
+    "diag_csv_exists": true,
+    "diag_csv_lines": 6353,
+    "diag_csv_bytes": 1795584,
+    "posteriors_present": [
+      "h_0_66.json",
+      "h_0_665.json",
+      "h_0_67.json",
+      "h_0_73.json"
+    ],
+    "posteriors_with_bh_mass_present": [
+      "h_0_66.json",
+      "h_0_665.json"
+    ],
+    "posteriors_with_bh_mass_67_73_missing": true,
+    "run_metadata_files_present": [],
+    "logs_dir_present": false,
+    "git_commit_at_run_file_present": false
+  },
+  "c_commit_hygiene": {
+    "current_total_simulations_subtree_bytes": 1476918034,
+    "current_total_simulations_subtree_MB": 1476.9,
+    "n_simulations_dirs_found": 37,
+    "commit_plan_3_claimed_MB": 93.5,
+    "event_likelihoods_csv_count": 33,
+    "event_likelihoods_csv_max_bytes": 1280894,
+    "event_likelihoods_csv_all_under_4MB": true,
+    "tracked_files_registered_run": [
+      "results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/logs/runner2_nohup.out",
+      "results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/logs/runner2_stage.txt",
+      "results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/logs/runner3_nohup.out",
+      "results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/logs/runner3_stage.txt",
+      "results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/logs/runner_stage.txt",
+      "results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/logs/runner_wave2pre_nohup.out",
+      "results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/s0a_score.md",
+      "results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/s0a_score_output.json",
+      "results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/s0c_full_output.json"
+    ],
+    "tracked_files_work": [],
+    "any_tracked_simulations_path": false,
+    "gitignore_blocks_simulations_subtree": true,
+    "gitignore_rule_matched": ".gitignore:16:simulations/\t/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/s0a_seed900102/node_s_minus_sites2.2_nosmear/simulations/diagnostics/event_likelihoods.csv",
+    "gitignore_blocks_raw_wave2pre_logs": true,
+    "gitignore_rule_matched_for_logs": ".gitignore:1:*.log\t/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/fanout1_20260829/hier_s0_registered_run/logs/runner3_wave2pre_20260829.log",
+    "raw_wave2pre_logs_tracked": false,
+    "commits_touching_these_paths": [
+      "60f9996e docs: wave-2 local reads \u2014 S0-A B0-A\u2032 INSTRUMENT-DEFECT (Z_b \u22123.68, Z_s \u22127.08; C1 not submitted), S0-C marginal 24.4 s/node, KW-Q1 KERNEL-WIDTH-INERT R = +0.085 (row #249; B4 does not merge into B1), driver \u00a78/\u00a78.1, wave-3 readout sbatch set"
+    ],
+    "largest_blob_ever_committed_bytes": 8438,
+    "largest_blob_ever_committed_MB": 0.008,
+    "n_blobs_ever_committed_under_these_paths": 8
+  }
+}

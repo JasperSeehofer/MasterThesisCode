@@ -379,18 +379,32 @@ class LamCDMScenario:
 
     h: CosmologicalParameter
     Omega_m: CosmologicalParameter
+    # Grid-admissibility ceiling for evaluate()'s entry guard ONLY (G-EXT wing,
+    # AMENDMENT G-EXT row #284; decoupling ratified row #301 item 4(a)).  This is
+    # NOT the host-window bound: get_redshift_outer_bounds(h_max=...) reads
+    # h.upper_limit below, which stays 0.86 so every detection's candidate-host
+    # z-window is unchanged (byte-identity below 0.86 by construction; see
+    # graph1_20260901/exec/b-hprior-fix/DECOUPLING_DESIGN.md).
+    h_grid_admissibility_max: float
     w_0: float = -1.0
     w_a: float = 0.0
 
     def __init__(self) -> None:
         self.h = CosmologicalParameter(
             symbol="h",
+            # Prior-support/admissibility decoupling — DECOUPLING_DESIGN.md (graph1), rows #293/#301/#304/#308; G-EXT wing rows #284/#286.
+            # HOST-WINDOW / prior-support bound — deliberately NOT raised for the
+            # G-EXT wing (row #293: raising it widens every candidate-host z-window
+            # and breaks byte-identity below 0.86). The wing is admitted via
+            # h_grid_admissibility_max instead.
             upper_limit=0.86,
             lower_limit=0.6,
             unit="s*Mpc/km",
             randomize_by_distribution=uniform,
             fiducial_value=0.73,
         )
+        # Prior-support/admissibility decoupling — DECOUPLING_DESIGN.md (graph1), rows #293/#301/#304/#308; G-EXT wing rows #284/#286.
+        self.h_grid_admissibility_max = 1.00
         self.Omega_m = CosmologicalParameter(
             symbol="Omega_m",
             upper_limit=0.5,

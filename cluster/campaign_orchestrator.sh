@@ -16,7 +16,7 @@
 # Launch:
 #   cd ~/darksiren-emri && nohup bash cluster/campaign_orchestrator.sh \
 #       > /dev/null 2>&1 & disown
-# Status:  tail $(ws_find emri)/campaign_orchestrator.log
+# Status:  tail $(ws_find emri2)/campaign_orchestrator.log   # name: CLUSTER_WORKSPACE_NAME in cluster/cluster.env
 # Stop:    pkill -f 'campaign_orchestrator[.]sh'   # bracket idiom: don't match the ssh wrapper shell
 
 set -u
@@ -27,8 +27,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="${PROJECT_ROOT:-$(dirname "$SCRIPT_DIR")}"
 cd "$PROJECT_ROOT"
 
-WS="${WORKSPACE:-$(ws_find emri 2>/dev/null)}"
-WS="${WS:-/pfs/work9/workspace/scratch/st_ac147838-emri}"
+WS_NAME="${CLUSTER_WORKSPACE_NAME:-$( . "$SCRIPT_DIR/cluster.env" >/dev/null 2>&1; echo "${CLUSTER_WORKSPACE_NAME:-}")}"
+WS="${WORKSPACE:-$(ws_find "$WS_NAME" 2>/dev/null)}"
+: "${WS:?workspace ${WS_NAME:-<unset>} not found — check CLUSTER_WORKSPACE_NAME in cluster/cluster.env}"
 # Pool + pipeline list are env-overridable (campaign #51, 2026-07-28) so new
 # campaigns don't require editing this script:
 #   POOL_OVERRIDE=$WS/injection_pool_mix200k_20260728 \

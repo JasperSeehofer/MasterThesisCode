@@ -212,6 +212,11 @@ class TestDiagnosticCsv:
             "L_comp",
             "combined_no_bh",
             "combined_with_bh",
+            # [HIER] C2 (PA-HIER-23): separable per-event ln L decomposition
+            # columns, shipped with the θ-hook commit.
+            "den_log_term",
+            "num_log_term_no_bh",
+            "num_log_term_with_bh",
         }
         assert rows[0]["event_idx"] == "0"
         assert rows[1]["w_G"] == "1.0"
