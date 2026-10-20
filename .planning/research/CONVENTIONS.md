@@ -58,10 +58,17 @@ the m1 adjudication. Each needs an author [RULE]/[DO] before it can become a num
 
 | # | convention | value | set by | criticality |
 |---|---|---|---|---|
-| C-24 | Sealed-run blindness | Between the sealed draw and the unseal row, **agents never read sealed run logs**, or `run_metadata_*`, `provenance_*`, CRB files, simulate `.out`/`.err` or `~/.sealed/`. **Monitoring is by `squeue`/`sacct` only.** The pre-unseal reader opens only `simulations/posteriors*/h_*.json` and `simulations/diagnostics/event_likelihoods.csv` (columns `event_idx, h, combined_no_bh, combined_with_bh`). Agents never run the draw or the unseal | `REGISTRATION_DRAFT.md` §4 item 3; dossier §1 item 8; `ERRATUM_m2_R27_R28.md` E-6 (draft for ratification); `UNSEAL_CEREMONY_m2.md` | critical |
+| C-24 | Sealed-run blindness | Between the sealed draw and the unseal row, **agents never read sealed run logs**, or `run_metadata_*`, `provenance_*`, CRB files, simulate `.out`/`.err` or `~/.sealed/`. **Monitoring is by `squeue`/`sacct` only.** The pre-unseal reader opens only `simulations/posteriors*/h_*.json` and `simulations/diagnostics/event_likelihoods.csv` (columns `event_idx, h, combined_no_bh, combined_with_bh`). Agents never run the draw or the unseal | `REGISTRATION_DRAFT.md` §4 item 3; dossier §1 item 8; `ERRATUM_m2_R27_R28.md` E-6 (ratified on card `m162-r1-t1-governance`, relayed 2026-10-20); `UNSEAL_CEREMONY_m2.md` | critical |
 | C-25 | p_det pool of record (campaign 2026-07-29 runs and (m2)) | `$WS/injection_pool_mix200k_20260728`, 707 files, content-manifest list-md5 `75f4030d5d3b0405fd948049bef5767e` (`ls -1 *.csv \| sort \| xargs md5sum \| md5sum`); **not** `injection_pool_depth15_50k`/500 | R28 ratified 2026-10-19 (`ask-20261018-w231446a3b9`); `cluster/datasets.yaml` entry `mix200k_20260728` | critical |
-| C-26 | Physics freeze for T-1 | `darksiren_emri/` tree `71acb98b0fd8a0f9d3aad9595eb9fc084cae0b6d`, dirty count 0; strict HEAD == H_code; no code change before T-1 | R24 ruled 2026-10-19 (`ask-20261018-w231446a3b9`); erratum E-4 | critical |
+| C-26 | Physics freeze for T-1 | `darksiren_emri/` tree `71acb98b0fd8a0f9d3aad9595eb9fc084cae0b6d`, dirty count 0; strict HEAD == H_code; no code change before T-1 | R24 ruled 2026-10-19 (`ask-20261018-w231446a3b9`); erratum E-4 (ratified, card `m162-r1-t1-governance`) | critical |
 | C-27 | Workspace lifetime (supersedes C-20) | Workspace `emri2` (moved from `emri` 2026-09-23), expires 2026-11-22; roll-forward due 2026-11-15; offsite copy on the Hetzner Storage Box | `cluster/datasets.yaml:24-26`; M65 status log 2026-10-19 | critical |
 
-**Open defects D-1, D-2 and D-3 (above):** these are addressed for (m2) by `ERRATUM_m2_R27_R28.md`
-E-2 (D-1, D-2) and E-3 (D-3). They stay open until the author ratifies. D-4 is M65 round 2's.
+**Open defects D-1, D-2 and D-3 (above):** these are **closed for (m2)** by `ERRATUM_m2_R27_R28.md`,
+ratified on card `m162-r1-t1-governance` (relayed 2026-10-20):
+- D-1 by E-2: the order is gates, then the rail clause wins, then a single band cell, otherwise
+  INTERMEDIATE.
+- D-2 by E-2 and card Q1b: the rail is a **banked bound**, not NO-READ.
+- D-3 by E-3: the σ-width check.
+- (m1) stays banked INTERMEDIATE (R25) and is not re-opened.
+- D-4 was taken by M65 round 2: the m1 read inputs are tracked (main `3e23824b`), and the scorer
+  `t0_read.py` is recorded as unrecovered.

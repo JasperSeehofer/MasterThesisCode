@@ -28,7 +28,7 @@ meta:
   commission_base: {tag: commission-base, commit: b593f02, branch: physics/photoz-joint-normalisation}
   expected_catalog_cols: 8            # reduced_galaxy_catalogue.csv (redshift-flag retained, 479afdd+)
   retirement_banner: "DATA_INVENTORY.md — all pre-2026-06-20 (pre mass-convention + L_cat fixes) CRBs/injections/posteriors are RETIRED"
-  updated: 2026-10-19   # R28 pool-identity correction (M162)
+  updated: 2026-10-20   # R28 pool identity (M65 R2 pin + M162 (m2) note, one entry)
 
 # --- STAGE 1: injection pools (feed the P_det detection-probability estimator) ---
 # p_det is h-invariant (detection-horizon survival), so a single-h pool suffices;
@@ -49,18 +49,6 @@ injections:
       identical across those commits (the diff touched only the sim-loop quick
       gate), so the loader's mixed-code_rev WARNING is expected and benign.
       Rows carry z_cut/code_rev provenance columns (stale-pool gate).
-  - id: mix200k_20260728
-    path: "$WS/injection_pool_mix200k_20260728"
-    h_ref: 0.73
-    files: 707                      # injection_h_0p73_task_*.csv, 200,100 rows
-    content_manifest_list_md5: 75f4030d5d3b0405fd948049bef5767e   # ls -1 *.csv | sort | xargs md5sum | md5sum  (STOP-gated pin; = md5 of exec/r-timeout-selection/POOL_MANIFEST.md5)
-    filename_list_md5: a1dffdf561c51c8c778dce115c5fb371          # md5 of the sorted filename list only — a label, never compared to the pin above
-    status: "CURRENT — pool of record for run_20260729_seed61000 (0.73 anchor), run_20260729_seed64000_h0p67 (m1) and the (m2) sealed run (R28 ratified 2026-10-19, ask-20261018-w231446a3b9)"
-    note: >
-      Pool identity per the R28 registration erratum (graph1_20260901/exec/r-sealed-mock/
-      ERRATUM_m2_R27_R28.md E-1; PIN_RECORD.md; D_SEALED_REGISTER_DOSSIER.md GUARD CORRECTION).
-      Pins last measured 2026-09-04 on workspace emri; NOT re-read since the emri -> emri2 move —
-      re-read requested (POOL_OPTION_MEMO_m2.md section 5, R-2) before T-1.
   - id: seed43000_Mz
     path: "$WS/injection_20260620-213449_seed43000/simulations/injections"
     files: 560
@@ -78,6 +66,25 @@ injections:
     files: 519
     mass_convention: source-frame   # pre-fix
     status: RETIRED (source-frame; was the old symlinked default)
+  - id: mix200k_20260728
+    path: "$WS/injection_pool_mix200k_20260728"
+    h_ref: 0.73
+    files: 707                      # injection_h_0p73_task_*.csv, 200,100 rows
+    list_md5: 75f4030d5d3b0405fd948049bef5767e   # md5 of the per-file manifest, tracked at results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-timeout-selection/POOL_MANIFEST.md5
+    # list_md5 = the content-manifest list-md5 (STOP-gated pin, = EXPECTED_POOL_LIST_MD5): ls -1 *.csv | sort | xargs md5sum | md5sum
+    filename_list_md5: a1dffdf561c51c8c778dce115c5fb371   # md5 of the sorted filename list only (PIN_RECORD.md) — a label, never compared to list_md5
+    status: "PINNED for the sealed-mock line (m1, and T-1/(m2) unless re-ruled)"
+    note: >
+      R28, ratified 2026-10-19 by the author (Answer Wire ask-20261018-w231446a3b9) as a
+      registration erratum: the m1 dossier registered `injection_pool_depth15_50k` (500 files),
+      but the 0.67 run's `injections` link resolves here (707 files); the 0.73 anchor run
+      run_20260729_seed61000 links the same pool (same list-md5), so the anchor comparison is
+      same-pool. Contents identical to the 0.73 baseline pool. See READ_RECORD_m1.md (G-1 pins)
+      and PIN_RECORD.md in graph1_20260901/exec/r-sealed-mock/.
+      (m2) use: pool of record per ERRATUM_m2_R27_R28.md E-1 (M162; ratified on card
+      m162-r1-t1-governance, relayed 2026-10-20). Pins last measured 2026-09-04 on workspace emri; NOT re-read since
+      the emri -> emri2 move — read-only re-read R-2 approved inside an M38 window
+      (POOL_OPTION_MEMO_m2.md section 5) before T-1.
 
 # --- STAGE 2: Cramer-Rao bounds (from GPU EMRI simulation) -----------------------
 # cramer_rao_bounds.csv = raw merge; prepared_cramer_rao_bounds.csv = SNR-filtered.

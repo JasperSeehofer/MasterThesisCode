@@ -59,7 +59,10 @@ cluster/vpn.sh
 # Durable project state is TRACKED in ROADMAP.md, STATE.md, and docs/ (a transparency virtue).
 # The noisy, ephemeral working state below is intentionally local-only; it syncs across the
 # author's machines via the same discipline, not by cluttering the public tree.
-.planning/
+.planning/*
+# Exception: the vault research-thread contract (project-init / /cartographer bridge) is
+# DURABLE project state, not ephemeral working state — it is tracked on purpose.
+!.planning/research/
 .gpd/
 .gardener-notes.md
 .claude/agents/

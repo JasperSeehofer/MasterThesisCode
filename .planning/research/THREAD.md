@@ -136,6 +136,8 @@ tonight, T-1 could not legitimately launch. Ratifying R27 is an author action th
 governance side regardless of when the credential lands.
 *(2026-10-19: unchanged and still the author's. The direction of R27 is ruled — rail clause wins
 — but the erratum is not yet drafted or ratified; the governance package is mission M162.)*
+*(2026-10-20: the M162 erratum is ratified on card `m162-r1-t1-governance` — this gate is cleared;
+see § T-1 package hashes. Gate 1, M38, remains.)*
 
 **Do not book m1 as T-1.** m1 is a sealed *mock* at an alternative truth, sharing T-1's design but
 not its blinding: its truth (h = 0.67) is public and legible in the run directory name
@@ -162,13 +164,15 @@ four dossier commits, hash `c908790d…`, frozen ~11 h before the first array ta
 "both cells fire" reading is **CONTESTED, not a fact**, and the underlying posterior data is
 **absent from version control**.
 
-## T-1 package hashes (mission M162, 2026-10-19; DRAFT FOR RATIFICATION)
+## T-1 package hashes (mission M162, 2026-10-19; RATIFIED on card `m162-r1-t1-governance`, relayed 2026-10-20)
 
 The T-1 governance package lives under
 `results/campaign51_20260728/realistic_20260729/graph1_20260901/exec/r-sealed-mock/` and
 `scripts/sealed_mock/` on branch `mission/M162-t1-governance-package`. It was cut from the work
 branch at `387cf33f`.
-- Status: **awaiting the author's ratification** on review card `m162-r1-t1-governance`.
+- Status: **ratified** by the author on review card `m162-r1-t1-governance` (all six questions;
+  rulings verbatim in `.planning/missions/M162-t1-governance-package/publish-round-r1/RATIFICATION.md`).
+  The rule blocks below are now append-only: a change is a new dated erratum, never an edit.
 - **No draw, no pool, no simulation and no cluster command has happened.**
 - How to recompute: run `python scripts/sealed_mock/rule_block_hashes.py <file>`. Each value is
   the sha256 of the exact text between the block markers. After ratification, any edit inside a
@@ -205,8 +209,15 @@ branch at `387cf33f`.
   at the end of the dossier; the threshold block is untouched.
 - `darksiren_emri/` tree `71acb98b…`, with dirty count 0 on this branch.
 
-**Effect on "Active experiment" above:** Gate 2 (the R27 launch bar) is drafted and awaits
-ratification. Gate 1 (the cluster credential, M38) is unchanged. T-1 is due **2026-12-15**; that is
+**Effect on "Active experiment" above:** Gate 2 (the R27 launch bar) is **cleared** by the
+ratification of card `m162-r1-t1-governance`. Gate 1 (the cluster credential, M38) is unchanged. T-1 is due **2026-12-15**; that is
 the dated default, and there is no third extension without a new ruling (the 2026-09-23 date in
 kill criterion 3 is superseded by `ask-20261018-w223027afac` R2). m1 is banked **INTERMEDIATE**
 (R25, `ask-20261018-w224256df6b`), which supersedes the "UNRESOLVED-AS-REGISTERED" claim row above.
+
+**Ruling on kill criterion 1 (card `m162-r1-t1-governance` Q4):** a (m2) TRANSFER result, a
+posterior closing at h_inj − 0.064, **passes** anti-tuning and **does not trigger** kill criterion 1.
+The criterion's text above is the author's and is unchanged; this ruling fixes how the erratum's
+E-8 TRANSFER row maps onto it. **Q5:** the read-only cluster reads R-1/R-2
+(`POOL_OPTION_MEMO_m2.md` §5) are approved inside an M38 window; they are not yet run. R-3 (the P2 pairing seeds) is not named in
+the ruling and returns to the author.

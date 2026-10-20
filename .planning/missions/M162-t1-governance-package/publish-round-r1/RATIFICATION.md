@@ -112,3 +112,38 @@ They run in M38's window, by one ops agent using `cluster/agent_ssh.sh`, or by y
 a STOP, not a re-pin.
 
 Recommended: **Approve.**
+
+---
+
+## Rulings, card `m162-r1-t1-governance` (relayed to the executor 2026-10-20)
+
+**Status: RATIFIED, all six questions.** This section records the rulings as relayed. It is
+append-only.
+
+**Source text, verbatim from the relay message:**
+
+> Jasper ratified all six questions of your card m162-r1-t1-governance (E-2/E-3 ratified; rail
+> read = banked bound; paired P2/P1 design ratified; prereg + unseal ceremony + dated default
+> ratified; Q4: TRANSFER passes anti-tuning, kill criterion 1 is not triggered by h_inj - 0.064;
+> Q5: read-only cluster reads R-1/R-2 approved inside an M38 window)
+
+**Attribution note** (per the `BIAS_HISTORY_LEDGER.md` convention):
+- The quote above is the orchestrator's relay. Jasper's own words are not in front of this
+  executor, so the itemisation is relay-derived.
+- The relay gives 2026-10-20 as the date it reached the executor. The exact time of the tap is
+  not recorded here.
+
+| Q | tag | ruling as relayed | what it binds |
+|---|---|---|---|
+| Q1 | [RULE] | "E-2/E-3 ratified" | erratum E-2 (precedence: gates ⇒ rail wins ⇒ single band cell ⇒ else INTERMEDIATE) and E-3 (ρ band [0.8, 1.25]), hashes in THREAD.md |
+| Q1b | [RULE] | "rail read = banked bound" | a firing rail clause books AT-RAIL-LOW/HIGH as a banked one-sided bound, not NO-READ (closes D-2) |
+| Q2 | [RULE] | "paired P2/P1 design ratified" | E-5: P2 paired with P2-0 ≥ 95 %, the 1e-3 gate on matched rows, before the draw; P1 ≤ 250 GPU-h inside the sealed RUN_DIR as the fallback |
+| Q3 | [RULE] | "prereg + unseal ceremony + dated default ratified" | `PREREG_EXP-MTC-T1.md`, `UNSEAL_CEREMONY_m2.md`, E-6, E-7 (2026-12-15, Europe/Berlin; a banked cell including INTERMEDIATE/AT-RAIL is a verdict; no third extension without a new ruling) |
+| Q4 | [RULE] | "TRANSFER passes anti-tuning, kill criterion 1 is not triggered by h_inj - 0.064" | E-8 TRANSFER row ⇒ anti-tuning PASS. Kill criterion 1's own text is unchanged |
+| Q5 | [DO] | "read-only cluster reads R-1/R-2 approved inside an M38 window" | R-1 (N_tasks/cost of the seed61000 simulate) and R-2 (pin re-reads on emri2), read-only, `cluster/agent_ssh.sh`, one ops agent, in M38's window. **R-3 (the pool-of-record seeds, needed for the P2 pairing) is not named in the relay and is therefore NOT approved**; it returns to the author before P2 can run |
+
+**Approval scope (CLAUDE.md):**
+- None of these rulings covers a decision whose inputs do not yet exist: the P2 gate value, the
+  cell of the unsealed result, and its E-8 consequence row each return as a fresh [RULE].
+- Ratification does not launch T-1. The launch still needs M38's window, R-1/R-2 green, R-3
+  approved and run, P2 gated, and the L-0 preconditions of `UNSEAL_CEREMONY_m2.md`.
