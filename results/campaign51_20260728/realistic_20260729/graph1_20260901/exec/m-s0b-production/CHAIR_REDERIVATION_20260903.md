@@ -1,0 +1,81 @@
+# m-s0b-production — chair re-derivation + booking (2026-09-03, Fable 5.1 chair)
+
+Reader record: READOUT_RECORD.md (fresh sonnet reader). Evidence, not authority: every decisive
+number below was recomputed by the chair directly from the five per-node `event_likelihoods.csv`
+files (ln of `combined_no_bh` / `combined_with_bh`, N = 1588, secants per PA-HIER-31(d)/(4)).
+
+## 1. Re-derived (chair script; MATCH the reader and the driver's --score-only to the digit)
+| channel | statistic | mean | SEM | Z |
+|---|---|---|---|---|
+| no_bh (primary) | score_b_re = [lnL(+0.033,1) − lnL(−0.033,1)]/0.066 | −0.6822 | 0.1293 | **−5.274** |
+| no_bh | score_lns = [lnL(0,√2) − lnL(0,1/√2)]/ln 2 | −0.0327 | 0.0045 | **−7.188** |
+| with_bh | score_b_re | −0.7412 | 0.1195 | −6.204 |
+| with_bh | score_lns | −0.0368 | 0.0050 | −7.333 |
+Reader's PA-HIER-33 Bartlett-corrected s-axis Z = −7.101 (not re-derived by the chair; within
+0.09 of the raw secant, direction identical — immaterial to any band).
+Class split at truth: L_cat_no_bh > 0: 1139 · == 0 (dark): 449 (chair count, both channels).
+
+## 2. Registered dispositions (PA-HIER-31(e)), chair-confirmed from the reader's curvature leg
+- B0-B: |Z_b| = 5.27 > 3 and |Z_lns| = 7.1 > 3 → **LEVER-LIVE** (not LEVER-DEAD-AT-N).
+- B0-M: |b̂| = 0.0114 < 0.0165 (b-axis small) ; |ln ŝ| = 1.165 > 0.173 (s-axis material) → **MIXED**.
+- B0-P: σ_b = 0.0032 < 0.0661 ; σ_ln s = 0.150 < ln 2 → **POWERED both axes**.
+- Cap: REPORTED-ONLY, unconditional (PA-HIER-28 item 9). No CALIBRATED claim.
+- GATE ENG on the registered `_re` pair: 54 % / 49 % of events move ≥1e-6 → pass (the driver's
+  own gate_eng looked for the as-built ±0.02 names and reported an absence, not a failure).
+- C-C identity check: 449 events, 0 deviation across all 5 nodes → instrument pass.
+
+## 3. Two things the chair FLAGS for the author (docket 2.3: this returns as a dossier, no ruling)
+(a) **Charter clause conflict.** Graph §2 panel: "g-score-null … abs Z ≤ 3 … a red STOPs
+    d-photoz-leverage; reopens the instrument question as a fresh RULE, never auto-recertifies".
+    On the production venue there is no separate control: the score at the assumed-truth node IS
+    the registered measurement (PA-HIER-31(h)), and its non-nullness is precisely the LEVER-LIVE
+    outcome the prereg's own disposition table anticipates. Read literally, the panel clause would
+    forbid ever reading a positive S0-B. Chair-derived reading (flagged, veto-able): the instrument
+    certification of record is row #287 (both axes |Z| ≤ 3 on the mirror, where truth is known);
+    the production red is a MEASUREMENT under the registered table, not an instrument red. The
+    conflict itself is put to the author as part of d-photoz-leverage; the chair does not
+    "reopen the instrument question" on its own.
+(b) **Class-count anchor mismatch (OPEN, instrument-level).** Registered anchor (b3_pop_prediction,
+    2026-08-29, venue iiib, same 1588 events): dark C-C = 606, C-A∪C-B = 982. This run: 449 / 1139.
+    157 events changed class. Forensics launched (CLASS_COUNT_FORENSICS.md); until it lands, the
+    dispositions above are booked PROVISIONAL-ON-POPULATION. Chair check: all 5 nodes resolved
+    `catalogue_leg_1d_mass_aware: "off"` (grep of the node JSONs), so the row #287 certified config
+    WAS honoured and the A18 flip is EXCLUDED as the cause; remaining candidates are the 2026-08-25
+    symmetric mass window, the h-grid decoupling, or a different class criterion / catalogue state
+    behind the 2026-08-29 anchor.
+(c) Cost: 5 tasks × ~7.5 min wall; the reader's 9.98 CPU-h "allocated" is the sbatch reservation,
+    the row #332 ≈2 CPU-h is elapsed×cores actually used — both are true, different quantities.
+
+## 4. Chair booking (under the row #325 grant; returns inside d-photoz-leverage)
+m-s0b-production: DONE. Disposition **LEVER-LIVE / MIXED / POWERED, REPORTED-ONLY,
+population-ROBUST** — (b) resolved, see §5. c-theta-pull-venue-physics: the registered discriminating
+measurement did NOT null it; promotion/interpretation is the author's (kill criterion of
+q-theta-pull "production null at |Z|≤3 → not venue physics" is NOT met). d-photoz-leverage dossier
+assembled for the morning once (b) resolves.
+
+## 5. Class-count anchor — RESOLVED (DIAG_COLUMN_FORENSICS.md, chair-accepted)
+The 606→449 shift is DIAGNOSTIC-ONLY: `combined_no_bh` (the likelihood actually used) agrees to
+≤ 1.6e-7 relative on all 157 moved events; `D_tilde_phi`, `alpha_G_phi` bit-identical; the raw
+`L_cat_no_bh` diagnostic crossed the IEEE exact-zero boundary (1e-110 … 2.3e-8) under a
+summation-order perturbation, and the class script (`b3_1_pop_measure.py`) tests `== 0`.
+Consequences: (i) the S0-B dispositions are population-robust (pooled statistics are
+label-invariant; the C-C identity check passes on the 449 either way); (ii) FINDING for the author:
+the "dark class" criterion `L_cat_no_bh == 0` is numerically fragile — every class-labelled read
+in the campaign (B3 population anchors, A12 score-by-class incl. tonight's S3 catalogue-hosted
+localisation) inherits a label that can flip on float noise. A relative-threshold definition
+(e.g. L_cat/combined < 1e-6) is a build item with a g-byte-id requirement on the physics and a
+re-derivation of the affected class counts. Routed to the Graph 1 addendum as a candidate.
+
+## ERRATA (end-verification D3/D5, 2026-09-03 ~22:10)
+- D3: "physics identical / DIAGNOSTIC-ONLY" holds for the 157 moved events ONLY. Against the
+  mass-aware-matched production baseline (`wave3_20260830/c0prime_off_iiib`, bit-identical to the
+  2026-08-27 head readout) the S0-B TRUTH node differs on 562/1588 events in combined_no_bh
+  (max_rel 0.734, every shift positive, +2.58 nats total; with_bh max_rel 1.65 on 392). The secants
+  are internal to the run and unaffected; but PA-HIER-31(d) "truth = C0" and §3.1 GATE T-ID (0 ULP)
+  are NOT satisfied (same finding as rd-s0b-parity-vs-c0prime, row #342). Cause OPEN: the site-2.2
+  hook is identity-forced at (0,1) per the verifier; the run's 606 dirty files are unaudited. This
+  is an instrument-level open item on the production venue and goes to the author inside
+  d-photoz-leverage (dossier amended).
+- D5: "config = row #287 certified" was wrong: row #287 certified b0i / divisor on / zwin zk4 (the
+  mirror); S0-B ran iiib / divisor off / zwindow off per PA-HIER-31 (the registered production shape,
+  row #332). Corrected wording: "config = the registered PA-HIER-31 production shape".

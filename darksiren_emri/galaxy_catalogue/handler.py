@@ -13,6 +13,7 @@ from sklearn.neighbors import BallTree
 
 from darksiren_emri.constants import (
     HOST_DRAW_Z_MAX,
+    SIGMA_V_PEC_KM_S,
     SIGMA_V_PV_RESIDUAL_CORRECTED_KM_S,
     SIGMA_V_PV_UNCORRECTED_KM_S,
     SPEED_OF_LIGHT_KM_S,
@@ -568,6 +569,12 @@ class GalaxyCatalogueHandler:
         sigma_multiplier: int = 2,
         cov_theta_phi: float = 0.0,
         mass_filter_sigma: str = "symmetric",
+        mass_filter_geometry: str = "linear",
+        mass_filter_k: float = 1.5,
+        theta_zwindow: str = "off",
+        z_window_k: float = 1.0,
+        theta_b: float = 0.0,
+        theta_s: float = 1.0,
     ) -> tuple[list[HostGalaxy], list[HostGalaxy]] | None:
         """Find candidate host galaxies within the sky-Fisher error ellipse + mass-redshift cuts.
 
@@ -608,6 +615,79 @@ class GalaxyCatalogueHandler:
                 Scope: the MASS filter only — the redshift filter above keeps
                 its own ±1σ galaxy-side convention (out of the row-#198
                 grant's scope).
+            mass_filter_geometry: mass-window GEOMETRY instrument flag
+                (charter node B5.1; ``PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_
+                20260829.md`` §2; ledger rows #220-#223). "linear" (default,
+                PRODUCTION, byte-identical): the interval-overlap test above,
+                ``M_z ± mass_filter_k·M_z_sigma`` vs. ``BH_MASS ±
+                _bh_mass_error_multiplier·BH_MASS_ERROR``, unchanged in form
+                from the pre-flag path. "log": the SAME interval-overlap
+                test re-expressed in ln-space on both sides —
+                ``σ_lnM,z = M_z_sigma/M_z`` (small-error correspondence,
+                ``Var[ln M] ≈ (σ_M/M)²`` to leading order) and
+                ``σ_lnM = BH_MASS_ERROR/BH_MASS`` (already the R&V15 ln-space
+                budget, no re-derivation) give GW-side edges
+                ``M_z·exp(∓mass_filter_k·σ_lnM,z)/(1+z)`` and candidate-side
+                edges ``BH_MASS·exp(±_bh_mass_error_multiplier·σ_lnM)``. Not
+                a production posterior at any adopted default; NOT
+                interchangeable with ``mass_filter_sigma`` (that flag still
+                selects the candidate-side multiplier convention under
+                EITHER geometry). Single read/validate site for this flag
+                (this docstring + the mask branch below).
+            mass_filter_k: mass-window half-width in units of σ (charter
+                node B5.1, same reference as ``mass_filter_geometry``).
+                Decouples the mass window's half-width from
+                ``sigma_multiplier`` (which after this flag's introduction
+                sets ONLY the sky-cone search radius above, never the mass
+                window). Default ``1.5`` is chosen to exactly match today's
+                coupled ``sigma_multiplier=1.5`` production call-site value
+                under ``mass_filter_geometry="linear"`` — i.e. the default
+                pairing of both new flags is byte-identical to the pre-flag
+                path. Must be finite; a non-finite value is rejected here.
+            theta_zwindow: [HIER] theta-consistent candidate z-window
+                instrument flag (``PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md``
+                §2, row #255 tree 2 node T1.3-zwin). "off" (default,
+                PRODUCTION, byte-identical): the redshift filter below keeps
+                its bare form, ``z_min <= z_g + z_window_k*sigma_g`` and
+                ``z_max >= z_g - z_window_k*sigma_g`` (``sigma_g`` = the
+                catalogue's listed ``REDSHIFT_MEASUREMENT_ERROR``, no theta,
+                no peculiar-velocity fold) — at ``z_window_k=1.0`` this is
+                bit-for-bit the pre-flag mask. "on": the SAME interval-
+                overlap test with the galaxy-side centre and width replaced
+                by the theta-transformed site-2.2 kernel, ``z_g^theta =
+                z_g + theta_b*(1+z_g)`` and ``sigma_g^theta =
+                sqrt((theta_s*sigma_g)^2 + sigma_pv,g^2)`` with
+                ``sigma_pv,g = (1+z_g)*SIGMA_V_PEC_KM_S/SPEED_OF_LIGHT_KM_S``
+                evaluated at the UNSHIFTED ``z_g`` (mirrors
+                ``bayesian_statistics.py``'s site 2.2 exactly). At
+                theta = (0, 1) this is a LITERAL SKIP — no floating-point
+                operation on theta is performed and the result is identical
+                to "off" at the same ``z_window_k`` (GATE T-ID). The GW-side
+                envelope (``z_min``, ``z_max``) and the sky cone / mass
+                filter are untouched by this flag in every state. Single
+                read/validate site for the token: this docstring + the mask
+                branch below (the ``mass_filter_geometry`` precedent); the
+                theta validity guard (finite ``theta_b``, ``theta_s > 0``) is
+                the caller's responsibility (``bayesian_statistics.py``'s
+                ``_validate_theta``, at or before the single call site) —
+                this handler is a non-physics file and keeps no theta state
+                of its own.
+            z_window_k: candidate z-window half-width in units of
+                ``sigma_g``/``sigma_g^theta`` (same reference as
+                ``theta_zwindow``). Applies under BOTH "off" and "on" (the
+                window's half-width is decoupled from whether its centre/
+                width are theta-transformed). Default ``1.0`` exactly
+                matches today's implicit ``+/- 1 sigma_g`` literal, so the
+                default is byte-identical to the pre-flag path regardless of
+                ``theta_zwindow``. Must be finite and > 0; rejected here
+                (single read/validate site for this knob, the
+                ``mass_filter_k`` precedent).
+            theta_b: [HIER] theta = (b, s) affine photo-z systematic's shift
+                parameter (same construct as site 2.2,
+                ``bayesian_statistics.py``); read only when
+                ``theta_zwindow="on"``. Ignored (never touched) at "off".
+            theta_s: [HIER] theta = (b, s)'s scale parameter; same scope as
+                ``theta_b``.
 
         Returns:
             Tuple of (hosts_without_BH_mass_filter, hosts_with_BH_mass_filter) or None.
@@ -634,43 +714,125 @@ class GalaxyCatalogueHandler:
 
         candidate_hosts = self.reduced_galaxy_catalog.iloc[indices]
 
-        redshift_filter_mask = (
-            z_min
-            <= candidate_hosts[InternalCatalogColumns.REDSHIFT]
-            + candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR]
-        ) & (
-            z_max
-            >= candidate_hosts[InternalCatalogColumns.REDSHIFT]
-            - candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR]
+        # Single read/validate site for z_window_k (the mass_filter_k
+        # precedent, corrected file attribution per
+        # PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md Revision note 1): applies
+        # under BOTH theta_zwindow states below.
+        _z_window_k = float(z_window_k)
+        if not np.isfinite(_z_window_k) or _z_window_k <= 0.0:
+            raise ValueError(f"z_window_k must be finite and > 0, got {z_window_k!r}")
+
+        _z_g = candidate_hosts[InternalCatalogColumns.REDSHIFT]
+        _sigma_g = candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR]
+        if theta_zwindow == "off":
+            _z_g_theta = _z_g
+            _sigma_g_theta = _sigma_g
+        elif theta_zwindow == "on":
+            # [HIER] theta-consistent candidate z-window
+            # (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.1, row #255 tree 2
+            # node T1.3-zwin): the galaxy-side centre and width of the
+            # selection window are replaced by the SAME theta-transformed
+            # kernel site 2.2 integrates (bayesian_statistics.py
+            # single_host_likelihood_batch), so the window and the kernel it
+            # is meant to select for are the same object at every theta —
+            # only the theta-free GW-side envelope (z_min, z_max) and sky
+            # cone/mass filter are left untouched (§2.4/§2.5). At
+            # theta = (0, 1) this is a LITERAL SKIP: no floating operation on
+            # theta is performed and the "off" mask at the same z_window_k
+            # is reproduced bit-for-bit (GATE T-ID, R2).
+            if theta_b != 0.0 or theta_s != 1.0:
+                # sigma_pv,g mirrors bayesian_statistics.py's site-2.2
+                # sigma_z_pv term exactly (Ma, Hu & Huterer 2006,
+                # arXiv:astro-ph/0506614, Sec. 2 — the affine photo-z
+                # systematic (b, s)); SIGMA_V_PEC_KM_S = 0.0 today
+                # (constants.py), so this term is identically zero.
+                _sigma_pv_g = (1.0 + _z_g) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+                _sigma_g_theta = np.sqrt((theta_s * _sigma_g) ** 2 + _sigma_pv_g**2)
+                _z_g_theta = _z_g + theta_b * (1.0 + _z_g)
+            else:
+                _z_g_theta = _z_g
+                _sigma_g_theta = _sigma_g
+        else:
+            raise ValueError(f"theta_zwindow must be 'off' or 'on', got {theta_zwindow!r}")
+
+        redshift_filter_mask = (z_min <= _z_g_theta + _z_window_k * _sigma_g_theta) & (
+            z_max >= _z_g_theta - _z_window_k * _sigma_g_theta
         )
         candidate_hosts_without_bh_mass = candidate_hosts[redshift_filter_mask]
 
+        # Single read/validate site for mass_filter_geometry/mass_filter_k
+        # (charter node B5.1, PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md
+        # §2; ledger rows #220-#223). `mass_filter_k` REPLACES
+        # `sigma_multiplier` as the mass-window half-width; `sigma_multiplier`
+        # from here on feeds ONLY the sky-cone radius above. Default
+        # `mass_filter_k=1.5` matches the current call-site
+        # `sigma_multiplier=1.5`, so the default pairing
+        # (geometry="linear", k=1.5) reproduces the pre-flag mask bit-for-bit
+        # (regression plan item 1 / invariant 1).
+        if mass_filter_geometry not in ("linear", "log"):
+            raise ValueError(
+                f"mass_filter_geometry must be 'linear' or 'log', got {mass_filter_geometry!r}"
+            )
+        _mass_filter_k = float(mass_filter_k)
+        if not np.isfinite(_mass_filter_k):
+            raise ValueError(f"mass_filter_k must be finite, got {mass_filter_k!r}")
+
         # Single read/validate site for mass_filter_sigma (rows #198-#202;
         # "symmetric" adopted as production per PROPOSAL_MASS_FILTER_
-        # SYMMETRIC_20260825.md sec 7(a)): "symmetric" (default) scales
-        # BH_MASS_ERROR by the SAME sigma_multiplier as the GW side on both
-        # window sides; "asymmetric" pins the retired pre-flag counterfactual
-        # (galaxy error at x1). Scope: the MASS filter only.
+        # SYMMETRIC_20260825.md sec 7(a)): "symmetric" (default) scales the
+        # candidate/galaxy-side error by the SAME k as the GW side (linear:
+        # BH_MASS_ERROR; log: σ_lnM); "asymmetric" pins the retired pre-flag
+        # counterfactual (galaxy error at its bare, un-k-scaled value; k=1
+        # equivalent). Scope: the MASS filter only. This split is orthogonal
+        # to mass_filter_geometry -- both flags are read independently, each
+        # at its own single site.
         if mass_filter_sigma == "asymmetric":
             _bh_mass_error_multiplier: float = 1.0
         elif mass_filter_sigma == "symmetric":
-            _bh_mass_error_multiplier = float(sigma_multiplier)
+            _bh_mass_error_multiplier = _mass_filter_k
         else:
             raise ValueError(
                 f"mass_filter_sigma must be 'asymmetric' or 'symmetric', got {mass_filter_sigma!r}"
             )
 
-        mass_filter_mask = (
-            (M_z - M_z_sigma * sigma_multiplier) / (1 + z_max)
-            <= candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
-            + candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
-            * _bh_mass_error_multiplier
-        ) & (
-            candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
-            - candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
-            * _bh_mass_error_multiplier
-            <= (M_z + M_z_sigma * sigma_multiplier) / (1 + z_min)
-        )
+        if mass_filter_geometry == "linear":
+            mass_filter_mask = (
+                (M_z - M_z_sigma * _mass_filter_k) / (1 + z_max)
+                <= candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
+                + candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
+                * _bh_mass_error_multiplier
+            ) & (
+                candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
+                - candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
+                * _bh_mass_error_multiplier
+                <= (M_z + M_z_sigma * _mass_filter_k) / (1 + z_min)
+            )
+        else:
+            # "log" (PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2/§4):
+            # same interval-overlap test, both sides re-expressed in
+            # ln-space. sigma_lnM,z = M_z_sigma/M_z is the small-error
+            # correspondence (Var[ln M] ~= (sigma_M/M)^2 to leading order);
+            # sigma_lnM = BH_MASS_ERROR/BH_MASS is already the R&V15
+            # ln-space budget the catalogue error was built from (no
+            # re-derivation, sec 1). k->infinity and sigma->0 limiting
+            # cases (sec 5) both agree with the linear geometry by
+            # construction of this closed form.
+            if not (M_z > 0):
+                raise ValueError(f"mass_filter_geometry='log' requires M_z > 0, got {M_z!r}")
+            _sigma_lnM_z = M_z_sigma / M_z
+            _gw_lo = M_z * np.exp(-_mass_filter_k * _sigma_lnM_z) / (1 + z_max)
+            _gw_hi = M_z * np.exp(+_mass_filter_k * _sigma_lnM_z) / (1 + z_min)
+            _sigma_lnM = (
+                candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
+                / candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
+            )
+            _cand_lo = candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS] * np.exp(
+                -_bh_mass_error_multiplier * _sigma_lnM
+            )
+            _cand_hi = candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS] * np.exp(
+                +_bh_mass_error_multiplier * _sigma_lnM
+            )
+            mass_filter_mask = (_gw_lo <= _cand_hi) & (_cand_lo <= _gw_hi)
 
         candidate_hosts_with_bh_mass = candidate_hosts_without_bh_mass[mass_filter_mask]
         possible_hosts_without_bh_mass = [

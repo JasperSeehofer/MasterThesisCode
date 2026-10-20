@@ -1,0 +1,32 @@
+{
+  "check_a_byte_identity": {
+    "n_events": 50,
+    "n_cand_per_event": 2000,
+    "total_pairs": 100000,
+    "mismatches": 0,
+    "mismatch_examples": []
+  },
+  "check_b_fleet_numbers": {
+    "catalogue_md5": "c52c13b5cab61f6b3f04bbe202550969",
+    "n_events_loaded": 2261,
+    "totals": {
+      "i_linear_k1.5": {
+        "n_all": 2249231,
+        "n_pass": 2154045
+      },
+      "iii_log_k3.0": {
+        "n_all": 2249231,
+        "n_pass": 1563411
+      }
+    },
+    "pass_fraction": {
+      "i_linear_k1.5": 0.9576806472967873,
+      "iii_log_k3.0": 0.6950868985888955
+    },
+    "truth_valid_n": 2261,
+    "retention": {
+      "i_linear_k1.5": 0.9566563467492261,
+      "iii_log_k3.0": 0.7890314020344981
+    }
+  }
+}

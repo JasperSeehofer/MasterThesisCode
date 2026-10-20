@@ -1,0 +1,49 @@
+{
+  "id": "m65-r1-darksiren-manyfold",
+  "title": "M65 R1 — EMRI kill-gate (3), the m1 adjudication, and darksiren-emri's vault wiring",
+  "date": "2026-09-22",
+  "mission": "M65",
+  "status": "open",
+  "kind": ["ruling", "ruling", "ruling"],
+  "summary": "darksiren-emri is now wired into the vault (THREAD.md + CONVENTIONS.md committed; entity-page and CLAUDE.md patches proposed, not applied). The m1 docket, unadjudicated since 2026-09-04, is adjudicated: UNRESOLVED-AS-REGISTERED — the register has no rule for a posterior where TUNED and NOT-TUNED-AT-RAIL both fire, so no tie-break was invented. An independent verifier reproduced all four numbers exactly and confirmed the registration was genuinely sealed before the result (threshold block byte-identical ~11 h pre-run). Two things you should know before ruling: 2.73 sigma is distance to the ANCHOR — from the actual truth it is 3.02 sigma, outside 3 sigma; and T-1 could not run for TWO reasons, not one — no cluster credential, AND your own R27 bar ('no (m2) launch until ratified'). m1 does not discharge T-1 and is not booked as doing so.",
+  "questions": [
+    {
+      "text": "Kill-gate (3) fires 2026-09-23. Your 2026-09-21 extension was conditioned on running T-1 AND adjudicating m1 — m1 is done, but T-1 is blocked by two gates and cannot be met as written. How do you want (3) disposed?",
+      "kind": "go-kill",
+      "chips": [
+        { "label": "Ship methods now + preserve separately", "consequence": "(3) fires as written: methods paper, closure reported as unblinded. The workspace copy-off is treated as its own P0 action rather than being bundled with the science decision — the two are only linked because one date got reused for both." },
+        { "label": "Ship as methods paper", "consequence": "(3) fires as written. Closure reported as unblinded, not as an H0 measurement. The redteam review already fences what such a paper may not claim without T-1/T-2/T-3." },
+        { "label": "Extend again, with a named date", "consequence": "Keeps the measurement framing alive — but needs all three: a date, M38 actually dispatched, and a preservation plan. Without them the same card returns." },
+        { "label": "Other — I'll say in free text", "consequence": "Nothing is banked; M65 has made no call." }
+      ],
+      "recommend": "Ship methods now + preserve separately"
+    },
+    {
+      "text": "m1 cell disposition (docket R25, open since 2026-09-04). The posterior satisfies TUNED (2.73 sigma / 2.50 sigma, 1D agreeing) AND NOT-TUNED-AT-RAIL (4.4% of mass on the 0.600 floor, floor 1e-3) at the same time; the register has no precedence rule and its INTERMEDIATE cell says 'neither'. Which binds?",
+      "kind": "free",
+      "chips": [
+        { "label": "(a) NOT-TUNED-AT-RAIL, read as a bound", "consequence": "The chair's own flagged recommendation at R25, with the sigma-distance reported alongside. Implies ratifying the R28 pool-pin correction as an erratum." },
+        { "label": "(b) TUNED", "consequence": "Note what this commits to: a posterior lying OUTSIDE 3 sigma of the actual truth (3.02 sigma) is ruled 'tuned to the 0.73-production value'. Per draft SS7 this also HALTs paper claims." },
+        { "label": "(c) INTERMEDIATE, banked", "consequence": "The band question returns with the sealed (m2) run. See Q1b in the verdict doc: the PARENT register says INTERMEDIATE is 'none or several of the above', which covers both-fire exactly — ruling (c) by text rather than by fiat." },
+        { "label": "NO-READ under the registered text", "consequence": "R28's alternative: the run used a different injection pool than the one registered and STOP-gated. Refusing the pin correction voids the read entirely and moots the tie." }
+      ]
+    },
+    {
+      "text": "Two vault-wiring patches are proposed but NOT applied (existing-file edits are proposals): a '## Vault Wiring' section for wiki/entities/master-thesis-code.md, and a vault-wiring section for darksiren-emri's own CLAUDE.md. Apply which?",
+      "kind": "free",
+      "chips": [
+        { "label": "Apply both", "consequence": "Completes the bidirectional wiring. Also pulls in three stale-fact fixes on the entity page (wrong local checkout path, missing hypothesis-ledger link) and a stale wiki/index.md entry that still calls this thread '(completed)'." },
+        { "label": "Entity page only", "consequence": "Vault side wired; the repo's CLAUDE.md keeps no pointer back to the vault." },
+        { "label": "CLAUDE.md only", "consequence": "Repo side wired; the entity page stays without a Vault Wiring section (it would be the vault's first)." },
+        { "label": "Neither yet", "consequence": "THREAD.md and CONVENTIONS.md are already committed and readable by /cartographer regardless; the patches can wait." }
+      ]
+    }
+  ],
+  "links": [
+    { "label": "Kill-gate memo — the decision and why (react)", "href": "/app/previews/m65-r1-darksiren-manyfold/MEMO-killgate-3.md" },
+    { "label": "m1 verdict — full adjudication (react)", "href": "/app/previews/m65-r1-darksiren-manyfold/VERDICT-m1.md" },
+    { "label": "Independent verification of the numbers (context)", "href": "/app/previews/m65-r1-darksiren-manyfold/VERIFY-R1.md" },
+    { "label": "Proposed patches, verbatim (react)", "href": "/app/previews/m65-r1-darksiren-manyfold/PROPOSALS.md" },
+    { "label": "Full mission report (context)", "href": "/app/previews/m65-r1-darksiren-manyfold/REPORT-R1.md" }
+  ]
+}

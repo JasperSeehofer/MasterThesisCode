@@ -234,7 +234,9 @@ from darksiren_emri.bayesian_inference.bayesian_statistics import (
     _warn_zoa_hostz_kernel_fallback,
     path_a_completion_numerators,
     path_a_mixture_objects,
+    precompute_global_catalog_selection,
     precompute_phi_marginal_survival,
+    precompute_phi_selection_integrals,
 )
 from darksiren_emri.bayesian_inference.simulation_detection_probability import (
     SimulationDetectionProbability,
@@ -1124,6 +1126,121 @@ def build_b0i_2d_selection_objects(
     return completeness, phi_survival_table, detection_probability
 
 
+# ── B8.2 S1 (results/campaign51_20260728/realistic_20260729/fanout1_20260829/
+# B8_2_HARNESS_DESIGN_20260829.md §2.1; launched under rows #255/#268 -- tree 2
+# node B8.2.S1) -- the "mixture_selected" host_mode's class weight. ─────────
+
+
+def compute_catalogue_class_weight_p_g(
+    galaxy_catalog: GalaxyCatalogueHandler,
+    h_true: float = H_TRUE,
+    injection_dir: str = INJECTION_POOL_DIR,
+    pdet_dl_bins: int = 60,
+    pdet_mass_bins: int = 40,
+    pdet_estimator: str = "local_linear",
+    allow_low_pdet_coverage: bool = True,
+    z_max_cap: float = HOST_DRAW_Z_MAX,
+) -> dict[str, float]:
+    r"""The estimator's own catalogue-class weight ``P_G = alpha_G^phi(h_true) / D_tilde^phi(h_true)``.
+
+    Design §2.1 item 1: computed from the SAME production construction calls
+    :func:`build_b0i_2d_selection_objects` already makes (``from_cache_or_build``,
+    :class:`SimulationDetectionProbability`, :func:`precompute_phi_marginal_survival`),
+    plus the two additional production module-level calls the mixture weight
+    itself needs: :func:`precompute_phi_selection_integrals` (``beta_G^phi``,
+    ``beta_Gbar^phi``) and :func:`precompute_global_catalog_selection` at
+    ``with_bh_mass=False`` (``Sigma^phi``) and ``with_bh_mass=True``
+    (``Sigma^4D``, the SAME catalogue rows/weights/eligibility as ``Sigma^phi``
+    per decision D2). The four legs are assembled by the REAL
+    :func:`~darksiren_emri.bayesian_inference.bayesian_statistics.path_a_mixture_objects`
+    (not reimplemented) -- its ``w_tilde_G`` output IS ``P_G`` by construction
+    (the SAME scalar ``evaluate()`` itself would report as ``w_tilde_G`` in
+    ``event_likelihoods.csv`` for a run over this catalogue at this ``h_true``,
+    design §0's banked-CSV note: production iiib reads ``w_tilde_G = 0.0620``).
+
+    Harness-side only (no production file edited); NOT called by
+    :func:`~darksiren_emri.validation.correspondence_1d.MirrorUniverseGenerator.draw_realization`
+    itself -- callers build ``P_G`` here, exactly once per ``(catalogue, h_true)``,
+    and pass it into ``draw_realization(..., host_mode="mixture_selected",
+    class_weight_p_g=P_G)``, mirroring how ``completeness``/``phi_survival_table``
+    are already built outside ``draw_realization`` and threaded in.
+
+    Args:
+        galaxy_catalog: The pinned (or dosed) catalogue handler -- the SAME
+            handler :func:`run_mirror_seed_inprocess` receives as
+            ``galaxy_catalog``, so ``Sigma^phi``/``Sigma^4D`` are summed over
+            the identical rows a wholesale ``evaluate()`` run would use.
+        h_true: The mirror-universe truth (default :data:`H_TRUE`) -- the
+            ONLY ``h`` this weight is evaluated at (design §2.1: the mixture
+            law is a truth-only object, not a function of the evaluation
+            grid).
+        injection_dir: The pinned injection pool (default :data:`INJECTION_POOL_DIR`).
+        pdet_dl_bins, pdet_mass_bins, pdet_estimator: :data:`PRODUCTION_FLAGS`
+            values, forwarded to :func:`build_b0i_2d_selection_objects`.
+        allow_low_pdet_coverage: Forwarded to :func:`build_b0i_2d_selection_objects`.
+        z_max_cap: Forwarded to :func:`build_b0i_2d_selection_objects` and to
+            both :func:`precompute_global_catalog_selection` calls (default
+            :data:`HOST_DRAW_Z_MAX`, matching the ``S_bar_phi`` table's own
+            domain).
+
+    Returns:
+        ``{"p_g", "alpha_G_phi", "D_tilde_phi", "beta_G_phi", "beta_Gbar_phi",
+        "sigma_phi", "sigma_4d"}`` -- ``p_g`` is
+        :func:`~darksiren_emri.bayesian_inference.bayesian_statistics.path_a_mixture_objects`'s
+        ``w_tilde_G`` at ``h_true``, the rest are the intermediate legs
+        (reported so a caller/registration can audit the derivation without
+        recomputing it).
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7)
+        (:func:`path_a_mixture_objects`'s own reference).
+    """
+    completeness, phi_survival_table, detection_probability = build_b0i_2d_selection_objects(
+        h_true=h_true,
+        injection_dir=injection_dir,
+        pdet_dl_bins=pdet_dl_bins,
+        pdet_mass_bins=pdet_mass_bins,
+        pdet_estimator=pdet_estimator,
+        allow_low_pdet_coverage=allow_low_pdet_coverage,
+        z_max_cap=z_max_cap,
+    )
+    beta_G_phi_table, beta_Gbar_phi_table = precompute_phi_selection_integrals(
+        h_values=[h_true],
+        phi_survival_table=phi_survival_table,
+        completeness=completeness,
+    )
+    sigma_phi_table = precompute_global_catalog_selection(
+        h_values=[h_true],
+        galaxy_catalog=galaxy_catalog,
+        detection_probability_obj=detection_probability,
+        with_bh_mass=False,
+        z_max_cap=z_max_cap,
+        phi_survival_table=phi_survival_table,
+    )
+    sigma_4d_table = precompute_global_catalog_selection(
+        h_values=[h_true],
+        galaxy_catalog=galaxy_catalog,
+        detection_probability_obj=detection_probability,
+        with_bh_mass=True,
+        z_max_cap=z_max_cap,
+    )
+    mix = path_a_mixture_objects(
+        beta_G_phi=beta_G_phi_table[h_true],
+        beta_Gbar_phi=beta_Gbar_phi_table[h_true],
+        sigma_phi=sigma_phi_table[h_true],
+        sigma_4d=sigma_4d_table[h_true],
+    )
+    return {
+        "p_g": mix["w_tilde_G"],
+        "alpha_G_phi": mix["alpha_G_phi"],
+        "D_tilde_phi": mix["D_tilde_phi"],
+        "beta_G_phi": beta_G_phi_table[h_true],
+        "beta_Gbar_phi": beta_Gbar_phi_table[h_true],
+        "sigma_phi": sigma_phi_table[h_true],
+        "sigma_4d": sigma_4d_table[h_true],
+    }
+
+
 # ── PA-2 (prereg PREREGISTRATION_B0_IDENTITY_20260823.md; A20 review
 # A20_REVIEW_B0_DESIGN_20260823.md Finding 2) -- estimator-aligned
 # catalogue-hosted draw ("catalogue_selected", the b0i arm). Finding 2
@@ -1161,7 +1278,11 @@ _KERNEL_SMEAR_CHUNK: int = 100_000
 _B0I_KERNEL_SIGMA_MULTIPLIER = 4.0
 # mirrors the non-volume_trunc z_min floor (bayesian_statistics.py:5921-5926).
 _B0I_KERNEL_Z_FLOOR = 1.0e-6
-_B0I_ZTRUE_GRID_N = 401  # per-host inverse-CDF draw grid resolution (fine; n=200 events only)
+# Per-host inverse-CDF draw grid resolution. 401 → 4001 (PA-HIER-30 free
+# hardening, same gated commit as the θ-hook): at 401 nodes, hosts whose ±4σ
+# window straddles the S̄_φ table's z_max = 1.5 edge showed ~13-15% relative
+# std inflation; 4001 nodes converge (rejection-sampling cross-check).
+_B0I_ZTRUE_GRID_N = 4001
 
 
 def host_z_error_eff(
@@ -1170,7 +1291,9 @@ def host_z_error_eff(
     r"""Effective photo-z kernel width: catalogue error (+) residual PV dispersion.
 
     Byte-identical functional form to production's per-host sigma
-    (``bayesian_statistics.py:5908-5909``):
+    (``bayesian_statistics.py`` — ``single_host_likelihood``'s and
+    ``single_host_likelihood_batch``'s ``host_z_error_eff`` lines; the
+    ``:5908-5909`` citation was stale, PA-HIER-21):
     ``sqrt(z_error^2 + sigma_z_pv^2)``, ``sigma_z_pv = (1+z) *
     SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S`` -- currently a no-op since
     :data:`~darksiren_emri.constants.SIGMA_V_PEC_KM_S` is ``0.0``, kept for
@@ -1447,6 +1570,7 @@ def _draw_kernel_survival_redshifts(
     host_qS: npt.NDArray[np.float64],
     h: float = H_TRUE,
     n_grid: int = _B0I_ZTRUE_GRID_N,
+    apply_survival: bool = True,
 ) -> npt.NDArray[np.float64]:
     r"""Per-event ``z_true`` draw from ``k_g(z) S_bar_phi(z;h)`` (PA-11), one per host.
 
@@ -1477,6 +1601,21 @@ def _draw_kernel_survival_redshifts(
             as ``host_z``.
         h: Dimensionless Hubble parameter (default :data:`H_TRUE`).
         n_grid: Per-host inverse-CDF grid resolution.
+        apply_survival: If ``True`` (default -- the "catalogue_selected"/b0i
+            and "mixture_selected" callers, UNCHANGED), the density includes
+            the ``S_bar_phi(z;h)`` factor as always. If ``False`` (the
+            "catalogue_selected_2d"/b0i2d 2D call site ONLY,
+            :func:`_draw_2d_accepted_latents`), the density drops the
+            ``S_bar_phi`` factor: ``density_i = kernel_i * w_pop_eff_i``, per
+            PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(ii) -- the 2D venue
+            already applies a per-event, per-mass ``S_4D`` Bernoulli
+            acceptance downstream (:func:`_draw_2d_accepted_latents`'s
+            accept step); folding the mass-marginal ``S_bar_phi(z;h)`` into
+            this z-density as well double-counts survival. This flag changes
+            NOTHING for any caller that does not pass it explicitly, so the
+            1D "catalogue_selected" (b0i) and "mixture_selected" arms'
+            output is bit-identical to before this change (author-ratified
+            L8 non-regression constraint).
 
     Returns:
         Drawn ``z_true`` per event, shape ``(n,)``.
@@ -1493,8 +1632,11 @@ def _draw_kernel_survival_redshifts(
         w_pop_eff_i = _kernel_w_pop_eff(z_i_grid[None, :], completeness, host_pixels[i : i + 1], h)[
             0
         ]
-        s_i = np.interp(z_i_grid, z_grid, s_phi)
-        density_i = kernel_i * w_pop_eff_i * s_i
+        if apply_survival:
+            s_i = np.interp(z_i_grid, z_grid, s_phi)
+            density_i = kernel_i * w_pop_eff_i * s_i
+        else:
+            density_i = kernel_i * w_pop_eff_i
         z_true[i] = _inverse_cdf_draw(rng, 1, z_i_grid, density_i)[0]
     return z_true
 
@@ -1546,9 +1688,26 @@ def draw_isotropic_sky(
 # Numerical safety floors ONLY (never a physical claim) -- a several-sigma-low
 # tail draw of a Gaussian mass/observation must not become non-positive and
 # propagate a NaN/inf through 1/M_z,det-type production ratios downstream.
-_M2D_MASS_FLOOR = 1.0  # M_sun, source-frame latent mass
 _M2D_OBS_M_FLOOR = 1.0  # M_sun, observed (detector-frame) mass
 _M2D_OBS_DL_FLOOR = 1.0e-6  # Gpc, same floor draw_realization already uses for d_L
+
+# [DEFECT 1 / R-2D-1 repair, PA-2D-10 residual accounting
+# (p32d_residual_accounting_20260827.md)]: the LATENT source-frame mass
+# M ~ N(m_eff, sigma) in :func:`_draw_2d_accepted_latents` no longer gets a
+# floor-CLIP to a positive value.  Clipping put a spurious point mass of
+# events at M_true == 1.0 M_sun INSIDE the venue's accepted class-G
+# population (measured: 793/4800 drawn latents exactly at the old floor,
+# 372 of which cleared F-0 and then w2 == 1.0 -- contributing a hard ZERO to
+# the LHS numerator while still counting in the /200 denominator), while the
+# companion that DEFINES Sigma~^4D applies S_4D(M <= 0) := 0
+# (p3_2d_companion.py:281, guard F2 MINOR-6) -- i.e. the target law assigns
+# these events measure ZERO. Clip-then-accept therefore drew from the WRONG
+# support. The repair instead REJECTS any M <= 0 draw outright (the round's
+# ``valid_mass_batch`` mask below is ANDed into ``accept_mask``) so it is
+# never accepted and the batch loop redraws a fresh host/z/mass triple for
+# that slot on the next round -- the accepted sample's support now matches
+# the target law's (M > 0) exactly, with no post-hoc filtering of an
+# already-drawn sample (which would itself bias the draw).
 
 # Rejection-sampling batch/round bounds for the class-G 2D latent draw
 # (:func:`_draw_2d_accepted_2d_latents`) -- "chunk-safe": each round draws a
@@ -1570,9 +1729,12 @@ class _B0i2DLatents:
     Attributes:
         host_idx: Accepted hosts' pool row index, shape ``(n,)``.
         z_true: Accepted hosts' kernel-smeared drawn true redshift, shape ``(n,)``
-            (:func:`_draw_kernel_survival_redshifts`, UNCHANGED from the 1D
-            "catalogue_selected" mode -- the mass-law extension does not
-            perturb the z-draw law).
+            (:func:`_draw_kernel_survival_redshifts` with ``apply_survival=False``
+            -- PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(ii)/Option A': the
+            ``S_bar_phi(z;h)`` factor is DROPPED here for the 2D arm only,
+            since the venue's per-event, per-mass ``S_4D`` Bernoulli
+            acceptance (below) already applies survival once; the 1D
+            "catalogue_selected" mode's density is unaffected).
         host_phiS: Accepted hosts' sky azimuth, shape ``(n,)``.
         host_qS: Accepted hosts' sky polar angle, shape ``(n,)``.
         M_true: Latent source-frame host mass ``M ~ p_gal(.|host)``, shape ``(n,)``.
@@ -1582,9 +1744,13 @@ class _B0i2DLatents:
             accept probability that produced this row).
         s_tilde_phi_host: The 1D ``S̃_φ,g`` of the accepted host (same object
             "catalogue_selected" records as ``s_tilde_phi_host`` -- carried
-            here unchanged; the b0i-2D host-DRAW weighting itself is the
-            SAME ``w_g * S̃_φ,g`` law, PREREGISTRATION_P3_2D_20260825.md §3.2's
-            venue-drift control convention), shape ``(n,)``.
+            here UNCHANGED as a diagnostic column only, per
+            PREREGISTRATION_P3_2D_20260825.md §3.2's venue-drift control
+            convention. As of PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(i)/
+            Option A' the b0i-2D host-DRAW weighting ITSELF is the PLAIN
+            rate weight ``w_g`` (normalized), NOT ``w_g * S̃_φ,g`` -- this
+            column is retained so R4-style venue-drift audits stay possible,
+            but it no longer describes the draw law), shape ``(n,)``.
         n_drawn_total: Total (accepted + rejected) candidate draws consumed
             across every round -- diagnostic only (GATE ACC-style disclosure).
         n_rounds: Number of batch rounds the rejection loop needed.
@@ -1616,31 +1782,56 @@ def _draw_2d_accepted_latents(
     r"""[P3-2D] rejection-sample ``n`` accepted class-G 2D latents.
 
     Implements the registered generative step of PREREGISTRATION_P3_2D_20260825.md §2(ii)/§3.2
-    item 2 as standard rejection sampling (algorithmically equivalent to, and cheaper to code
-    than, an explicit ``S̃_4D,g``-weighted host reweighting -- drawing host/``z_true`` from their
-    UNCHANGED "catalogue_selected" laws (``w_g*S̃_φ,g`` / kernel-smeared ``z_true``, see the module
-    docstring's "PA-2" section) and then a latent mass ``M ~ p_gal(.|host, z_true)`` (the
-    Eddington-shifted gaussian-branch prior, mirroring ``_host_M_eff``/``mu_gal_frac`` -- see the
-    section header above this function), accepting the WHOLE triple with probability
+    item 2 as standard rejection sampling: drawing host from the PLAIN rate weight ``w_g``
+    (normalized) and ``z_true`` from the ``S_bar_phi``-FREE kernel density
+    (:func:`_draw_kernel_survival_redshifts` with ``apply_survival=False`` -- see the module
+    docstring's "PA-2" section for the 1D "catalogue_selected" law this arm used to share
+    verbatim), then a latent mass ``M ~ p_gal(.|host, z_true)`` (the Eddington-shifted
+    gaussian-branch prior, mirroring ``_host_M_eff``/``mu_gal_frac`` -- see the section header
+    above this function), accepting the WHOLE triple with probability
     ``Bernoulli(S_4D(d_L(z_true;h), M_true*(1+z_true)))`` reproduces exactly the target joint law
-    up to the (unchanged) z-marginal's own existing survival weighting -- "on top of the existing
-    F-0 machinery" per the task spec, i.e. an ADDITIONAL selection layer, not a replacement of the
-    quality-based F-0 filter :func:`run_mirror_seed_inprocess`'s ``evaluate()`` call applies later.
+    ``w_g * k̄_g(z) * p_gal(M|g) * S_4D(z,M)`` -- "on top of the existing F-0 machinery" per the
+    task spec, i.e. an ADDITIONAL selection layer, not a replacement of the quality-based F-0
+    filter :func:`run_mirror_seed_inprocess`'s ``evaluate()`` call applies later.
+
+    [PHYSICS_CHANGE_SBARPHI_20260827.md §2.2, Option A', 2026-09-02] Prior to this change, the
+    host weight was ``w_g * S̃_φ,g`` and the z-density carried its own ``S_bar_phi(z;h)`` factor,
+    so this rejection step ALSO applying a per-mass ``S_4D`` Bernoulli double-counted survival
+    (the mass-marginal ``S̃_φ,g``/``S_bar_phi`` and the pointwise ``S_4D`` are the same physical
+    survival object -- see the physics-change presentation §3). The host weight and z-density
+    are corrected here (this function's caller passes the plain-``w_g`` ``host_w`` and this
+    function passes ``apply_survival=False``); the mass draw and Bernoulli gate are UNCHANGED.
+
+    [DEFECT 1 repair, PA-2D-10] The latent mass draw's support is ``M > 0``: any candidate with
+    ``M_true <= 0`` is REJECTED unconditionally (never floor-clipped into the accepted sample) so
+    the venue's accepted-event support matches the companion's ``S_4D(M <= 0) := 0`` convention
+    that defines :math:`\tilde{\Sigma}^{4D}`. Rejection happens INSIDE the batch loop (an invalid
+    draw simply fails to contribute to ``n_accepted`` and the next round redraws a fresh triple for
+    that slot) -- never as a post-hoc filter of an already-materialized sample, which would bias
+    the draw by depleting only the low tail without replacing it.
 
     Draws in BOUNDED batches (chunk-safe, :data:`_M2D_MIN_BATCH`/:data:`_M2D_MAX_BATCH`), hosts
     drawn WITH replacement within/across batches (the pool is the full reduced catalogue, ~2.3e7
     rows -- a documented, negligible-probability simplification relative to the 1D mode's
     without-replacement host draw, flagged for review). Deterministic given ``rng``'s state (every
     draw -- host index, per-host inverse-CDF uniform, mass normal, Bernoulli uniform -- consumes
-    from the SAME stream in a fixed order per round).
+    from the SAME stream in a fixed order per round, UNCHANGED by the defect-1 repair: the M <= 0
+    rejection is an extra AND-condition on ``accept_mask``, not an extra RNG draw).
 
     Args:
         rng: Seeded generator.
         pool: Host pool; :attr:`HostPool.M` and :attr:`HostPool.M_error` must both be populated.
-        host_w: Normalized host-draw weights (:func:`catalogue_selected_host_draw_weights`'s first
-            return value), shape ``(pool.n,)``.
-        s_tilde_phi: The SAME function's third return value (``S̃_φ,g`` per host), shape
-            ``(pool.n,)`` -- recorded per accepted event, not consumed by the draw itself.
+        host_w: Normalized host-draw weights. As of PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(i)/
+            Option A', callers MUST pass the normalized PLAIN rate weight (``w_g`` --
+            :func:`catalogue_selected_host_draw_weights`'s SECOND return value, renormalized by
+            the caller) here, NOT that function's first return value (``w_g * S̃_φ,g``
+            normalized, which is what the 1D "catalogue_selected"/b0i arm still uses -- see
+            L8/§9.1 of the physics-change presentation: this function is 2D-only, so the swap is
+            confined to its caller and does not touch the 1D arm), shape ``(pool.n,)``.
+        s_tilde_phi: :func:`catalogue_selected_host_draw_weights`'s third return value
+            (``S̃_φ,g`` per host), shape ``(pool.n,)`` -- recorded per accepted event as a
+            venue-drift-audit diagnostic column ONLY (:attr:`_B0i2DLatents.s_tilde_phi_host`),
+            not consumed by the draw itself either before or after this change.
         phi_survival_table: See :func:`kernel_smeared_survival`.
         completeness: Per-pixel completeness model.
         detection_probability: A constructed
@@ -1659,7 +1850,13 @@ def _draw_2d_accepted_latents(
         ValueError: If ``pool.M``/``pool.M_error`` is ``None``.
         RuntimeError: If :data:`_M2D_MAX_ROUNDS` batches do not accumulate ``n`` accepted events
             (a GATE-ACC-style closed-loop STOP -- a pathologically low-S_4D venue/host-weighting
-            combination, not silently under-filled).
+            combination, not silently under-filled). The defect-1 M <= 0 rejection lowers the
+            per-round accept rate (measured pre-repair: ~16.5% of drawn latents at the old floor,
+            i.e. would now be rejected) but does not change the loop's termination structure --
+            :data:`_M2D_BATCH_MULTIPLIER`'s 4x-remaining batch sizing (capped at
+            :data:`_M2D_MAX_BATCH`) already has slack for accept rates well below 1, and this guard
+            still fires loudly rather than silently under-filling if a venue/weighting combination
+            ever drives the valid-mass rate low enough to starve it.
     """
     if pool.M is None or pool.M_error is None:
         raise ValueError(
@@ -1684,6 +1881,10 @@ def _draw_2d_accepted_latents(
         host_z_error_listed = pool.z_error[host_idx_batch]
         host_phiS_batch = pool.phiS[host_idx_batch]
         host_qS_batch = pool.qS[host_idx_batch]
+        # PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(ii)/Option A': apply_survival=False drops the
+        # S_bar_phi(z;h) factor from this z-density -- this is the 2D-only call site; the 1D
+        # "catalogue_selected"/b0i and "mixture_selected" call sites do not pass this flag and
+        # are therefore bit-identical to before this change (L8).
         z_true_batch = _draw_kernel_survival_redshifts(
             rng,
             host_z_listed,
@@ -1693,6 +1894,7 @@ def _draw_2d_accepted_latents(
             host_phiS_batch,
             host_qS_batch,
             h=h,
+            apply_survival=False,
         )
 
         # Latent source-frame mass: M ~ N(host_M_eff, host_M_error) (the gaussian p_gal branch,
@@ -1705,18 +1907,31 @@ def _draw_2d_accepted_latents(
         valid_sigma = (host_m_error > 0.0) & np.isfinite(host_m_error)
         sigma = np.where(valid_sigma, host_m_error, 0.0)
         m_true_batch = m_eff + sigma * rng.normal(size=batch)
-        m_true_batch = np.clip(m_true_batch, _M2D_MASS_FLOOR, None)
+
+        # [DEFECT 1 repair] M <= 0 is REJECTED, not floor-clipped (see the
+        # comment block above this function). ``valid_mass_batch`` is ANDed
+        # into ``accept_mask`` below so an invalid draw can never be
+        # accepted; the round loop naturally redraws a fresh triple for that
+        # slot next round -- no RNG stream reordering (host/z/mass/uniform
+        # are still drawn in the same fixed order every round).
+        valid_mass_batch = m_true_batch > 0.0
         m_z_true_batch = m_true_batch * (1.0 + z_true_batch)
 
         d_l_true_batch = np.asarray(dist_vectorized(z_true_batch, h=h), dtype=np.float64)
+        # Feed the interpolator a numerically-safe floored mass for the
+        # invalid (M <= 0) rows ONLY, purely to avoid NaN/inf propagating
+        # out of `detection_probability_with_bh_mass_interpolated` (e.g. its
+        # log10(M_z) branch) for rows that are rejected unconditionally
+        # below regardless of the S_4D value computed for them.
+        m_z_for_s4d = np.where(valid_mass_batch, m_z_true_batch, _M2D_OBS_M_FLOOR)
         s4d_batch = np.asarray(
             detection_probability.detection_probability_with_bh_mass_interpolated(
-                d_l_true_batch, m_z_true_batch, host_phiS_batch, host_qS_batch, h=h
+                d_l_true_batch, m_z_for_s4d, host_phiS_batch, host_qS_batch, h=h
             ),
             dtype=np.float64,
         )
         u_batch = rng.uniform(size=batch)
-        accept_mask = u_batch < s4d_batch
+        accept_mask = valid_mass_batch & (u_batch < s4d_batch)
 
         take = min(int(accept_mask.sum()), remaining)
         if take > 0:
@@ -1900,11 +2115,14 @@ class MirrorUniverseGenerator:
             "population_selected",
             "catalogue_selected",
             "catalogue_selected_2d",
+            "mixture_selected",
         ] = "catalogue",
         completeness: CompletenessModel | None = None,
         phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]
         | None = None,
         detection_probability: SimulationDetectionProbability | None = None,
+        class_weight_p_g: float | None = None,
+        gw_scatter: bool = True,
     ) -> pd.DataFrame:
         """Draw one mirror-universe realization: ``n_events`` synthetic CRB rows.
 
@@ -1969,13 +2187,37 @@ class MirrorUniverseGenerator:
                 ``detection_probability`` (e.g. from
                 :func:`build_b0i_2d_selection_objects`); ``host_pool`` must
                 carry both ``M`` and ``M_error``.
-            completeness: Required for ``host_mode="population_selected"``
-                or ``host_mode="catalogue_selected_2d"`` -- see
+                ``"mixture_selected"`` (B8.2 S1,
+                ``B8_2_HARNESS_DESIGN_20260829.md`` §2.1, launched under rows
+                #255/#268, tree 2 node B8.2.S1 -- "the consistent truth"): a
+                ``Binomial(n, class_weight_p_g)`` split of the ``n`` events
+                into ``n_g`` catalogue-hosted events (drawn by the EXACT
+                ``"catalogue_selected"`` law above, on the SAME ``rng``
+                stream) and ``n - n_g`` dark events (drawn by the EXACT
+                ``"population_selected"`` law above, continuing the SAME
+                stream) -- byte-for-byte reuse of both existing branches, no
+                new draw law. ``class_weight_p_g == 1.0`` reproduces
+                ``"catalogue_selected"`` bit-for-bit (no ``rng.binomial``
+                call at all -- ``n_g := n`` is set directly so the RNG
+                stream is untouched by the split decision);
+                ``class_weight_p_g == 0.0`` reproduces
+                ``"population_selected"`` bit-for-bit (``n_g := 0``,
+                likewise no ``rng.binomial`` call). Requires
+                ``phi_survival_table``, ``completeness`` AND
+                ``class_weight_p_g`` (build the latter via
+                :func:`compute_catalogue_class_weight_p_g`, the estimator's
+                own catalogue-class weight at ``H_TRUE``); ``host_pool`` must
+                carry ``M`` (unused by the 1D mixture law itself, but
+                :func:`catalogue_selected_host_draw_weights` reads it).
+            completeness: Required for ``host_mode="population_selected"``,
+                ``host_mode="catalogue_selected_2d"``, or
+                ``host_mode="mixture_selected"`` -- see
                 :func:`build_bsel_selection_objects`/
                 :func:`build_b0i_2d_selection_objects`.
             phi_survival_table: Required for ``host_mode="population_selected"``,
-                ``host_mode="catalogue_selected"``, or
-                ``host_mode="catalogue_selected_2d"`` -- see
+                ``host_mode="catalogue_selected"``,
+                ``host_mode="catalogue_selected_2d"``, or
+                ``host_mode="mixture_selected"`` -- see
                 :func:`build_bsel_selection_objects`/
                 :func:`build_b0i_2d_selection_objects`.
             detection_probability: Required (only) for
@@ -1984,6 +2226,25 @@ class MirrorUniverseGenerator:
                 (e.g. from :func:`build_b0i_2d_selection_objects`), the
                 production ``S_4D`` interpolator the latent-mass acceptance
                 step queries.
+            class_weight_p_g: Required (only) for
+                ``host_mode="mixture_selected"`` -- the estimator's own
+                catalogue-class weight at ``H_TRUE`` (``P_G =
+                alpha_G^phi/D_tilde^phi``, design §2.1), a scalar in
+                ``[0, 1]``. Build via :func:`compute_catalogue_class_weight_p_g`.
+            gw_scatter: Design §2.3 (B8.2 S1). ``True`` (default) is
+                byte-identical to every pre-existing call site: the GW
+                observation noise draws (``d_hat``/``M_hat_z`` about the
+                latent truth, and the sky offset about the host) are added as
+                before. ``False`` (Cell T, the truth-centred width-only
+                comparand for the HEAD readout's ⟨σ_h⟩, which has NO GW
+                measurement scatter) draws the SAME noise realizations from
+                the SAME ``rng`` calls -- so every OTHER draw on this stream
+                (host selection, ``z_true``, the class split) is completely
+                unaffected by this flag -- but discards them instead of
+                adding them, following the ``pp_coverage.py``
+                "draw made and discarded" convention (:data:`pp_coverage`
+                module, Q-0 note) so a paired scatter/no-scatter A/B run
+                stays on one random stream.
 
         Returns:
             A DataFrame with the SAME columns/order as
@@ -2009,7 +2270,10 @@ class MirrorUniverseGenerator:
             host_phiS = pool.phiS[host_idx]
             host_qS = pool.qS[host_idx]
             host_index_col = host_idx.astype(np.int64)
-            in_catalog_col = True
+            # Annotated (bool | array) here at first use: "mixture_selected"
+            # below assigns an array (a per-event mix of True/False), the
+            # only branch that does so.
+            in_catalog_col: bool | npt.NDArray[np.bool_] = True
         elif host_mode == "population":
             # (a) AMENDMENT A-2 (B-OUT): population-model host draw, never a
             # pinned-catalogue member -- see the module docstring's
@@ -2088,10 +2352,24 @@ class MirrorUniverseGenerator:
             host_z = z_true_col
             b0i_s_tilde_phi_host = b0i_s_tilde_phi[host_idx]
         elif host_mode == "catalogue_selected_2d":
-            # (a) [P3-2D] (b0i2d): SAME host/z_true draw law as
-            # "catalogue_selected" PLUS the venue mass-law extension -- see
-            # the module-level "[P3-2D]" section above
-            # :func:`_draw_2d_accepted_latents`.
+            # (a) [P3-2D] (b0i2d): venue mass-law extension on top of the
+            # 1D "catalogue_selected" host pool -- see the module-level
+            # "[P3-2D]" section above :func:`_draw_2d_accepted_latents`.
+            # PHYSICS_CHANGE_SBARPHI_20260827.md §2.2, Option A' (ratified,
+            # ledger row #314, 2026-09-02): the 2D branch's host/z_true draw
+            # law is NOT the same as "catalogue_selected" any more -- the
+            # host draw uses the PLAIN rate weight w_g (renormalized below,
+            # NOT catalogue_selected_host_draw_weights's first return value,
+            # which is w_g * S̃_φ,g) and the z-draw drops the S_bar_phi
+            # factor (_draw_2d_accepted_latents passes
+            # apply_survival=False to _draw_kernel_survival_redshifts) --
+            # because the 2D venue's own per-event, per-mass S_4D Bernoulli
+            # gate below already applies survival once; keeping the 1D
+            # arm's S̄_φ-weighted host/z-draw as well double-counted it
+            # (see the physics-change presentation §3). The 1D
+            # "catalogue_selected"/b0i arm and
+            # catalogue_selected_host_draw_weights's first return value are
+            # UNCHANGED (L8) -- only this branch's OWN host_w is affected.
             if phi_survival_table is None or completeness is None:
                 raise ValueError(
                     "host_mode='catalogue_selected_2d' requires completeness and "
@@ -2104,9 +2382,22 @@ class MirrorUniverseGenerator:
                     "interpolator the latent-mass acceptance step queries"
                 )
             pool = host_pool if host_pool is not None else _load_host_pool(REDUCED_CATALOGUE_PATH)
-            host_w, _b0i2d_w_g, b0i2d_s_tilde_phi = catalogue_selected_host_draw_weights(
-                pool, phi_survival_table, completeness, h=H_TRUE
+            _b0i2d_host_w_swphi, _b0i2d_w_g, b0i2d_s_tilde_phi = (
+                catalogue_selected_host_draw_weights(
+                    pool, phi_survival_table, completeness, h=H_TRUE
+                )
             )
+            # Option A'(i): plain rate-weight host draw, normalized here --
+            # do NOT use `_b0i2d_host_w_swphi` (w_g * S̃_φ,g normalized),
+            # which remains the 1D b0i arm's own weight above and is
+            # otherwise unused by this branch.
+            _b0i2d_w_g_total = float(_b0i2d_w_g.sum())
+            if not (_b0i2d_w_g_total > 0.0):
+                raise ValueError(
+                    f"catalogue_selected_2d plain rate-weight draw weights sum to <= 0 "
+                    f"({_b0i2d_w_g_total})"
+                )
+            host_w = _b0i2d_w_g / _b0i2d_w_g_total
             latents = _draw_2d_accepted_latents(
                 rng,
                 pool,
@@ -2130,11 +2421,114 @@ class MirrorUniverseGenerator:
             s4d_at_truth_col = latents.s4d_at_truth
             b0i2d_s_tilde_phi_host = latents.s_tilde_phi_host
             link_id_col = row_idx.astype(np.int64)
+        elif host_mode == "mixture_selected":
+            # (a) B8.2 S1 (B8_2_HARNESS_DESIGN_20260829.md §2.1, rows
+            # #255/#268, tree 2 node B8.2.S1): Binomial(n, class_weight_p_g)
+            # split on the SAME rng stream, then EXACT reuse of the
+            # "catalogue_selected" branch (n_g events) and the
+            # "population_selected" branch (n - n_g events) above -- no new
+            # draw law, only a class split. See the docstring's
+            # "mixture_selected" paragraph for the bit-identity guarantee at
+            # the P_G in {0, 1} limits.
+            if phi_survival_table is None or completeness is None:
+                raise ValueError(
+                    "host_mode='mixture_selected' requires completeness and "
+                    "phi_survival_table (build via build_bsel_selection_objects)"
+                )
+            if class_weight_p_g is None:
+                raise ValueError(
+                    "host_mode='mixture_selected' requires class_weight_p_g "
+                    "(the estimator's own catalogue-class weight at H_TRUE; "
+                    "build via compute_catalogue_class_weight_p_g)"
+                )
+            p_g = float(class_weight_p_g)
+            if not (0.0 <= p_g <= 1.0):
+                raise ValueError(f"class_weight_p_g must be in [0, 1]; got {p_g}")
+            # Edge cases special-cased (rather than left to rng.binomial(n, 0
+            # or 1)) so the RNG stream is UNTOUCHED by the split decision at
+            # the P_G in {0, 1} limits -- the acceptance test (design §8 S1
+            # (ii)) requires bit-for-bit reproduction of the pure arms there.
+            if p_g >= 1.0:
+                n_g = n
+            elif p_g <= 0.0:
+                n_g = 0
+            else:
+                n_g = int(rng.binomial(n, p_g))
+            n_dark = n - n_g
+
+            pool = host_pool if host_pool is not None else _load_host_pool(REDUCED_CATALOGUE_PATH)
+
+            if n_g > 0:
+                # EXACT "catalogue_selected" branch (b0i law), size n_g.
+                host_w, _mix_w_g, mix_s_tilde_phi = catalogue_selected_host_draw_weights(
+                    pool, phi_survival_table, completeness, h=H_TRUE
+                )
+                host_idx_g = rng.choice(pool.n, size=n_g, replace=False, p=host_w)
+                host_z_listed_g = pool.z[host_idx_g]
+                host_z_error_listed_g = pool.z_error[host_idx_g]
+                host_phiS_g = pool.phiS[host_idx_g]
+                host_qS_g = pool.qS[host_idx_g]
+                z_true_g = _draw_kernel_survival_redshifts(
+                    rng,
+                    host_z_listed_g,
+                    host_z_error_listed_g,
+                    phi_survival_table,
+                    completeness,
+                    host_phiS_g,
+                    host_qS_g,
+                    h=H_TRUE,
+                )
+                host_index_g = host_idx_g.astype(np.int64)
+                in_catalog_g = np.full(n_g, True)
+                s_tilde_phi_host_g = mix_s_tilde_phi[host_idx_g]
+                class_g = np.full(n_g, "catalogue_hosted", dtype=object)
+            else:
+                z_true_g = np.empty(0, dtype=np.float64)
+                host_phiS_g = np.empty(0, dtype=np.float64)
+                host_qS_g = np.empty(0, dtype=np.float64)
+                host_index_g = np.empty(0, dtype=np.int64)
+                in_catalog_g = np.empty(0, dtype=bool)
+                s_tilde_phi_host_g = np.empty(0, dtype=np.float64)
+                class_g = np.empty(0, dtype=object)
+
+            if n_dark > 0:
+                # EXACT "population_selected" branch (B-SEL law), size n_dark,
+                # continuing the SAME rng stream (no fresh generator; the
+                # diagnostic unweighted comparison draw that branch makes is
+                # deliberately NOT reproduced here -- it uses an independent
+                # rng seeded from ``seed``, so omitting it cannot perturb this
+                # branch's bit-identity).
+                z_true_dark = draw_selected_population_redshifts(
+                    rng, n_dark, completeness, phi_survival_table, h=H_TRUE
+                )
+                host_phiS_dark, host_qS_dark = draw_isotropic_sky(rng, n_dark)
+                host_index_dark = np.full(n_dark, -1, dtype=np.int64)
+                in_catalog_dark = np.full(n_dark, False)
+                s_tilde_phi_host_dark = np.full(n_dark, np.nan)
+                class_dark = np.full(n_dark, "dark", dtype=object)
+            else:
+                z_true_dark = np.empty(0, dtype=np.float64)
+                host_phiS_dark = np.empty(0, dtype=np.float64)
+                host_qS_dark = np.empty(0, dtype=np.float64)
+                host_index_dark = np.empty(0, dtype=np.int64)
+                in_catalog_dark = np.empty(0, dtype=bool)
+                s_tilde_phi_host_dark = np.empty(0, dtype=np.float64)
+                class_dark = np.empty(0, dtype=object)
+
+            host_z = np.concatenate([z_true_g, z_true_dark])
+            host_phiS = np.concatenate([host_phiS_g, host_phiS_dark])
+            host_qS = np.concatenate([host_qS_g, host_qS_dark])
+            host_index_col = np.concatenate([host_index_g, host_index_dark])
+            in_catalog_col = np.concatenate([in_catalog_g, in_catalog_dark])
+            z_true_col = host_z
+            mix_s_tilde_phi_host = np.concatenate([s_tilde_phi_host_g, s_tilde_phi_host_dark])
+            mix_class_col = np.concatenate([class_g, class_dark])
+            mix_n_g = n_g
         else:
             raise ValueError(
                 f"unknown host_mode {host_mode!r}; expected "
                 "'catalogue'/'population'/'population_selected'/'catalogue_selected'/"
-                "'catalogue_selected_2d'"
+                "'catalogue_selected_2d'/'mixture_selected'"
             )
 
         # (c) true d_L from host z at h_true; observed d_L about it.
@@ -2166,13 +2560,23 @@ class MirrorUniverseGenerator:
                     chol = np.linalg.cholesky(cov)
                 except np.linalg.LinAlgError:
                     chol = np.diag([np.sqrt(max(var_dL[i], 0.0)), np.sqrt(max(var_m[i], 0.0))])
+                # B8.2 S1 gw_scatter knob (design §2.3): the draw is ALWAYS
+                # made (same rng.normal(size=2) call, same stream position
+                # regardless of gw_scatter) and only conditionally ADDED --
+                # the pp_coverage.py "draw made and discarded" convention, so
+                # a paired scatter/no-scatter run stays on one RNG stream.
+                # gw_scatter=True is byte-identical to the pre-B8.2 code.
                 offset = chol @ rng.normal(size=2)
-                obs_d_L[i] = true_d_L[i] + offset[0]
-                obs_m[i] = m_z_true_col[i] + offset[1]
+                obs_d_L[i] = true_d_L[i] + (offset[0] if gw_scatter else 0.0)
+                obs_m[i] = m_z_true_col[i] + (offset[1] if gw_scatter else 0.0)
             obs_d_L = np.clip(obs_d_L, _M2D_OBS_DL_FLOOR, None)
             obs_m = np.clip(obs_m, _M2D_OBS_M_FLOOR, None)
         else:
-            obs_d_L = true_d_L + rng.normal(size=n) * sigma_dL
+            # Same "draw made and discarded" convention as the 2D branch
+            # above (design §2.3): the noise vector is always drawn from
+            # ``rng`` so the stream is identical regardless of gw_scatter.
+            _dl_noise = rng.normal(size=n) * sigma_dL
+            obs_d_L = true_d_L + (_dl_noise if gw_scatter else 0.0)
             obs_d_L = np.clip(obs_d_L, 1.0e-6, None)
 
         # (c) sky: correlated draw about the host's true position using the
@@ -2198,9 +2602,12 @@ class MirrorUniverseGenerator:
                 chol = np.linalg.cholesky(cov)
             except np.linalg.LinAlgError:
                 chol = np.diag([np.sqrt(max(phi_var[i], 0.0)), np.sqrt(max(theta_var[i], 0.0))])
+            # B8.2 S1 gw_scatter knob (design §2.3): same "draw made and
+            # discarded" convention as the d_L/M draw above -- the sky offset
+            # is always drawn, only conditionally added.
             offset = chol @ rng.normal(size=2)
-            obs_phiS[i] = host_phiS[i] + offset[0]
-            obs_qS[i] = host_qS[i] + offset[1]
+            obs_phiS[i] = host_phiS[i] + (offset[0] if gw_scatter else 0.0)
+            obs_qS[i] = host_qS[i] + (offset[1] if gw_scatter else 0.0)
         obs_phiS = np.mod(obs_phiS, 2.0 * np.pi)
         obs_qS = np.clip(obs_qS, 0.0, np.pi)
 
@@ -2240,6 +2647,22 @@ class MirrorUniverseGenerator:
             rows["M"] = obs_m
             rows["s4d_at_truth"] = s4d_at_truth_col
             rows["link_id"] = link_id_col
+        elif host_mode == "mixture_selected":
+            # B8.2 S1 record (design §2.1): host draw mode, the per-event
+            # drawn z_true, S̃_φ,g of the drawn host (NaN for dark events --
+            # they have no catalogue host), the per-event class label
+            # ("catalogue_hosted"/"dark"), the realized catalogue-class count
+            # n_g (constant per realization -- how many of the n events the
+            # Binomial split routed to the catalogue-hosted branch), and the
+            # class_weight_p_g used to draw this realization (constant;
+            # self-describing so a mixture JSON does not need cross-
+            # referencing the caller's P_G computation).
+            rows["host_draw_mode"] = "mixture_selected"
+            rows["z_true"] = z_true_col
+            rows["s_tilde_phi_host"] = mix_s_tilde_phi_host
+            rows["event_class"] = mix_class_col
+            rows["n_catalogue_hosted"] = mix_n_g
+            rows["class_weight_p_g"] = p_g
         return rows
 
 
@@ -2680,6 +3103,101 @@ def write_mirror_crb_csv(events: pd.DataFrame, out_path: str) -> str:
     return out_path
 
 
+# ── B8.2 S1 (B8_2_HARNESS_DESIGN_20260829.md §3 item 1; rows #255/#268, tree
+# 2 node B8.2.S1) -- the resolved-flags return + engagement assertion. ──────
+
+# The BayesianStatistics instance attributes design §3 item 1 names as the
+# resolved (post-"auto"-dispatch) engagement record: normalization_mode,
+# catalogue_global_selection, selection_in_completion_numerator,
+# catalogue_numerator_survival, catalogue_numerator_survival_2d, the mass-
+# window triple, and the theta-hook state (theta_b/theta_s/theta_sites plus
+# the two [HIER] site-2.3 sibling flags, since a non-identity theta engaged
+# on those sites would silently change the SAME resolved-flag surface this
+# assertion exists to catch).
+_RESOLVED_FLAG_ATTRS: tuple[str, ...] = (
+    "_normalization_mode",
+    "_catalogue_global_selection",
+    "_selection_in_completion_numerator",
+    "_catalogue_numerator_survival",
+    "_catalogue_numerator_survival_2d",
+    "_mass_filter_sigma",
+    "_mass_filter_geometry",
+    "_mass_filter_k",
+    "_theta_b",
+    "_theta_s",
+    "_theta_sites",
+    "_theta_phi_divisor",
+    "_theta_zwindow",
+)
+
+
+def _resolved_flags_from_bs(bs: BayesianStatistics) -> dict[str, Any]:
+    """Read the resolved (post-``evaluate()``) engagement flags off a live instance.
+
+    Args:
+        bs: A ``BayesianStatistics`` instance AFTER its ``evaluate()`` call has
+            returned (the resolved attributes are set during ``evaluate()``,
+            not ``__init__``).
+
+    Returns:
+        ``{name (leading underscore stripped): value}`` for every attribute
+        in :data:`_RESOLVED_FLAG_ATTRS`.
+    """
+    return {name.lstrip("_"): getattr(bs, name) for name in _RESOLVED_FLAG_ATTRS}
+
+
+# The registered production values these resolve to (design §3): the chair-
+# confirmed "phi"/"phi"/"fused" triple under `absolute_marginal`
+# (PRODUCTION_FLAGS + the row #195/#172-178/#117-118 adoptions), the B5.1
+# mass-window defaults, the with-BH twin adopted under row #223 (charter
+# B7.3), and theta identity (no [HIER] instrument engaged).
+REGISTERED_RESOLVED_FLAGS: dict[str, Any] = {
+    "normalization_mode": PRODUCTION_FLAGS["--normalization_mode"],
+    "catalogue_global_selection": "phi",
+    "selection_in_completion_numerator": PRODUCTION_FLAGS["--selection_in_completion_numerator"],
+    "catalogue_numerator_survival": "phi",
+    "catalogue_numerator_survival_2d": "mz_sel",
+    "mass_filter_sigma": "symmetric",
+    "mass_filter_geometry": "linear",
+    "mass_filter_k": 1.5,
+    "theta_b": 0.0,
+    "theta_s": 1.0,
+    "theta_sites": "all",
+    "theta_phi_divisor": "off",
+    "theta_zwindow": "off",
+}
+
+
+def assert_resolved_production_flags(
+    resolved: dict[str, Any],
+    expected: dict[str, Any] | None = None,
+) -> None:
+    """STOP-gate the resolved flags against the registered production set (design §3 item 1).
+
+    Args:
+        resolved: A dict from :func:`_resolved_flags_from_bs` (e.g. populated
+            via ``run_mirror_seed_inprocess``'s ``resolved_flags_out``).
+        expected: The registered values to check against (default
+            :data:`REGISTERED_RESOLVED_FLAGS`). Only the keys present in
+            ``expected`` are checked, so a caller auditing a wave-2 with-BH
+            adoption can pass a narrower/updated mapping (design §3: "the
+            harness runs at the wave-2 commit and asserts whichever value
+            production resolves there").
+
+    Raises:
+        AssertionError: On the first mismatched key, naming both the
+            resolved and the expected value.
+    """
+    check = REGISTERED_RESOLVED_FLAGS if expected is None else expected
+    for key, want in check.items():
+        got = resolved.get(key)
+        if got != want:
+            raise AssertionError(
+                f"resolved flag {key!r} = {got!r}, expected {want!r} (B8.2 S1 "
+                "engagement assertion, B8_2_HARNESS_DESIGN_20260829.md §3 item 1)"
+            )
+
+
 def run_mirror_seed_inprocess(
     work_root: Path,
     events: pd.DataFrame,
@@ -2698,12 +3216,14 @@ def run_mirror_seed_inprocess(
     # scalar twin of the same semantics. "auto" (default) resolves to "phi"
     # under absolute_marginal (production), else "off".
     catalogue_numerator_survival: str = "auto",
-    # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test (stage
-    # 2) (PREREGISTRATION_P3_2D_20260825.md §2(i)). "off" (default) is
-    # byte-identical to the pre-flag path; requires
+    # [P3-2D] the with-BH catalogue-leg twin, ADOPTED in production (row
+    # #223 standing grant, charter node B7.3;
+    # PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md). "mz_sel"/"eff" (default)
+    # is the production with-BH catalogue numerator; explicit "off" is the
+    # pre-adoption COUNTERFACTUAL; requires
     # catalogue_numerator_survival_2d_center to be "raw"/"eff" when "mz_sel".
-    catalogue_numerator_survival_2d: str = "off",
-    catalogue_numerator_survival_2d_center: str = "unset",
+    catalogue_numerator_survival_2d: str = "mz_sel",
+    catalogue_numerator_survival_2d_center: str = "eff",
     # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
     # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178);
     # scalar twin of the same semantics. "auto" (default) resolves to "phi"
@@ -2715,7 +3235,61 @@ def run_mirror_seed_inprocess(
     # the explicit counterfactual pinning the retired pre-flag window (the
     # wza/wza0/proda0 arms pass it explicitly).
     mass_filter_sigma: str = "symmetric",
+    # Mass-window GEOMETRY instrument flag (charter node B5.1,
+    # PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+    # #220-#223); scalar passthrough of the same semantics.
+    # "linear"/1.5 (defaults) are byte-identical to the pre-flag path.
+    mass_filter_geometry: str = "linear",
+    mass_filter_k: float = 1.5,
     h_bounds: tuple[float, float] | None = None,
+    # [HIER] Stage-0 driver (B1.1, charter node; PREREGISTRATION_HIER_HTHETA_
+    # 20260826.md §2.1/§4.1): passthrough to ``BayesianStatistics.evaluate``'s
+    # theta hook (C1, PHYSICS_CHANGE_THETA_HOOK_20260828.md). Defaults are
+    # byte-identical to every pre-existing call site (theta_b=0.0, theta_s=1.0,
+    # theta_sites="all", smear_global_selection=False -- evaluate()'s own
+    # defaults, unchanged). This function is NOT a physics-trigger file
+    # (CLAUDE.md trigger list); the theta hook itself already landed, gated,
+    # inside bayesian_statistics.py.
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
+    theta_sites: str = "all",
+    smear_global_selection: bool = False,
+    # [HIER] site 2.3phi theta-consistent no-BH divisor instrument
+    # (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2; row #255 tree 2 node
+    # T1.1). "off" (default) is byte-identical, forwarded verbatim to
+    # BayesianStatistics.evaluate(). INDEPENDENT of theta_sites -- composes
+    # with theta_sites="2.2" for the registered CoR-P/CoR-M-faithful form.
+    theta_phi_divisor: str = "off",
+    # Sky-cone-radius instrument flag (same reference, §2.5). 1.5 (default)
+    # is byte-identical to the pre-flag sigma_multiplier literal.
+    sky_cone_k: float = 1.5,
+    # [HIER] theta-consistent candidate z-window instrument
+    # (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2; row #255 tree 2 node
+    # T1.3-zwin). "off"/1.0 (defaults) are byte-identical, forwarded
+    # verbatim to BayesianStatistics.evaluate(). INDEPENDENT of theta_sites
+    # and theta_phi_divisor -- composes with either.
+    theta_zwindow: str = "off",
+    z_window_k: float = 1.0,
+    # [HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree 2
+    # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). Forwarded
+    # verbatim to ``BayesianStatistics.evaluate()``. "auto" (default) matches
+    # the 2026-08-31 production flip (rows #284-#286: engages under the
+    # absolute_marginal phi stack); "off" = the pre-flip counterfactual.
+    catalogue_leg_1d_mass_aware: str = "auto",
+    # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
+    # guard, not a physics gate; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md
+    # §6). Forwarded verbatim to BayesianStatistics.evaluate(). None
+    # (default) is byte-identical (GATE BI) -- pattern 0b308828.
+    candidate_dump_dir: str | None = None,
+    # B8.2 S1 (B8_2_HARNESS_DESIGN_20260829.md §3 item 1; rows #255/#268, tree
+    # 2 node B8.2.S1): the resolved-flags return. None (default) is a no-op
+    # (GATE BI pattern, byte-identical to every pre-existing call site -- the
+    # dict is only populated when a caller supplies one). An out-parameter
+    # rather than a return-type change: this function has many call sites
+    # across results/ scripts that unpack a 2-tuple
+    # (``diag_csv, elapsed = run_mirror_seed_inprocess(...)``); changing the
+    # return arity would break every one of them.
+    resolved_flags_out: dict[str, Any] | None = None,
 ) -> tuple[Path, float]:
     """Evaluate one mirror realization in-process (D-A wholesale, no subprocess).
 
@@ -2808,6 +3382,63 @@ def run_mirror_seed_inprocess(
         widening when ``h_values`` already sits inside ``[0.6, 0.86]``, e.g.
         every G-1/G-2 call) rather than editing production's
         ``LamCDMScenario`` class default -- no production file is touched.
+
+        theta_b, theta_s, theta_sites: Forwarded verbatim to
+            ``BayesianStatistics.evaluate`` ([HIER] C1 theta hook,
+            PHYSICS_CHANGE_THETA_HOOK_20260828.md). Defaults are the
+            identity/no-op values -- byte-identical to every pre-existing
+            call site.
+        smear_global_selection: Forwarded verbatim to
+            ``BayesianStatistics.evaluate``. theta engaged (``theta_b != 0``
+            or ``theta_s != 1``) on a site set including "2.3"/"all" REQUIRES
+            this ``True`` (``evaluate``'s own guard raises otherwise); this
+            function does not force it automatically -- the [HIER] Stage-0
+            driver (``hier_s0_driver.py``) sets it per-node so the truth node
+            (theta identity) stays on the unsmeared, byte-identical path
+            (GATE PARITY) while off-truth nodes engage the smeared kernel
+            (GATE ENG). Default ``False`` is byte-identical to every
+            pre-existing call site.
+        theta_phi_divisor, sky_cone_k: Forwarded verbatim to
+            ``BayesianStatistics.evaluate()`` ([HIER] site 2.3phi,
+            PHYSICS_CHANGE_THETA_DIVISOR_20260830.md, row #255 tree 2 node
+            T1.1). Defaults ("off", 1.5) are byte-identical to every
+            pre-existing call site. NOTE: this function does not itself
+            derive a driver CLI surface for these two flags -- a caller
+            (e.g. ``hier_s0_driver.py``) wanting to arm the divisor from the
+            command line must add its own ``--theta_phi_divisor``/
+            ``--sky_cone_k`` arguments and thread them through to this call
+            (see the T1.1 implementation record's "driver gap" note).
+        theta_zwindow, z_window_k: Forwarded verbatim to
+            ``BayesianStatistics.evaluate()`` ([HIER] theta-consistent
+            candidate z-window, PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md,
+            row #255 tree 2 node T1.3-zwin). Defaults ("off", 1.0) are
+            byte-identical to every pre-existing call site. ``hier_s0_
+            driver.py`` exposes these as ``--theta-zwindow``/
+            ``--z-window-k``.
+        candidate_dump_dir: Forwarded verbatim to
+            ``BayesianStatistics.evaluate()`` (T2.2, row #255 tree 2 node
+            T2.2; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md §6). ``None``
+            (default) is byte-identical to every pre-existing call site
+            (GATE BI). ``hier_s0_driver.py`` exposes this as
+            ``--candidate_dump_dir``.
+        catalogue_leg_1d_mass_aware: Forwarded verbatim to
+            ``BayesianStatistics.evaluate()`` ([HIER T2.3], row #255 tree 2
+            node T2.3; PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2).
+            ``"off"`` (default) is byte-identical to every pre-existing call
+            site. ``hier_s0_driver.py`` exposes this as
+            ``--catalogue-leg-1d-mass-aware``.
+        resolved_flags_out: B8.2 S1 engagement assertion (design §3 item 1).
+            When given a dict, it is updated (in place, after ``evaluate()``
+            returns) with the RESOLVED post-``"auto"``-dispatch flag values
+            read off the ``BayesianStatistics`` instance itself --
+            :func:`_resolved_flags_from_bs`'s keys. ``None`` (default) skips
+            this entirely (no attribute reads, no dict mutation) -- byte-
+            identical to every pre-existing call site. Pass
+            :func:`assert_resolved_production_flags` the populated dict to
+            STOP-gate a run whose resolved flags do not match the registered
+            production triple (``phi``/``phi``/``fused`` under
+            ``absolute_marginal``, plus the mass-window and theta-identity
+            defaults).
     """
     import darksiren_emri.bayesian_inference.bayesian_statistics as _bs_mod
 
@@ -2862,14 +3493,40 @@ def run_mirror_seed_inprocess(
             catalogue_global_selection=catalogue_global_selection,
             # [P3-WBHZERO] mass-filter sigma-window instrument (row #198).
             mass_filter_sigma=mass_filter_sigma,
+            # Mass-window GEOMETRY instrument flag (charter node B5.1).
+            mass_filter_geometry=mass_filter_geometry,
+            mass_filter_k=mass_filter_k,
             catalogue_mass_overlap=PRODUCTION_FLAGS["--catalogue_mass_overlap"],
             completion_b_scale=PRODUCTION_FLAGS["--completion_b_scale"],
             pdet_dl_bins=int(PRODUCTION_FLAGS["--pdet_dl_bins"]),
             pdet_mass_bins=int(PRODUCTION_FLAGS["--pdet_mass_bins"]),
             pdet_estimator=PRODUCTION_FLAGS["--pdet_estimator"],
             allow_low_pdet_coverage=allow_low_pdet_coverage,
+            # [HIER] C1 theta hook passthrough (identity defaults => no-op).
+            theta_b=theta_b,
+            theta_s=theta_s,
+            theta_sites=theta_sites,
+            smear_global_selection=smear_global_selection,
+            # [HIER] site 2.3phi passthrough (identity default => no-op).
+            theta_phi_divisor=theta_phi_divisor,
+            sky_cone_k=sky_cone_k,
+            # [HIER] theta-consistent candidate z-window passthrough
+            # (identity default => no-op).
+            theta_zwindow=theta_zwindow,
+            z_window_k=z_window_k,
+            # [HIER T2.3] mass-aware 1D catalogue leg instrument passthrough
+            # (identity default "off" => no-op).
+            catalogue_leg_1d_mass_aware=catalogue_leg_1d_mass_aware,
+            # T2.2 (row #255 A10) candidate-dump instrumentation passthrough
+            # (identity default None => no-op, GATE BI).
+            candidate_dump_dir=candidate_dump_dir,
         )
         elapsed = time.time() - start
+        if resolved_flags_out is not None:
+            # B8.2 S1 (design §3 item 1): read the RESOLVED (post-"auto"-
+            # dispatch) flags off the live `bs` instance -- must happen here,
+            # inside the try block, before `bs` goes out of scope.
+            resolved_flags_out.update(_resolved_flags_from_bs(bs))
     finally:
         _bs_mod.from_cache_or_build = original_from_cache
         os.chdir(original_cwd)

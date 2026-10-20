@@ -67,8 +67,13 @@ TID="${SLURM_ARRAY_TASK_ID:?array job required (--array=0-23)}"
 BASE_SEED=900101
 SEED=$((BASE_SEED + TID))
 
-: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) — run cluster/setup.sh first}"
-OUT_ROOT="$WORKSPACE/p3_2d_fleet_20260825"
+: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (workspace name: cluster/cluster.env) — run cluster/setup.sh first}"
+# Out-root is overridable via `sbatch --export=ALL,OUT_ROOT=...` (PA-2DR, 2026-08-27).
+# The default is the ORIGINAL banked 2026-08-25 fleet. A re-run MUST pass its own
+# OUT_ROOT: PA-CA-11's idempotency guard skips any (arm, seed) whose meta already
+# exists, so re-submitting against the banked default is a silent no-op that also
+# risks contaminating the frozen comparand.
+OUT_ROOT="${OUT_ROOT:-$WORKSPACE/p3_2d_fleet_20260825}"
 LOG_DIR="$OUT_ROOT/logs"
 mkdir -p "$OUT_ROOT" "$LOG_DIR"
 
@@ -78,6 +83,13 @@ LOG_BASE="$LOG_DIR/task${TID}_seed${SEED}"
 exec > "${LOG_BASE}.out" 2> "${LOG_BASE}.err"
 
 echo "=== p3-2d-fleet task=$TID seed=$SEED out_root=$OUT_ROOT host=$(hostname) commit=$(git rev-parse HEAD) ==="
+
+# Provenance stamp (cluster/SKILL.md gotcha #12): this driver is invoked as a
+# bare `python <driver>.py`, not `python -m darksiren_emri`, so main.py's
+# run_metadata writer never fires. write_provenance() is the one-line adopter.
+TASK_SEED="$SEED"
+source "$PROJECT_ROOT/cluster/write_provenance.sh"
+write_provenance "$OUT_ROOT" "p3_2d_fleet arm loop"
 
 DRIVER="results/campaign51_20260728/realistic_20260729/p3_2d_fleet.py"
 

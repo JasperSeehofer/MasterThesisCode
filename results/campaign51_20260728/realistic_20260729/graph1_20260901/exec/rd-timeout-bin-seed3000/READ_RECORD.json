@@ -1,0 +1,606 @@
+{
+  "node": "rd-timeout-bin-seed3000",
+  "source_paths": {
+    "logs_dir": "/home/jasper/Repositories/darksiren-emri/results/_archive/run_20260707_seed3000",
+    "n_log_files": 99,
+    "crb_csv": "/home/jasper/Repositories/darksiren-emri/results/_archive/run_20260707_seed3000/simulations/cramer_rao_bounds.csv",
+    "n_crb_rows": 3325,
+    "n_timeout_records": 1198,
+    "n_snr_stage_timeouts": 1196,
+    "n_crb_stage_timeouts": 2,
+    "commit": "a545c0eb (run_metadata_16.json, run_metadata_combine.json)"
+  },
+  "design_gate": {
+    "rule": "M: log-spaced 5 bins over union(kept,timeout) support (equal width in log10 M). e0, p0: quantile (quintile) 5 bins over the same union population. Frozen BEFORE any timeout rate/count is computed or inspected.",
+    "population_source": "union of CRB-CSV kept events (n=3325) and timeout log records (n=1198, both stages)",
+    "M_edges": [
+      35519.79338813367,
+      77608.1885928589,
+      169568.12917853205,
+      370493.77075337456,
+      809501.3775998681,
+      1768702.1681796953
+    ],
+    "e0_edges": [
+      0.05000128114607985,
+      0.08048083859815598,
+      0.10927054536561712,
+      0.13821830500768573,
+      0.16881553943906852,
+      0.19988153327910718
+    ],
+    "p0_edges": [
+      10.000753793277148,
+      11.400286962597344,
+      12.586043251646046,
+      13.653349371080477,
+      14.820190225137154,
+      15.999516863531062
+    ]
+  },
+  "snr_stage": {
+    "aggregate": {
+      "n_timeout": 1196,
+      "denom": 4523,
+      "rate": 0.2644262657528189,
+      "garwood95_count_ci": [
+        1129.1701765414612,
+        1265.7523485402387
+      ],
+      "garwood95_rate_ci": [
+        0.24965071336313535,
+        0.27984796562906006
+      ]
+    },
+    "by_axis": {
+      "M": {
+        "table": [
+          {
+            "bin": 0,
+            "edge_lo": 35519.79338813367,
+            "edge_hi": 77608.1885928589,
+            "n_kept": 15,
+            "n_timeout": 103,
+            "denom": 118,
+            "rate": 0.8728813559322034,
+            "rate_garwood_lo95": 0.7124740537696472,
+            "rate_garwood_hi95": 1.0586225037883996,
+            "se_approx_from_garwood": 0.08830479795005224
+          },
+          {
+            "bin": 1,
+            "edge_lo": 77608.1885928589,
+            "edge_hi": 169568.12917853205,
+            "n_kept": 110,
+            "n_timeout": 401,
+            "denom": 511,
+            "rate": 0.7847358121330724,
+            "rate_garwood_lo95": 0.7097990564220823,
+            "rate_garwood_hi95": 0.8654316373477112,
+            "se_approx_from_garwood": 0.03970291824891399
+          },
+          {
+            "bin": 2,
+            "edge_lo": 169568.12917853205,
+            "edge_hi": 370493.77075337456,
+            "n_kept": 1017,
+            "n_timeout": 378,
+            "denom": 1395,
+            "rate": 0.2709677419354839,
+            "rate_garwood_lo95": 0.2443367437975963,
+            "rate_garwood_hi95": 0.2997093701092471,
+            "se_approx_from_garwood": 0.014125929433308673
+          },
+          {
+            "bin": 3,
+            "edge_lo": 370493.77075337456,
+            "edge_hi": 809501.3775998681,
+            "n_kept": 1993,
+            "n_timeout": 245,
+            "denom": 2238,
+            "rate": 0.10947274352100089,
+            "rate_garwood_lo95": 0.09619283418192015,
+            "rate_garwood_hi95": 0.12407361692615494,
+            "se_approx_from_garwood": 0.00711257521674755
+          },
+          {
+            "bin": 4,
+            "edge_lo": 809501.3775998681,
+            "edge_hi": 1768702.1681796953,
+            "n_kept": 192,
+            "n_timeout": 69,
+            "denom": 261,
+            "rate": 0.26436781609195403,
+            "rate_garwood_lo95": 0.20569394083082312,
+            "rate_garwood_hi95": 0.33457439116875587,
+            "se_approx_from_garwood": 0.032878269789121825
+          }
+        ],
+        "max_gradient_sigma": 12.191644974466382,
+        "max_gradient_pair_bins": [
+          1,
+          2
+        ],
+        "band_call": "NEW_SYSTEMATIC_CANDIDATE (>3sigma)"
+      },
+      "e0": {
+        "table": [
+          {
+            "bin": 0,
+            "edge_lo": 0.05000128114607985,
+            "edge_hi": 0.08048083859815598,
+            "n_kept": 672,
+            "n_timeout": 233,
+            "denom": 905,
+            "rate": 0.2574585635359116,
+            "rate_garwood_lo95": 0.22545918709390336,
+            "rate_garwood_hi95": 0.29272631317290326,
+            "se_approx_from_garwood": 0.01716029633171831
+          },
+          {
+            "bin": 1,
+            "edge_lo": 0.08048083859815598,
+            "edge_hi": 0.10927054536561712,
+            "n_kept": 651,
+            "n_timeout": 253,
+            "denom": 904,
+            "rate": 0.27986725663716816,
+            "rate_garwood_lo95": 0.2464408742649433,
+            "rate_garwood_hi95": 0.3165628196244554,
+            "se_approx_from_garwood": 0.017888579932976354
+          },
+          {
+            "bin": 2,
+            "edge_lo": 0.10927054536561712,
+            "edge_hi": 0.13821830500768573,
+            "n_kept": 653,
+            "n_timeout": 252,
+            "denom": 905,
+            "rate": 0.27845303867403315,
+            "rate_garwood_lo95": 0.24513175976092294,
+            "rate_garwood_hi95": 0.31504001817240296,
+            "se_approx_from_garwood": 0.017834066955178772
+          },
+          {
+            "bin": 3,
+            "edge_lo": 0.13821830500768573,
+            "edge_hi": 0.16881553943906852,
+            "n_kept": 667,
+            "n_timeout": 237,
+            "denom": 904,
+            "rate": 0.26216814159292035,
+            "rate_garwood_lo95": 0.22985040245446445,
+            "rate_garwood_hi95": 0.29775727966741816,
+            "se_approx_from_garwood": 0.017323501149243994
+          },
+          {
+            "bin": 4,
+            "edge_lo": 0.16881553943906852,
+            "edge_hi": 0.19988153327910718,
+            "n_kept": 684,
+            "n_timeout": 221,
+            "denom": 905,
+            "rate": 0.24419889502762432,
+            "rate_garwood_lo95": 0.21306236670036918,
+            "rate_garwood_hi95": 0.27860565796139025,
+            "se_approx_from_garwood": 0.01672053447436307
+          }
+        ],
+        "max_gradient_sigma": 0.9039901344045778,
+        "max_gradient_pair_bins": [
+          0,
+          1
+        ],
+        "band_call": "NON_ISSUE_WITHIN_POISSON_BOUND"
+      },
+      "p0": {
+        "table": [
+          {
+            "bin": 0,
+            "edge_lo": 10.000753793277148,
+            "edge_hi": 11.400286962597344,
+            "n_kept": 667,
+            "n_timeout": 238,
+            "denom": 905,
+            "rate": 0.26298342541436465,
+            "rate_garwood_lo95": 0.23063110710965815,
+            "rate_garwood_hi95": 0.29860338289143123,
+            "se_approx_from_garwood": 0.017340184764050026
+          },
+          {
+            "bin": 1,
+            "edge_lo": 11.400286962597344,
+            "edge_hi": 12.586043251646046,
+            "n_kept": 666,
+            "n_timeout": 238,
+            "denom": 904,
+            "rate": 0.26327433628318586,
+            "rate_garwood_lo95": 0.2308862300157529,
+            "rate_garwood_hi95": 0.29893369636808104,
+            "se_approx_from_garwood": 0.01735936638436424
+          },
+          {
+            "bin": 2,
+            "edge_lo": 12.586043251646046,
+            "edge_hi": 13.653349371080477,
+            "n_kept": 671,
+            "n_timeout": 234,
+            "denom": 905,
+            "rate": 0.2585635359116022,
+            "rate_garwood_lo95": 0.2264932701879294,
+            "rate_garwood_hi95": 0.29390202615985817,
+            "se_approx_from_garwood": 0.017196427070070873
+          },
+          {
+            "bin": 3,
+            "edge_lo": 13.653349371080477,
+            "edge_hi": 14.820190225137154,
+            "n_kept": 675,
+            "n_timeout": 229,
+            "denom": 904,
+            "rate": 0.25331858407079644,
+            "rate_garwood_lo95": 0.2215692164255978,
+            "rate_garwood_hi95": 0.28834054535009923,
+            "se_approx_from_garwood": 0.017033815142650947
+          },
+          {
+            "bin": 4,
+            "edge_lo": 14.820190225137154,
+            "edge_hi": 15.999516863531062,
+            "n_kept": 648,
+            "n_timeout": 257,
+            "denom": 905,
+            "rate": 0.2839779005524862,
+            "rate_garwood_lo95": 0.25031711930820494,
+            "rate_garwood_hi95": 0.3209037284502283,
+            "se_approx_from_garwood": 0.018007118789432702
+          }
+        ],
+        "max_gradient_sigma": 1.2368992478717704,
+        "max_gradient_pair_bins": [
+          3,
+          4
+        ],
+        "band_call": "NON_ISSUE_WITHIN_POISSON_BOUND"
+      }
+    },
+    "grid_2d_M_p0": {
+      "table": [
+        {
+          "M_bin": 0,
+          "p0_bin": 0,
+          "n_kept": 3,
+          "n_timeout": 18,
+          "denom": 21,
+          "rate": 0.8571428571428571,
+          "rate_garwood_lo95": 0.507997180019025,
+          "rate_garwood_hi95": 1.3546552508346659,
+          "se_approx": 0.21598816886831615
+        },
+        {
+          "M_bin": 0,
+          "p0_bin": 1,
+          "n_kept": 3,
+          "n_timeout": 21,
+          "denom": 24,
+          "rate": 0.875,
+          "rate_garwood_lo95": 0.5416387910031745,
+          "rate_garwood_hi95": 1.3375304472893086,
+          "se_approx": 0.20303731504408604
+        },
+        {
+          "M_bin": 0,
+          "p0_bin": 2,
+          "n_kept": 5,
+          "n_timeout": 21,
+          "denom": 26,
+          "rate": 0.8076923076923077,
+          "rate_garwood_lo95": 0.49997426861831484,
+          "rate_garwood_hi95": 1.2346434898055156,
+          "se_approx": 0.18741906004069483
+        },
+        {
+          "M_bin": 0,
+          "p0_bin": 3,
+          "n_kept": 1,
+          "n_timeout": 17,
+          "denom": 18,
+          "rate": 0.9444444444444444,
+          "rate_garwood_lo95": 0.5501736927559607,
+          "rate_garwood_hi95": 1.5121470453281451,
+          "se_approx": 0.24540587290689636
+        },
+        {
+          "M_bin": 0,
+          "p0_bin": 4,
+          "n_kept": 3,
+          "n_timeout": 26,
+          "denom": 29,
+          "rate": 0.896551724137931,
+          "rate_garwood_lo95": 0.5856573522619428,
+          "rate_garwood_hi95": 1.313656002866379,
+          "se_approx": 0.18571735261577157
+        },
+        {
+          "M_bin": 1,
+          "p0_bin": 0,
+          "n_kept": 8,
+          "n_timeout": 65,
+          "denom": 73,
+          "rate": 0.8904109589041096,
+          "rate_garwood_lo95": 0.6872003798525242,
+          "rate_garwood_hi95": 1.1349018604913914,
+          "se_approx": 0.11421165915263422
+        },
+        {
+          "M_bin": 1,
+          "p0_bin": 1,
+          "n_kept": 13,
+          "n_timeout": 87,
+          "denom": 100,
+          "rate": 0.87,
+          "rate_garwood_lo95": 0.696834335358197,
+          "rate_garwood_hi95": 1.0731417858252383,
+          "se_approx": 0.09599856182742164
+        },
+        {
+          "M_bin": 1,
+          "p0_bin": 2,
+          "n_kept": 15,
+          "n_timeout": 80,
+          "denom": 95,
+          "rate": 0.8421052631578947,
+          "rate_garwood_lo95": 0.6677371009577932,
+          "rate_garwood_hi95": 1.0480728943940891,
+          "se_approx": 0.09702621921532639
+        },
+        {
+          "M_bin": 1,
+          "p0_bin": 3,
+          "n_kept": 35,
+          "n_timeout": 65,
+          "denom": 100,
+          "rate": 0.65,
+          "rate_garwood_lo95": 0.5016562772923426,
+          "rate_garwood_hi95": 0.8284783581587157,
+          "se_approx": 0.083374511181423
+        },
+        {
+          "M_bin": 1,
+          "p0_bin": 4,
+          "n_kept": 39,
+          "n_timeout": 104,
+          "denom": 143,
+          "rate": 0.7272727272727273,
+          "rate_garwood_lo95": 0.594234519651262,
+          "rate_garwood_hi95": 0.8812126363287087,
+          "se_approx": 0.07321004790839188
+        },
+        {
+          "M_bin": 2,
+          "p0_bin": 0,
+          "n_kept": 107,
+          "n_timeout": 73,
+          "denom": 180,
+          "rate": 0.40555555555555556,
+          "rate_garwood_lo95": 0.31789081623610643,
+          "rate_garwood_hi95": 0.5099252232387863,
+          "se_approx": 0.04898926893623553
+        },
+        {
+          "M_bin": 2,
+          "p0_bin": 1,
+          "n_kept": 147,
+          "n_timeout": 60,
+          "denom": 207,
+          "rate": 0.2898550724637681,
+          "rate_garwood_lo95": 0.22118995628022833,
+          "rate_garwood_hi95": 0.37310093433161023,
+          "se_approx": 0.038753512322517635
+        },
+        {
+          "M_bin": 2,
+          "p0_bin": 2,
+          "n_kept": 184,
+          "n_timeout": 81,
+          "denom": 265,
+          "rate": 0.30566037735849055,
+          "rate_garwood_lo95": 0.2427384603552655,
+          "rate_garwood_hi95": 0.37990794030237374,
+          "se_approx": 0.03499285699816635
+        },
+        {
+          "M_bin": 2,
+          "p0_bin": 3,
+          "n_kept": 263,
+          "n_timeout": 84,
+          "denom": 347,
+          "rate": 0.2420749279538905,
+          "rate_garwood_lo95": 0.19308844305413833,
+          "rate_garwood_hi95": 0.299705232766247,
+          "se_approx": 0.027198660208072357
+        },
+        {
+          "M_bin": 2,
+          "p0_bin": 4,
+          "n_kept": 316,
+          "n_timeout": 80,
+          "denom": 396,
+          "rate": 0.20202020202020202,
+          "rate_garwood_lo95": 0.16018945603785442,
+          "rate_garwood_hi95": 0.2514316287056527,
+          "se_approx": 0.023276491983474774
+        },
+        {
+          "M_bin": 3,
+          "p0_bin": 0,
+          "n_kept": 437,
+          "n_timeout": 49,
+          "denom": 486,
+          "rate": 0.10082304526748971,
+          "rate_garwood_lo95": 0.07458944392763198,
+          "rate_garwood_hi95": 0.13329341274263024,
+          "se_approx": 0.01497577731402165
+        },
+        {
+          "M_bin": 3,
+          "p0_bin": 1,
+          "n_kept": 438,
+          "n_timeout": 48,
+          "denom": 486,
+          "rate": 0.09876543209876543,
+          "rate_garwood_lo95": 0.07282183297013013,
+          "rate_garwood_hi95": 0.13094863411960342,
+          "se_approx": 0.014828537960256741
+        },
+        {
+          "M_bin": 3,
+          "p0_bin": 2,
+          "n_kept": 452,
+          "n_timeout": 47,
+          "denom": 499,
+          "rate": 0.09418837675350701,
+          "rate_garwood_lo95": 0.06920607648710572,
+          "rate_garwood_hi95": 0.12525057382895186,
+          "se_approx": 0.014297328252418445
+        },
+        {
+          "M_bin": 3,
+          "p0_bin": 3,
+          "n_kept": 376,
+          "n_timeout": 58,
+          "denom": 434,
+          "rate": 0.1336405529953917,
+          "rate_garwood_lo95": 0.10147887483928515,
+          "rate_garwood_hi95": 0.17276140494169256,
+          "se_approx": 0.018184652907504272
+        },
+        {
+          "M_bin": 3,
+          "p0_bin": 4,
+          "n_kept": 290,
+          "n_timeout": 43,
+          "denom": 333,
+          "rate": 0.12912912912912913,
+          "rate_garwood_lo95": 0.0934513910269285,
+          "rate_garwood_hi95": 0.17393608952067155,
+          "se_approx": 0.020532187962060286
+        },
+        {
+          "M_bin": 4,
+          "p0_bin": 0,
+          "n_kept": 112,
+          "n_timeout": 33,
+          "denom": 145,
+          "rate": 0.22758620689655173,
+          "rate_garwood_lo95": 0.15665987291537822,
+          "rate_garwood_hi95": 0.31961565013220206,
+          "se_approx": 0.04157111488191207
+        },
+        {
+          "M_bin": 4,
+          "p0_bin": 1,
+          "n_kept": 65,
+          "n_timeout": 22,
+          "denom": 87,
+          "rate": 0.25287356321839083,
+          "rate_garwood_lo95": 0.15847451577275415,
+          "rate_garwood_hi95": 0.38285361364511766,
+          "se_approx": 0.05724061714204024
+        },
+        {
+          "M_bin": 4,
+          "p0_bin": 2,
+          "n_kept": 15,
+          "n_timeout": 5,
+          "denom": 20,
+          "rate": 0.25,
+          "rate_garwood_lo95": 0.08117431950592105,
+          "rate_garwood_hi95": 0.5834166039661335,
+          "se_approx": 0.1281253850734535
+        },
+        {
+          "M_bin": 4,
+          "p0_bin": 3,
+          "n_kept": 0,
+          "n_timeout": 5,
+          "denom": 5,
+          "rate": 1.0,
+          "rate_garwood_lo95": 0.3246972780236842,
+          "rate_garwood_hi95": 2.333666415864534,
+          "se_approx": 0.512501540293814
+        },
+        {
+          "M_bin": 4,
+          "p0_bin": 4,
+          "n_kept": 0,
+          "n_timeout": 4,
+          "denom": 4,
+          "rate": 1.0,
+          "rate_garwood_lo95": 0.27246634340658127,
+          "rate_garwood_hi95": 2.5603971688509235,
+          "se_approx": 0.5836665432233302
+        }
+      ],
+      "max_gradient_sigma": 6.837332739573566,
+      "max_gradient_pair_cells": [
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          4
+        ]
+      ],
+      "band_call": "NEW_SYSTEMATIC_CANDIDATE (>3sigma)"
+    }
+  },
+  "crb_stage_descriptive": {
+    "n_timeout": 2,
+    "denom": 3327,
+    "rate": 0.0006011421701232341,
+    "garwood95_count_ci": [
+      0.24220927854396507,
+      7.22468766772396
+    ],
+    "garwood95_rate_ci": [
+      7.280110566395103e-05,
+      0.0021715322115190743
+    ],
+    "events": [
+      {
+        "M": 489029.47660579206,
+        "e0": 0.19196770295163784,
+        "p0": 13.046503251771965,
+        "log_file": "master_thesis_code_20260708_093757_h_0_73.log"
+      },
+      {
+        "M": 460687.1044443573,
+        "e0": 0.11847121224261756,
+        "p0": 15.847985787623845,
+        "log_file": "master_thesis_code_20260708_132258_h_0_73.log"
+      }
+    ],
+    "note": "n=2, not binnable at 5 bins/axis; reported descriptively only"
+  },
+  "population_depth_z": {
+    "n": 3325,
+    "min": 0.009326139682309711,
+    "median": 0.4126880363986883,
+    "p95": 0.6967670776139528,
+    "max": 1.0250062365591437,
+    "HOST_DRAW_Z_MAX": 1.5,
+    "depth_fraction_of_zmax": 0.6833374910394291,
+    "frac_events_z_gt_0.9_zmax": 0.0
+  },
+  "overall_max_gradient_sigma": 12.191644974466382,
+  "overall_band_call": "NEW_SYSTEMATIC_CANDIDATE (>3sigma)",
+  "gaps": [
+    "Raw injected-population files (results/_archive/run_20260707_seed3000/simulations/injections/*.csv) are UNREACHABLE: dangling symlinks to a cluster-only workspace path (/pfs/work9/workspace/scratch/st_ac147838-emri/injection_pool_depth15_50k/), not present on this machine. Bin edges therefore use the union of kept (CRB-CSV) and timeout-log parameters as the population proxy, not the raw injected draw -- disclosed, not substituted silently.",
+    "Denominator for both stages = kept (CRB-CSV rows) + timeout events with known params. Other skip categories seen in the 33 available 'Skip tally' summary lines (snr:ZeroDivisionError=1151, snr:Warning, crb:ParameterOutOfBoundsError=32, crb:ZeroDivisionError=12, etc., aggregate 34480 attempts / 1320 successful over the 33 tasks that logged a final tally) have NO per-event parameters logged (G9 instrumented only the two timeout call sites) and cannot be placed in a bin; excluded from rate/denominator by construction. This rate answers 'of events that either timed out or fully succeeded, what fraction timed out', not 'of every attempted draw'.",
+    "Only 33 of ~100 simulate array tasks reached the final 'Skip tally' log line (most were still running / hit the walltime before printing it), so the full per-task attempt/success accounting is incomplete; this does not affect the timeout-vs-kept binned rate above (which uses raw event records, not the tally line) but is disclosed as a completeness caveat on the archive.",
+    "run_metadata_*.json for simulate task indices 0-40 has been overwritten by a LATER evaluate-stage array run reusing the same run_metadata_<index>.json filenames (same working directory): only task indices 41-99 (59 of ~100 files) retain original simulate-stage SLURM metadata. This blocks a strict per-task-id cross-check of the g-population gate beyond 'same archive, same commit, same seed, same simulate run' -- disclosed; the global rate computation above does not depend on it.",
+    "CRB-stage timeout count (n=2) is far too small to bin into 5x5x5 cells; reported descriptively only."
+  ]
+}

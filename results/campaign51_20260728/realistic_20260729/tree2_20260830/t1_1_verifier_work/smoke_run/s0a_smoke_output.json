@@ -1,0 +1,57 @@
+{
+  "arm": "S0-A",
+  "seeds_requested": [
+    900101
+  ],
+  "jobs": 1,
+  "cpu_per_job": 14,
+  "wall_s": 459.15636372566223,
+  "n_seeds_ok": 1,
+  "n_seeds_error": 0,
+  "errors": [],
+  "theta_sites": "2.2",
+  "smear": "off",
+  "config": "b0i",
+  "h_values": [
+    0.73
+  ],
+  "score_h": null,
+  "node_dir_suffix": "_sites2.2_nosmear",
+  "per_seed_summary": [
+    {
+      "seed": 900101,
+      "nodes": {
+        "truth": {
+          "elapsed_s": 45.35024571418762,
+          "n_events": 9
+        }
+      }
+    }
+  ],
+  "note": "nodes=('truth',) does not include all 4 off-truth nodes -- scores/gates/verdict require {b_plus,b_minus,s_plus,s_minus}; this is expected for a --smoke run with 1-2 nodes and is NOT a registered read.",
+  "gate_parity": {
+    "900101": {
+      "status": "COMPARED",
+      "n_events_compared": 9,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 9,
+          "max_abs_diff": 0.00013716993081880346,
+          "max_rel_diff": 3.695906492546106e-05,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 9,
+          "max_abs_diff": 0.3322636516074535,
+          "max_rel_diff": 0.04372798717681088,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    }
+  },
+  "smoke": true,
+  "event_cap": 12,
+  "registration": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/PREREGISTRATION_HIER_HTHETA_20260826.md"
+}

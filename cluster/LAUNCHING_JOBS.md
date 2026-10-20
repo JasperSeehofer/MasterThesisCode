@@ -232,4 +232,4 @@ inline wrapper that makes `RUN_DIR` and passes `--export`.
 5. Set `--seed`. Note the printed `RUN_DIR` + job IDs.
 6. Monitor: `squeue -u $USER` · `sacct -j <IDs> --format=JobID,State,Elapsed,MaxRSS,ExitCode`.
 7. Retrieve: `rsync -avz bwunicluster:$RUN_DIR/ ./results/…`. Copy finals off the
-   workspace before it expires (`ws_list`, `ws_extend emri 60`).
+   workspace before it expires (`ws_list`, `ws_extend emri2 60`; name in `cluster/cluster.env`).

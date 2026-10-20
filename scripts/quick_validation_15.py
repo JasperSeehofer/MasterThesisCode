@@ -75,7 +75,15 @@ def main() -> None:
     for h in h_values:
         _LOGGER.info(f"=== Evaluating h = {h} ===")
         stats = BayesianStatistics()
-        stats.evaluate(galaxy_catalog, cosmological_model, h, num_workers=4)
+        stats.evaluate(
+            galaxy_catalog,
+            cosmological_model,
+            h,
+            num_workers=4,
+            # pinned explicitly 2026-08-29: production default flipped to mz_sel/eff (charter B7.3, row #223); this archived gate keeps its documented baseline
+            catalogue_numerator_survival_2d="off",
+            catalogue_numerator_survival_2d_center="unset",
+        )
 
         # Extract sum of per-detection likelihoods (product in log-space)
         detection_keys = sorted(

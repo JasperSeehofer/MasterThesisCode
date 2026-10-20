@@ -1,0 +1,6 @@
+=== 2026-08-29T21:39:52+02:00 runner-1 (S0-C) finished; starting P0
+=== 2026-08-29T21:39:52+02:00 START P0 S0-A 4 seeds 5 nodes sites2.2 nosmear jobs2 (fixed driver)
+=== 2026-08-29T21:58:20+02:00 END rc=1
+=== 2026-08-29T21:58:20+02:00 START P0 score-only
+=== 2026-08-29T21:58:21+02:00 END rc=1
+=== 2026-08-29T21:58:21+02:00 START KW-Q1 ft 4 seeds s-nodes h0.725/0.735 sites2.2 nosmear jobs2

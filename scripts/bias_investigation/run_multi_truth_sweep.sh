@@ -43,7 +43,10 @@ TRUTHS=${TRUTHS:-"0.60 0.65 0.70 0.73 0.75 0.80 0.85"}
 INPUT_CRB=${INPUT_CRB:-"$PROJECT_ROOT/simulations/cluster_run_phase46_merged_20260504/cramer_rao_bounds.csv"}
 
 CLUSTER_HOST="bwunicluster"
-CLUSTER_WS="/pfs/work9/workspace/scratch/st_ac147838-emri"
+# Workspace: name from cluster/cluster.env, path resolved on the cluster (env CLUSTER_WS overrides).
+CLUSTER_WS_NAME=$( . "$PROJECT_ROOT/cluster/cluster.env" && echo "$CLUSTER_WORKSPACE_NAME" )
+CLUSTER_WS=${CLUSTER_WS:-$(ssh "$CLUSTER_HOST" "ws_find $CLUSTER_WS_NAME")}
+: "${CLUSTER_WS:?could not resolve cluster workspace ${CLUSTER_WS_NAME} via ssh ws_find}"
 SEED_BASE=200  # bumped per truth to ensure fresh noise draws
 
 # Cluster job parameters (env-overridable for smoke / different partitions)

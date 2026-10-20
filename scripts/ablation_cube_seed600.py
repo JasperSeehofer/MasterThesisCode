@@ -151,6 +151,9 @@ def main() -> None:
                 num_workers=args.workers,
                 catalog_only=catonly,
                 normalization_mode=nmode,
+                # pinned explicitly 2026-08-29: production default flipped to mz_sel/eff (charter B7.3, row #223); this archived gate keeps its documented baseline
+                catalogue_numerator_survival_2d="off",
+                catalogue_numerator_survival_2d_center="unset",
             )
             print(f"[{label}] h={h} done in {time.time() - th:.0f}s", flush=True)
         combine_posteriors(posteriors_dir=pdir, strategy="physics-floor", output_dir=pdir)

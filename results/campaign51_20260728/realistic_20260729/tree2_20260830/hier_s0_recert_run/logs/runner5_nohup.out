@@ -1,0 +1,7 @@
+=== 2026-08-30T05:50:19+02:00 START T1.2 S0-A recert 4 seeds 5 nodes sites2.2 nosmear divisor-on jobs1
+=== 2026-08-30T09:28:25+02:00 END rc=0
+=== 2026-08-30T09:28:25+02:00 START T1.2 score-only
+=== 2026-08-30T09:28:27+02:00 END rc=0
+=== 2026-08-30T09:28:27+02:00 START T2.2 BI-closure dump ft truth h0.725/0.735 jobs1
+=== 2026-08-30T09:37:57+02:00 END rc=0
+=== 2026-08-30T09:37:57+02:00 ALL DONE

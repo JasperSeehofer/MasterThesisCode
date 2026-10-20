@@ -1,0 +1,28 @@
+{
+  "rule": "M: log-spaced 5 bins over union(kept,timeout) support (equal width in log10 M). e0, p0: quantile (quintile) 5 bins over the same union population. Frozen BEFORE any timeout rate/count is computed or inspected.",
+  "population_source": "union of CRB-CSV kept events (n=3325) and timeout log records (n=1198, both stages)",
+  "M_edges": [
+    35519.79338813367,
+    77608.1885928589,
+    169568.12917853205,
+    370493.77075337456,
+    809501.3775998681,
+    1768702.1681796953
+  ],
+  "e0_edges": [
+    0.05000128114607985,
+    0.08048083859815598,
+    0.10927054536561712,
+    0.13821830500768573,
+    0.16881553943906852,
+    0.19988153327910718
+  ],
+  "p0_edges": [
+    10.000753793277148,
+    11.400286962597344,
+    12.586043251646046,
+    13.653349371080477,
+    14.820190225137154,
+    15.999516863531062
+  ]
+}

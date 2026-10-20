@@ -1,0 +1,95 @@
+# m1 evidence checksum manifest (M65 Round 2, 2026-10-19)
+# One line per MANIFEST.md5 entry (85) plus the off-manifest items, format:
+#   <sha256>  <bytes>  <path relative to m1_iiib_retrieved/>  <state>  <locations>
+# state: tracked = committed in git next to this file.
+# WS2 = /pfs/work9/workspace/scratch/st_ac147838-emri2/graph1_sealed_m1_iiib_20260904 (cluster, emri2)
+# BOX = hbox:archive/darksiren-emri/cluster/graph1_sealed_m1_iiib_20260904 (Hetzner Storage Box, read 2026-10-19)
+# Every tracked file was pulled from BOX on 2026-10-19 or was already tracked; md5sum -c MANIFEST.md5 = 85/85 OK.
+76060cc5c6d09fbe14560372a69397bf407f8f3db432ffa10857e479319675e4  41  GIT_COMMIT_AT_RUN.txt  tracked  WS2/GIT_COMMIT_AT_RUN.txt ; BOX/GIT_COMMIT_AT_RUN.txt
+3e57d10c02001a0468e4797cedf2b85c72fcaaf5a2932c9fb9c0a46d34b750c6  2328  run_metadata_0.json  tracked  WS2/run_metadata_0.json ; BOX/run_metadata_0.json
+a3ff60e8c421e5caa90adfa11b93c0b3ff479174a6927b7c7cdc08896cec447a  2332  run_metadata_10.json  tracked  WS2/run_metadata_10.json ; BOX/run_metadata_10.json
+d0b987dc1e392d7b468c666861a934cf0c18650db1e8198903ee24f45acc2b58  2331  run_metadata_11.json  tracked  WS2/run_metadata_11.json ; BOX/run_metadata_11.json
+99ff4f4d037e2f8e742e2d5fe8d1f7c0860ca639660dd1c83aef397f7d93cab4  2332  run_metadata_12.json  tracked  WS2/run_metadata_12.json ; BOX/run_metadata_12.json
+50539771aebbb30f59b3148f9caa21d2a597ceb11ec651d8da5bd698bde2d1ed  2331  run_metadata_13.json  tracked  WS2/run_metadata_13.json ; BOX/run_metadata_13.json
+1227b6f8eba81e057a65cf6435abf084e513f775b19ea1edaf8acf47e520b8ce  2332  run_metadata_14.json  tracked  WS2/run_metadata_14.json ; BOX/run_metadata_14.json
+504b93f5f942bc9f8c1df3b2a1659f39dbf05d2fd98538fc489a276bd72bdb9e  2330  run_metadata_15.json  tracked  WS2/run_metadata_15.json ; BOX/run_metadata_15.json
+41ba0059200a08847ffa317bb278ab9bb1db4d8933add857e32755cfdef107b5  2332  run_metadata_16.json  tracked  WS2/run_metadata_16.json ; BOX/run_metadata_16.json
+732750b3f711a9bd83c5d40df08c0323296177e812f8175de6cf1f3897349986  2331  run_metadata_17.json  tracked  WS2/run_metadata_17.json ; BOX/run_metadata_17.json
+d34ebdc39d4f172e0370e963a7874779dd30da828a1bb9d42056102985dbdf60  2332  run_metadata_18.json  tracked  WS2/run_metadata_18.json ; BOX/run_metadata_18.json
+b1591f743194935ac08f6d8b5e05443f7718a2fa5d4a750ea2524255573ffc22  2331  run_metadata_19.json  tracked  WS2/run_metadata_19.json ; BOX/run_metadata_19.json
+847f54dbf684ec5018f096934e7fd2ebcbc759881af2b941459ce87ccf3121d4  2329  run_metadata_1.json  tracked  WS2/run_metadata_1.json ; BOX/run_metadata_1.json
+43c11f8ebc3883900b2d2d52389d6399508b3ab123fb0cf68ee3582b1641ce9b  2332  run_metadata_20.json  tracked  WS2/run_metadata_20.json ; BOX/run_metadata_20.json
+d076749d02bd3f059974af363e6677e0f716b20b042f1706e18f4fb45a69ceff  2331  run_metadata_21.json  tracked  WS2/run_metadata_21.json ; BOX/run_metadata_21.json
+eb3c10f368d0a8194a29b4e5e053a3cc2b9e7ab2b4d125e00a134447e6543073  2332  run_metadata_22.json  tracked  WS2/run_metadata_22.json ; BOX/run_metadata_22.json
+ea003a49b424ae4a639ad6e706d0923c72021e6892bfdeb1cf4133241921a330  2331  run_metadata_23.json  tracked  WS2/run_metadata_23.json ; BOX/run_metadata_23.json
+a46f17a61b38b55f775597049cb44080d53e3a493f0fe75f5cdcc5e61dff5cc2  2332  run_metadata_24.json  tracked  WS2/run_metadata_24.json ; BOX/run_metadata_24.json
+c6cb437aa98cfdeb6428d394d2b7ce29b3142490780478de7114bcdd070853d7  2331  run_metadata_25.json  tracked  WS2/run_metadata_25.json ; BOX/run_metadata_25.json
+62067a62b66e643343de315b354bc3739f39868722b4e7bc5bbf850a084fbdcb  2332  run_metadata_26.json  tracked  WS2/run_metadata_26.json ; BOX/run_metadata_26.json
+72918d7aab0aa67fde57cf64543b0448e506111cbe2470878acdad6edd89de54  2331  run_metadata_27.json  tracked  WS2/run_metadata_27.json ; BOX/run_metadata_27.json
+3e4dce7d5d897af3043cba75f643455f39e964701815e5bb22e8345d840427fa  2332  run_metadata_28.json  tracked  WS2/run_metadata_28.json ; BOX/run_metadata_28.json
+4568adb85ccf7ed0a6adb8d0fdbb0c938ac64f6bf912131e98af8561443cb970  2331  run_metadata_29.json  tracked  WS2/run_metadata_29.json ; BOX/run_metadata_29.json
+fbcb14b9443cc67032ffd610baacc432518325008a54ce37393283c23c206fb4  2329  run_metadata_2.json  tracked  WS2/run_metadata_2.json ; BOX/run_metadata_2.json
+2318e788d2a81c606acdb0c18fb65a9ad6032f60cfb26aa4e7f0b1d8e3f40af4  2332  run_metadata_30.json  tracked  WS2/run_metadata_30.json ; BOX/run_metadata_30.json
+c8499af6c8c68bbb3de10bf7aa5cdf19a309f8e14e1eabba83808a89299f105c  2331  run_metadata_31.json  tracked  WS2/run_metadata_31.json ; BOX/run_metadata_31.json
+85547c1fe5141c798e9a9b846b332190c8d193717cac8e8bd08e0e1fdc760522  2332  run_metadata_32.json  tracked  WS2/run_metadata_32.json ; BOX/run_metadata_32.json
+54509931b8532724b67435f52e9dcbc81875f6814548c9fa8f5a594353bfc031  2331  run_metadata_33.json  tracked  WS2/run_metadata_33.json ; BOX/run_metadata_33.json
+900730967dcf3e8f094099914adc5d58a73c3a9f9ad438c809ed0dbe9dd06266  2330  run_metadata_34.json  tracked  WS2/run_metadata_34.json ; BOX/run_metadata_34.json
+860c4a421599bf290a36d1b24d808bdb949fb799f1e2961e00e9990186394160  2331  run_metadata_35.json  tracked  WS2/run_metadata_35.json ; BOX/run_metadata_35.json
+15645f1aa1caf75c6874f0d8ab775a0f7fc4dad92831d774904d89d9c9fc28d3  2331  run_metadata_36.json  tracked  WS2/run_metadata_36.json ; BOX/run_metadata_36.json
+10fa27d183e9da9a111a22ff17780c28e5afaab18e98b2ca14b8a79538f67218  2331  run_metadata_37.json  tracked  WS2/run_metadata_37.json ; BOX/run_metadata_37.json
+f40a8720d5ecdc5006dc4df877c8d38d5d534e11d9fbc2aff86f30c8c6f1d6f0  2331  run_metadata_38.json  tracked  WS2/run_metadata_38.json ; BOX/run_metadata_38.json
+dc824361363dee885e146a00c65ce512de315a828dfe524fe13531a081086f62  2331  run_metadata_39.json  tracked  WS2/run_metadata_39.json ; BOX/run_metadata_39.json
+b721a6065743824e096ac795838d0f23c0620a8ba1f08ce54cfe330f6afae6f7  2329  run_metadata_3.json  tracked  WS2/run_metadata_3.json ; BOX/run_metadata_3.json
+7c99827ea98973d92d323f20de4b51f181feb61a6fcecfdc37dcbe7670e0b894  2331  run_metadata_40.json  tracked  WS2/run_metadata_40.json ; BOX/run_metadata_40.json
+5f622ece5f2d08208c6332585a230c207c8bff8f1049e1f9c869cf81ef6f6bf1  2329  run_metadata_4.json  tracked  WS2/run_metadata_4.json ; BOX/run_metadata_4.json
+9baa515ba34cfba1637ed25b77bf0646cbd608bd82a21b7fb6f2627697fef4fd  2329  run_metadata_5.json  tracked  WS2/run_metadata_5.json ; BOX/run_metadata_5.json
+36628d084d24cf35a725dba40e193a557521df2023b43d6f3477d3aa227cbef1  2330  run_metadata_6.json  tracked  WS2/run_metadata_6.json ; BOX/run_metadata_6.json
+8166f17580407eab7d910d4c1b83470aba1ad690fb970d5afab7d8253c3ba201  2329  run_metadata_7.json  tracked  WS2/run_metadata_7.json ; BOX/run_metadata_7.json
+68a05cb8bc76872777cb9aedbfb77bba00782192f9e8eee568d9c2f3d1356d6a  2330  run_metadata_8.json  tracked  WS2/run_metadata_8.json ; BOX/run_metadata_8.json
+752dce181fd704034175307ed06e088eeeda2528482c3e17f83f1a171e9de531  2329  run_metadata_9.json  tracked  WS2/run_metadata_9.json ; BOX/run_metadata_9.json
+bef5da057aa2be52dbe110bde0089783f26d4c7135d004f936aa1c95bc34bb5a  15573458  simulations/diagnostics/event_likelihoods.csv  tracked  WS2/simulations/diagnostics/event_likelihoods.csv ; BOX/simulations/diagnostics/event_likelihoods.csv
+dfe32a9c949a230289c7a3cb14798772583718b8bae1bf1bb9228cb3163c3292  62927  simulations/fisher_quality.csv  tracked  WS2/simulations/fisher_quality.csv ; BOX/simulations/fisher_quality.csv
+2bc674abc4f44a1ab8aea6617374d78bd442c46acbc8d3b869338a155d62d806  41147  simulations/posteriors/h_0_61.json  tracked  WS2/simulations/posteriors/h_0_61.json ; BOX/simulations/posteriors/h_0_61.json
+29e932ce78263aa7eb91b486ac91d0ce54276bd28e07c49e41066f4854449c99  41160  simulations/posteriors/h_0_62.json  tracked  WS2/simulations/posteriors/h_0_62.json ; BOX/simulations/posteriors/h_0_62.json
+2b8dc780cc992da84654a12e88b07d81ede37c51df0cd5886ea7aec924a93e67  41172  simulations/posteriors/h_0_63.json  tracked  WS2/simulations/posteriors/h_0_63.json ; BOX/simulations/posteriors/h_0_63.json
+6cbee9fcb91fc165119321cec2fd5bc14fff273e1838100b0732f699782f38c0  41185  simulations/posteriors/h_0_64.json  tracked  WS2/simulations/posteriors/h_0_64.json ; BOX/simulations/posteriors/h_0_64.json
+c434f2eadf374e066305d831e896e563081238d31970569edff4bff07ae0d379  41233  simulations/posteriors/h_0_655.json  tracked  WS2/simulations/posteriors/h_0_655.json ; BOX/simulations/posteriors/h_0_655.json
+4dda2c56c2f95f305d530bcaf850f9be7832a41ffd7df7781f8727472daeab51  41213  simulations/posteriors/h_0_65.json  tracked  WS2/simulations/posteriors/h_0_65.json ; BOX/simulations/posteriors/h_0_65.json
+55197ace7aa53997b190f787f400e088cf8ec6a2ea77d884db5a0a317d760a09  41191  simulations/posteriors/h_0_665.json  tracked  WS2/simulations/posteriors/h_0_665.json ; BOX/simulations/posteriors/h_0_665.json
+f8cf49d7bf53a521c3a682d8ebf3ee40dd1cd2651c0c97f34a3b1e28fd2f9af8  41161  simulations/posteriors/h_0_66.json  tracked  WS2/simulations/posteriors/h_0_66.json ; BOX/simulations/posteriors/h_0_66.json
+1cb1cb63b59b42dd1992f7c6c77f63543d1eedd06eb25a9035cac058649f2e0c  41239  simulations/posteriors/h_0_675.json  tracked  WS2/simulations/posteriors/h_0_675.json ; BOX/simulations/posteriors/h_0_675.json
+172a1f53e5babb8934bbcb264f33aff5d7d60db426fc3143f445de4e26de642c  41174  simulations/posteriors/h_0_67.json  tracked  WS2/simulations/posteriors/h_0_67.json ; BOX/simulations/posteriors/h_0_67.json
+651431135a933e85d9ce75127a758942699291fdecbe6e788a994bbec363a8dc  41224  simulations/posteriors/h_0_685.json  tracked  WS2/simulations/posteriors/h_0_685.json ; BOX/simulations/posteriors/h_0_685.json
+271d66b1b8fb40d4b58de23dc877616dbfffdf30e8feb048cb183ee23296d094  41191  simulations/posteriors/h_0_68.json  tracked  WS2/simulations/posteriors/h_0_68.json ; BOX/simulations/posteriors/h_0_68.json
+2da5c9e49786fd2884a013474e24d2a1e28558c7ca73f71f7f01949d2d8c7a89  41179  simulations/posteriors/h_0_695.json  tracked  WS2/simulations/posteriors/h_0_695.json ; BOX/simulations/posteriors/h_0_695.json
+ce00a9fd65bce3ce37656c62bfcef6f53c20d91bb51fd4d2b472df176616b46d  41193  simulations/posteriors/h_0_69.json  tracked  WS2/simulations/posteriors/h_0_69.json ; BOX/simulations/posteriors/h_0_69.json
+7d99777f6ec21ac54a2fa22f6b1a7d09f4913a1600c17381f386d00e4921a204  41188  simulations/posteriors/h_0_6.json  tracked  WS2/simulations/posteriors/h_0_6.json ; BOX/simulations/posteriors/h_0_6.json
+b358f8dac7b32eaa2fd2cd9a1c51d2de47fb21542c8a55b20bc05f57f1a3db7f  41220  simulations/posteriors/h_0_705.json  tracked  WS2/simulations/posteriors/h_0_705.json ; BOX/simulations/posteriors/h_0_705.json
+1c8c04c33b0cd8d9b0d384345d3474aab3599ca85fe40de9049afc234b2b1b9b  41192  simulations/posteriors/h_0_715.json  tracked  WS2/simulations/posteriors/h_0_715.json ; BOX/simulations/posteriors/h_0_715.json
+e64c104118277f3cf4791baa49aee235854c34515487b81855872206b6d38f2d  41210  simulations/posteriors/h_0_71.json  tracked  WS2/simulations/posteriors/h_0_71.json ; BOX/simulations/posteriors/h_0_71.json
+08831464874b59501ccd228413e4b83570d41ab849cc23eb87742bb7695f3828  41195  simulations/posteriors/h_0_725.json  tracked  WS2/simulations/posteriors/h_0_725.json ; BOX/simulations/posteriors/h_0_725.json
+820385b12e84b3b9ee49d3c5a56dc4ed474597012f8730b7474f98f9ec2ce872  41164  simulations/posteriors/h_0_72.json  tracked  WS2/simulations/posteriors/h_0_72.json ; BOX/simulations/posteriors/h_0_72.json
+c252e88c20da80db2274114d67e4936168d9ac59dc4b61ede0f033440e6c6d8f  41225  simulations/posteriors/h_0_735.json  tracked  WS2/simulations/posteriors/h_0_735.json ; BOX/simulations/posteriors/h_0_735.json
+af8fe55eb21ec5a7a0e7b0775f24d8198902686111a3b4fd7390c191ea8f7145  41178  simulations/posteriors/h_0_73.json  tracked  WS2/simulations/posteriors/h_0_73.json ; BOX/simulations/posteriors/h_0_73.json
+861cd85cf4186060126c4d0fdfeb9af11d7a55833520453ba1210e6cc7c031f2  41204  simulations/posteriors/h_0_745.json  tracked  WS2/simulations/posteriors/h_0_745.json ; BOX/simulations/posteriors/h_0_745.json
+cdc994c5b9a4379249dba92a47ad9bf0bb731f23fdec3edd5594c61750e812fb  41203  simulations/posteriors/h_0_74.json  tracked  WS2/simulations/posteriors/h_0_74.json ; BOX/simulations/posteriors/h_0_74.json
+ee1ea1a098d4a111a5893080c5c6611d6505cfdc580e2d278f296a8f15e364b9  41189  simulations/posteriors/h_0_755.json  tracked  WS2/simulations/posteriors/h_0_755.json ; BOX/simulations/posteriors/h_0_755.json
+d7536bf8f760315260ee14a386ef57641828bac4989f730ed26942914c1d4337  41202  simulations/posteriors/h_0_75.json  tracked  WS2/simulations/posteriors/h_0_75.json ; BOX/simulations/posteriors/h_0_75.json
+a98c00ca3637722cce14ebe47f5689feb6d5fc5506f5f94ebd1fe5236c60d35b  41184  simulations/posteriors/h_0_765.json  tracked  WS2/simulations/posteriors/h_0_765.json ; BOX/simulations/posteriors/h_0_765.json
+ebccd02fc23bfda00bb464220d8dceeb888751090f9d2e2083803efeb0609d8a  41203  simulations/posteriors/h_0_76.json  tracked  WS2/simulations/posteriors/h_0_76.json ; BOX/simulations/posteriors/h_0_76.json
+bacc3f3badfc6654d7d20124e2ae12b1da50d5280175e9545e277e2c295850da  41199  simulations/posteriors/h_0_775.json  tracked  WS2/simulations/posteriors/h_0_775.json ; BOX/simulations/posteriors/h_0_775.json
+77d96e57078e31d8fceb7e8fdeffc135c06524fa4b22d809627ea228f1d000bc  41185  simulations/posteriors/h_0_77.json  tracked  WS2/simulations/posteriors/h_0_77.json ; BOX/simulations/posteriors/h_0_77.json
+ea95471d45a86249f989adcd22ce1bda10cd246bf6980581c30f7d5831f2d633  41250  simulations/posteriors/h_0_785.json  tracked  WS2/simulations/posteriors/h_0_785.json ; BOX/simulations/posteriors/h_0_785.json
+575058a9b77f8fd2ae9021e55ebc5df4917c031d80021195ceecef9054a987ff  41189  simulations/posteriors/h_0_78.json  tracked  WS2/simulations/posteriors/h_0_78.json ; BOX/simulations/posteriors/h_0_78.json
+2fa9d6586d79deab40cd17660be423d4cd55d8e7f5aa77ce310920e3b351bc4a  41198  simulations/posteriors/h_0_79.json  tracked  WS2/simulations/posteriors/h_0_79.json ; BOX/simulations/posteriors/h_0_79.json
+f51c8e88459fea421cec7e50c7e5e05f20cdcd8ffe615e9f92b69d3cba13d124  41186  simulations/posteriors/h_0_7.json  tracked  WS2/simulations/posteriors/h_0_7.json ; BOX/simulations/posteriors/h_0_7.json
+847c306c4e8767b34a77df7bf2f17fda6746b88a26217da8aa1abee9e0e5cc25  41191  simulations/posteriors/h_0_81.json  tracked  WS2/simulations/posteriors/h_0_81.json ; BOX/simulations/posteriors/h_0_81.json
+85e13b5f24e0edde93ed4fbbf4aaefc6d824d019b3230310273ffb1cc62e20c3  41209  simulations/posteriors/h_0_82.json  tracked  WS2/simulations/posteriors/h_0_82.json ; BOX/simulations/posteriors/h_0_82.json
+09d74f0ead235ae69f5095b17dceb76dd5ee9a29180f7e89b294f8015da7aa0d  41189  simulations/posteriors/h_0_83.json  tracked  WS2/simulations/posteriors/h_0_83.json ; BOX/simulations/posteriors/h_0_83.json
+f847554110230f843e41a04c3fc5dddfce9937832fe4bcc72884528b65030350  41195  simulations/posteriors/h_0_84.json  tracked  WS2/simulations/posteriors/h_0_84.json ; BOX/simulations/posteriors/h_0_84.json
+1877605c6add308065250a0908f329886de1d4383cbbb0257d73840fae207035  41191  simulations/posteriors/h_0_85.json  tracked  WS2/simulations/posteriors/h_0_85.json ; BOX/simulations/posteriors/h_0_85.json
+d425307b2232413fe0c4a377f41eb2baf3a1a5e8bbbc56e86c74e504bbee82d8  41197  simulations/posteriors/h_0_86.json  tracked  WS2/simulations/posteriors/h_0_86.json ; BOX/simulations/posteriors/h_0_86.json
+7c399af1b1948c4de6fc572356087b111664cf9068ac90a87df47214307dad9a  41223  simulations/posteriors/h_0_8.json  tracked  WS2/simulations/posteriors/h_0_8.json ; BOX/simulations/posteriors/h_0_8.json
+# Off-manifest, NOT tracked:
+-  3540577702  simulations/posteriors_with_bh_mass/ (41 files, du -sb on BOX)  cluster-and-box-only-by-design  WS2/simulations/posteriors_with_bh_mass/ ; BOX/simulations/posteriors_with_bh_mass/
+-  -  t0_read.py (the T0 scorer behind READ_RECORD_m1.md)  UNRECOVERED  not in any git ref, not on BOX (listing search 2026-10-19); see REPORT-R2.md

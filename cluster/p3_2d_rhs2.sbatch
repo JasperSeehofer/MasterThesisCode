@@ -82,7 +82,7 @@ SEED=$((BASE_SEED + 100 * TID))
 N_DRAWS=800
 F10C_REFERENCE_N=2000
 
-: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (ws_find emri) — run cluster/setup.sh first}"
+: "${WORKSPACE:?WORKSPACE not resolved by modules.sh (workspace name: cluster/cluster.env) — run cluster/setup.sh first}"
 OUT_ROOT="$WORKSPACE/p3_2d_rhs2_20260826/task${TID}"
 LOG_DIR="$WORKSPACE/p3_2d_rhs2_20260826/logs"
 mkdir -p "$OUT_ROOT" "$LOG_DIR"
@@ -93,6 +93,14 @@ LOG_BASE="$LOG_DIR/task${TID}_seed${SEED}"
 exec > "${LOG_BASE}.out" 2> "${LOG_BASE}.err"
 
 echo "=== p3-2d-rhs2 task=$TID seed=$SEED out_root=$OUT_ROOT host=$(hostname) commit=$(git rev-parse HEAD) ==="
+
+# Provenance stamp (cluster/SKILL.md gotcha #12): bare `python <driver>.py`
+# invocation bypasses main.py's run_metadata writer. Stamped into LOG_DIR, not
+# OUT_ROOT — `--stage rhs2` REFUSES a non-empty out-root (PA-CA-11 idempotency
+# check above), so OUT_ROOT must stay empty until the driver itself writes to it.
+TASK_SEED="$SEED"
+source "$PROJECT_ROOT/cluster/write_provenance.sh"
+write_provenance "$LOG_DIR" "p3_2d_rhs2 task$TID"
 
 DRIVER="results/campaign51_20260728/realistic_20260729/ca_rhs_scorer.py"
 

@@ -1,0 +1,42 @@
+==============================================================================
+B8.2 [CAL] harness -- score-only aggregate (INFORMATIONAL, no verdict; launched under rows #255/#268 -- tree 2 node B8.2.S2)
+n_universes = 25  cell = T  population = 200
+  run_status: stopped_reason=exhausted_n_universes wall_limited=False n_done_this_invocation=20/25
+------------------------------------------------------------------------------
+channel = no_bh
+  sigma_h,harness (median SD)  = 0.0589684
+  sigma_h,floor (B8.1)         = 0.00520363
+  F = SD/floor                 = 11.33
+  PIT-KS D                     = 0.306  (informational band: <= 0.134 at n_U=100)
+  coverage hpd50 = 0.400 (10/25), 2sigma band [0.3, 0.7], in_band=True
+  coverage hpd68 = 0.560 (14/25), 2sigma band [0.49340953936495047, 0.8665904606350496], in_band=True
+  coverage hpd90 = 0.880 (22/25), 2sigma band [0.78, 1.02], in_band=True
+  coverage hpd95 = 0.880 (22/25), 2sigma band [0.8628220211291865, 1.0371779788708135], in_band=True
+  mean(MAP) - h_true = 0.0388, Z = 2.82
+  score-zero[catalogue_hosted]: Z = 3.48, pass(|Z|<=3) = False
+  score-zero[dark]: Z = 0.871, pass(|Z|<=3) = True
+  score-zero[all]: Z = 2.49, pass(|Z|<=3) = True
+------------------------------------------------------------------------------
+channel = with_bh
+  sigma_h,harness (median SD)  = 0.0595289
+  sigma_h,floor (B8.1)         = 0.00520337
+  F = SD/floor                 = 11.44
+  PIT-KS D                     = 0.3459  (informational band: <= 0.134 at n_U=100)
+  coverage hpd50 = 0.400 (10/25), 2sigma band [0.3, 0.7], in_band=True
+  coverage hpd68 = 0.480 (12/25), 2sigma band [0.49340953936495047, 0.8665904606350496], in_band=False
+  coverage hpd90 = 0.840 (21/25), 2sigma band [0.78, 1.02], in_band=True
+  coverage hpd95 = 0.880 (22/25), 2sigma band [0.8628220211291865, 1.0371779788708135], in_band=True
+  mean(MAP) - h_true = 0.0488, Z = 3.58
+  score-zero[catalogue_hosted]: Z = 2.94, pass(|Z|<=3) = True
+  score-zero[dark]: Z = 1.92, pass(|Z|<=3) = True
+  score-zero[all]: Z = 3.1, pass(|Z|<=3) = False
+------------------------------------------------------------------------------
+absolute-count audit (n_pred vs n_real, harness-universe instrument test):
+  z in (0.075, 0.392]: n_real=2068 n_pred=2069.57 Z=-0.0345 in_3sigma=True
+  z in (0.392, 0.559]: n_real=1651 n_pred=1609.09 Z=1.04 in_3sigma=True
+  z in (0.559, 0.659]: n_real=624 n_pred=630.17 Z=-0.246 in_3sigma=True
+  z in (0.659, 0.753]: n_real=366 n_pred=363.56 Z=0.128 in_3sigma=True
+  z in (0.753, 1.018]: n_real=246 n_pred=251.97 Z=-0.376 in_3sigma=True
+==============================================================================
+NOTE: the above are band OUTCOMES for the chair's/S4's own read -- this script does
+NOT emit a PASS/FAIL verdict (design §8 S2 acceptance, rule 2).

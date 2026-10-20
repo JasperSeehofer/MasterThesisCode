@@ -1,0 +1,18 @@
+{
+  "L_cat_no_bh_max_abs_diff": 0.0,
+  "L_cat_no_bh_exact": true,
+  "alpha_G_phi_22_unique_count": 1,
+  "alpha_G_phi_reg_unique_count": 1,
+  "alpha_G_phi_22_value": 58688310.0,
+  "alpha_G_phi_reg_value": 51635200.0,
+  "alpha_G_phi_pct_change_base22_to_reg": -12.017912937005683,
+  "D_tilde_phi_22_unique_count": 1,
+  "D_tilde_phi_reg_unique_count": 1,
+  "D_tilde_phi_22_value": 947092100.0,
+  "D_tilde_phi_reg_value": 940039000.0,
+  "D_tilde_phi_pct_change_base22_to_reg": -0.744711100430465,
+  "combined_no_bh_max_rel": 0.0074471153155849824,
+  "combined_no_bh_max_rel_event_idx": 3,
+  "w_G_22_value": 0.0619668411108587,
+  "w_G_reg_value": 0.0549287868047627
+}

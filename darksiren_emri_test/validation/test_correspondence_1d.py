@@ -14,12 +14,13 @@ import dataclasses
 import inspect
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import pytest
 from scipy.integrate import quad
-from scipy.stats import norm
+from scipy.stats import kstest, norm
 
 from darksiren_emri.emri_rate import R_eff_per_mbh
 from darksiren_emri.validation import correspondence_1d as c1d
@@ -176,6 +177,33 @@ def test_run_mirror_seed_inprocess_accepts_mass_filter_sigma_default_symmetric()
     sig = inspect.signature(c1d.run_mirror_seed_inprocess)
     assert "mass_filter_sigma" in sig.parameters
     assert sig.parameters["mass_filter_sigma"].default == "symmetric"
+
+
+def test_run_mirror_seed_inprocess_accepts_mass_filter_geometry_defaults() -> None:
+    """Mass-window GEOMETRY instrument flag (charter node B5.1,
+    PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+    #220-#223): the pass-through parameters exist with the
+    production-inert ("linear"/1.5, byte-identical) defaults, following the
+    same inert-plumbing pattern as the neighboring ``mass_filter_sigma`` /
+    ``catalogue_*`` flags on this function."""
+    sig = inspect.signature(c1d.run_mirror_seed_inprocess)
+    assert "mass_filter_geometry" in sig.parameters
+    assert sig.parameters["mass_filter_geometry"].default == "linear"
+    assert "mass_filter_k" in sig.parameters
+    assert sig.parameters["mass_filter_k"].default == 1.5
+
+
+def test_run_mirror_seed_inprocess_defaults_to_mz_sel_and_eff() -> None:
+    """[P3-2D] with-BH catalogue-leg twin production-default flip (row #223
+    standing grant, charter node B7.3;
+    PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md §1.4 site 9): this
+    function's own declaration site flips in step with
+    BayesianStatistics.evaluate()'s; explicit "off"/"unset" stays the
+    pre-adoption COUNTERFACTUAL and is what every registered CoR-P/Class-B
+    caller (§6.1 (a-v)) must now pin explicitly."""
+    sig = inspect.signature(c1d.run_mirror_seed_inprocess)
+    assert sig.parameters["catalogue_numerator_survival_2d"].default == "mz_sel"
+    assert sig.parameters["catalogue_numerator_survival_2d_center"].default == "eff"
 
 
 # ── Fleet arm-runner CLI tests (task spec item 4: fast, no pool) ────────────
@@ -1755,6 +1783,868 @@ def test_catalogue_selected_2d_rejection_loop_stops_on_zero_survival(
         )
 
 
+def _draw_2d_accepted_latents_pre_repair(
+    rng: np.random.Generator,
+    pool: c1d.HostPool,
+    host_w: np.ndarray,
+    s_tilde_phi: np.ndarray,
+    phi_survival_table: dict[float, tuple[np.ndarray, np.ndarray]],
+    completeness: c1d.CompletenessModel,
+    detection_probability: object,
+    n: int,
+    h: float = c1d.H_TRUE,
+) -> dict[str, np.ndarray]:
+    """Verbatim reference copy of the PRE-repair ``_draw_2d_accepted_latents`` (floor-CLIP the
+    latent mass to 1.0 M_sun, no ``M <= 0`` rejection) -- used ONLY by
+    ``test_catalogue_selected_2d_byte_identical_to_pre_repair_when_no_floor_rows`` below to pin
+    byte-identity with the repaired code on a synthetic case where no floor row is ever
+    triggered. Do NOT "clean up" to match the current implementation -- that would defeat the
+    point of the pin. Mirrors the pre-``R-2D-1`` code exactly (batch sizing, RNG consumption
+    order, floor value); the only intentional difference from the real function is returning a
+    plain dict instead of :class:`c1d._B0i2DLatents` (this reference does not need the extra
+    recorded fields the real dataclass carries).
+
+    PHYSICS_CHANGE_SBARPHI_20260827.md, 2026-09-02: this reference isolates ONLY the R-2D-1
+    (mass-floor) defect, not the S̄_φ defect -- it now passes ``apply_survival=False`` to
+    :func:`c1d._draw_kernel_survival_redshifts` to match the real ``_draw_2d_accepted_latents``'s
+    (post-fix) z-density, so the byte-identity pin below stays a pin on the mass-floor mechanism
+    alone, not a stale comparison against a z-density the real function no longer computes.
+    """
+    assert pool.M is not None and pool.M_error is not None
+    old_floor = 1.0
+    host_idx_acc: list[np.ndarray] = []
+    z_true_acc: list[np.ndarray] = []
+    m_true_acc: list[np.ndarray] = []
+    m_z_true_acc: list[np.ndarray] = []
+    s4d_acc: list[np.ndarray] = []
+    n_accepted = 0
+    round_idx = 0
+    while n_accepted < n and round_idx < c1d._M2D_MAX_ROUNDS:
+        remaining = n - n_accepted
+        batch = int(
+            np.clip(c1d._M2D_BATCH_MULTIPLIER * remaining, c1d._M2D_MIN_BATCH, c1d._M2D_MAX_BATCH)
+        )
+        host_idx_batch = rng.choice(pool.n, size=batch, replace=True, p=host_w)
+        host_z_listed = pool.z[host_idx_batch]
+        host_z_error_listed = pool.z_error[host_idx_batch]
+        host_phiS_batch = pool.phiS[host_idx_batch]
+        host_qS_batch = pool.qS[host_idx_batch]
+        z_true_batch = c1d._draw_kernel_survival_redshifts(
+            rng,
+            host_z_listed,
+            host_z_error_listed,
+            phi_survival_table,
+            completeness,
+            host_phiS_batch,
+            host_qS_batch,
+            h=h,
+            apply_survival=False,
+        )
+        host_m = pool.M[host_idx_batch]
+        host_m_error = pool.M_error[host_idx_batch]
+        m_eff = c1d._eddington_shifted_host_mass_batch(host_m, host_m_error)
+        valid_sigma = (host_m_error > 0.0) & np.isfinite(host_m_error)
+        sigma = np.where(valid_sigma, host_m_error, 0.0)
+        m_true_batch = m_eff + sigma * rng.normal(size=batch)
+        m_true_batch = np.clip(m_true_batch, old_floor, None)
+        m_z_true_batch = m_true_batch * (1.0 + z_true_batch)
+
+        d_l_true_batch = np.asarray(c1d.dist_vectorized(z_true_batch, h=h), dtype=np.float64)
+        s4d_batch = np.asarray(
+            detection_probability.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                d_l_true_batch, m_z_true_batch, host_phiS_batch, host_qS_batch, h=h
+            ),
+            dtype=np.float64,
+        )
+        u_batch = rng.uniform(size=batch)
+        accept_mask = u_batch < s4d_batch
+
+        take = min(int(accept_mask.sum()), remaining)
+        if take > 0:
+            keep_idx = np.flatnonzero(accept_mask)[:take]
+            host_idx_acc.append(host_idx_batch[keep_idx].astype(np.int64))
+            z_true_acc.append(z_true_batch[keep_idx])
+            m_true_acc.append(m_true_batch[keep_idx])
+            m_z_true_acc.append(m_z_true_batch[keep_idx])
+            s4d_acc.append(s4d_batch[keep_idx])
+            n_accepted += take
+        round_idx += 1
+
+    if n_accepted < n:
+        raise RuntimeError(
+            f"pre-repair reference did not converge: accepted {n_accepted}/{n} after "
+            f"{round_idx} rounds"
+        )
+    return {
+        "host_idx": np.concatenate(host_idx_acc),
+        "z_true": np.concatenate(z_true_acc),
+        "M_true": np.concatenate(m_true_acc),
+        "M_z_true": np.concatenate(m_z_true_acc),
+        "s4d_at_truth": np.concatenate(s4d_acc),
+    }
+
+
+def test_catalogue_selected_2d_rejects_nonpositive_mass_not_floor_clips() -> None:
+    """DEFECT 1 (R-2D-1) regression, PA-2D-10 residual accounting
+    (p32d_residual_accounting_20260827.md): a host pool engineered so a large fraction of its
+    Gaussian mass draws land at/below zero (tiny mean mass, huge sigma) must produce NO accepted
+    latent with ``M_true <= 0``, and -- the sharper check -- NO accepted latent sitting exactly at
+    the OLD floor value (1.0 M_sun). The pre-repair code floor-clipped every negative draw to
+    exactly 1.0 and then still ran it through Bernoulli(S_4D) acceptance, manufacturing a spurious
+    point mass in the accepted class-G population (measured pre-repair: 793/4800 drawn latents
+    exactly at the floor, 372 of which cleared F-0 with w2 == 1.0 exactly). This test FAILS
+    against the pre-repair code (some accepted M_true == 1.0 exactly, a near-certainty with ~50%
+    of raw draws landing <= 0 and a 0.9 constant acceptance probability) and PASSES against the
+    repair, where M_true is drawn from a continuous distribution and is therefore never exactly
+    1.0 and never <= 0 by construction.
+    """
+    n_pool = 30
+    rng_pool = np.random.default_rng(9001)
+    pool = c1d.HostPool(
+        phiS=rng_pool.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng_pool.uniform(0.1, np.pi - 0.1, n_pool),
+        z=rng_pool.uniform(0.01, 0.3, n_pool),
+        z_error=rng_pool.uniform(0.001, 0.04, n_pool),
+        n=n_pool,
+        M=np.full(n_pool, 1.0),  # tiny mean -- the Eddington shift is a no-op at this scale
+        M_error=np.full(n_pool, 1.0e6),  # huge sigma -- ~50% of raw draws land <= 0
+    )
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    host_w, _w_g, s_tilde = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+
+    result = c1d._draw_2d_accepted_latents(
+        np.random.default_rng(2026),
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        _FakeS4D(value=0.9),  # type: ignore[arg-type]
+        n=100,
+    )
+
+    assert np.all(result.M_true > 0.0)
+    assert not np.any(np.isclose(result.M_true, 1.0))
+    assert np.all(result.M_z_true > 0.0)
+
+
+def test_catalogue_selected_2d_byte_identical_to_pre_repair_when_no_floor_rows() -> None:
+    """Byte-identity pin (task item 5): with ``M_error == 0`` for every host, the latent mass
+    draw is fully deterministic (``m_eff == host_M`` exactly, zero-multiplied noise) and
+    therefore ``M_true`` can never be <= 0 -- the pre-repair floor-clip and the repaired
+    reject-and-redraw are BOTH structural no-ops in this regime. Given the identical seed, the
+    repaired ``_draw_2d_accepted_latents`` must reproduce
+    :func:`_draw_2d_accepted_latents_pre_repair` EXACTLY (``assert_array_equal``, not
+    ``allclose``): no RNG stream reordering, no numerical drift.
+    """
+    n_pool = 20
+    rng_pool = np.random.default_rng(4242)
+    pool = c1d.HostPool(
+        phiS=rng_pool.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng_pool.uniform(0.1, np.pi - 0.1, n_pool),
+        z=rng_pool.uniform(0.01, 0.3, n_pool),
+        z_error=rng_pool.uniform(0.001, 0.04, n_pool),
+        n=n_pool,
+        M=rng_pool.uniform(1.0e5, 1.0e6, n_pool),
+        M_error=np.zeros(n_pool),  # deterministic mass -- guarantees zero floor rows
+    )
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    host_w, _w_g, s_tilde = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+    detection_probability = _FakeS4D(value=0.9)
+
+    new_result = c1d._draw_2d_accepted_latents(
+        np.random.default_rng(777),
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        detection_probability,  # type: ignore[arg-type]
+        n=15,
+    )
+    old_result = _draw_2d_accepted_latents_pre_repair(
+        np.random.default_rng(777),
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        detection_probability,
+        n=15,
+    )
+
+    np.testing.assert_array_equal(new_result.host_idx, old_result["host_idx"])
+    np.testing.assert_array_equal(new_result.z_true, old_result["z_true"])
+    np.testing.assert_array_equal(new_result.M_true, old_result["M_true"])
+    np.testing.assert_array_equal(new_result.M_z_true, old_result["M_z_true"])
+    np.testing.assert_array_equal(new_result.s4d_at_truth, old_result["s4d_at_truth"])
+
+
+class _CountingRng:
+    """RNG proxy recording every ``choice``/``normal``/``uniform`` call and the number of
+    variates it consumed, delegating everything else to a real ``np.random.Generator``.
+
+    Used by the RNG-STREAM gate (``PREREGISTRATION_P3_2D_REPAIR_20260827.md`` REGISTERED DESIGN
+    v2 gate G2, replacing the unrunnable "zero-floor-row seed" form per PA-2DR-5): the defect-1
+    repair's load-bearing claim is that rejecting ``M <= 0`` is an extra AND-condition on
+    ``accept_mask``, **not** an extra RNG draw. Instrumenting the generator observes exactly that,
+    on the CHANGED code path (a pool engineered to produce ``M <= 0`` draws), which the prereg's
+    §5 structural-blindness item 3 wrongly claimed was impossible by construction.
+    """
+
+    def __init__(self, rng: np.random.Generator) -> None:
+        self._rng = rng
+        self.log: list[tuple[str, int]] = []
+
+    def choice(self, *args: Any, **kwargs: Any) -> Any:
+        out = self._rng.choice(*args, **kwargs)
+        self.log.append(("choice", int(np.size(out))))
+        return out
+
+    def normal(self, *args: Any, **kwargs: Any) -> Any:
+        out = self._rng.normal(*args, **kwargs)
+        self.log.append(("normal", int(np.size(out))))
+        return out
+
+    def uniform(self, *args: Any, **kwargs: Any) -> Any:
+        out = self._rng.uniform(*args, **kwargs)
+        self.log.append(("uniform", int(np.size(out))))
+        return out
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._rng, name)
+
+
+def _split_rounds(log: list[tuple[str, int]]) -> list[list[tuple[str, int]]]:
+    """Segment a :class:`_CountingRng` log into per-round blocks. Each round of
+    ``_draw_2d_accepted_latents`` opens with the host ``choice`` draw, so ``choice`` is the
+    round delimiter.
+    """
+    rounds: list[list[tuple[str, int]]] = []
+    for entry in log:
+        if entry[0] == "choice":
+            rounds.append([])
+        if rounds:
+            rounds[-1].append(entry)
+    return rounds
+
+
+def _invalid_mass_pool(n_pool: int = 30, seed: int = 9001) -> c1d.HostPool:
+    """Host pool engineered so ~50% of the latent mass draws land at or below zero
+    (``M = 1 M_sun`` mean -- the Eddington shift is a no-op below its ``M > 0`` quadrature
+    guard's useful range -- with ``M_error = 1e6 M_sun``). This is the floor-row-CONTAINING
+    case, i.e. the repair's changed code path.
+    """
+    rng_pool = np.random.default_rng(seed)
+    return c1d.HostPool(
+        phiS=rng_pool.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng_pool.uniform(0.1, np.pi - 0.1, n_pool),
+        z=rng_pool.uniform(0.01, 0.3, n_pool),
+        z_error=rng_pool.uniform(0.001, 0.04, n_pool),
+        n=n_pool,
+        M=np.full(n_pool, 1.0),
+        M_error=np.full(n_pool, 1.0e6),
+    )
+
+
+def test_catalogue_selected_2d_rng_consumption_is_4x_batch_on_the_changed_path() -> None:
+    """RNG-STREAM gate (G2, PA-2DR-5(b)1) -- draw-count instrumentation on the CHANGED path.
+
+    On a pool where ~50% of latent mass draws are invalid (``M <= 0``), the repaired
+    ``_draw_2d_accepted_latents`` must consume **exactly 4 x batch** variates per round --
+    ``choice(batch)`` hosts, ``batch`` single-uniform inverse-CDF z draws
+    (``_draw_kernel_survival_redshifts`` consumes exactly ``len(host_z)`` uniforms, one per host,
+    documented at its own docstring), ``normal(batch)`` masses, ``uniform(batch)`` Bernoulli --
+    with the SAME per-round call signature in every round regardless of how many draws were
+    rejected. If rejection instead of clipping had introduced any extra draw or any
+    invalid-count-dependent consumption, the per-round signature would vary with the realized
+    invalid fraction and this assertion would fail.
+
+    The test also pins the FIRST round's call log against the pre-repair reference
+    implementation: round 1 has identical ``remaining`` (hence identical ``batch``) in both, so
+    the repair must consume byte-identically there even though its ACCEPTANCE differs.
+    """
+    pool = _invalid_mass_pool()
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    host_w, _w_g, s_tilde = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+
+    counting_new = _CountingRng(np.random.default_rng(2026))
+    result = c1d._draw_2d_accepted_latents(
+        counting_new,  # type: ignore[arg-type]
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        _FakeS4D(value=0.2),  # type: ignore[arg-type]  # low survival -> several rounds needed
+        n=100,
+    )
+    assert np.all(result.M_true > 0.0)  # the changed path really did reject
+
+    rounds = _split_rounds(counting_new.log)
+    assert len(rounds) >= 2, (
+        "the engineered ~50%-invalid pool must force at least one redraw round -- otherwise "
+        "this gate did not exercise the changed path at all"
+    )
+    signatures: set[tuple[str, ...]] = set()
+    for round_idx, block in enumerate(rounds):
+        batch = block[0][1]
+        assert block[0] == ("choice", batch)
+        # exactly 4 x batch variates consumed in the round
+        total = sum(size for _method, size in block)
+        assert total == 4 * batch, (
+            f"round {round_idx}: consumed {total} variates, expected 4 x batch = {4 * batch} "
+            "-- the M<=0 rejection must not consume extra draws"
+        )
+        # the z-kernel draw is `batch` separate single-uniform calls, then normal, then uniform
+        assert block[1 : 1 + batch] == [("uniform", 1)] * batch
+        assert block[1 + batch :] == [("normal", batch), ("uniform", batch)]
+        assert len(block) == batch + 3
+        # Signature NORMALIZED by the round's own batch: consecutive same-method calls collapse
+        # to one entry (the run of `batch` single-uniform z draws becomes one "uniform"), so the
+        # shape must be identical in every round even though `batch` itself legitimately shrinks
+        # as `remaining` falls. Derived from the observed log, never asserted as a constant.
+        collapsed: list[str] = []
+        for method, _size in block:
+            if not collapsed or collapsed[-1] != method:
+                collapsed.append(method)
+        signatures.add(tuple(collapsed))
+    assert signatures == {("choice", "uniform", "normal", "uniform")}, (
+        f"unexpected per-round RNG call shape: {signatures}"
+    )
+
+    counting_old = _CountingRng(np.random.default_rng(2026))
+    _draw_2d_accepted_latents_pre_repair(
+        counting_old,  # type: ignore[arg-type]
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        _FakeS4D(value=0.2),
+        n=100,
+    )
+    old_rounds = _split_rounds(counting_old.log)
+    assert rounds[0] == old_rounds[0], (
+        "round-1 RNG consumption differs from the pre-repair reference on identical inputs "
+        "and seed -- the repair reordered or added draws"
+    )
+
+
+def test_catalogue_selected_2d_accepted_mass_follows_truncated_normal() -> None:
+    """SUPPORT gate (G3, PA-2DR-5(b)3) -- the only EXTERNAL anchor in this design.
+
+    Give every host the SAME ``(M, M_error)``, so the venue's latent mass proposal is a single
+    normal ``N(mu, sigma)`` with ``mu = _eddington_shifted_host_mass_batch(M, M_error)`` and
+    ``sigma = M_error`` (the venue uses the RAW ``M_error`` as the draw sigma,
+    ``correspondence_1d.py`` :1735-1739), and give ``S_4D`` a CONSTANT value so acceptance is
+    independent of the drawn mass. Under those conditions rejection sampling on ``M > 0`` has a
+    closed-form target that owes nothing to this codebase: the accepted masses must follow the
+    TRUNCATED NORMAL ``N(mu, sigma) | M > 0``. With ``M = M_error = 1e6 M_sun`` about 16% of raw
+    proposals fall at or below zero, so the truncation is a large, easily-resolved effect.
+
+    Note on what is and is not externally anchored: ``(mu, sigma)`` are taken from the venue's own
+    (unchanged, defect-1-independent) proposal-mean helper -- the EXTERNAL content of the check is
+    the *truncation law* of rejection sampling, which is what defect 1 got wrong. The pre-repair
+    floor-CLIP piles those ~16% at exactly 1.0 M_sun instead of removing them, giving KS
+    ``D ~ 0.16`` against this target and ``p`` far below any threshold.
+
+    KS at a deliberately loose alpha = 1e-3: this is a correctness gate, not a power study.
+    """
+    n_pool = 40
+    rng_pool = np.random.default_rng(5150)
+    host_mass = 1.0e6
+    host_mass_error = 1.0e6
+    pool = c1d.HostPool(
+        phiS=rng_pool.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng_pool.uniform(0.1, np.pi - 0.1, n_pool),
+        z=rng_pool.uniform(0.01, 0.3, n_pool),
+        z_error=rng_pool.uniform(0.001, 0.04, n_pool),
+        n=n_pool,
+        M=np.full(n_pool, host_mass),
+        M_error=np.full(n_pool, host_mass_error),
+    )
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    host_w, _w_g, s_tilde = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+
+    result = c1d._draw_2d_accepted_latents(
+        np.random.default_rng(31337),
+        pool,
+        host_w,
+        s_tilde,
+        table,
+        completeness,
+        _FakeS4D(value=0.9),  # type: ignore[arg-type]
+        n=2000,
+    )
+
+    mu = float(
+        c1d._eddington_shifted_host_mass_batch(np.array([host_mass]), np.array([host_mass_error]))[
+            0
+        ]
+    )
+    sigma = host_mass_error
+    lost = float(norm.cdf(-mu / sigma))
+    assert lost > 0.05, (
+        f"the engineered pool truncates only {lost:.4f} of its proposals -- too little to make "
+        "this gate decisive; re-tune (M, M_error)"
+    )
+
+    def _truncated_cdf(x: np.ndarray) -> np.ndarray:
+        cdf: np.ndarray = np.asarray(norm.cdf((np.asarray(x) - mu) / sigma), dtype=np.float64)
+        return (cdf - lost) / (1.0 - lost)
+
+    assert np.all(result.M_true > 0.0)
+    ks = kstest(result.M_true, _truncated_cdf)
+    assert ks.pvalue > 1.0e-3, (
+        f"accepted latent masses reject the analytic truncated-normal N({mu:.4g},{sigma:.4g})"
+        f"|M>0 target (KS D={ks.statistic:.4f}, p={ks.pvalue:.3e}) -- the venue's accepted-mass "
+        "support does not match rejection sampling's own closed form"
+    )
+
+
+# ── PHYSICS_CHANGE_SBARPHI_20260827.md §2.2, Option A' (ratified, ledger row #314,
+# 2026-09-02): class-G S̄_φ de-double-weight, "catalogue_selected_2d"/b0i2d branch ONLY.
+# R1-R8 per §7 of the presentation, with the corrections its own adversarial review (AR-8,
+# D1-D7) applies: R5/R6 merged (D2/D3), R3 rebuilt host-independent (D5). The 1D
+# "catalogue_selected"/b0i and "mixture_selected" arms are covered by the PRE-EXISTING tests
+# above (unaffected by this change; see test_draw_kernel_survival_redshifts_matches_model_density
+# for the shared function's UNCHANGED default (apply_survival=True) behaviour, and
+# test_catalogue_selected_mode_does_not_enter_catalogue_selected_2d_code_path below for the b0i
+# arm's own non-entry guard).
+
+
+def test_draw_kernel_survival_redshifts_apply_survival_false_drops_the_factor() -> None:
+    """Direct unit test for the ``apply_survival`` flag added by
+    PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(ii)/Option A': with ``apply_survival=False`` the
+    density drops the ``S_bar_phi(z;h)`` factor entirely
+    (``density_i = kernel_i * w_pop_eff_i``). The default (``apply_survival=True``, exercised by
+    :func:`test_draw_kernel_survival_redshifts_matches_model_density` above) is UNCHANGED -- this
+    is the L8 non-regression guard for the shared function itself: the 1D
+    "catalogue_selected"/b0i and "mixture_selected" call sites never pass this flag, so their
+    output is bit-identical to before this change.
+    """
+    table = _fake_phi_survival_table(z_max=1.0)  # S_bar_phi(z) = exp(-3z)
+    completeness = _FakeIncompleteness()
+    z0, z_err0 = 0.2, 0.03
+    phi0, theta0 = 1.1, 1.4
+    n = 20000
+    rng = np.random.default_rng(2026)
+    host_z = np.full(n, z0)
+    host_z_error = np.full(n, z_err0)
+    host_phiS = np.full(n, phi0)
+    host_qS = np.full(n, theta0)
+    sample = c1d._draw_kernel_survival_redshifts(
+        rng,
+        host_z,
+        host_z_error,
+        table,
+        completeness,
+        host_phiS,
+        host_qS,
+        h=c1d.H_TRUE,
+        apply_survival=False,
+    )
+
+    lower, upper = c1d._host_kernel_window(np.array([z0]), np.array([z_err0]))
+    z_grid = np.linspace(float(lower[0]), float(upper[0]), 4000)
+    kernel = norm.pdf(z_grid, loc=z0, scale=z_err0)
+    pixel0 = completeness.ang2pix(phi0, theta0)
+    w_pop_f_k = np.array(
+        [
+            float(c1d.comoving_volume_element(float(z), h=c1d.H_TRUE))
+            / (1.0 + float(z))
+            * float(completeness.f_k(float(z), pixel0, c1d.H_TRUE))
+            for z in z_grid
+        ]
+    )
+    density_no_survival = kernel * w_pop_f_k  # NO S_bar_phi factor -- the new (post-fix) law
+
+    gap = c1d._max_cdf_gap(sample, z_grid, density_no_survival)
+    assert 0.0 <= gap < 0.02, gap
+
+    # Decisive counter-check (this is what makes the test non-vacuous, per §5 L2's warning that
+    # a constant survival table cannot distinguish the two forms): the sample must NOT also match
+    # the S_bar_phi-INCLUDED density.
+    z_table, s_table = table[c1d.H_TRUE]
+    s_vals = np.interp(z_grid, z_table, s_table)
+    density_with_survival = kernel * w_pop_f_k * s_vals
+    gap_with_survival = c1d._max_cdf_gap(sample, z_grid, density_with_survival)
+    assert gap_with_survival > 0.03, (
+        f"apply_survival=False sample still matches the S_bar_phi-included density "
+        f"(gap={gap_with_survival:.4f}) -- the flag may not be wired correctly"
+    )
+
+
+class _FakeS4DZDependent:
+    """R2 test double: ``S_4D`` depending on ``d_L(z;h)`` only (M-independent by design -- this
+    isolates the z-law double-count from the R7 mass-selection guard, tested separately), and
+    genuinely z-dependent (NOT the constant ``_FakeS4D`` this module's other doubles default to,
+    which §7/§5 L2 flag as blind to this exact fix).
+    """
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[int, float]] = []
+
+    def detection_probability_with_bh_mass_interpolated(
+        self,
+        d_L: np.ndarray,
+        M_z: np.ndarray,
+        phi: np.ndarray,
+        theta: np.ndarray,
+        *,
+        h: float,
+        z: np.ndarray | None = None,
+    ) -> np.ndarray:
+        d_l_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
+        self.calls.append((int(d_l_arr.size), float(h)))
+        return np.clip(0.9 * np.exp(-1.2 * d_l_arr), 0.0, 1.0)
+
+
+def test_catalogue_selected_2d_z_draw_matches_q_new_not_q_old() -> None:
+    """R2 (§7): the decisive law-identity discriminator. The accepted ``z_true`` marginal must
+    match ``q_new(z) ~ k̄_g(z) * S_4D(d_L(z;h))`` -- NOT the pre-fix
+    ``q_old(z) ~ k̄_g(z) * S_bar_phi(z;h) * S_4D(d_L(z;h))`` (the double-counted form, §3 of the
+    physics-change presentation). Single host (its host-draw weight is then a constant that
+    cancels in the ``_inverse_cdf_draw`` normalization, isolating the z-law) and an
+    M-independent, genuinely z-dependent ``S_4D`` (:class:`_FakeS4DZDependent`).
+    """
+    table = _fake_phi_survival_table(z_max=1.0)  # S_bar_phi(z) = exp(-3z)
+    completeness = _FakeIncompleteness()
+    z0, z_err0 = 0.25, 0.05
+    phi0, theta0 = 0.7, 1.2
+    pool = c1d.HostPool(
+        phiS=np.array([phi0]),
+        qS=np.array([theta0]),
+        z=np.array([z0]),
+        z_error=np.array([z_err0]),
+        n=1,
+        M=np.array([5.0e5]),
+        M_error=np.array([5.0e3]),  # 1% -- negligible M<=0 probability (>>10 sigma from zero)
+    )
+    _, w_g, s_tilde_phi = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+    host_w = w_g / w_g.sum()
+    detection_probability = _FakeS4DZDependent()
+
+    n = 20000
+    result = c1d._draw_2d_accepted_latents(
+        np.random.default_rng(99),
+        pool,
+        host_w,
+        s_tilde_phi,
+        table,
+        completeness,
+        detection_probability,  # type: ignore[arg-type]
+        n=n,
+    )
+
+    lower, upper = c1d._host_kernel_window(np.array([z0]), np.array([z_err0]))
+    z_grid = np.linspace(float(lower[0]), float(upper[0]), 4000)
+    kernel = norm.pdf(z_grid, loc=z0, scale=z_err0)
+    pixel0 = completeness.ang2pix(phi0, theta0)
+    w_pop_f_k = np.array(
+        [
+            float(c1d.comoving_volume_element(float(z), h=c1d.H_TRUE))
+            / (1.0 + float(z))
+            * float(completeness.f_k(float(z), pixel0, c1d.H_TRUE))
+            for z in z_grid
+        ]
+    )
+    z_table, s_table = table[c1d.H_TRUE]
+    s_bar = np.interp(z_grid, z_table, s_table)
+    d_l = np.asarray(c1d.dist_vectorized(z_grid, h=c1d.H_TRUE), dtype=np.float64)
+    s4d = np.clip(0.9 * np.exp(-1.2 * d_l), 0.0, 1.0)
+
+    density_new = kernel * w_pop_f_k * s4d  # q_new -- no S_bar_phi
+    density_old = kernel * w_pop_f_k * s_bar * s4d  # q_old -- the pre-fix double-count
+
+    gap_new = c1d._max_cdf_gap(result.z_true, z_grid, density_new)
+    gap_old = c1d._max_cdf_gap(result.z_true, z_grid, density_old)
+
+    assert gap_new < 0.02, gap_new
+    assert gap_old > 0.05, (
+        f"accepted z_true ALSO matches q_old (the double-counted S_bar_phi form, gap={gap_old:.4f}) "
+        "-- the fix may not be wired in"
+    )
+
+
+def test_catalogue_selected_2d_host_draw_uses_plain_rate_weight_not_sw_tilde_phi() -> None:
+    """R3 (§7), corrected per the presentation's own adversarial review D5: the "single most
+    important new test". PHYSICS_CHANGE_SBARPHI_20260827.md §2.2(i)/Option A' requires the 2D
+    branch's host draw to use the PLAIN rate weight ``w_g`` (normalized), never
+    ``w_g * S̃_φ,g`` (``catalogue_selected_host_draw_weights``'s first return value -- what the
+    1D "catalogue_selected"/b0i arm still uses, and what "Option-A-literal" -- §5 L6, the
+    granted-but-under-specified fix -- would leave in ``host_w`` unchanged).
+
+    D5's correction: the accepted-host marginal is ``propto w_g * A_g`` with
+    ``A_g = integral(k̄_g * p_gal * S_4D)``, not bare ``w_g``, UNLESS ``A_g`` is host-independent.
+    This construction makes it so: identical ``(M, M_error)`` across every host (so the mass
+    selection's acceptance fraction is the same for every host) and a host-independent constant
+    ``S_4D`` -- while giving the pool a WIDE spread in ``z_g`` so ``S̃_φ,g`` varies strongly under
+    the (non-trivial, non-constant) survival table, so the guard is decisive against
+    Option-A-literal specifically.
+    """
+    n_pool = 25
+    rng_pool = np.random.default_rng(20260902)
+    z_wide = np.concatenate(
+        [
+            rng_pool.uniform(0.01, 0.05, n_pool // 2),
+            rng_pool.uniform(0.6, 0.9, n_pool - n_pool // 2),
+        ]
+    )
+    pool = c1d.HostPool(
+        phiS=rng_pool.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng_pool.uniform(0.1, np.pi - 0.1, n_pool),
+        z=z_wide,
+        z_error=rng_pool.uniform(0.001, 0.01, n_pool),
+        n=n_pool,
+        M=np.full(n_pool, 5.0e5),
+        M_error=np.full(n_pool, 5.0e3),  # 1% -- host-independent, negligible truncation
+    )
+    table = _fake_phi_survival_table(z_max=1.0)  # S_bar_phi(z) = exp(-3z), steep
+    completeness = _FakeIncompleteness()
+
+    _, w_g, s_tilde_phi = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+    # Sanity: S̃_φ,g really does vary strongly across this pool, else the guard is vacuous.
+    assert s_tilde_phi.max() / s_tilde_phi.min() > 3.0, "S̃_φ,g spread too small to be decisive"
+    host_w = w_g / w_g.sum()
+
+    result = c1d._draw_2d_accepted_latents(
+        np.random.default_rng(7),
+        pool,
+        host_w,
+        s_tilde_phi,
+        table,
+        completeness,
+        _FakeS4D(value=0.8),  # type: ignore[arg-type]  # host-independent constant
+        n=20000,
+    )
+
+    counts = np.bincount(result.host_idx, minlength=n_pool).astype(np.float64)
+    total = counts.sum()
+
+    expected_counts = host_w * total
+    chi2 = float(np.sum((counts - expected_counts) ** 2 / expected_counts))
+    assert chi2 < 60.0, f"accepted-host marginal diverges from plain w_g/sum(w_g) (chi2={chi2:.2f})"
+
+    # Decisive counter-check: the marginal must NOT match Option-A-literal's residual
+    # w_g * S̃_φ,g law (what L6 says survives if only the z-density is fixed).
+    sw_tilde = w_g * s_tilde_phi
+    expected_counts_literal = (sw_tilde / sw_tilde.sum()) * total
+    chi2_literal = float(np.sum((counts - expected_counts_literal) ** 2 / expected_counts_literal))
+    assert chi2_literal > 200.0, (
+        "accepted-host marginal matches the Option-A-literal w_g*S̃_φ,g law -- host weight was "
+        "not swapped to plain w_g (L6 regression)"
+    )
+
+
+def test_catalogue_selected_2d_call_site_passes_plain_w_g_as_host_w(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """R8/L8 addition (§9.1): explicit guard on the ACTUAL ``draw_realization`` call-site wiring
+    (not just the lower-level ``_draw_2d_accepted_latents`` behaviour tested above). The
+    "catalogue_selected_2d" branch must pass the PLAIN normalized ``w_g`` as ``host_w`` --
+    never ``catalogue_selected_host_draw_weights``'s first return value (``w_g * S̃_φ,g``
+    normalized), which is what the 1D "catalogue_selected"/b0i arm's OWN call
+    (unaffected by this change) still consumes --
+    see :func:`test_catalogue_selected_host_draw_weights_matches_independent_computation` for
+    that value's own correctness.
+    """
+    n = 6
+    donor_csv = _make_donor_csv_2d(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass_and_error()
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+
+    captured: dict[str, np.ndarray] = {}
+    real_fn = c1d._draw_2d_accepted_latents
+
+    def _capture(rng: Any, pool_arg: Any, host_w: Any, *args: Any, **kwargs: Any) -> Any:
+        captured["host_w"] = np.asarray(host_w).copy()
+        return real_fn(rng, pool_arg, host_w, *args, **kwargs)
+
+    monkeypatch.setattr(c1d, "_draw_2d_accepted_latents", _capture)
+
+    gen.draw_realization(
+        seed=1,
+        host_pool=pool,
+        host_mode="catalogue_selected_2d",
+        completeness=completeness,
+        phi_survival_table=table,
+        detection_probability=_FakeS4D(value=0.9),  # type: ignore[arg-type]
+    )
+
+    host_w_swphi, w_g, _s_tilde = c1d.catalogue_selected_host_draw_weights(
+        pool, table, completeness
+    )
+    expected_plain = w_g / w_g.sum()
+    assert "host_w" in captured
+    np.testing.assert_allclose(captured["host_w"], expected_plain, rtol=1e-12)
+    max_abs_diff = float(np.max(np.abs(captured["host_w"] - host_w_swphi)))
+    assert max_abs_diff > 1e-6, (
+        "the 2D call site passed catalogue_selected_host_draw_weights's w_g*S̃_φ,g value as "
+        "host_w -- Option-A-literal / L6 regression"
+    )
+
+
+def test_catalogue_selected_2d_l1_complete_detection_limit() -> None:
+    """R5 (§7), corrected per the presentation's own adversarial review D2/D3: L1
+    (``S_4D == 1``, ``S_bar_phi == 1``) -- old and new forms are IDENTICAL at this limit (§5 L1),
+    so this is a forward-looking regression pin, not a diff-visibility test. D2's correction:
+    ``n_drawn_total`` is ``int(clip(4*n, 64, 4000))``, NOT ``n`` (the batch sizing always
+    over-draws; every candidate is simply accepted here). D3's correction folded in: this ALSO
+    covers L2 (a flat survival table, which is what makes ``_FakeS4D(value=c)`` non-vacuous in
+    the existing suite's tests) by construction, since the flat table here is exactly that case
+    with ``c=1``.
+    """
+    n_pool = 12
+    rng_pool = np.random.default_rng(20260902 + 1)
+    pool = c1d.HostPool(
+        phiS=rng_pool.uniform(0.0, 2 * np.pi, n_pool),
+        qS=rng_pool.uniform(0.1, np.pi - 0.1, n_pool),
+        z=rng_pool.uniform(0.01, 0.3, n_pool),
+        z_error=rng_pool.uniform(0.001, 0.04, n_pool),
+        n=n_pool,
+        M=rng_pool.uniform(1.0e5, 1.0e6, n_pool),
+        M_error=rng_pool.uniform(1.0e5, 1.0e6, n_pool) * 0.01,  # 1% -- negligible M<=0 rate
+    )
+    flat_table = {c1d.H_TRUE: (np.linspace(0.0, 2.0, 10), np.ones(10))}  # S_bar_phi == 1
+    completeness = _FakeIncompleteness()
+    _, w_g, s_tilde_phi = c1d.catalogue_selected_host_draw_weights(pool, flat_table, completeness)
+    np.testing.assert_allclose(s_tilde_phi, 1.0, atol=1e-12)  # sanity: the flat table is flat
+    host_w = w_g / w_g.sum()
+
+    n = 200
+    seed = 314159
+    result = c1d._draw_2d_accepted_latents(
+        np.random.default_rng(seed),
+        pool,
+        host_w,
+        s_tilde_phi,
+        flat_table,
+        completeness,
+        _FakeS4D(value=1.0),  # type: ignore[arg-type]
+        n=n,
+    )
+    expected_n_drawn = int(
+        np.clip(c1d._M2D_BATCH_MULTIPLIER * n, c1d._M2D_MIN_BATCH, c1d._M2D_MAX_BATCH)
+    )
+    assert result.n_rounds == 1
+    assert result.n_drawn_total == expected_n_drawn
+    np.testing.assert_array_equal(result.s4d_at_truth, np.ones(n))
+
+    # Bit-identical z_true replay (D2's second correction): the RNG stream draws the host batch
+    # FIRST, so a correct replay must reproduce that draw before calling
+    # _draw_kernel_survival_redshifts directly on the SAME hosts, in order.
+    rng_replay = np.random.default_rng(seed)
+    host_idx_replay = rng_replay.choice(pool.n, size=expected_n_drawn, replace=True, p=host_w)
+    z_replay = c1d._draw_kernel_survival_redshifts(
+        rng_replay,
+        pool.z[host_idx_replay],
+        pool.z_error[host_idx_replay],
+        flat_table,
+        completeness,
+        pool.phiS[host_idx_replay],
+        pool.qS[host_idx_replay],
+        h=c1d.H_TRUE,
+        apply_survival=False,
+    )
+    # S_4D == 1 and M<=0 is negligibly rare here, so every batch candidate is accepted and the
+    # first n (in draw order) are exactly what result.z_true holds.
+    np.testing.assert_array_equal(result.z_true, z_replay[:n])
+
+
+def test_catalogue_selected_2d_mass_selection_retained_against_drop_bernoulli() -> None:
+    """R7 (§7): guards against the L5 failure (the record's disjunct-2 "drop the Bernoulli"
+    misreading). The accepted ``M_true`` distribution must NOT equal the bare host-conditional
+    ``p_gal(M|g)`` -- it must be selected by ``S_4D(z,M)`` (mass draw + Bernoulli gate, UNCHANGED
+    by Option A'/§2.2(iii)). Uses an ``S_4D`` depending on ``M_z`` ONLY (flat in ``d_L``) so the
+    mass-selection signature is unambiguous and decoupled from the (also changed) z-law tested by
+    R2 above; a near-zero ``z_error`` removes the host-z-smearing contribution to ``M_z`` so the
+    closed-form target is a clean 1-D quadrature.
+    """
+    z0 = 0.2
+    pool = c1d.HostPool(
+        phiS=np.array([0.3]),
+        qS=np.array([1.0]),
+        z=np.array([z0]),
+        z_error=np.array([1.0e-4]),
+        n=1,
+        M=np.array([1.0e6]),
+        M_error=np.array([3.0e5]),
+    )
+    table = _fake_phi_survival_table(z_max=1.0)
+    completeness = _FakeIncompleteness()
+    _, w_g, s_tilde_phi = c1d.catalogue_selected_host_draw_weights(pool, table, completeness)
+    host_w = w_g / w_g.sum()
+
+    class _FakeS4DMassOnly:
+        def detection_probability_with_bh_mass_interpolated(
+            self,
+            d_L: np.ndarray,
+            M_z: np.ndarray,
+            phi: np.ndarray,
+            theta: np.ndarray,
+            *,
+            h: float,
+            z: np.ndarray | None = None,
+        ) -> np.ndarray:
+            m_z_arr = np.atleast_1d(np.asarray(M_z, dtype=np.float64))
+            return np.clip(m_z_arr / 2.0e6, 0.02, 0.98)
+
+    n = 15000
+    result = c1d._draw_2d_accepted_latents(
+        np.random.default_rng(555),
+        pool,
+        host_w,
+        s_tilde_phi,
+        table,
+        completeness,
+        _FakeS4DMassOnly(),  # type: ignore[arg-type]
+        n=n,
+    )
+
+    assert pool.M is not None and pool.M_error is not None
+    mu = float(c1d._eddington_shifted_host_mass_batch(pool.M, pool.M_error)[0])
+    sigma = float(pool.M_error[0])
+
+    # (a) NOT the bare p_gal(M|g): a KS test against the untruncated, unselected N(mu, sigma)
+    # must be REJECTED (mass selection is present).
+    ks_bare = kstest(result.M_true, lambda x: norm.cdf(x, loc=mu, scale=sigma))
+    assert ks_bare.pvalue < 1.0e-6, (
+        "accepted M_true matches the bare host-conditional p_gal(M|g) -- mass selection "
+        "(the Bernoulli S_4D gate) appears to have been dropped (L5 regression)"
+    )
+
+    # (b) DOES match p_gal(M|g) * S_4D(M*(1+z0)), normalized -- a closed-form quadrature target.
+    def _target_unnorm(m: float) -> float:
+        m_z = m * (1.0 + z0)
+        s4d = float(np.clip(m_z / 2.0e6, 0.02, 0.98))
+        return float(norm.pdf(m, loc=mu, scale=sigma)) * s4d
+
+    lo, hi = max(mu - 8.0 * sigma, 1.0e-3), mu + 8.0 * sigma
+    m_grid = np.linspace(lo, hi, 4000)
+    target_grid = np.array([_target_unnorm(m) for m in m_grid])
+    seg = 0.5 * (target_grid[1:] + target_grid[:-1]) * np.diff(m_grid)
+    cdf_grid = np.concatenate([[0.0], np.cumsum(seg)])
+    cdf_grid /= cdf_grid[-1]
+
+    def _target_cdf(x: np.ndarray) -> np.ndarray:
+        return np.asarray(np.interp(x, m_grid, cdf_grid, left=0.0, right=1.0), dtype=np.float64)
+
+    ks_target = kstest(result.M_true, _target_cdf)
+    assert ks_target.pvalue > 1.0e-3, (
+        f"accepted M_true rejects the analytic p_gal*S_4D/normalization target "
+        f"(D={ks_target.statistic:.4f}, p={ks_target.pvalue:.3e})"
+    )
+
+
 def test_catalogue_selected_mode_does_not_enter_catalogue_selected_2d_code_path(
     tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1787,3 +2677,447 @@ def test_catalogue_selected_mode_does_not_enter_catalogue_selected_2d_code_path(
     assert "M_true" not in events.columns
     assert "s4d_at_truth" not in events.columns
     assert "link_id" not in events.columns
+
+
+# ── B8.2 S1 (B8_2_HARNESS_DESIGN_20260829.md §2.1/§2.3/§3; rows #255/#268,
+# tree 2 node B8.2.S1) -- host_mode="mixture_selected", the gw_scatter knob,
+# and the resolved-flags engagement assertion. Same pool-free, synthetic-
+# test-double convention as the PA-2/[P3-2D] sections above.
+
+
+def test_mixture_selected_requires_completeness_and_phi_survival_table(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 10
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    with pytest.raises(ValueError, match="phi_survival_table"):
+        gen.draw_realization(
+            seed=1, host_pool=pool, host_mode="mixture_selected", class_weight_p_g=0.5
+        )
+
+
+def test_mixture_selected_requires_class_weight_p_g(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 10
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    with pytest.raises(ValueError, match="class_weight_p_g"):
+        gen.draw_realization(
+            seed=1,
+            host_pool=pool,
+            host_mode="mixture_selected",
+            completeness=completeness,
+            phi_survival_table=table,
+        )
+
+
+def test_mixture_selected_rejects_p_g_outside_unit_interval(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 10
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table()
+    for bad_p_g in (-0.1, 1.1):
+        with pytest.raises(ValueError, match="class_weight_p_g"):
+            gen.draw_realization(
+                seed=1,
+                host_pool=pool,
+                host_mode="mixture_selected",
+                completeness=completeness,
+                phi_survival_table=table,
+                class_weight_p_g=bad_p_g,
+            )
+
+
+def test_mixture_selected_p_g_one_matches_catalogue_selected_bit_for_bit(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Design §8 S1 acceptance (ii): class_weight_p_g=1.0 reproduces
+    host_mode='catalogue_selected' bit-for-bit on the same seed -- no
+    ``rng.binomial`` call is made at this limit, so the RNG stream (hence
+    every downstream draw) is untouched by the split decision."""
+    n = 30
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    # n_g == n at this limit (every event draws a host without replacement),
+    # so the pool must have at least n hosts.
+    pool = _make_host_pool_with_mass(n_pool=n)
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+
+    mixture = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=7,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=1.0,
+    )
+    pure = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=7,
+        host_pool=pool,
+        host_mode="catalogue_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+    )
+    shared_cols = [
+        "luminosity_distance",
+        "phiS",
+        "qS",
+        "host_galaxy_index",
+        "in_catalog",
+        "z_true",
+        "s_tilde_phi_host",
+    ]
+    for col in shared_cols:
+        np.testing.assert_array_equal(
+            mixture[col].to_numpy(), pure[col].to_numpy(), err_msg=f"column {col!r} diverged"
+        )
+    assert (mixture["n_catalogue_hosted"] == n).all()
+    assert (mixture["event_class"] == "catalogue_hosted").all()
+
+
+def test_mixture_selected_p_g_zero_matches_population_selected_bit_for_bit(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Design §8 S1 acceptance (ii): class_weight_p_g=0.0 reproduces
+    host_mode='population_selected' bit-for-bit on the same seed."""
+    n = 30
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    pool = _make_host_pool_with_mass()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+
+    mixture = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=11,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=0.0,
+    )
+    pure = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=11,
+        host_pool=pool,
+        host_mode="population_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+    )
+    shared_cols = ["luminosity_distance", "phiS", "qS", "host_galaxy_index", "in_catalog"]
+    for col in shared_cols:
+        np.testing.assert_array_equal(
+            mixture[col].to_numpy(), pure[col].to_numpy(), err_msg=f"column {col!r} diverged"
+        )
+    assert (mixture["n_catalogue_hosted"] == 0).all()
+    assert (mixture["event_class"] == "dark").all()
+    assert (mixture["host_galaxy_index"].to_numpy() == -1).all()
+
+
+def test_mixture_selected_class_split_matches_class_weight_p_g_statistically(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """The mixture weight equals the estimator class weight on a fixture (design
+    §8 S1 unit tests, item 1): with a fixed ``p_g`` strictly inside ``(0, 1)``
+    and a large ``n``, the realized catalogue-hosted fraction sits within a
+    wide (5 sigma) binomial band of ``p_g``."""
+    n = 4000
+    p_g = 0.3
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    # Sized to n (not the realized n_g ~ 1200) so no realized binomial draw
+    # can ever exceed the pool (without-replacement host sampling).
+    pool = _make_host_pool_with_mass(n_pool=n)
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    events = gen.draw_realization(
+        seed=99,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=p_g,
+    )
+    n_g = int(events["n_catalogue_hosted"].iloc[0])
+    assert n_g == int((events["event_class"] == "catalogue_hosted").sum())
+    realized_fraction = n_g / n
+    sd = float(np.sqrt(p_g * (1.0 - p_g) / n))
+    assert abs(realized_fraction - p_g) < 5.0 * sd
+    assert np.allclose(events["class_weight_p_g"].to_numpy(), p_g)
+
+
+def test_mixture_selected_records_columns(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 20
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    gen = c1d.MirrorUniverseGenerator(cfg)
+    pool = _make_host_pool_with_mass()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    events = gen.draw_realization(
+        seed=5,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=0.5,
+    )
+    assert (events["host_draw_mode"] == "mixture_selected").all()
+    assert set(events["event_class"].unique()) <= {"catalogue_hosted", "dark"}
+    dark = events[events["event_class"] == "dark"]
+    hosted = events[events["event_class"] == "catalogue_hosted"]
+    assert (dark["host_galaxy_index"].to_numpy() == -1).all()
+    assert not dark["in_catalog"].any()
+    assert (hosted["host_galaxy_index"].to_numpy() >= 0).all()
+    assert bool(hosted["in_catalog"].all())
+    assert dark["s_tilde_phi_host"].isna().all()
+    assert hosted["s_tilde_phi_host"].notna().all()
+
+
+def test_mixture_selected_is_deterministic(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    n = 25
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    pool = _make_host_pool_with_mass()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    a = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=3,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=0.4,
+    )
+    b = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=3,
+        host_pool=pool,
+        host_mode="mixture_selected",
+        completeness=completeness,
+        phi_survival_table=table,
+        class_weight_p_g=0.4,
+    )
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_compute_catalogue_class_weight_p_g_matches_path_a_mixture_objects(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Design §8 S1 unit tests, item 1 (the assembly half): on a fixture (the
+    three production leg-builders monkeypatched to fixed values, never
+    recomputed), ``compute_catalogue_class_weight_p_g``'s ``p_g`` equals the
+    REAL ``path_a_mixture_objects``'s own ``w_tilde_G`` -- i.e. this tests the
+    WIRING this stage added (which leg feeds which ``with_bh_mass`` flag),
+    not production's already-tested selection integrals (fixtured out, not
+    re-derived)."""
+    h_true = 0.73
+    fake_completeness = object()
+    fake_table = {h_true: (np.array([0.0, 1.0]), np.array([1.0, 1.0]))}
+    fake_dp = object()
+
+    monkeypatch.setattr(
+        c1d,
+        "build_b0i_2d_selection_objects",
+        lambda **kwargs: (fake_completeness, fake_table, fake_dp),
+    )
+    monkeypatch.setattr(
+        c1d,
+        "precompute_phi_selection_integrals",
+        lambda h_values, phi_survival_table, completeness: ({h_true: 3.0}, {h_true: 7.0}),
+    )
+
+    def _fake_global_sel(
+        h_values: list[float],
+        galaxy_catalog: object,
+        detection_probability_obj: object,
+        *,
+        with_bh_mass: bool,
+        **kwargs: object,
+    ) -> dict[float, float]:
+        return {h_true: 13.0} if with_bh_mass else {h_true: 11.0}
+
+    monkeypatch.setattr(c1d, "precompute_global_catalog_selection", _fake_global_sel)
+
+    result = c1d.compute_catalogue_class_weight_p_g(galaxy_catalog=object(), h_true=h_true)  # type: ignore[arg-type]
+
+    expected = c1d.path_a_mixture_objects(
+        beta_G_phi=3.0, beta_Gbar_phi=7.0, sigma_phi=11.0, sigma_4d=13.0
+    )
+    assert result["p_g"] == pytest.approx(expected["w_tilde_G"])
+    assert result["alpha_G_phi"] == pytest.approx(expected["alpha_G_phi"])
+    assert result["D_tilde_phi"] == pytest.approx(expected["D_tilde_phi"])
+    assert result["beta_G_phi"] == pytest.approx(3.0)
+    assert result["beta_Gbar_phi"] == pytest.approx(7.0)
+    assert result["sigma_phi"] == pytest.approx(11.0)
+    assert result["sigma_4d"] == pytest.approx(13.0)
+
+
+def test_gw_scatter_false_is_truth_centred_and_shares_rng_stream_with_true(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """Design §2.3/§8 S1 unit tests, item 2: ``gw_scatter`` on/off, paired on one
+    RNG stream. Host selection (a draw made BEFORE the noise draws) is
+    IDENTICAL between the two -- "same draws elsewhere" -- and the
+    truth-centred (``False``) realization's observed d_L/sky sit exactly at
+    the host truth."""
+    n = 50
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    pool = _make_host_pool(n)
+
+    scattered = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=42, host_pool=pool, host_mode="catalogue", gw_scatter=True
+    )
+    truth_centred = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=42, host_pool=pool, host_mode="catalogue", gw_scatter=False
+    )
+
+    np.testing.assert_array_equal(
+        scattered["host_galaxy_index"].to_numpy(), truth_centred["host_galaxy_index"].to_numpy()
+    )
+    host_idx = truth_centred["host_galaxy_index"].to_numpy()
+    true_d_L = c1d.dist_vectorized(pool.z[host_idx], h=c1d.H_TRUE)
+    np.testing.assert_allclose(
+        truth_centred["luminosity_distance"].to_numpy(), true_d_L, rtol=0.0, atol=1e-12
+    )
+    assert not np.allclose(scattered["luminosity_distance"].to_numpy(), true_d_L)
+    np.testing.assert_allclose(
+        truth_centred["phiS"].to_numpy(), np.mod(pool.phiS[host_idx], 2.0 * np.pi), atol=1e-12
+    )
+    np.testing.assert_allclose(
+        truth_centred["qS"].to_numpy(), np.clip(pool.qS[host_idx], 0.0, np.pi), atol=1e-12
+    )
+    assert not np.allclose(scattered["phiS"].to_numpy(), truth_centred["phiS"].to_numpy())
+
+
+def test_gw_scatter_true_default_is_byte_identical_to_omitting_it(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """B8.2 S1 acceptance (i)/(iv): ``gw_scatter``'s default (``True``) is a
+    byte-identical no-op relative to the pre-B8.2 call signature (which had
+    no such kwarg)."""
+    n = 20
+    donor_csv = _make_donor_csv(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    pool = _make_host_pool(n)
+    a = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=1, host_pool=pool, host_mode="catalogue"
+    )
+    b = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=1, host_pool=pool, host_mode="catalogue", gw_scatter=True
+    )
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_gw_scatter_false_truth_centres_2d_joint_draw(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """The 2D loop's own ``gw_scatter`` branch (design §2.3): with
+    ``gw_scatter=False`` the joint (d_hat, M_hat_z) draw sits exactly at the
+    latent truth."""
+    n = 6
+    donor_csv = _make_donor_csv_2d(tmp_path_factory, n_rows=n)
+    cfg = c1d.CorrespondenceConfig(n_events=n, crb_reference_csv=donor_csv)
+    pool = _make_host_pool_with_mass_and_error()
+    completeness = _FakeIncompleteness()
+    table = _fake_phi_survival_table(z_max=1.0)
+    dp = _FakeS4D()
+    events = c1d.MirrorUniverseGenerator(cfg).draw_realization(
+        seed=13,
+        host_pool=pool,
+        host_mode="catalogue_selected_2d",
+        completeness=completeness,
+        phi_survival_table=table,
+        detection_probability=dp,  # type: ignore[arg-type]
+        gw_scatter=False,
+    )
+    true_d_L = c1d.dist_vectorized(events["z_true"].to_numpy(), h=c1d.H_TRUE)
+    np.testing.assert_allclose(
+        events["luminosity_distance"].to_numpy(), true_d_L, rtol=0.0, atol=1e-9
+    )
+    np.testing.assert_allclose(
+        events["M"].to_numpy(), events["M_z_true"].to_numpy(), rtol=0.0, atol=1e-9
+    )
+
+
+def test_resolved_flags_from_bs_reads_registered_attribute_set() -> None:
+    """The resolved-flags reader extracts exactly :data:`c1d._RESOLVED_FLAG_ATTRS`
+    (underscore stripped)."""
+
+    class _FakeBS:
+        _normalization_mode = "absolute_marginal"
+        _catalogue_global_selection = "phi"
+        _selection_in_completion_numerator = "fused"
+        _catalogue_numerator_survival = "phi"
+        _catalogue_numerator_survival_2d = "mz_sel"
+        _mass_filter_sigma = "symmetric"
+        _mass_filter_geometry = "linear"
+        _mass_filter_k = 1.5
+        _theta_b = 0.0
+        _theta_s = 1.0
+        _theta_sites = "all"
+        _theta_phi_divisor = "off"
+        _theta_zwindow = "off"
+
+    resolved = c1d._resolved_flags_from_bs(_FakeBS())  # type: ignore[arg-type]
+    assert resolved == c1d.REGISTERED_RESOLVED_FLAGS
+
+
+def test_assert_resolved_production_flags_passes_on_the_registered_values() -> None:
+    c1d.assert_resolved_production_flags(dict(c1d.REGISTERED_RESOLVED_FLAGS))
+
+
+def test_assert_resolved_production_flags_fires_on_a_wrong_flag() -> None:
+    """Design §8 S1 unit tests, item 3: the resolved-flags assertion fires on a
+    wrong flag."""
+    resolved = dict(c1d.REGISTERED_RESOLVED_FLAGS)
+    resolved["mass_filter_sigma"] = "asymmetric"
+    with pytest.raises(AssertionError, match="mass_filter_sigma"):
+        c1d.assert_resolved_production_flags(resolved)
+
+
+def test_assert_resolved_production_flags_fires_on_a_wrong_theta_flag() -> None:
+    """A non-identity theta silently changing the resolved surface must also fire."""
+    resolved = dict(c1d.REGISTERED_RESOLVED_FLAGS)
+    resolved["theta_b"] = 0.02
+    with pytest.raises(AssertionError, match="theta_b"):
+        c1d.assert_resolved_production_flags(resolved)
+
+
+def test_assert_resolved_production_flags_accepts_a_narrower_expected_mapping() -> None:
+    """A caller (e.g. a wave-2 with-BH-adoption audit) may pass a narrower/updated
+    ``expected`` mapping (design §3 item 1's "asserts whichever value production
+    resolves there")."""
+    resolved = {"catalogue_numerator_survival_2d": "off"}
+    c1d.assert_resolved_production_flags(
+        resolved, expected={"catalogue_numerator_survival_2d": "off"}
+    )
+    with pytest.raises(AssertionError):
+        c1d.assert_resolved_production_flags(
+            resolved, expected={"catalogue_numerator_survival_2d": "mz_sel"}
+        )
+
+
+def test_run_mirror_seed_inprocess_accepts_resolved_flags_out_default_none() -> None:
+    """The out-parameter is additive: ``None`` by default, so every pre-B8.2 call
+    site (which never passes it) is unaffected."""
+    sig = inspect.signature(c1d.run_mirror_seed_inprocess)
+    assert "resolved_flags_out" in sig.parameters
+    assert sig.parameters["resolved_flags_out"].default is None

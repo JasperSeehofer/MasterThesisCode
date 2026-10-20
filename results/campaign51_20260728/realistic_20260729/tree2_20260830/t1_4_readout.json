@@ -1,0 +1,93 @@
+{
+  "node": "T1.4 Richardson half-step falsifier (PA-HIER-33 item (ii))",
+  "date": "2026-08-30",
+  "role": "independent reader of runner-8's run of record (not the runner; foreground only, <=600s per command, no git, no ssh, append-only)",
+  "run_dir": "results/campaign51_20260728/realistic_20260729/tree2_20260830/hier_s0_zwin_run",
+  "inputs": [
+    "PREREGISTRATION_HIER_HTHETA_20260826.md PA-HIER-33 item (ii) (registered design, statistic, predictions, reading rule)",
+    "tree2_20260830/T1_3_ES_NULL_DET_VALIDITY_20260830.md sections 2-5 (Bartlett-null derivation, caveats, falsifier registration)",
+    "hier_s0_zwin_run/s0a_seed*/node_{truth,s_plus,s_minus,s_plus_half,s_minus_half}_sites2.2_nosmear_divisor_zwin_zk4/simulations/diagnostics/event_likelihoods.csv (raw per-event combined_no_bh / combined_with_bh columns; independently re-derived, not read from s0a_score_output.json)",
+    "hier_s0_zwin_run/s0a_score.md, s0a_score_output.json (driver's own precomputed statistic, used only as a cross-check target)",
+    "hier_s0_zwin_run/logs/runner8_tree2_20260830.log (cost)"
+  ],
+  "config": {
+    "theta_sites": "2.2",
+    "smear": "off",
+    "theta_phi_divisor": "on",
+    "sky_cone_k": 1.5,
+    "theta_zwindow": "on",
+    "z_window_k": 4.0,
+    "h": 0.73,
+    "b": 0.0,
+    "s_nodes": ["s_plus (sqrt2)", "s_minus (1/sqrt2)", "s_plus_half (2^(1/4))", "s_minus_half (2^(-1/4))"],
+    "seeds": [900101, 900102, 900103, 900104],
+    "n_new_cells": 8
+  },
+  "method": {
+    "S_full_i": "[l_i(+Delta) - l_i(-Delta)] / ln2, Delta = ln sqrt2  (= score_lns, PA-HIER-4)",
+    "S_half_i": "[l_i(+Delta/2) - l_i(-Delta/2)] / (2*(Delta/2))  =  [l_i(+Delta/2) - l_i(-Delta/2)] / Delta",
+    "S_R_i": "(4*S_half_i - S_full_i) / 3   (Richardson secant, score_lns_R)",
+    "l_i(t)": "ln(combined_no_bh) [primary] or ln(combined_with_bh) [companion] at s-node t, per event",
+    "pooling": "events matched across all 5 nodes per seed (truth/s_plus/s_minus/s_plus_half/s_minus_half); dark events (combined_*==0 at every node) scored 0.0 by driver convention",
+    "cross_check": "computed independently from raw CSVs in a from-scratch script, not by calling hier_s0_driver.py's compute_scores"
+  },
+  "reproduction_of_driver": {
+    "note": "matches s0a_score_output.json to the digit (float noise at ~13th significant digit only)",
+    "score_lns_nb": {"driver": 0.0039648115580011465, "reader": 0.003964811558001806},
+    "score_lns_R_nb": {"driver": 0.00639944397134349, "reader": 0.0063994439713455495},
+    "paired_shift_nb": {"driver": 0.0024346324133423442, "reader": 0.0024346324133437433},
+    "score_lns_wbh": {"driver": 0.03086300187527085, "reader": 0.03086300187527753},
+    "score_lns_R_wbh": {"driver": 0.03843984097631638, "reader": 0.03843984097630409},
+    "paired_shift_wbh": {"driver": 0.007576839101045523, "reader": 0.00757683910102656}
+  },
+  "no_bh_channel_primary": {
+    "n_pooled": 461,
+    "score_lns_R": {"mean": 0.0063994439713455495, "sem_per_event": 0.013607304741003051, "Z": 0.4702947492652259},
+    "paired_shift_R_minus_full": {
+      "mean": 0.0024346324133437433,
+      "sem_per_event": 0.0014036745956341283,
+      "sem_seed_clustered": 0.0017240541393813084,
+      "note": "PA-HIER-5 leg (a): SEM = max(per-event, seed-clustered); binding SEM here is the seed-clustered 0.001724, LARGER than the per-event 0.001404 the task specified for adjudication -- using the binding SEM makes the Bartlett-null read even more consistent (2.17 sigma vs 2.66 sigma), never less"
+    },
+    "per_seed_score_lns_R": {
+      "900101": {"mean": 0.0039859749541786196, "n": 106},
+      "900102": {"mean": -0.03548937240709612, "n": 120},
+      "900103": {"mean": 0.05179068062864939, "n": 105},
+      "900104": {"mean": 0.010371796526851638, "n": 130}
+    },
+    "seed_900102_flag": "only seed with a negative pooled mean on both score_lns_R and score_lns (raw), consistent with the same E17-class opposite-sign stratification disclosed in T1_3_ES_NULL_DET_VALIDITY section 2.5 item 4; per-seed SEM (~0.028) does not by itself distinguish this from sampling noise at n=4 seeds -- REPORTED, not adjudicated"
+  },
+  "with_bh_channel_companion_reported_only": {
+    "n_pooled": 461,
+    "score_lns_R": {"mean": 0.03843984097630409, "sem_per_event": 0.01791844748995465, "Z": 2.1452662680655807},
+    "paired_shift_R_minus_full": {"mean": 0.00757683910102656, "sem_per_event": 0.002072356350515204}
+  },
+  "band_adjudication": {
+    "rule": "adjudicate the paired shift score_lns_R - score_lns against each registered two-sided band at 3 sigma of the measured paired SEM (task-specified: per-event SEM 0.0014037)",
+    "measured_paired_shift": 0.0024346324133437433,
+    "bands": {
+      "PA-HIER-32d_unweighted_null": {"predicted": -0.046, "diff": 0.04843463241334374, "sigma": 34.505598779083665, "excluded_at_3sigma": true},
+      "c_weighted_null": {"predicted_range": [-0.023, -0.027], "predicted_point_used": -0.025, "diff": 0.027434632413343745, "sigma": 19.544866380480293, "excluded_at_3sigma": true},
+      "Bartlett_null_PA_HIER_33": {"predicted": -0.0013, "predicted_sd": 0.0008, "diff": 0.0037346324133437432, "sigma": 2.6606112449136223, "excluded_at_3sigma": false, "note": "2.66 sigma < 3 sigma decision threshold literally applied -> NOT excluded; using the seed-clustered SEM (0.001724, the binding one per PA-HIER-5 leg a) gives 2.166 sigma, also NOT excluded"}
+    }
+  },
+  "caveats_carried_from_derivation": {
+    "finite_difference_underestimate": "T1_3_ES_NULL_DET_VALIDITY section 2.5 item 2: the 3-node Bartlett estimator underestimates the true bias by ~19% on the Gaussian test family (0.0663 vs exact 0.0820); worst-case exact-equivalent bumps the P1 Bartlett prediction from +0.0013 to ~+0.0017, still <<1 SEM; the Richardson falsifier itself (this arm) is disclosed as free of this specific error by construction",
+    "quartile_cancellation": "section 2.5 item 4: pooled score_lns +0.004 is a sum of opposite-sign c-quartile/z_g strata (c-quartiles +0.023/+0.102/+0.094/-0.234; z_g<0.125 -0.147 vs +0.055/+0.073/+0.003 above); a pooled |Z|<=3 band does not test strata; the c/z_g-stratified read is REPORTED-ONLY per PA-HIER-33, not a band"
+  },
+  "verdict": {
+    "falsifier_bands": "PA-HIER-32(d) null REFUTED (~34.5 sigma); c-weighted null REFUTED (~19.5 sigma); Bartlett-scale null (PA-HIER-33) NOT excluded (2.66 sigma per-event SEM, 2.17 sigma seed-clustered SEM; both < 3 sigma)",
+    "s_axis_at_truth_under_PA_HIER_33_rule": "the Delta^2-free Richardson secant itself is null at truth (score_lns_R Z=+0.470, no-BH) -- CONSISTENT WITH ZERO under the proposed rule",
+    "P1_verdict_of_record": "B0-A' (s) STOP stands as the rule of record (PA-HIER-32(d), unweighted) until the author ratifies PA-HIER-33; this arm does not overturn it (registered reading rule, PA-HIER-33 item (ii))",
+    "with_bh": "REPORTED-ONLY, Z=+2.145, inside 3 -- not adjudicated (no registered band on this channel)"
+  },
+  "cost": {
+    "wall_s_measured": 7976.42523765564,
+    "wall_h": 2.2156736771265666,
+    "cores": 14,
+    "cpu_h": 31.01943147977193,
+    "source": "hier_s0_zwin_run/logs/runner8_tree2_20260830.log (START 19:45:48 -> END 21:58:47 = 7979 s clock; internal wall_s field 7976.43 s from the runner's own timer)",
+    "vs_prereg_estimate": "prereg item (ii) estimated ~8 x 654 s = ~1.5 h wall / ~20 CPU-h; measured 2.22 h / 31.0 CPU-h, about 1.5x the estimate"
+  },
+  "scope_and_authorization": "runner-8 built the run; this node reads it only. No git, no ssh, no source edits, no compute (zero evaluate() calls by this reader). Did not touch b8_cal_harness* or its work roots (runner-9 / B8.2 S3 concurrently running). Append-only. Launched under rows #255/#268 -- tree 2 node T1.4 (Richardson falsifier, independent reader)."
+}

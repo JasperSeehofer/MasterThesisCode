@@ -1,0 +1,209 @@
+{
+  "node": "T1.3-zwin P1",
+  "date": "2026-08-30",
+  "role": "independent reader of runner-7's run of record (not the runner; not the builder)",
+  "run_dir": "results/campaign51_20260728/realistic_20260729/tree2_20260830/hier_s0_zwin_run",
+  "config": {
+    "theta_sites": "2.2",
+    "smear": "off",
+    "theta_phi_divisor": "on",
+    "sky_cone_k": 1.5,
+    "theta_zwindow": "on",
+    "z_window_k": 4.0,
+    "h": 0.73,
+    "seeds": [
+      900101,
+      900102,
+      900103,
+      900104
+    ],
+    "nodes": [
+      "truth",
+      "s_plus",
+      "s_minus"
+    ]
+  },
+  "cost": {
+    "wall_s": 8248.47153377533,
+    "cores": 14,
+    "cpu_h": 32.07738929801517,
+    "wall_h": 2.291242092715369
+  },
+  "closed_form_crosscheck": {
+    "method": "from-scratch standalone reimplementation of PA-HIER-32(d) Es_null_det_i closed form (independent of hier_s0_driver.py's own function), seed 900101, 8 hosts",
+    "max_abs_diff": 8.327e-17,
+    "result": "machine-precision match to the cached es_null_det.csv for all 8 sampled hosts"
+  },
+  "pooled_no_bh": {
+    "score_s_raw": {
+      "mean": 0.00388654,
+      "sem": 0.01263903,
+      "Z": 0.3075,
+      "n": 461
+    },
+    "score_lns": {
+      "mean": 0.00396481,
+      "sem": 0.01289357,
+      "Z": 0.3075,
+      "n": 461
+    },
+    "score_s_corrected_unweighted": {
+      "mean": -0.04237092,
+      "sem": 0.01275151,
+      "Z": -3.3228,
+      "n": 461
+    },
+    "score_s_corrected_cweighted_DERIVED": {
+      "mean": -0.023052,
+      "sem": 0.012906,
+      "Z": -1.7861,
+      "n": 461,
+      "note": "derived by this reader; c_i = 1 - B_num/(combined_no_bh*D_tilde_phi) at the truth node (forensic f4_mechanism.py's c_nb definition); c_i mean 0.6161/median 0.6592 here vs the forensic's own E12 reference mean 0.616/median 0.651 -- cross-validated"
+    },
+    "es_null_det_mean_unweighted": 0.046336
+  },
+  "pooled_with_bh": {
+    "score_s_raw": {
+      "mean": 0.03025371,
+      "sem": 0.01637127,
+      "Z": 1.848,
+      "n": 461
+    },
+    "score_lns": {
+      "mean": 0.030863,
+      "sem": 0.01670098,
+      "Z": 1.848,
+      "n": 461
+    },
+    "score_s_corrected_unweighted": {
+      "mean": -0.01547273,
+      "sem": 0.01654443,
+      "Z": -0.9352,
+      "n": 461
+    }
+  },
+  "per_seed_score_s_corrected_unweighted": {
+    "900101": {
+      "mean": -0.041687,
+      "sem": 0.025307,
+      "Z": -1.6472,
+      "n": 106
+    },
+    "900102": {
+      "mean": -0.080248,
+      "sem": 0.027102,
+      "Z": -2.9609,
+      "n": 120
+    },
+    "900103": {
+      "mean": -0.003194,
+      "sem": 0.030626,
+      "Z": -0.1043,
+      "n": 105
+    },
+    "900104": {
+      "mean": -0.039608,
+      "sem": 0.019363,
+      "Z": -2.0456,
+      "n": 130
+    }
+  },
+  "per_seed_score_lns": {
+    "900101": {
+      "mean": 0.003898,
+      "Z": 0.1514,
+      "n": 106
+    },
+    "900102": {
+      "mean": -0.03502,
+      "Z": -1.2739,
+      "n": 120
+    },
+    "900103": {
+      "mean": 0.04478,
+      "Z": 1.4641,
+      "n": 105
+    },
+    "900104": {
+      "mean": 0.007039,
+      "Z": 0.3573,
+      "n": 130
+    }
+  },
+  "class_split": {
+    "true_dark_host_galaxy_index_minus1": {
+      "n": 0,
+      "note": "no event in the pooled n=461 lacks an es_null_det cache row this run -- differs from the T1.2 recert disclosure of dark n=5/matched n=456 on an equal n=461 total; not adjudicated by this reader (out of scope/budget)"
+    },
+    "zero_L_cat_no_bh_at_truth": {
+      "n": 2,
+      "event_ids": [
+        "seed900103/25",
+        "seed900104/51"
+      ],
+      "note": "L_cat_no_bh==0 at truth for these 2 events (a z-window-truncation-type null, score_lns exactly 0.0 for both); consistent in direction with sec 5.6's predicted z_out-class recovery (from a previous ~8 down to within 2)"
+    }
+  },
+  "gate_checks": {
+    "ENG": {
+      "s_plus_s_minus_mean_fraction_moved": 0.9956959706959707,
+      "pass": true
+    },
+    "PARITY": {
+      "pass_exact": false,
+      "max_rel_diff_range_across_seeds": [
+        0.0388,
+        0.4468
+      ],
+      "note": "consistent in KIND with the already-RATIFIED E19 generator-grid comparand residual (401->4001 z_true grid change); this reader flags that the observed max ln_L diff magnitudes are larger than the previously-quoted 5.718e-4 headline figure -- that figure described injection-level z_true/d_L deltas, not the downstream ln_L deltas reported here, and steep sensitivity of ln_L to a tiny z_true shift for edge-case events is a plausible amplification path consistent with the ratified disposition. Disclosed, not re-adjudicated by this reader."
+    }
+  },
+  "band_and_falsifier": {
+    "registered_band": "|Z_s| <= 3.0 (PREREGISTRATION_HIER_HTHETA_20260826.md sec 4.1 B0-A/B0-A-prime, restated by PA-HIER-32)",
+    "registered_predicted_point_cweighted": {
+      "mean": -0.026,
+      "sem": 0.012,
+      "Z": -2.1,
+      "band": [
+        -0.031,
+        0.005
+      ]
+    },
+    "literal_check_on_drivers_own_unweighted_score_s": {
+      "Z": -3.3228,
+      "verdict": "FAILS |Z|<=3",
+      "margin_in_Z": 0.3228,
+      "margin_pct_over_threshold": 10.76
+    },
+    "A15_false_fail_rate_at_this_band": "0.27% two-sided (PA-HIER-32 A8/A15 restatement at N=461, carried forward unchanged from score_lns to first order)",
+    "E12_prediction_check": {
+      "raw_lns_form": {
+        "predicted_Z": "-0.5 +/- 1.0",
+        "predicted_band_this_node": "[0, +2.5] i.e. score_s in [0.000,+0.031]",
+        "measured_Z": 0.3075,
+        "measured_value": 0.00396,
+        "verdict": "MET -- well inside the registered raw-form band and inside the E12 reference point +/- its stated uncertainty"
+      },
+      "corrected_cweighted_form_registered_primary": {
+        "predicted_point": -0.026,
+        "predicted_Z": -2.1,
+        "predicted_band": [
+          -0.031,
+          0.005
+        ],
+        "measured_by_this_reader_DERIVED": -0.023052,
+        "measured_Z_DERIVED": -1.7861,
+        "verdict_DERIVED": "MET -- inside the registered band and close to the registered point; NOT computed by hier_s0_driver.py itself (see convention_gap_finding)"
+      },
+      "corrected_unweighted_form_drivers_own_output": {
+        "measured": -0.04237,
+        "measured_Z": -3.3228,
+        "verdict": "NOT MET -- outside |Z|<=3"
+      }
+    },
+    "convention_gap_finding": "PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md sec 5.6/F1 registers the C-WEIGHTED Es_null_det convention (c_i x Es_null_det_i) as PRIMARY for P1, \"fixed before unblinding\". The same document's own Implementation record section discloses that hier_s0_driver.py's compute_scores NEVER applies c_i weighting (raw/unweighted pooling only) and states explicitly: \"Whoever reads P1's output against F1 must still apply Revision note 2 item 3's process constraint (report both conventions, do not declare F1 CONFIRMED/REFUTED on the driver's score_s alone) -- this implementation record does not, and cannot, discharge that constraint.\" This reader computed the c-weighted statistic independently (c_i definition cross-validated against the forensic's own quoted mean/median 0.616/0.651): result Z=-1.786, PASSES the registered band and lands close to the registered predicted point. The driver's own reported score_s (Z=-3.32, unweighted) is NOT the statistic F1 names. Reported as fact for the orchestrator/author to adjudicate -- this reader does not declare F1 CONFIRMED or REFUTED."
+  },
+  "verdict_of_record_literal": "B0-A-prime (s) persists at |Z_s|=3.3228 under the DRIVER'S OWN (unweighted) corrected score_s -- REPORTED-ONLY per PA-HIER-28 item 9. Per this gate document's own disclosed process constraint (Revision note 2 item 3), this literal reading is NOT sufficient on its own to declare F1 REFUTED -- the registered c-weighted convention (independently derived here, Z=-1.786) PASSES the same band.",
+  "raw_null_observation": "score_s_raw / score_lns pooled Z=+0.3075 -- inside the registered raw-form band [0,+2.5] and consistent with the E12 reference point -0.5+/-1.0.",
+  "licenses": "Nothing beyond row #255/#268 -- tree-2 charter. No S0-B, no Stage-P/F beyond what is already registered. The convention-gap finding returns to the author/orchestrator as the decisive open item before any F1 adjudication; per the task's own routing, an Es_null_det-validity derivation is dispatched before any re-run; S0-B stays unlaunched."
+}

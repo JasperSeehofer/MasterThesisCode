@@ -1,0 +1,5 @@
+=== wave2-c3-wink3 task=2 job=6739005 host=uc2n765.localdomain commit=ff2306213e9e65abbd474f66348bc05a6f3e6547 ===
+dataset pins OK: CRB=9a1f2a14384a9281c97ca3be312ddaab catalogue=c52c13b5cab61f6b3f04bbe202550969
+provenance stamp: /pfs/work9/workspace/scratch/st_ac147838-emri/run_20260829_wave2_c3_iiib/logs/provenance_6739005_2.json (commit=ff2306213e9e65abbd474f66348bc05a6f3e6547 dirty=296 job=6739005/2)
+=== wave2-c3-wink3: task=2 h=0.670 seed=777009 (H41 idx 9) ===
+=== done: wave2-c3-wink3 task=2 h=0.670 ===

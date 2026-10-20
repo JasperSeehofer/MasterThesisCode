@@ -1,0 +1,49 @@
+{
+  "instrument": "KW-Q1 (B4.2), CLAIM_IMPOSTOR_DRAG_20260829.md sec 1.3",
+  "out_root": "results/campaign51_20260728/realistic_20260729/fanout1_20260829/kwq1_registered_run",
+  "seeds": [
+    900101,
+    900102,
+    900103,
+    900104
+  ],
+  "config": "ft",
+  "theta_sites": "2.2",
+  "smear": "off",
+  "h_lo": 0.725,
+  "h_hi": 0.735,
+  "node_dir_suffix": "_ft_sites2.2_nosmear",
+  "missing_csv_paths": [],
+  "q1_edge_z_true": 0.35750209116114345,
+  "q1_n_pairs_requested_seeds": 191,
+  "S_by_node": {
+    "s_minus": {
+      "S": -1.0456669608306142,
+      "sem": 0.07654187054094574,
+      "n_pooled": 191
+    },
+    "truth": {
+      "S": -1.0205308001317845,
+      "sem": 0.06930008798223615,
+      "n_pooled": 191
+    },
+    "s_plus": {
+      "S": -0.9591134472063961,
+      "sem": 0.0628415771165945,
+      "n_pooled": 191
+    }
+  },
+  "R": 0.08481225026529439,
+  "gate_i_max_rel": 7.61324951632632e-08,
+  "gate_i_tol": 2e-06,
+  "gate_i_pass": true,
+  "gate_eng": {
+    "n_active_rows_pooled": 486,
+    "fraction_L_cat_differs_across_s": 1.0,
+    "pass": true,
+    "threshold": 0.99
+  },
+  "falsifier_q1_share_of_total_s_imp_at_truth": 0.9224659153397511,
+  "falsifier_min_q1_share": 0.5,
+  "falsifier_withdrawn": false
+}

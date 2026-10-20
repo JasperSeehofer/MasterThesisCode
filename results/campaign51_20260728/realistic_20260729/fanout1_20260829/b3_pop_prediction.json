@@ -1,0 +1,198 @@
+{
+  "node": "B3.1_POP",
+  "authorization": "rows #222/#223 -- charter node B3.1",
+  "crb_path": "results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv",
+  "crb_md5": "9a1f2a14384a9281c97ca3be312ddaab",
+  "crb_md5_matches_run_metadata": true,
+  "n_crb_rows": 1590,
+  "registered_bin_edges": [
+    0.075,
+    0.392,
+    0.559,
+    0.659,
+    0.753,
+    1.018
+  ],
+  "finite_difference": {
+    "h_lo": 0.72,
+    "h_hi": 0.74,
+    "step": 0.02,
+    "h_true": 0.73
+  },
+  "venues": {
+    "iiib": {
+      "n_events_scored_csv": 1588,
+      "n_h_nodes": 41,
+      "n_events_zero_or_nonpositive_combined_no_bh_near_truth": 0,
+      "n_events_score_nonfinite": 0,
+      "n_dark": 606,
+      "n_matched": 982,
+      "dark_ensemble": {
+        "measured_mean": -0.46679800530233134,
+        "measured_sem": 0.016195809673473442,
+        "predicted_mean": -0.533366799222861,
+        "coverage_fraction": 1.1426072801605376,
+        "n": 606,
+        "predicted_mean_ALT_mass_weighted_integration_REJECTED_CONVENTION": -0.32519497811647974
+      },
+      "dark_ensemble_bins2to5_only_robustness": {
+        "measured_mean": -0.61231527035036,
+        "predicted_mean": -0.6030632919238113,
+        "coverage_fraction": 0.9848901719840256,
+        "n": 484,
+        "note": "excludes bin 1 (0.075-0.392), where measured and predicted are both near zero and opposite in sign"
+      },
+      "matched_ensemble": {
+        "measured_mean": -0.016941018883926583,
+        "measured_sem": 0.06439475003884942,
+        "n": 982
+      },
+      "historical_row138": {
+        "mean": -0.635,
+        "sem": 0.017
+      },
+      "head_vs_historical": {
+        "abs_diff": 0.16820199469766867,
+        "diff_in_combined_sigma": 7.163668344248303
+      },
+      "bins": [
+        {
+          "z_lo": 0.075,
+          "z_hi": 0.392,
+          "n": 121,
+          "measured_mean": 0.08094128671723808,
+          "measured_sem": 0.029680191591454665,
+          "predicted_mean": -0.26540395170166736,
+          "ratio": -3.2789687743516467
+        },
+        {
+          "z_lo": 0.392,
+          "z_hi": 0.559,
+          "n": 121,
+          "measured_mean": -0.3323958578621272,
+          "measured_sem": 0.007305593152114014,
+          "predicted_mean": -0.4882621040898706,
+          "ratio": 1.4689175347437522
+        },
+        {
+          "z_lo": 0.559,
+          "z_hi": 0.659,
+          "n": 122,
+          "measured_mean": -0.5620387939893579,
+          "measured_sem": 0.0043762057299502385,
+          "predicted_mean": -0.5889207440213385,
+          "ratio": 1.0478293497165423
+        },
+        {
+          "z_lo": 0.659,
+          "z_hi": 0.753,
+          "n": 120,
+          "measured_mean": -0.7010667484429683,
+          "measured_sem": 0.003402266957542418,
+          "predicted_mean": -0.6389625840360862,
+          "ratio": 0.9114147625103998
+        },
+        {
+          "z_lo": 0.753,
+          "z_hi": 1.018,
+          "n": 121,
+          "measured_mean": -0.8549086724661076,
+          "measured_sem": 0.005828373055463808,
+          "predicted_mean": -0.6965213044736913,
+          "ratio": 0.8147318268096111
+        }
+      ],
+      "n_overflow_above_top_edge": 0,
+      "n_underflow_below_bottom_edge": 1,
+      "z_true_max_dark": 1.017532357582283,
+      "z_true_min_dark": 0.04138476837515729
+    },
+    "joint_r1": {
+      "n_events_scored_csv": 1588,
+      "n_h_nodes": 41,
+      "n_events_zero_or_nonpositive_combined_no_bh_near_truth": 0,
+      "n_events_score_nonfinite": 0,
+      "n_dark": 493,
+      "n_matched": 1095,
+      "dark_ensemble": {
+        "measured_mean": -0.39379150901421817,
+        "measured_sem": 0.020673034630077722,
+        "predicted_mean": -0.5115062407107395,
+        "coverage_fraction": 1.298926536001748,
+        "n": 493,
+        "predicted_mean_ALT_mass_weighted_integration_REJECTED_CONVENTION": -0.30823020493977427
+      },
+      "dark_ensemble_bins2to5_only_robustness": {
+        "measured_mean": -0.574350885364903,
+        "predicted_mean": -0.5965122101168692,
+        "coverage_fraction": 1.0385849927573219,
+        "n": 372,
+        "note": "excludes bin 1 (0.075-0.392), where measured and predicted are both near zero and opposite in sign"
+      },
+      "matched_ensemble": {
+        "measured_mean": -0.056872197175999416,
+        "measured_sem": 0.03994715209639732,
+        "n": 1095
+      },
+      "historical_row138": {
+        "mean": -0.565,
+        "sem": 0.02
+      },
+      "head_vs_historical": {
+        "abs_diff": 0.17120849098578178,
+        "diff_in_combined_sigma": 5.952155521120475
+      },
+      "bins": [
+        {
+          "z_lo": 0.075,
+          "z_hi": 0.392,
+          "n": 119,
+          "measured_mean": 0.10337250413030956,
+          "measured_sem": 0.029777240597048327,
+          "predicted_mean": -0.26613670387514227,
+          "ratio": -2.5745405522889824
+        },
+        {
+          "z_lo": 0.392,
+          "z_hi": 0.559,
+          "n": 118,
+          "measured_mean": -0.309041190362486,
+          "measured_sem": 0.007376008250076833,
+          "predicted_mean": -0.48799543068896484,
+          "ratio": 1.5790627460261095
+        },
+        {
+          "z_lo": 0.559,
+          "z_hi": 0.659,
+          "n": 77,
+          "measured_mean": -0.539245744749813,
+          "measured_sem": 0.005480380997792945,
+          "predicted_mean": -0.5878020596964063,
+          "ratio": 1.0900448736394226
+        },
+        {
+          "z_lo": 0.659,
+          "z_hi": 0.753,
+          "n": 78,
+          "measured_mean": -0.6732994628551603,
+          "measured_sem": 0.004398294534918571,
+          "predicted_mean": -0.6377130487443299,
+          "ratio": 0.9471462312476466
+        },
+        {
+          "z_lo": 0.753,
+          "z_hi": 1.018,
+          "n": 99,
+          "measured_mean": -0.8399231156013378,
+          "measured_sem": 0.006691407315396415,
+          "predicted_mean": -0.7001687368029945,
+          "ratio": 0.8336105100544983
+        }
+      ],
+      "n_overflow_above_top_edge": 0,
+      "n_underflow_below_bottom_edge": 2,
+      "z_true_max_dark": 1.017532357582283,
+      "z_true_min_dark": 0.04594511784199472
+    }
+  }
+}

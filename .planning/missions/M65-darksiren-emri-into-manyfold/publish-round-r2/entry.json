@@ -1,0 +1,123 @@
+{
+ "id": "m65-r2-darksiren-landing",
+ "title": "M65 R2 — darksiren-emri: m1 evidence under git, thread re-dated, landing on main",
+ "date": "2026-10-19",
+ "mission": "M65",
+ "status": "open",
+ "summary": "Round 2 puts the pilot thread on main by construction. The m1 docket THREAD.md cites (dossier, read record, morning docket, ops records, anchor readout, pool manifest) and the cluster-ops files (cluster.env naming emri2, preflight, workspace_check, agent_ssh, datasets.yaml, DATA_INVENTORY.md) are on the branch by path allowlist, byte-identical to the work branch; nothing under darksiren_emri/ changes. All 85 m1 manifest entries are now tracked — the likelihood CSV and the 41 posteriors were pulled read-only from the Storage Box, md5 85/85 OK, sha256 recorded. The one gap: the scorer t0_read.py exists nowhere I can read, so the four m1 numbers (2.73σ, 2.58σ, 4.39 %, 2.59 %) are not yet re-run from git. THREAD.md now carries kill criterion 3 at 2026-12-15 with your dated 2026-10-18/19 rulings, gate 1 = M38 (~2026-11-20); hard core, criteria 1–2, claims and verdict text unchanged. Garden: the brain host now gets the darksiren-emri briefing (second registry row, tested), P-1/P-2 are queued as PROP-20261019-65/-66, the T-1 and ship-question atoms are re-dated and the graph regenerated. The .claude/ guard hook could not be written by this session (the harness blocks self-modification); it arrives with step 0's fast-forward.",
+ "questions": [
+  {
+   "text": "Land M65 Round 2 on darksiren-emri main? Step 0 is your 2026-10-19 ruling: fast-forward main to fix/p32d-classg-venue-repair (387cf33f), then merge this branch on top. A trial merge of exactly that is clean. Know before tapping: step 0 also registers .claude/hooks/ssh-guard.py as a Bash hook for every agent session in the repo (it blocks closing the ssh master, pkill ssh, long remote sleeps, ssh fan-out) — this is what M38 Round 3 needs.",
+   "kind": "merge",
+   "chips": [
+    {
+     "label": "Yes, merge as is",
+     "consequence": "The overseer fast-forwards main to 387cf33f, then lands mission/M65-darksiren-emri-into-manyfold on top once VERIFY-R2 passes: THREAD.md (kill criterion 3 = 2026-12-15), the m1 docket, the 85 m1 manifest files and the cluster-ops discipline are on main; the ssh guard hook is live for agent sessions."
+    },
+    {
+     "label": "Not yet",
+     "consequence": "Nothing moves on main. Say what to change and it becomes Round 3; M38 Round 3 keeps waiting for the guard hook on main."
+    }
+   ],
+   "recommend": "Yes, merge as is: every allowlisted file is byte-identical to the work branch except datasets.yaml (one R28 pool pin) and .gitignore (R1's research exception), nothing under darksiren_emri/ changes, and the merge onto 387cf33f is clean."
+  },
+  {
+   "text": "Size line: I committed the m1 read inputs as plain files (15.6 MB likelihood CSV + 41 posterior JSONs at ~41 KB + fisher_quality, 17 MB total), past the repo's generic 'simulations/' ignore rule, because they are not regenerable without the cluster and the repo already tracks four 14.4 MB likelihood CSVs. The 3.5 GB 2D posteriors stay off git. Keep this line?",
+   "kind": "react",
+   "chips": [
+    {
+     "label": "Keep — 17 MB committed",
+     "consequence": "Every m1 input stays re-derivable from git; the line for future evidence is about 20 MB per file, the repo's largest precedent."
+    },
+    {
+     "label": "Checksum-only for the CSV",
+     "consequence": "One follow-up commit untracks the 15.6 MB CSV; its sha256 stays in M1_EVIDENCE_SHA256.txt and the CSV lives on the cluster and the Storage Box only."
+    }
+   ],
+   "recommend": "Keep — 17 MB committed: the whole point of the round was that m1's numbers stop being testimony, and 15.6 MB is inside the repo's existing practice."
+  },
+  {
+   "text": "Registry fix: a second master-thesis-code row with the brain-host path (/home/ops/Repositories/darksiren-emri), placed above the laptop row, plus a contract note 'one row per host path'. A synthetic session-start run briefs both paths (before the fix the brain host got none). Keep it?",
+   "kind": "react",
+   "chips": [
+    {
+     "label": "Keep two rows",
+     "consequence": "Lands with the garden half after VERIFY-R2. Any future host gets its own row the same way; /chronicler bumps both rows' Last Updated."
+    },
+    {
+     "label": "Prefer another fix",
+     "consequence": "Name it (for example a path-alias column, which needs edits to the protected hook scripts and so your tap); the row is reverted in the garden landing."
+    }
+   ],
+   "recommend": "Keep two rows: no hook or protected path changes, first-match readers are unaffected, and gardener --all runs the project once per host."
+  },
+  {
+   "text": "The m1 scorer t0_read.py is in no git ref, not on this host and not on the Storage Box, so the four m1 numbers cannot be re-run from git yet (the inputs now can). Could you check your laptop for ~/t0_scorer_rescue_20260923.tar.gz or an untracked t0_read.py in your darksiren-emri checkout?",
+   "kind": "ruling",
+   "chips": [
+    {
+     "label": "I'll look on the laptop",
+     "consequence": "If found, commit it beside READ_RECORD_m1.md (or drop it in the brain host's repo) and the four numbers are a one-command re-run."
+    },
+    {
+     "label": "Leave it to M38 R3",
+     "consequence": "The M38 Round 3 cluster-ops agent searches the emri2 workspace for t0_read.py once cluster access exists."
+    },
+    {
+     "label": "Re-implement it",
+     "consequence": "A new scorer is written to the READ_RECORD conventions and validated against the anchors 0.665854 / 0.666987 — new code, so it goes through a fresh round and its own verifier."
+    }
+   ],
+   "recommend": "I'll look on the laptop: it is seconds of your time and the only copy likely to be the original."
+  }
+ ],
+ "suggested": [
+  [
+   "Yes, merge as is",
+   "Not yet"
+  ],
+  [
+   "Keep — 17 MB committed",
+   "Checksum-only for the CSV"
+  ],
+  [
+   "Keep two rows",
+   "Prefer another fix"
+  ],
+  [
+   "I'll look on the laptop",
+   "Leave it to M38 R3",
+   "Re-implement it"
+  ]
+ ],
+ "kind": [
+  "merge",
+  "react",
+  "react",
+  "ruling"
+ ],
+ "yes": [
+  "Yes, merge as is",
+  "",
+  "",
+  ""
+ ],
+ "links": [
+  {
+   "label": "REPORT-R2, full (context)",
+   "href": "/app/previews/m65-r2-darksiren-landing/report.html"
+  },
+  {
+   "label": "REPORT-R2 markdown (context)",
+   "href": "/app/previews/m65-r2-darksiren-landing/REPORT-R2.md"
+  },
+  {
+   "label": "THREAD.md as it lands (react)",
+   "href": "/app/previews/m65-r2-darksiren-landing/THREAD.md"
+  },
+  {
+   "label": "m1 evidence sha256 manifest (context)",
+   "href": "/app/previews/m65-r2-darksiren-landing/M1_EVIDENCE_SHA256.txt"
+  }
+ ]
+}

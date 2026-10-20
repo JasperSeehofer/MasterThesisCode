@@ -1616,6 +1616,33 @@ def precompute_completeness_population_volume(
     return V_f_table
 
 
+# [HIER] θ-hook inventory counters (PA-HIER-16 corroborant): each in-scope
+# site increments its counter when its θ branch actually runs, so a driver can
+# assert the θ-aware path was entered. NOTE: sites 2.1/2.2 execute inside
+# multiprocessing workers under production dispatch — increments land in the
+# worker process, not the parent; the decisive engagement evidence is the
+# per-term ln L diagnostics (PA-HIER-23), never this counter alone.
+_THETA_HOOK_COUNTERS: dict[str, int] = {
+    "site_2_1": 0,
+    "site_2_2": 0,
+    "site_2_3": 0,
+    # [HIER] site 2.3phi (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md section 2.2,
+    # row #255 tree 2 node T1.1): the theta-consistent no-BH phi divisor
+    # ratio rho(theta). Incremented once per (h) pass when engaged.
+    "site_2_3_phi": 0,
+}
+
+
+def _theta_hook_count(site: str) -> None:
+    _THETA_HOOK_COUNTERS[site] += 1
+
+
+def _validate_theta(theta_b: float, theta_s: float) -> None:
+    """Guard pattern, not a silent no-op: θ = (b, s) needs s > 0 and finite b."""
+    if not (theta_s > 0.0) or not np.isfinite(theta_s) or not np.isfinite(theta_b):
+        raise ValueError(f"theta requires finite b and s > 0, got (b, s) = ({theta_b}, {theta_s})")
+
+
 def _smeared_global_pdet_expectation(
     z_g: npt.NDArray[np.float64],
     M_g: npt.NDArray[np.float64],
@@ -1628,6 +1655,10 @@ def _smeared_global_pdet_expectation(
     sky_aware: bool,
     n_quad: int = 50,
     chunk_size: int = 200_000,
+    # [HIER] θ-hook site 2.3 (PHYSICS_CHANGE_THETA_HOOK_20260828.md, row #216).
+    # (0.0, 1.0) is the literal-skip identity (GATE T-ID).
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
 ) -> npt.NDArray[np.float64]:
     r"""Per-galaxy sigma_z-smeared selection weight ``E_{z~kernel_g}[P_det(d_L(z;h))]``.
 
@@ -1670,6 +1701,18 @@ def _smeared_global_pdet_expectation(
     # Tiny floor keeps the affine window non-degenerate; at 1e-10 the kernel is
     # numerically a delta and the expectation equals the point evaluation.
     sigma_eff = np.maximum(np.sqrt(z_err_g**2 + sigma_z_pv**2), 1e-10)
+    if theta_b != 0.0 or theta_s != 1.0:
+        # Sec. 2 in Ma, Hu & Huterer (2006), arXiv:astro-ph/0506614 — affine
+        # photo-z systematic (b, s). HIER §1.2 s-placement (row #221 item 4;
+        # 2026-08-29 note supersedes the 2026-08-28 "s on the folded width"
+        # pin): s scales the RAW z_err_g BEFORE the PV fold; b is unchanged
+        # (still AFTER the fold, using sigma_z_pv from the UNSHIFTED z_g);
+        # the 1e-10 floor re-applies after the combine so the delta limit
+        # stays exact.
+        _validate_theta(theta_b, theta_s)
+        _theta_hook_count("site_2_3")
+        sigma_eff = np.maximum(np.sqrt((theta_s * z_err_g) ** 2 + sigma_z_pv**2), 1e-10)
+        z_g = z_g + theta_b * (1.0 + z_g)
     for start in range(0, z_g.size, chunk_size):
         sl = slice(start, min(start + chunk_size, z_g.size))
         zc = z_g[sl]
@@ -2563,6 +2606,19 @@ def write_selection_table_json(
     sigma_phi: float,
     sigma_4d: float,
     directory: str = ".",
+    # [HIER] site 2.3phi instrumentation (PHYSICS_CHANGE_THETA_DIVISOR_
+    # 20260830.md section 2.2, row #255 tree 2 node T1.1). None (default) =
+    # theta_phi_divisor="off" or the theta=(0,1) literal skip -- byte-
+    # identical JSON (no new keys written), matching every pre-existing call.
+    sigma_phi_theta: float | None = None,
+    sigma_phi_smear_truth: float | None = None,
+    rho_theta: float | None = None,
+    kappa_smear_over_point: float | None = None,
+    n_degenerate_rows: float | None = None,
+    w_share_degenerate: float | None = None,
+    theta_b: float | None = None,
+    theta_s: float | None = None,
+    theta_phi_divisor: str | None = None,
 ) -> str:
     r"""P4 banked source (PREREGISTRATION_TILT_BATTERY.md §2, N-2(J)).
 
@@ -2584,6 +2640,20 @@ def write_selection_table_json(
         sigma_4d: Global with-BH-mass catalogue selection sum Sigma^4D(h).
         directory: Output directory (default: the current working directory,
             i.e. the run's working directory).
+        sigma_phi_theta: [HIER] site 2.3phi (optional): the registered
+            theta-consistent divisor ``Sigma_phi_reg(theta;h)`` actually
+            consumed at :5215-5219 when engaged. ``None`` omits the key.
+        sigma_phi_smear_truth: The site-2.3phi ``(0,1)`` normaliser pass
+            ``Sigma_phi_smear((0,1);h)`` (section 2.1).
+        rho_theta: The per-node ratio ``rho(theta;h)`` (section 2.3).
+        kappa_smear_over_point: ``Sigma_phi_smear((0,1);h)/Sigma_phi_point(h)``
+            (section 5.5) -- a REPORTED diagnostic, never a divisor.
+        n_degenerate_rows: Count of degenerate transformed windows at this
+            node (section 2.4).
+        w_share_degenerate: Their total ``w_g``-share of the eligible pool.
+        theta_b: The node's theta_b (recorded for T1.2 gate scoring from files).
+        theta_s: The node's theta_s.
+        theta_phi_divisor: The node's ``theta_phi_divisor`` flag value.
 
     Returns:
         The path written.
@@ -2591,19 +2661,37 @@ def write_selection_table_json(
     obj = path_a_mixture_objects(beta_G_phi, beta_Gbar_phi, sigma_phi, sigma_4d)
     h_label = str(np.round(h, 4)).replace(".", "_")
     path = os.path.join(directory, f"selection_tables_h_{h_label}.json")
+    payload: dict[str, float | str] = {
+        "h": h,
+        "beta_G_phi": beta_G_phi,
+        "beta_Gbar_phi": beta_Gbar_phi,
+        "sigma_phi": sigma_phi,
+        "sigma_4d": sigma_4d,
+        "r_Malm": obj["r_Malm"],
+    }
+    # [HIER] site 2.3phi instrumentation: only written when engaged (None ==
+    # off / literal-skip), so the payload is byte-identical (same key set)
+    # whenever the divisor is off -- R1/R2/regression-item byte-identity.
+    if sigma_phi_theta is not None:
+        payload["sigma_phi_theta"] = sigma_phi_theta
+    if sigma_phi_smear_truth is not None:
+        payload["sigma_phi_smear_truth"] = sigma_phi_smear_truth
+    if rho_theta is not None:
+        payload["rho_theta"] = rho_theta
+    if kappa_smear_over_point is not None:
+        payload["kappa_smear_over_point"] = kappa_smear_over_point
+    if n_degenerate_rows is not None:
+        payload["n_degenerate_rows"] = n_degenerate_rows
+    if w_share_degenerate is not None:
+        payload["w_share_degenerate"] = w_share_degenerate
+    if theta_b is not None:
+        payload["theta_b"] = theta_b
+    if theta_s is not None:
+        payload["theta_s"] = theta_s
+    if theta_phi_divisor is not None:
+        payload["theta_phi_divisor"] = theta_phi_divisor
     with open(path, "w") as sel_file:
-        json.dump(
-            {
-                "h": h,
-                "beta_G_phi": beta_G_phi,
-                "beta_Gbar_phi": beta_Gbar_phi,
-                "sigma_phi": sigma_phi,
-                "sigma_4d": sigma_4d,
-                "r_Malm": obj["r_Malm"],
-            },
-            sel_file,
-            indent=2,
-        )
+        json.dump(payload, sel_file, indent=2)
     return path
 
 
@@ -2674,6 +2762,13 @@ def precompute_global_catalog_selection(
     # (the SAME shift production's per-event D_g uses). No effect under
     # sigma4d_mass_kernel="point" (unchanged point evaluation at raw M_g).
     eddington_m: str = "on",
+    # [HIER] θ-hook site 2.3 (PHYSICS_CHANGE_THETA_HOOK_20260828.md, row #216):
+    # forwarded to _smeared_global_pdet_expectation. The registered site is the
+    # smeared kernel's width/window lines ONLY, so a non-identity θ REQUIRES
+    # smear_sigma_z=True (guard below) — the point-evaluation branches carry no
+    # kernel for θ to reparametrize.
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
 ) -> dict[float, float]:
     r"""Precompute the GLOBAL in-catalogue selection denominator (Option A).
 
@@ -2754,6 +2849,15 @@ def precompute_global_catalog_selection(
         Babak et al. (2017), arXiv:1703.09722 — per-MBH rate ``R_eff``
             (:func:`darksiren_emri.emri_rate.R_eff_per_mbh`).
     """
+    if (theta_b != 0.0 or theta_s != 1.0) and not smear_sigma_z:
+        # [HIER] θ-hook site 2.3: guard pattern, not a silent no-op — the
+        # registered site is the smeared kernel; the point branches would
+        # silently ignore θ (PHYSICS_CHANGE_THETA_HOOK_20260828.md §2).
+        raise ValueError(
+            "theta (site 2.3) requires smear_sigma_z=True — the registered "
+            "site is the smeared host-z kernel; got "
+            f"(theta_b, theta_s) = ({theta_b}, {theta_s}) with smear_sigma_z=False"
+        )
     if phi_survival_table is not None and (with_bh_mass or smear_sigma_z):
         raise ValueError(
             "phi_survival_table is the mass-blind phi-marginal leg Sigma^phi: it "
@@ -2878,6 +2982,8 @@ def precompute_global_catalog_selection(
                 detection_probability_obj,
                 with_bh_mass=with_bh_mass,
                 sky_aware=_sky_aware,
+                theta_b=theta_b,
+                theta_s=theta_s,
             )
         elif with_bh_mass:
             # FLAG (user-approved, statistics-starved): the with-BH-mass 4D
@@ -2981,6 +3087,283 @@ def precompute_global_catalog_selection(
             _log_sigma_4d_mass_band_shares(w_g * p_det, M_g, z_g, detection_probability_obj, h)
 
     return global_table
+
+
+def _phi_divisor_kernel_pass(
+    z_g: npt.NDArray[np.float64],
+    z_err_g: npt.NDArray[np.float64],
+    w_g: npt.NDArray[np.float64],
+    host_pixels: npt.NDArray[np.int64],
+    completeness: CompletenessModel,
+    h: float,
+    phi_z_grid: npt.NDArray[np.float64],
+    phi_s_grid: npt.NDArray[np.float64],
+    theta_b: float,
+    theta_s: float,
+    *,
+    n_quad: int = 50,
+    chunk_size: int = 200_000,
+) -> tuple[float, int, float]:
+    r"""One theta-node pass of the site-2.3phi kernel sum.
+
+    [HIER] PHYSICS_CHANGE_THETA_DIVISOR_20260830.md section 2.1 (row #255,
+    tree 2 node T1.1). Computes ``sum_{g eligible} w_g * S_tilde_g(theta;h)``
+    with the SAME per-host kernel form as the site-2.2 numerator
+    (``single_host_likelihood_batch``, :7117-7208; the C7-core kernel
+    ``N(z; z_g^theta, sigma_g^theta) * f_k(g)(z;h) * dVc/dz(z;h) / (1+z)``, the
+    +/-4 sigma window, the 1e-6 floor, GL-50 quadrature) — NOT the
+    theta-INERT point evaluation and NOT the pre-C7 bare smear branch of
+    :func:`_smeared_global_pdet_expectation` (section 1g, disclosed and left
+    untouched). ``S_bar_phi`` is read off ``phi_z_grid``/``phi_s_grid`` by
+    plain (endpoint-clamped) ``np.interp``, the same table-object convention
+    :func:`precompute_global_catalog_selection`'s phi branch uses.
+
+    A degenerate transformed window (``hi <= lo``, only possible at ``b < 0``,
+    section 2.4) contributes exactly ``0`` (zero physical support => zero
+    survival mass) and is counted, never integrated.
+
+    Row-chunked over the ACTIVE (non-degenerate) rows only, for memory
+    (mirrors :func:`_smeared_global_pdet_expectation` and the harness's
+    ``_KERNEL_SMEAR_CHUNK`` precedent, correspondence_1d.py:1248-1345): each
+    row's contribution depends only on its own window/nodes, so the final
+    reduction is a single ``np.sum`` over the completed per-row array,
+    independent of ``chunk_size`` (regression R8).
+
+    Args:
+        z_g: Eligible-row redshifts (UNSHIFTED), shape ``(n,)``.
+        z_err_g: Eligible-row RAW catalogue redshift errors (before the s
+            scale and the PV fold), shape ``(n,)``.
+        w_g: Eligible-row rate weights ``R_eff_per_mbh(M_g)/(1+z_g)``.
+        host_pixels: HEALPix pixel index per row (:func:`_host_pixels`).
+        completeness: Per-pixel completeness model.
+        h: Dimensionless Hubble parameter.
+        phi_z_grid: ``S_bar_phi`` table's z-grid for this ``h``.
+        phi_s_grid: ``S_bar_phi`` table's survival values for this ``h``.
+        theta_b: Affine photo-z bias offset.
+        theta_s: Affine photo-z scale.
+        n_quad: Gauss-Legendre order (default 50, GL-50).
+        chunk_size: Row-chunk size for the active-row loop.
+
+    Returns:
+        ``(sigma_phi_smear, n_degenerate_rows, w_degenerate)`` — the kernel
+        sum, the degenerate-row count, and their total ``w_g`` weight.
+
+    References:
+        Ma, Hu & Huterer (2006), arXiv:astro-ph/0506614, sec. 2.
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7).
+        Gray et al. (2020), arXiv:1908.06050, Eq. (A.10).
+    """
+    x_nodes, x_weights = roots_legendre(n_quad)
+    x_nodes = np.asarray(x_nodes, dtype=np.float64)
+    x_weights = np.asarray(x_weights, dtype=np.float64)
+
+    # Section 2.1: sigma_pv,g from the UNSHIFTED z_g, s on the RAW catalogue
+    # error BEFORE the PV fold -- the same registered form and operation
+    # order as site 2.2 (:7117-7129).
+    sigma_z_pv = (1.0 + z_g) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+    z_g_theta = z_g + theta_b * (1.0 + z_g)
+    sigma_g_theta = np.sqrt((theta_s * z_err_g) ** 2 + sigma_z_pv**2)
+    lo = np.maximum(z_g_theta - 4.0 * sigma_g_theta, 1e-6)
+    hi = z_g_theta + 4.0 * sigma_g_theta
+    degenerate = hi <= lo
+    n_degenerate = int(np.count_nonzero(degenerate))
+    w_degenerate = float(np.sum(w_g[degenerate])) if n_degenerate else 0.0
+
+    idx_active = np.nonzero(~degenerate)[0]
+    m = idx_active.size
+    contrib = np.zeros(m, dtype=np.float64)
+    for start in range(0, m, chunk_size):
+        sl = slice(start, min(start + chunk_size, m))
+        rows = idx_active[sl]
+        lo_a = lo[rows]
+        hi_a = hi[rows]
+        zc_a = z_g_theta[rows]
+        se_a = sigma_g_theta[rows]
+        pix_a = host_pixels[rows]
+
+        z_nodes = _batched_gl_nodes(lo_a, hi_a, x_nodes)
+        gauss = _gaussian_pdf(z_nodes, zc_a[:, None], se_a[:, None])
+        w_pop = (
+            np.asarray(comoving_volume_element(z_nodes.reshape(-1), h=h), dtype=np.float64)
+            / (1.0 + z_nodes.reshape(-1))
+        ).reshape(z_nodes.shape)
+        f_host = _completeness_at_host_nodes(completeness, z_nodes, pix_a, h)
+        zoa = ~np.any(f_host > 0.0, axis=1)
+        if bool(np.any(zoa)):
+            f_host = f_host.copy()
+            f_host[zoa, :] = 1.0
+        kern = gauss * f_host * w_pop
+        z_row = _batched_gl_reduce(lo_a, hi_a, x_weights, kern)
+        s_phi_nodes = np.interp(z_nodes, phi_z_grid, phi_s_grid)
+        numer = _batched_gl_reduce(lo_a, hi_a, x_weights, kern * s_phi_nodes)
+        z_row_safe = np.where(z_row > 0.0, z_row, 1.0)
+        s_tilde = np.where(z_row > 0.0, numer / z_row_safe, 0.0)
+        contrib[sl] = w_g[rows] * s_tilde
+
+    return float(np.sum(contrib)), n_degenerate, w_degenerate
+
+
+def precompute_phi_divisor_theta_ratio(
+    h_values: list[float],
+    galaxy_catalog: GalaxyCatalogueHandler,
+    completeness: CompletenessModel,
+    phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    *,
+    theta_b: float,
+    theta_s: float,
+    n_quad: int = 50,
+    chunk_size: int = 200_000,
+) -> dict[float, dict[str, float]]:
+    r"""[HIER] site 2.3phi: the theta-consistent no-BH divisor ratio ``rho(theta)``.
+
+    [PHYSICS] PHYSICS_CHANGE_THETA_DIVISOR_20260830.md sections 2.1-2.4 (row
+    #255, tree 2 node T1.1). The forensic (B1_1_S0A_DEFECT_FORENSIC_20260829.md,
+    mechanism (i)) localised the S0-A b-axis non-null to the no-BH catalogue
+    divisor Sigma^phi carrying no theta-dependence in any BUILT form
+    (:func:`precompute_global_catalog_selection`'s phi branch, :2906-2915,
+    :3022), while the site-2.2 numerator DOES reparametrize under theta. This
+    function restores the theta-dependence as a per-``(h, theta)`` SCALAR
+    ratio to the stored point table, computed EXACTLY (not to first order):
+
+    .. math::
+
+        \rho(\theta; h) = \frac{\Sigma^\phi_\mathrm{smear}(\theta; h)}
+            {\Sigma^\phi_\mathrm{smear}((0,1); h)}, \qquad
+        \Sigma^\phi_\mathrm{smear}(\theta; h) = \sum_{g\ \mathrm{eligible}}
+            w_g\, \tilde S_g(\theta; h),
+
+    with :math:`\tilde S_g(\theta;h)` the theta-consistent per-galaxy
+    survival — the SAME C7-core host-z kernel the site-2.2 numerator
+    integrates against (:func:`_phi_divisor_kernel_pass`), evaluated on the
+    galaxy's OWN transformed window. Two full pool passes are performed per
+    ``h`` (the theta pass and the ``(0,1)`` normaliser pass); the caller forms
+    the registered divisor ``Sigma_phi_reg(theta;h) = Sigma_phi_point(h) *
+    rho(theta;h)``, so the object returned here is deliberately the RATIO,
+    never a replacement table (section 2.3: dividing a banked node's
+    ``L_cat,i(theta)`` by this scalar is algebraically identical to
+    re-evaluating with the registered divisor — exact, not a linearisation).
+
+    Eligibility (decision D2): identical mask to
+    :func:`precompute_global_catalog_selection`'s phi branch and to
+    ``Sigma^4D`` — ``z_g < z_max(h)`` (read off ``phi_survival_table``'s own
+    capped z-grid domain, so no separate ``z_max_cap`` argument is needed)
+    with finite, positive source-frame mass. The weights ``w_g`` are the
+    IDENTICAL rate weights.
+
+    Args:
+        h_values: Hubble parameter values to evaluate.
+        galaxy_catalog: Loaded catalogue handler (same rows the phi-point
+            divisor sums over).
+        completeness: Per-pixel completeness model (the C7-core ``f_k``
+            accessor site 2.2 uses).
+        phi_survival_table: Output of :func:`precompute_phi_marginal_survival`
+            (``h -> (z_grid, S_bar_phi(z_grid))``); its domain fixes the
+            eligibility ``z_max(h)``.
+        theta_b: Affine photo-z bias offset (Ma, Hu & Huterer 2006, sec. 2).
+        theta_s: Affine photo-z scale.
+        n_quad: Gauss-Legendre order (default 50, GL-50, matching site 2.2).
+        chunk_size: Row-chunk size (memory only; bit-identical sums for any
+            chunk size, regression R8).
+
+    Returns:
+        ``h -> {"sigma_phi_smear_theta", "sigma_phi_smear_truth", "rho",
+        "n_degenerate_rows", "w_share_degenerate"}``.
+
+    References:
+        Ma, Hu & Huterer (2006), arXiv:astro-ph/0506614, sec. 2.
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7).
+        Gray et al. (2020), arXiv:1908.06050, Eq. (29).
+        B1_1_S0A_DEFECT_FORENSIC_20260829.md (mechanism (i), E10/E11/E20).
+    """
+    _validate_theta(theta_b, theta_s)
+    catalog = galaxy_catalog.reduced_galaxy_catalog
+    if InternalCatalogColumns.REDSHIFT_ERROR not in catalog.columns:
+        raise ValueError(
+            "precompute_phi_divisor_theta_ratio requires the catalogue "
+            "REDSHIFT_MEASUREMENT_ERROR column (the site-2.3phi kernel width)."
+        )
+    z_all = np.asarray(
+        catalog[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64), dtype=np.float64
+    )
+    M_all = np.asarray(
+        catalog[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64), dtype=np.float64
+    )
+    z_err_all = np.asarray(
+        catalog[InternalCatalogColumns.REDSHIFT_ERROR].to_numpy(dtype=np.float64), dtype=np.float64
+    )
+    phi_s_all = np.asarray(
+        catalog[InternalCatalogColumns.PHI_S].to_numpy(dtype=np.float64), dtype=np.float64
+    )
+    theta_s_col_all = np.asarray(
+        catalog[InternalCatalogColumns.THETA_S].to_numpy(dtype=np.float64), dtype=np.float64
+    )
+
+    result: dict[float, dict[str, float]] = {}
+    for h in h_values:
+        z_grid, s_phi_grid = phi_survival_table[h]
+        z_max = float(z_grid[-1])
+        # Decision D2: the SAME eligibility mask precompute_global_catalog_
+        # selection's phi branch applies (:2890) -- the table's own domain
+        # already carries the run's z_max_cap.
+        eligible = (z_all < z_max) & np.isfinite(M_all) & (M_all > 0.0)
+        z_g = z_all[eligible]
+        z_err_g = z_err_all[eligible]
+        M_g = M_all[eligible]
+        w_g = np.asarray(R_eff_per_mbh(M_g), dtype=np.float64) / (1.0 + z_g)
+        host_pixels = _host_pixels(completeness, phi_s_all[eligible], theta_s_col_all[eligible])
+
+        sigma_theta, n_deg_theta, w_deg_theta = _phi_divisor_kernel_pass(
+            z_g,
+            z_err_g,
+            w_g,
+            host_pixels,
+            completeness,
+            h,
+            z_grid,
+            s_phi_grid,
+            theta_b,
+            theta_s,
+            n_quad=n_quad,
+            chunk_size=chunk_size,
+        )
+        sigma_truth, _n_deg_truth, _w_deg_truth = _phi_divisor_kernel_pass(
+            z_g,
+            z_err_g,
+            w_g,
+            host_pixels,
+            completeness,
+            h,
+            z_grid,
+            s_phi_grid,
+            0.0,
+            1.0,
+            n_quad=n_quad,
+            chunk_size=chunk_size,
+        )
+        w_total = float(np.sum(w_g))
+        rho = sigma_theta / sigma_truth if sigma_truth > 0.0 else 0.0
+        w_share_degenerate = (w_deg_theta / w_total) if w_total > 0.0 else 0.0
+        result[h] = {
+            "sigma_phi_smear_theta": sigma_theta,
+            "sigma_phi_smear_truth": sigma_truth,
+            "rho": rho,
+            "n_degenerate_rows": float(n_deg_theta),
+            "w_share_degenerate": w_share_degenerate,
+        }
+        _LOGGER.info(
+            "site 2.3phi(h=%.4f, theta=(%.6g,%.6g)): Sigma_phi_smear(theta)=%.7g, "
+            "Sigma_phi_smear(0,1)=%.7g, rho=%.7g, n_degenerate=%d, "
+            "w_share_degenerate=%.4e",
+            h,
+            theta_b,
+            theta_s,
+            sigma_theta,
+            sigma_truth,
+            rho,
+            n_deg_theta,
+            w_share_degenerate,
+        )
+    return result
 
 
 def _log_sigma_4d_mass_band_shares(
@@ -3215,14 +3598,18 @@ class BayesianStatistics:
     # [P3-IMP] catalogue-leg twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2).
     # "off" (default) is byte-identical to the pre-flag path.
     _catalogue_numerator_survival: str = "off"
-    # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test (stage
-    # 2) (results/campaign51_20260728/realistic_20260729/
-    # PREREGISTRATION_P3_2D_20260825.md §2(i)). "off" (default) is
-    # byte-identical to the pre-flag path.
-    _catalogue_numerator_survival_2d: str = "off"
-    # Centering sub-option ("unset"/"raw"/"eff"): REFUSED ("unset") until
-    # explicitly set when the twin above is engaged -- no silent default.
-    _catalogue_numerator_survival_2d_center: str = "unset"
+    # [P3-2D] the with-BH catalogue-leg twin: production adoption (row #223
+    # standing grant, charter node B7.3; PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md).
+    # "mz_sel" (default) = the production with-BH catalogue numerator: S_4D
+    # inside the candidate's own mass quadrature (row #<adoption>); explicit
+    # "off" = the pre-adoption COUNTERFACTUAL (no per-candidate survival
+    # factor).
+    _catalogue_numerator_survival_2d: str = "mz_sel"
+    # Centering sub-option ("unset"/"raw"/"eff"): "eff" (default) is the
+    # adopted centering (A20_REVIEW_P3_2D_DESIGN_20260825.md F2); REFUSED
+    # ("unset") until explicitly set when the twin is engaged -- no silent
+    # default.
+    _catalogue_numerator_survival_2d_center: str = "eff"
     # B-DEN falsifier instrument (docs/derivations/
     # completion_numerator_data_measure.md §6; AMENDMENT A-5,
     # results/prod2d_closure_20260818/PREREGISTRATION_1D_CORRESPONDENCE.md).
@@ -3246,6 +3633,66 @@ class BayesianStatistics:
     # ±1.5σ-vs-±1σ window). Single read site: the mask branch in
     # get_possible_hosts_from_ball_tree; this attribute is inert plumbing.
     _mass_filter_sigma: str = "symmetric"
+    # Mass-window GEOMETRY instrument flag (charter node B5.1,
+    # PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+    # #220-#223). "linear" (default, PRODUCTION, byte-identical) is the
+    # pre-flag interval-overlap form; "log" re-expresses both sides in
+    # ln-space. Not a production posterior at "log". Single read site: the
+    # mask branch in get_possible_hosts_from_ball_tree; these two attributes
+    # are inert plumbing.
+    _mass_filter_geometry: str = "linear"
+    _mass_filter_k: float = 1.5
+    # [HIER] site 2.3phi theta-consistent no-BH divisor instrument
+    # (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md, row #255 tree 2 node T1.1).
+    # "off" (default, PRODUCTION, byte-identical): the no-BH catalogue
+    # divisor stays Sigma_phi_point (or Sigma^3D under catalogue_global_
+    # selection="s3d") -- no code path change. "on" arms the theta-consistent
+    # ratio; at theta=(0,1) the literal skip applies (GATE T-ID, no floating
+    # operation performed). Single read site: the global_denom_no_bh branch
+    # in p_Di.
+    _theta_phi_divisor: str = "off"
+    # Sky-cone-radius instrument flag (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md
+    # §2.5): decouples the sky search radius from the (now-mass-only)
+    # mass_filter_k. Default 1.5 matches the pre-flag sigma_multiplier
+    # literal -- byte-identical. Single read site: the sigma_multiplier
+    # argument of get_possible_hosts_from_ball_tree.
+    _sky_cone_k: float = 1.5
+    # [HIER] theta-consistent candidate z-window instrument flag (row #255
+    # tree 2 node T1.3-zwin, PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2).
+    # "off" (default, PRODUCTION, byte-identical): the candidate z-filter
+    # keeps its bare +/- z_window_k*sigma_g form, no theta. "on": the
+    # galaxy-side centre/width follow the theta-transformed site-2.2 kernel.
+    # Single read site: the redshift_filter_mask branch in
+    # get_possible_hosts_from_ball_tree.
+    _theta_zwindow: str = "off"
+    # Candidate z-window half-width in units of sigma_g/sigma_g^theta (same
+    # reference). Default 1.0 matches today's implicit +/- 1 sigma_g literal
+    # -- byte-identical regardless of _theta_zwindow.
+    _z_window_k: float = 1.0
+    # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
+    # guard, not a physics gate). None (default) => OFF, byte-identical: no
+    # computed value is read or written differently. A directory path arms a
+    # READ-ONLY per-(event, candidate) diagnostic serialiser -- see
+    # B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md §6.
+    _candidate_dump_dir: str | None = None
+    # [HIER] mass-aware 1D catalogue leg instrument (row #255 tree 2 node
+    # T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). "off" (default,
+    # PRODUCTION, byte-identical): sites N1/D1/W1 stay exactly as before --
+    # no code path change. "on" (guarded: normalization_mode=
+    # "absolute_marginal", catalogue_numerator_survival resolving to "phi",
+    # catalogue_global_selection resolving to "phi", theta_phi_divisor="off")
+    # replaces the WITHOUT-BH catalogue numerator's per-candidate survival by
+    # S_4D(d_L(z;h), M_g(1+z)) (the with-BH object Sigma_4D already
+    # evaluates), Sigma_4D as the global divisor (ALREADY IN HAND) and
+    # alpha_G_phi as the mixture weight -- the no-mass-likelihood image of
+    # the 2D assembly. PRODUCTION DEFAULT "on" since 2026-08-31: the arm (c)
+    # readout was Z-CONFIRMED (1D map_h 0.665, mean_h 0.66699, both inside the
+    # measured band; PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §6.3 +
+    # AMENDMENT G-EXT; ledger rows #282/#284-#286). Default "auto" (the row
+    # #197/#253 auto->engaged pattern): resolves to "on" under the
+    # absolute_marginal phi stack, "off" elsewhere; explicit "off" = the
+    # pre-flip mass-blind counterfactual.
+    _catalogue_leg_1d_mass_aware: str = "auto"
 
     def __init__(self) -> None:
         self.h_values = []
@@ -3292,10 +3739,11 @@ class BayesianStatistics:
         # [P3-IMP] twin cell (PREREGISTRATION_P3_TWIN_20260822.md §2): "off"
         # => the pre-flag production path, byte-identical.
         self._catalogue_numerator_survival: str = "off"
-        # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md
-        # §2(i)): "off" => the pre-flag production path, byte-identical.
-        self._catalogue_numerator_survival_2d: str = "off"
-        self._catalogue_numerator_survival_2d_center: str = "unset"
+        # [P3-2D] the with-BH catalogue-leg twin, ADOPTED (row #223 standing
+        # grant, charter node B7.3): "mz_sel"/"eff" => the production
+        # with-BH catalogue numerator; explicit "off" = the COUNTERFACTUAL.
+        self._catalogue_numerator_survival_2d: str = "mz_sel"
+        self._catalogue_numerator_survival_2d_center: str = "eff"
         # B-DEN falsifier instrument (docs/derivations/
         # completion_numerator_data_measure.md §6; AMENDMENT A-5). "ratio"
         # (default) => the pre-flag production path, byte-identical.
@@ -3309,6 +3757,33 @@ class BayesianStatistics:
         # "symmetric" (default) = production; "asymmetric" pins the pre-flag
         # counterfactual.
         self._mass_filter_sigma: str = "symmetric"
+        # Mass-window GEOMETRY instrument flag (charter node B5.1, ledger
+        # rows #220-#223): "linear" (default) = production, byte-identical;
+        # "log" is the ln-space re-expression, not a production posterior.
+        self._mass_filter_geometry: str = "linear"
+        self._mass_filter_k: float = 1.5
+        # [HIER] site 2.3phi theta-consistent no-BH divisor instrument (row
+        # #255 tree 2 node T1.1): "off" (default) = production, byte-identical.
+        self._theta_phi_divisor: str = "off"
+        # Sky-cone-radius instrument flag (same reference): default 1.5
+        # matches the pre-flag sigma_multiplier literal, byte-identical.
+        self._sky_cone_k: float = 1.5
+        # [HIER] theta-consistent candidate z-window instrument (row #255
+        # tree 2 node T1.3-zwin): "off"/1.0 => production, byte-identical.
+        self._theta_zwindow: str = "off"
+        self._z_window_k: float = 1.0
+        # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2): None (default)
+        # => production path, byte-identical (GATE BI). See evaluate()'s
+        # candidate_dump_dir parameter.
+        self._candidate_dump_dir = None
+        self._candidate_dump_rows: list[dict[str, object]] = []
+        self._candidate_dump_event_rows: list[dict[str, object]] = []
+        self._candidate_dump_warned: bool = False
+        # [HIER] mass-aware 1D catalogue leg (row #255 tree 2 node T2.3):
+        # "auto" (default) resolves to "on" under the absolute_marginal phi
+        # stack = PRODUCTION since the 2026-08-31 Z-CONFIRMED flip (rows
+        # #284-#286); "off" = the pre-flip counterfactual.
+        self._catalogue_leg_1d_mass_aware: str = "auto"
 
     def evaluate(
         self,
@@ -3420,19 +3895,22 @@ class BayesianStatistics:
         # ratified).
         catalogue_numerator_survival: str = "auto",
         # [P3-2D] the with-BH catalogue-leg twin: 2D bounded identity test
-        # (stage 2) (results/campaign51_20260728/realistic_20260729/
-        # PREREGISTRATION_P3_2D_20260825.md §2(i)). "off" (default) is
-        # byte-identical to the pre-flag path; "mz_sel" multiplies the
+        # (row #223 standing grant, charter node B7.3;
+        # PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md). "mz_sel" (default) =
+        # the production with-BH catalogue numerator: multiplies the
         # WITH-BH catalogue numerator's mass integrand by S_4D(d_L(z;h),
         # x*M_z,det) inside the candidate's own mass quadrature (the
-        # product-Gaussian identity; see _mz_sel_2d_expectation). The
-        # without-BH twin above is deliberately untouched.
-        catalogue_numerator_survival_2d: str = "off",
+        # product-Gaussian identity; see _mz_sel_2d_expectation). Explicit
+        # "off" = the pre-adoption COUNTERFACTUAL. The without-BH twin above
+        # is deliberately untouched.
+        catalogue_numerator_survival_2d: str = "mz_sel",
         # Centering sub-option ("raw"=host_M, "eff"=host_M_eff) for the
-        # product-Gaussian mean fed to the S_4D quadrature: REQUIRED (no
-        # silent default) when catalogue_numerator_survival_2d="mz_sel" --
-        # the choice is PENDING the pre-execution review (prereg §2(i)).
-        catalogue_numerator_survival_2d_center: str = "unset",
+        # product-Gaussian mean fed to the S_4D quadrature: "eff" (default)
+        # is the adopted centering (A20_REVIEW_P3_2D_DESIGN_20260825.md F2);
+        # REQUIRED explicitly (no silent default) when
+        # catalogue_numerator_survival_2d="mz_sel" is combined with
+        # "unset".
+        catalogue_numerator_survival_2d_center: str = "eff",
         # [P3-RPHI] the fourth Path-A slot, ADOPTED (docs/derivations/
         # PROPOSAL_SIGMA_PHI_DIVISOR_20260822.md §2/§6(ii); rows #172-#178).
         # "auto" (default) resolves exactly like
@@ -3458,6 +3936,115 @@ class BayesianStatistics:
         # mass_filter_mask branch in
         # galaxy_catalogue/handler.py:get_possible_hosts_from_ball_tree.
         mass_filter_sigma: str = "symmetric",
+        # Mass-window GEOMETRY instrument flag (charter node B5.1,
+        # PHYSICS_CHANGE_MASS_WINDOW_GEOMETRY_20260829.md §2; ledger rows
+        # #220-#223). "linear" (default, PRODUCTION, byte-identical): the
+        # mass_filter_sigma interval-overlap window above, unchanged in
+        # form. "log": the SAME window re-expressed in ln-space on both
+        # sides (small-error correspondence on the GW side, the existing
+        # R&V15 ln-space budget BH_MASS_ERROR/BH_MASS on the candidate
+        # side -- no re-derivation). Orthogonal to mass_filter_sigma (that
+        # flag still selects the candidate-side multiplier convention under
+        # EITHER geometry). Never a production posterior at "log". Purely
+        # plumbing: validated and read at exactly one site, the
+        # mass_filter_mask branch in
+        # galaxy_catalogue/handler.py:get_possible_hosts_from_ball_tree.
+        mass_filter_geometry: str = "linear",
+        # Mass-window half-width in units of sigma, decoupled from
+        # sigma_multiplier (which after this flag's introduction sets ONLY
+        # the sky-cone search radius, never the mass window). Default 1.5
+        # matches the current call-site sigma_multiplier=1.5, so the
+        # default pairing of both new flags is byte-identical to the
+        # pre-flag path (same reference as mass_filter_geometry).
+        mass_filter_k: float = 1.5,
+        # Sky-cone-radius instrument flag (PHYSICS_CHANGE_THETA_DIVISOR_
+        # 20260830.md §2.5, row #255 tree 2 node T1.1): decouples the sky
+        # search radius from mass_filter_k (which after B5.1 already governs
+        # ONLY the mass window). Default 1.5 matches the pre-flag
+        # sigma_multiplier literal at the get_possible_hosts_from_ball_tree
+        # call site -- byte-identical mask, candidate list and every
+        # downstream value. Purely plumbing: validated (finite, > 0) and read
+        # at exactly one site.
+        sky_cone_k: float = 1.5,
+        # [HIER] theta-consistent candidate z-window instrument flag
+        # (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2, row #255 tree 2
+        # node T1.3-zwin). "off" (default, PRODUCTION, byte-identical): the
+        # candidate z-filter (get_possible_hosts_from_ball_tree) keeps its
+        # bare form at z_window_k=1.0. "on": the galaxy-side centre/width of
+        # that filter are replaced by the theta-transformed site-2.2 kernel
+        # (z_g + b(1+z_g), sqrt((s*sigma_g)^2 + sigma_pv,g^2)) so the
+        # selection window and the kernel it selects for are the same object
+        # at every theta; at theta=(0,1) this is a LITERAL SKIP (GATE T-ID).
+        # theta_b/theta_s are passed to the handler ONLY when this flag is
+        # "on" (the theta_phi_divisor precedent, :4830-4831) -- the handler
+        # is a non-physics file and keeps no theta state of its own.
+        # INDEPENDENT of theta_sites and theta_phi_divisor (composes with
+        # either). Single read/validate site for the token: here + the mask
+        # branch in get_possible_hosts_from_ball_tree (the
+        # mass_filter_geometry precedent).
+        theta_zwindow: str = "off",
+        # Candidate z-window half-width in units of sigma_g/sigma_g^theta
+        # (same reference as theta_zwindow). Applies under BOTH theta_zwindow
+        # states. Default 1.0 matches today's implicit +/- 1 sigma_g literal
+        # -- byte-identical. Guard (finite, > 0) lives in
+        # get_possible_hosts_from_ball_tree, not here (the mass_filter_k
+        # precedent, corrected file attribution per that gate doc's Revision
+        # note 1): this attribute is opaque plumbing, cast but not validated
+        # at this site.
+        z_window_k: float = 1.0,
+        # [HIER] θ-hook (C1, PHYSICS_CHANGE_THETA_HOOK_20260828.md, ledger row
+        # #216): affine photo-z systematic θ = (b, s) — z̃ = z + b(1+z),
+        # σ̃_eff = s·σ_eff at estimator sites 2.1/2.2/2.3 (Ma, Hu & Huterer
+        # 2006, arXiv:astro-ph/0506614, Sec. 2). (0.0, 1.0) is the literal-skip
+        # identity: the production path is byte-identical by construction (GATE
+        # T-ID). NEVER applied generator-side (GATE GEN-FROZEN, PA-HIER-2).
+        theta_b: float = 0.0,
+        theta_s: float = 1.0,
+        # [HIER] C2 (PA-HIER-23) OAT toggle: which in-scope site(s) receive θ;
+        # the others are forced to their (0, 1) evaluation. Site 2.3 requires
+        # smear_global_selection=True (the registered site is the smeared
+        # kernel).
+        theta_sites: str = "all",
+        # [HIER] site 2.3phi (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2,
+        # row #255 tree 2 node T1.1): the theta-consistent no-BH divisor
+        # ratio ρ(θ). "off" (default) is byte-identical -- no code path
+        # change. "on" arms the divisor; INDEPENDENT of theta_sites (composes
+        # with "2.2" for the CoR-P/CoR-M form of record) and valid with
+        # smear_global_selection=False. At θ=(0,1) the literal skip applies
+        # (GATE T-ID). Guards: "on" with catalogue_global_selection resolving
+        # to "s3d", or with normalization_mode != "absolute_marginal", raises.
+        theta_phi_divisor: str = "off",
+        # [HIER] mass-aware 1D catalogue leg instrument (row #255 tree 2 node
+        # T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). "off"
+        # (default, PRODUCTION) is byte-identical -- sites N1/D1/W1 unchanged.
+        # "on" replaces the WITHOUT-BH catalogue numerator's per-candidate
+        # survival S_bar_phi(z;h) by S_4D(d_L(z;h), M_g(1+z)) (mirroring
+        # self._sigma4d_mass_kernel), Sigma_4D as the global divisor and
+        # alpha_G_phi as the mixture weight -- the no-mass-likelihood image
+        # of the 2D assembly (:6524). Guarded (raises at setup, not a silent
+        # no-op): requires normalization_mode="absolute_marginal",
+        # catalogue_numerator_survival resolving to "phi",
+        # catalogue_global_selection resolving to "phi" and
+        # theta_phi_divisor="off" (no theta-consistent Sigma_4D exists).
+        # PRODUCTION DEFAULT "auto" since 2026-08-31 (Z-CONFIRMED flip, gate
+        # doc §6.3 + §11's fresh-[RULE] discharged via rows #278(3)/#284/#286;
+        # the row #197/#253 auto->engaged pattern): "auto" resolves to "on"
+        # iff catalogue_numerator_survival and catalogue_global_selection both
+        # resolve to "phi" and theta_phi_divisor="off" (the absolute_marginal
+        # production stack), else "off". Explicit "off" = the pre-flip
+        # mass-blind counterfactual; explicit "on" keeps its hard guards.
+        catalogue_leg_1d_mass_aware: str = "auto",
+        # INSTRUMENTATION (T2.2, row #255 tree 2 node T2.2; A10 = instrumentation
+        # guard, not a physics gate; B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md
+        # §6). None (default) is byte-identical -- no code path change, no
+        # value read or written differently (GATE BI). When set to a directory
+        # path, a READ-ONLY per-(event, candidate) diagnostic serialiser writes
+        # per_candidate_h_<label>.csv and per_event_h_<label>.csv there, built
+        # entirely from state p_Di already computed for a normal run (the
+        # candidate_hosts lists, posterior_data_with_bh_mass, the phi-survival
+        # table, the diagnostic row); it never writes into anything the
+        # likelihood consumes.
+        candidate_dump_dir: str | None = None,
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3473,6 +4060,39 @@ class BayesianStatistics:
         if not _h_list:
             raise ValueError("h_values must contain at least one value")
         self.catalog_only = catalog_only
+        # INSTRUMENTATION (T2.2, row #255 A10): None => byte-identical, no
+        # directory created, nothing collected or written below.
+        self._candidate_dump_dir = candidate_dump_dir
+        if self._candidate_dump_dir is not None:
+            os.makedirs(self._candidate_dump_dir, exist_ok=True)
+        # [HIER] θ-hook (C1/C2): validate, then store for p_Di's site-2.2
+        # dispatch and the site-2.3 precompute below. The identity default
+        # stores (0.0, 1.0, "all") and engages nothing.
+        _theta_engaged = theta_b != 0.0 or theta_s != 1.0
+        if _theta_engaged:
+            _validate_theta(theta_b, theta_s)
+        if theta_sites not in ("all", "2.1", "2.2", "2.3"):
+            raise ValueError(
+                f"theta_sites must be 'all', '2.1', '2.2' or '2.3', got {theta_sites!r}"
+            )
+        if _theta_engaged and theta_sites in ("all", "2.3") and not smear_global_selection:
+            raise ValueError(
+                "theta with site 2.3 enabled requires smear_global_selection=True "
+                "(the registered site is the smeared global-selection kernel); "
+                "pass theta_sites='2.1'/'2.2' or enable smearing"
+            )
+        self._theta_b = float(theta_b)
+        self._theta_s = float(theta_s)
+        self._theta_sites = str(theta_sites)
+        if _theta_engaged:
+            _LOGGER.warning(
+                "INSTRUMENTATION ACTIVE: theta=(b=%.6g, s=%.6g), sites=%s — the "
+                "host-z kernel is reparametrized ([HIER] θ-hook). This run is a "
+                "COUNTERFACTUAL/profile point, not a production posterior.",
+                theta_b,
+                theta_s,
+                theta_sites,
+            )
         self._freeze_g_frac_ref_h = (
             float(freeze_g_frac_ref_h) if freeze_g_frac_ref_h is not None else None
         )
@@ -3568,7 +4188,8 @@ class BayesianStatistics:
                 "posterior."
             )
         self._catalogue_numerator_survival = _cat_num_surv
-        # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md §2(i)).
+        # [P3-2D] the with-BH catalogue-leg twin, ADOPTED (row #223 standing
+        # grant, charter node B7.3; PHYSICS_CHANGE_2D_TWIN_ADOPTION_20260829.md).
         if catalogue_numerator_survival_2d not in ("off", "mz_sel"):
             raise ValueError(
                 "catalogue_numerator_survival_2d must be 'off' or 'mz_sel', "
@@ -3584,13 +4205,32 @@ class BayesianStatistics:
                     "PREREGISTRATION_P3_2D_20260825.md §2(i)); got "
                     f"{catalogue_numerator_survival_2d_center!r}"
                 )
+            if catalogue_numerator_survival_2d_center == "eff":
+                _LOGGER.info(
+                    '[PHYSICS] catalogue_numerator_survival_2d="mz_sel" '
+                    '(center="eff") ACTIVE (adopted under row #223, charter B7.3): the WITH-BH catalogue '
+                    "numerator carries S_4D(d_L(z;h), x*M_z,det) inside its "
+                    "own mass quadrature (the product-Gaussian identity). "
+                    "This is the production with-BH catalogue-leg twin "
+                    "estimator."
+                )
+            else:
+                _LOGGER.warning(
+                    "COUNTERFACTUAL: catalogue_numerator_survival_2d=%r "
+                    "(center=%r) — S_4D inside the with-BH catalogue "
+                    "numerator's own mass quadrature with the RAW "
+                    "(non-Eddington-shifted) centering ([P3-2D] twin "
+                    "instrument only; the adopted centering is 'eff'). Not "
+                    "a production posterior.",
+                    catalogue_numerator_survival_2d,
+                    catalogue_numerator_survival_2d_center,
+                )
+        else:
             _LOGGER.warning(
-                "COUNTERFACTUAL: catalogue_numerator_survival_2d=%r "
-                "(center=%r) — S_4D inside the with-BH catalogue numerator's "
-                "own mass quadrature ([P3-2D] twin cell). Not a production "
-                "posterior.",
-                catalogue_numerator_survival_2d,
-                catalogue_numerator_survival_2d_center,
+                'COUNTERFACTUAL: catalogue_numerator_survival_2d="off" — '
+                "the pre-adoption WITH-BH catalogue numerator (no "
+                "per-candidate survival factor inside the mass quadrature). "
+                "Not a production posterior."
             )
         self._catalogue_numerator_survival_2d = catalogue_numerator_survival_2d
         self._catalogue_numerator_survival_2d_center = catalogue_numerator_survival_2d_center
@@ -3631,6 +4271,55 @@ class BayesianStatistics:
         # (get_possible_hosts_from_ball_tree's mass_filter_mask branch), not
         # here, so there is exactly one place that interprets the value.
         self._mass_filter_sigma = str(mass_filter_sigma)
+        # Mass-window GEOMETRY instrument flag (charter node B5.1, ledger
+        # rows #220-#223): same "opaque plumbing" convention as
+        # mass_filter_sigma above -- validated at the single read site in
+        # get_possible_hosts_from_ball_tree, not here.
+        self._mass_filter_geometry = str(mass_filter_geometry)
+        self._mass_filter_k = float(mass_filter_k)
+        # Sky-cone-radius instrument flag (PHYSICS_CHANGE_THETA_DIVISOR_
+        # 20260830.md §2.5): guard pattern, not a silent no-op.
+        self._sky_cone_k = float(sky_cone_k)
+        if not (self._sky_cone_k > 0.0) or not np.isfinite(self._sky_cone_k):
+            raise ValueError(f"sky_cone_k must be finite and > 0, got {sky_cone_k}")
+        # [HIER] theta-consistent candidate z-window instrument flag
+        # (PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md §2.2, row #255 tree 2
+        # node T1.3-zwin): the token guard lives here (the theta_phi_divisor
+        # precedent); z_window_k is opaque plumbing cast (not validated) at
+        # this site -- its single raise site is
+        # get_possible_hosts_from_ball_tree (the mass_filter_k precedent,
+        # per that gate doc's Revision note 1).
+        _theta_zwin = str(theta_zwindow)
+        if _theta_zwin not in ("off", "on"):
+            raise ValueError(f"theta_zwindow must be 'off' or 'on', got {theta_zwindow!r}")
+        self._theta_zwindow = _theta_zwin
+        self._z_window_k = float(z_window_k)
+        # [HIER] site 2.3phi theta-consistent no-BH divisor instrument
+        # (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md §2.2, row #255 tree 2 node
+        # T1.1). Guard pattern: "on" requires a phi table to transform
+        # (catalogue_global_selection resolving to "phi", i.e.
+        # normalization_mode="absolute_marginal", which precompute_
+        # global_catalog_selection's phi branch also requires) -- checked
+        # here so a misconfiguration raises at setup, not silently no-ops.
+        _theta_phi_div = str(theta_phi_divisor)
+        if _theta_phi_div not in ("off", "on"):
+            raise ValueError(f"theta_phi_divisor must be 'off' or 'on', got {theta_phi_divisor!r}")
+        if _theta_phi_div == "on":
+            if self._catalogue_global_selection != "phi":
+                raise ValueError(
+                    "theta_phi_divisor='on' requires catalogue_global_selection "
+                    "to resolve to 'phi' (site 2.3phi transforms the phi-"
+                    f"marginal divisor); resolved to "
+                    f"{self._catalogue_global_selection!r} (no phi table to "
+                    "transform)"
+                )
+            if normalization_mode != "absolute_marginal":
+                raise ValueError(
+                    "theta_phi_divisor='on' requires normalization_mode="
+                    "'absolute_marginal' (no phi objects are built otherwise); "
+                    f"got {normalization_mode!r}"
+                )
+        self._theta_phi_divisor = _theta_phi_div
         # Prod2d closure counterfactual instrument (results/
         # prod2d_closure_20260818/PREREGISTRATION_PROD_COUNTERFACTUAL.md §1,
         # P8): validated here the same way selection_in_completion_numerator
@@ -3709,6 +4398,76 @@ class BayesianStatistics:
                 "PREREGISTRATION_TILT_BATTERY.md §1 instrument J). Not a "
                 "production posterior."
             )
+        # [HIER] mass-aware 1D catalogue leg instrument (row #255 tree 2 node
+        # T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2.1). Guard
+        # pattern (raises at setup, not a silent no-op): "on" requires a phi
+        # numerator/divisor to REPLACE (catalogue_numerator_survival and
+        # catalogue_global_selection both resolving to "phi", i.e.
+        # normalization_mode="absolute_marginal") and no theta-consistent
+        # Sigma_phi_reg divisor already armed (theta_phi_divisor="off" --
+        # Sigma_4D is theta-inert under the registered form, T1.1 invariant
+        # 9; no theta-consistent Sigma_4D exists).
+        _cat_leg_1d_ma = str(catalogue_leg_1d_mass_aware)
+        if _cat_leg_1d_ma not in ("auto", "off", "on"):
+            raise ValueError(
+                "catalogue_leg_1d_mass_aware must be 'auto', 'off' or 'on', got "
+                f"{catalogue_leg_1d_mass_aware!r}"
+            )
+        if _cat_leg_1d_ma == "auto":
+            # PRODUCTION DEFAULT since 2026-08-31 (rows #284-#286, gate doc
+            # §6.3 Z-CONFIRMED: 1D map_h 0.665 / mean_h 0.66699 in band):
+            # engage the mass-aware leg exactly where its guard stack holds
+            # (the row #197/#253 auto->engaged pattern); resolve "off"
+            # silently elsewhere (legacy/other normalization modes).
+            _cat_leg_1d_ma = (
+                "on"
+                if (
+                    self._catalogue_numerator_survival == "phi"
+                    and self._catalogue_global_selection == "phi"
+                    and self._theta_phi_divisor == "off"
+                )
+                else "off"
+            )
+        elif _cat_leg_1d_ma == "off":
+            _LOGGER.warning(
+                "COUNTERFACTUAL: catalogue_leg_1d_mass_aware='off' (explicit) "
+                "— the pre-2026-08-31 mass-blind 1D catalogue leg "
+                "(S_bar_phi numerator, beta_G_phi weight, Sigma^phi divisor; "
+                "Z(h)=1.0999 defect, rows #261/#282). Not the production "
+                "default since the rows #284-#286 flip."
+            )
+        if _cat_leg_1d_ma == "on":
+            if self._catalogue_numerator_survival != "phi":
+                raise ValueError(
+                    "catalogue_leg_1d_mass_aware='on' requires "
+                    "catalogue_numerator_survival to resolve to 'phi' (site N1 "
+                    "replaces the phi per-candidate survival); resolved to "
+                    f"{self._catalogue_numerator_survival!r}"
+                )
+            if self._catalogue_global_selection != "phi":
+                raise ValueError(
+                    "catalogue_leg_1d_mass_aware='on' requires "
+                    "catalogue_global_selection to resolve to 'phi' (site D1 "
+                    "replaces the phi global divisor); resolved to "
+                    f"{self._catalogue_global_selection!r}"
+                )
+            if self._theta_phi_divisor != "off":
+                raise ValueError(
+                    "catalogue_leg_1d_mass_aware='on' requires "
+                    "theta_phi_divisor='off' (Sigma_4D is theta-inert under "
+                    "the registered form; no theta-consistent Sigma_4D "
+                    f"exists); got theta_phi_divisor={self._theta_phi_divisor!r}"
+                )
+            _LOGGER.info(
+                "[PHYSICS] catalogue_leg_1d_mass_aware ACTIVE (production "
+                "default since 2026-08-31, rows #284-#286; Z-CONFIRMED, gate "
+                "doc §6.3) — the WITHOUT-BH catalogue numerator carries "
+                "S_4D(d_L(z;h), M_g(1+z)) in place of S_bar_phi(z;h), "
+                "Sigma_4D replaces Sigma^phi as the global divisor and "
+                "alpha_G_phi replaces beta_G_phi as the mixture weight "
+                "(PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2)."
+            )
+        self._catalogue_leg_1d_mass_aware = _cat_leg_1d_ma
         # B-DEN falsifier instrument (docs/derivations/
         # completion_numerator_data_measure.md §6; AMENDMENT A-5). Validated
         # here the same way the other instrument flags above are.
@@ -3894,9 +4653,26 @@ class BayesianStatistics:
         _LOGGER.info(
             f"Computing posteriors for h = {_h_list[0] if len(_h_list) == 1 else _h_list}..."
         )
+        # Admissibility guard ONLY (row #301 item 4(a) decoupling): the ceiling is
+        # max(host-window bound, grid-admissibility ceiling) so (i) the ratified
+        # G-EXT wing (h <= 1.00) is admissible, (ii) the mirror harness's runtime
+        # widening of h.upper_limit (correspondence_1d.py:3398-3399, [P3-HGRID])
+        # keeps working, and (iii) setting h_grid_admissibility_max ==
+        # h.upper_limit reproduces the old guard exactly. The host-window call
+        # site (get_redshift_outer_bounds(h_max=h.upper_limit), :5716) is
+        # deliberately NOT changed — see DECOUPLING_DESIGN.md.
+        # Prior-support/admissibility decoupling — DECOUPLING_DESIGN.md (graph1), rows #293/#301/#304/#308; G-EXT wing rows #284/#286.
+        _h_admissible_max = max(
+            self.cosmological_model.h.upper_limit,
+            getattr(
+                self.cosmological_model,
+                "h_grid_admissibility_max",
+                self.cosmological_model.h.upper_limit,
+            ),
+        )
         for _h_check in _h_list:
             if (_h_check < self.cosmological_model.h.lower_limit) or (
-                _h_check > self.cosmological_model.h.upper_limit
+                _h_check > _h_admissible_max
             ):
                 raise ValueError("Hubble constant out of bounds.")
 
@@ -4007,6 +4783,11 @@ class BayesianStatistics:
             z_max_cap=REDSHIFT_UPPER_LIMIT,
         )
         _beta_G_table = {h: _D_h_table[h] - _beta_Gbar_table[h] for h in _D_h_table}
+        # [HIER] θ-hook site 2.3 dispatch (OAT toggle, PA-HIER-23): θ reaches
+        # the global-selection denominator only when site 2.3 is enabled.
+        _theta_b_23, _theta_s_23 = (
+            (self._theta_b, self._theta_s) if self._theta_sites in ("all", "2.3") else (0.0, 1.0)
+        )
         _global_cat_denom_no_bh = precompute_global_catalog_selection(
             h_values=_h_list,
             galaxy_catalog=galaxy_catalog,
@@ -4014,6 +4795,8 @@ class BayesianStatistics:
             with_bh_mass=False,
             z_max_cap=REDSHIFT_UPPER_LIMIT,
             smear_sigma_z=smear_global_selection,
+            theta_b=_theta_b_23,
+            theta_s=_theta_s_23,
         )
         _global_cat_denom_with_bh = precompute_global_catalog_selection(
             h_values=_h_list,
@@ -4024,6 +4807,8 @@ class BayesianStatistics:
             smear_sigma_z=smear_global_selection,
             sigma4d_mass_kernel=self._sigma4d_mass_kernel,
             eddington_m=self._eddington_m,
+            theta_b=_theta_b_23,
+            theta_s=_theta_s_23,
         )
         # [PHYSICS] Path (A): ONE detection model (FIXB_PATHA_PACKAGE.md §3.2,
         # 2026-08-04). Only the production mixture mode consumes the
@@ -4035,6 +4820,12 @@ class BayesianStatistics:
         _beta_G_phi_table: dict[float, float] = {}
         _beta_Gbar_phi_table: dict[float, float] = {}
         _global_cat_selection_phi: dict[float, float] = {}
+        # [HIER] site 2.3phi (row #255 tree 2 node T1.1): stays empty unless
+        # theta_phi_divisor="on" AND theta != (0,1) -- the consumer (p_Di)
+        # falls back to _global_cat_selection_phi (the point table) whenever
+        # this dict has no entry for the current h (GATE T-ID literal skip,
+        # and the "off" default).
+        _global_cat_selection_phi_theta: dict[float, float] = {}
         _use_phi_selection = normalization_mode == "absolute_marginal"
         if _use_phi_selection:
             # MINOR-1 (row #118): the frozen-g_frac counterfactual re-enters the
@@ -4068,6 +4859,36 @@ class BayesianStatistics:
                 smear_sigma_z=False,
                 phi_survival_table=_phi_survival_table,
             )
+            # [HIER] site 2.3phi (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md
+            # §2.2, row #255 tree 2 node T1.1): theta-consistent no-BH
+            # divisor ratio. INDEPENDENT of theta_sites; engages only when
+            # armed AND theta != (0,1). At theta=(0,1) the literal skip
+            # applies (GATE T-ID) -- _global_cat_selection_phi_theta stays
+            # empty and the consumer (p_Di) falls back to the stored point
+            # table object itself, no floating operation performed.
+            _theta_phi_engaged = self._theta_phi_divisor == "on" and (
+                self._theta_b != 0.0 or self._theta_s != 1.0
+            )
+            _phi_divisor_ratio_table: dict[float, dict[str, float]] = {}
+            if _theta_phi_engaged:
+                _theta_hook_count("site_2_3_phi")
+                _phi_divisor_ratio_table = precompute_phi_divisor_theta_ratio(
+                    h_values=_h_list,
+                    galaxy_catalog=galaxy_catalog,
+                    completeness=completeness,
+                    phi_survival_table=_phi_survival_table,
+                    theta_b=self._theta_b,
+                    theta_s=self._theta_s,
+                )
+                for _h_r in _h_list:
+                    _global_cat_selection_phi_theta[_h_r] = (
+                        _global_cat_selection_phi[_h_r] * _phi_divisor_ratio_table[_h_r]["rho"]
+                    )
+            elif self._theta_phi_divisor == "on":
+                _LOGGER.info(
+                    "site 2.3phi armed, identity theta, divisor = point table "
+                    "(theta=(0,1), GATE T-ID literal skip)."
+                )
             for _h_phi in _h_list:
                 _log_path_a_selection_objects(
                     _h_phi,
@@ -4087,12 +4908,35 @@ class BayesianStatistics:
                 # scored from files, not log-line scraping. Always written
                 # whenever the phi-selection objects above are computed
                 # (independent of --sigma4d_mass_kernel/--eddington_m).
+                # [HIER] site 2.3phi instrumentation (section 2.2): so the
+                # T1.2 gates are scored from files, not log-line scraping.
+                _ratio_h = _phi_divisor_ratio_table.get(_h_phi)
+                _kappa_h: float | None = None
+                if _ratio_h is not None and _global_cat_selection_phi[_h_phi] > 0.0:
+                    _kappa_h = _ratio_h["sigma_phi_smear_truth"] / _global_cat_selection_phi[_h_phi]
                 write_selection_table_json(
                     _h_phi,
                     beta_G_phi=_beta_G_phi_table[_h_phi],
                     beta_Gbar_phi=_beta_Gbar_phi_table[_h_phi],
                     sigma_phi=_global_cat_selection_phi[_h_phi],
                     sigma_4d=_global_cat_denom_with_bh[_h_phi],
+                    sigma_phi_theta=_global_cat_selection_phi_theta.get(_h_phi),
+                    sigma_phi_smear_truth=(
+                        _ratio_h["sigma_phi_smear_truth"] if _ratio_h is not None else None
+                    ),
+                    rho_theta=(_ratio_h["rho"] if _ratio_h is not None else None),
+                    kappa_smear_over_point=_kappa_h,
+                    n_degenerate_rows=(
+                        _ratio_h["n_degenerate_rows"] if _ratio_h is not None else None
+                    ),
+                    w_share_degenerate=(
+                        _ratio_h["w_share_degenerate"] if _ratio_h is not None else None
+                    ),
+                    theta_b=(self._theta_b if self._theta_phi_divisor == "on" else None),
+                    theta_s=(self._theta_s if self._theta_phi_divisor == "on" else None),
+                    theta_phi_divisor=(
+                        self._theta_phi_divisor if self._theta_phi_divisor == "on" else None
+                    ),
                 )
 
         # generator_marginal precomputes: the draw-side calibration pair
@@ -4364,6 +5208,10 @@ class BayesianStatistics:
         self._beta_G_phi_table = _beta_G_phi_table
         self._beta_Gbar_phi_table = _beta_Gbar_phi_table
         self._global_cat_selection_phi = _global_cat_selection_phi
+        # [HIER] site 2.3phi (row #255 tree 2 node T1.1): the registered
+        # theta-consistent divisor Sigma_phi_reg(theta;h) = Sigma_phi_point(h)
+        # * rho(theta;h); empty unless armed AND theta != (0,1) (see above).
+        self._global_cat_selection_phi_theta = _global_cat_selection_phi_theta
         # The S_bar_phi(z;h) table itself (h -> (z_grid, S_bar_phi)). Read by
         # the N-2 counterfactual in p_Di through the SAME np.interp accessor
         # precompute_global_catalog_selection uses for Sigma^phi — one object,
@@ -4467,6 +5315,9 @@ class BayesianStatistics:
                     self.posterior_data = {}
                     self.posterior_data_with_bh_mass = {}
                     self._diagnostic_rows = []
+                    if self._candidate_dump_dir is not None:
+                        self._candidate_dump_rows = []
+                        self._candidate_dump_event_rows = []
 
                 self.p_D(
                     galaxy_catalog=galaxy_catalog,
@@ -4528,6 +5379,13 @@ class BayesianStatistics:
                 if self._diagnostic_rows:
                     diagnostic_csv_path = "simulations/diagnostics/event_likelihoods.csv"
                     self._write_diagnostic_csv(diagnostic_csv_path)
+
+                # T2.2 (row #255 A10) candidate-dump instrumentation: OFF by
+                # default (self._candidate_dump_dir is None), byte-identical.
+                if self._candidate_dump_dir is not None and (
+                    self._candidate_dump_rows or self._candidate_dump_event_rows
+                ):
+                    self._write_candidate_dump_csvs(self._candidate_dump_dir)
 
         # Write Fisher quality CSV (per D-12) — h-invariant, once per run
         self._write_fisher_quality_csv()
@@ -4598,6 +5456,12 @@ class BayesianStatistics:
             "L_comp",
             "combined_no_bh",
             "combined_with_bh",
+            # [HIER] C2 (PA-HIER-23): separable ln L terms — num_log − den_log
+            # is the event's ln L; the OAT toggle matrix reads these, never the
+            # aggregate.
+            "den_log_term",
+            "num_log_term_no_bh",
+            "num_log_term_with_bh",
         ]
         # 7 significant figures on the path-(A) diagnostics.
         _seven_sf = ("w_G_legacy", "w_tilde_G", "alpha_G_phi", "r_Malm", "D_tilde_phi", "g_frac")
@@ -4621,6 +5485,202 @@ class BayesianStatistics:
             writer.writerows(rows_out)
 
         _LOGGER.info("Wrote %d diagnostic rows to %s", len(self._diagnostic_rows), csv_path)
+
+    def _collect_candidate_dump_rows(
+        self,
+        *,
+        detection_index: int,
+        candidate_hosts: list[HostGalaxy],
+        candidate_hosts_with_bh_mass: list[HostGalaxy],
+        detection_row: pd.Series,
+        galaxy_catalog: GalaxyCatalogueHandler,
+        completeness: CompletenessModel,
+        detection_probability_obj: SimulationDetectionProbability,
+    ) -> None:
+        """T2.2 (row #255 A10) read-only per-candidate diagnostic serialiser.
+
+        Builds the per-(event, candidate) and per-event dump rows of
+        B4_3_MIXTURE_WEIGHT_DERIVATION_20260830.md section 6.2, called AFTER
+        ``p_Di`` returns for this event. Reads only already-computed state
+        (``self.posterior_data_with_bh_mass``, ``self._phi_survival_table``,
+        ``self._diagnostic_rows``) — it never writes into anything the
+        likelihood consumes (GATE BI). Never raises: any failure is caught,
+        logged once, and the run proceeds with whatever rows were collected
+        before the failure (diagnostic-only, never affects the posterior).
+
+        Args:
+            detection_index: CRB row index of the detection (event_idx).
+            candidate_hosts: The 1D (no-BH) candidate ball for this event.
+            candidate_hosts_with_bh_mass: The 2D (with-BH mass filter) ball.
+            detection_row: The raw CRB row (for the ``z_true`` truth column
+                when present; NaN otherwise).
+            galaxy_catalog: Handler used to translate the true host position
+                for the ``is_true_host`` flag.
+            completeness: Completeness model for ``f_bar``/``f_k``.
+            detection_probability_obj: Survival-estimator object for the
+                per-candidate ``S_4D(z_g, M_g; h)`` diagnostic read.
+        """
+        try:
+            h = float(self.h)
+            det = self.detection
+            d_hat = float(det.d_L)
+            sigma_dL = float(det.d_L_uncertainty)
+
+            cand_by_idx: dict[int, HostGalaxy] = {
+                host.catalog_index: host for host in candidate_hosts
+            }
+            cand_by_idx.update({host.catalog_index: host for host in candidate_hosts_with_bh_mass})
+
+            _phi_table = getattr(self, "_phi_survival_table", {})
+            if h in _phi_table:
+                _z_phi_grid, _s_phi_grid = _phi_table[h]
+            else:
+                _z_phi_grid, _s_phi_grid = None, None
+
+            _translated: int | None = None
+            if det.host_galaxy_index >= 0:
+                _translated = galaxy_catalog.resolve_host_recovery_position(det.host_galaxy_index)
+
+            galaxy_likelihoods = self.posterior_data_with_bh_mass.get(GALAXY_LIKELIHOODS, {}).get(
+                detection_index, []
+            )
+            additional_likelihoods = self.posterior_data_with_bh_mass.get(
+                ADDITIONAL_GALAXIES_WITHOUT_BH_MASS, {}
+            ).get(detection_index, [])
+
+            def _emit(catalog_index: int, result_row: Sequence[float], batch: str) -> None:
+                host = cand_by_idx.get(catalog_index)
+                if host is None:
+                    return
+                z_g = float(host.z)
+                M_g = float(host.M)
+                N_g_used = float(result_row[0])
+                D_g = float(result_row[1])
+                w_g = float(_rate_weight(host))
+                if _z_phi_grid is not None and _s_phi_grid is not None:
+                    s_bar_phi_zg = float(np.interp(z_g, _z_phi_grid, _s_phi_grid))
+                else:
+                    s_bar_phi_zg = float("nan")
+                try:
+                    d_L_g = float(dist(z_g, h=h))
+                    s_4d_zg_mg = float(
+                        detection_probability_obj.detection_probability_with_bh_mass_interpolated(
+                            d_L_g, M_g * (1.0 + z_g), 0.0, 0.0, h=h
+                        )
+                    )
+                    u_g = (d_L_g - d_hat) / sigma_dL if sigma_dL > 0.0 else float("nan")
+                except Exception:
+                    s_4d_zg_mg = float("nan")
+                    u_g = float("nan")
+                self._candidate_dump_rows.append(
+                    {
+                        "event_idx": detection_index,
+                        "h": h,
+                        "catalog_index": int(catalog_index),
+                        "batch": batch,
+                        "z_g": z_g,
+                        "z_err_g": float(host.z_error),
+                        "M_g": M_g,
+                        "M_err_g": float(host.M_error),
+                        "phiS_g": float(host.phiS),
+                        "qS_g": float(host.qS),
+                        "w_g": w_g,
+                        "N_g_used": N_g_used,
+                        "D_g": D_g,
+                        "s_bar_phi_zg": s_bar_phi_zg,
+                        "s_4d_zg_mg": s_4d_zg_mg,
+                        "u_g": u_g,
+                        # Optional per section 6.2 (sky Fisher block Mahalanobis
+                        # distance) -- not computed by this hook; column kept
+                        # for schema stability (T2_2 schema test).
+                        "sky_mahalanobis": float("nan"),
+                        "is_true_host": bool(
+                            _translated is not None and catalog_index == _translated
+                        ),
+                    }
+                )
+
+            for catalog_index, result_row in galaxy_likelihoods:
+                _emit(catalog_index, result_row, "with_bh")
+            for catalog_index, result_row in additional_likelihoods:
+                _emit(catalog_index, result_row, "no_bh_only")
+
+            _diag = self._diagnostic_rows[-1] if self._diagnostic_rows else {}
+            z_true = float("nan")
+            try:
+                if "z_true" in detection_row.index:
+                    _zt = detection_row["z_true"]
+                    if _zt is not None and not (isinstance(_zt, float) and math.isnan(_zt)):
+                        z_true = float(_zt)
+            except Exception:
+                z_true = float("nan")
+
+            f_bar_z_true = float("nan")
+            f_k_z_true = float("nan")
+            if np.isfinite(z_true):
+                try:
+                    f_bar_z_true = float(completeness.f_bar(z_true, h=h))
+                    _pix = completeness.ang2pix(det.phi, det.theta)
+                    f_k_z_true = float(completeness.f_k(z_true, _pix, h=h))
+                except Exception:
+                    pass
+
+            self._candidate_dump_event_rows.append(
+                {
+                    "event_idx": detection_index,
+                    "h": h,
+                    "d_hat": d_hat,
+                    "sigma_dL": sigma_dL,
+                    "z_true": z_true,
+                    "host_galaxy_index": int(det.host_galaxy_index),
+                    "n_cand_no_bh": len(candidate_hosts),
+                    "n_cand_with_bh": len(candidate_hosts_with_bh_mass),
+                    "f_bar_z_true": f_bar_z_true,
+                    "f_k_z_true": f_k_z_true,
+                    "L_cat_no_bh": _diag.get("L_cat_no_bh", float("nan")),
+                    "B_num": _diag.get("B_num", float("nan")),
+                    "D_tilde_phi": _diag.get("D_tilde_phi", float("nan")),
+                }
+            )
+        except Exception:
+            if not self._candidate_dump_warned:
+                _LOGGER.warning(
+                    "candidate_dump_dir instrumentation raised for detection "
+                    "%d; further dump rows may be incomplete (diagnostic-only, "
+                    "never affects the posterior)",
+                    detection_index,
+                    exc_info=True,
+                )
+                self._candidate_dump_warned = True
+
+    def _write_candidate_dump_csvs(self, directory: str) -> None:
+        """Write the T2.2 per-candidate / per-event dump CSVs for the current h.
+
+        One overwrite write per h, matching the ``write_selection_table_json``
+        naming convention: ``per_candidate_h_<label>.csv`` /
+        ``per_event_h_<label>.csv``.
+
+        Args:
+            directory: Output directory (``candidate_dump_dir``).
+        """
+        h_label = str(np.round(self.h, 4)).replace(".", "_")
+        os.makedirs(directory, exist_ok=True)
+        if self._candidate_dump_rows:
+            cand_path = os.path.join(directory, f"per_candidate_h_{h_label}.csv")
+            pd.DataFrame(self._candidate_dump_rows).to_csv(cand_path, index=False)
+            _LOGGER.info(
+                "Wrote %d candidate-dump rows to %s",
+                len(self._candidate_dump_rows),
+                cand_path,
+            )
+        if self._candidate_dump_event_rows:
+            event_path = os.path.join(directory, f"per_event_h_{h_label}.csv")
+            pd.DataFrame(self._candidate_dump_event_rows).to_csv(event_path, index=False)
+            _LOGGER.info(
+                "Wrote %d event-dump rows to %s",
+                len(self._candidate_dump_event_rows),
+                event_path,
+            )
 
     def p_D(
         self,
@@ -4688,8 +5748,20 @@ class BayesianStatistics:
                 z_max=z_max,
                 M_z=self.detection.M,
                 M_z_sigma=self.detection.M_uncertainty,
-                sigma_multiplier=1.5,  # type: ignore[arg-type]
+                sigma_multiplier=self._sky_cone_k,  # type: ignore[arg-type]
                 mass_filter_sigma=self._mass_filter_sigma,
+                mass_filter_geometry=self._mass_filter_geometry,
+                mass_filter_k=self._mass_filter_k,
+                theta_zwindow=self._theta_zwindow,
+                z_window_k=self._z_window_k,
+                # theta reaches the handler ONLY when the flag is "on" (the
+                # theta_phi_divisor precedent, :4830-4831 below) -- the
+                # handler is a non-physics file and keeps no theta state of
+                # its own; at "off" the identity defaults are passed and the
+                # handler never reads them (bare window, R1 byte-identity
+                # independent of theta engagement elsewhere).
+                theta_b=(self._theta_b if self._theta_zwindow == "on" else 0.0),
+                theta_s=(self._theta_s if self._theta_zwindow == "on" else 1.0),
             )
 
             if possible_hosts is None:
@@ -4783,6 +5855,20 @@ class BayesianStatistics:
                 _sum_ln_p_dark_no_bh += _ln_p_no_bh
                 _sum_ln_p_dark_with_bh += _ln_p_with_bh
 
+            # T2.2 (row #255 A10) candidate-dump instrumentation: OFF by
+            # default (self._candidate_dump_dir is None) -- this branch is
+            # never entered on the production path (GATE BI).
+            if self._candidate_dump_dir is not None:
+                self._collect_candidate_dump_rows(
+                    detection_index=int(index),
+                    candidate_hosts=candidate_hosts,
+                    candidate_hosts_with_bh_mass=candidate_hosts_with_bh_mass,
+                    detection_row=detection,
+                    galaxy_catalog=galaxy_catalog,
+                    completeness=completeness,
+                    detection_probability_obj=detection_probability_obj,
+                )
+
             _det_time = time.perf_counter() - _t_det
             _det_times.append(_det_time)
             if count % 100 == 0 or count == len(self.cramer_rao_bounds):
@@ -4853,6 +5939,12 @@ class BayesianStatistics:
         detection_probability_obj: SimulationDetectionProbability,
         redshift_upper_limit: float = HOST_DRAW_Z_MAX,
     ) -> tuple[float, float]:
+        # [HIER] C2 (PA-HIER-23): the denominator actually dividing this
+        # event's combined likelihood — NaN until an assembly branch sets it
+        # (the catalog_only bypass never does), so ln L decomposes into a
+        # separable numerator-log-term and denominator-log-term at the
+        # diagnostic append.
+        _den_used = float("nan")
         # start parallel computation
         _LOGGER.info(f"start parallel computation with: {pool}")
         start = time.time()
@@ -4887,6 +5979,14 @@ class BayesianStatistics:
             _cat_surv = "phi"  # workers see the same engaged cell semantics
         else:
             _cat_surv_table = None
+        # [HIER] θ-hook site 2.2 dispatch: the batch kernel receives θ only
+        # when site 2.2 is enabled by the OAT toggle (PA-HIER-23); otherwise it
+        # is forced to the (0, 1) identity evaluation.
+        _theta_b_22, _theta_s_22 = (
+            (getattr(self, "_theta_b", 0.0), getattr(self, "_theta_s", 1.0))
+            if getattr(self, "_theta_sites", "all") in ("all", "2.2")
+            else (0.0, 1.0)
+        )
         results_with_bh_mass = _starmap_host_batches(
             pool,
             possible_host_galaxies_with_bh_mass,
@@ -4903,6 +6003,10 @@ class BayesianStatistics:
             _cat_surv_table,
             self._catalogue_numerator_survival_2d,
             self._catalogue_numerator_survival_2d_center,
+            theta_b=_theta_b_22,
+            theta_s=_theta_s_22,
+            catalogue_leg_1d_mass_aware=self._catalogue_leg_1d_mass_aware,
+            sigma4d_mass_kernel=self._sigma4d_mass_kernel,
         )
 
         results_without_blackhole_mass = _starmap_host_batches(
@@ -4921,6 +6025,10 @@ class BayesianStatistics:
             _cat_surv_table,
             self._catalogue_numerator_survival_2d,
             self._catalogue_numerator_survival_2d_center,
+            theta_b=_theta_b_22,
+            theta_s=_theta_s_22,
+            catalogue_leg_1d_mass_aware=self._catalogue_leg_1d_mass_aware,
+            sigma4d_mass_kernel=self._sigma4d_mass_kernel,
         )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
@@ -5014,12 +6122,34 @@ class BayesianStatistics:
             # the no-BH catalogue divisor Sigma^3D for Sigma^phi (the SAME
             # table Path A already builds for the weight chain, :3878). The
             # with-BH leg (global_denom_with_bh) is deliberately untouched.
-            global_denom_no_bh: float = (
-                self._global_cat_selection_phi.get(self.h, 0.0)
-                if getattr(self, "_catalogue_global_selection", "s3d") == "phi"
-                else self._global_cat_denom_no_bh.get(self.h, 0.0)
-            )
+            # [HIER] site 2.3phi (PHYSICS_CHANGE_THETA_DIVISOR_20260830.md
+            # §2.1-2.2, row #255 tree 2 node T1.1): when the theta-consistent
+            # divisor is armed AND engaged (theta != (0,1)),
+            # _global_cat_selection_phi_theta[h] holds the registered
+            # Sigma_phi_reg(theta;h) = Sigma_phi_point(h) * rho(theta;h); its
+            # ``.get`` falls through to the stored point-table VALUE itself
+            # (identity of object, no floating operation) whenever the dict
+            # has no entry for this h -- the "off" default and the GATE T-ID
+            # literal skip at theta=(0,1) are both this same fallback.
             global_denom_with_bh: float = self._global_cat_denom_with_bh.get(self.h, 0.0)
+            # [HIER T2.3] mass-aware 1D catalogue leg instrument
+            # (PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2.2 site D1,
+            # row #255 tree 2 node T2.3): "on" (guarded at setup) replaces
+            # the no-BH catalogue divisor by Sigma_4D (global_denom_with_bh,
+            # ALREADY IN HAND, no new computation) -- the SAME divisor
+            # Sigma_4D's own with-BH branch already computes. "off"
+            # (default): byte-identical to the pre-flag ternary below.
+            global_denom_no_bh: float = (
+                global_denom_with_bh
+                if getattr(self, "_catalogue_leg_1d_mass_aware", "off") == "on"
+                else (
+                    getattr(self, "_global_cat_selection_phi_theta", {}).get(
+                        self.h, self._global_cat_selection_phi.get(self.h, 0.0)
+                    )
+                    if getattr(self, "_catalogue_global_selection", "s3d") == "phi"
+                    else self._global_cat_denom_no_bh.get(self.h, 0.0)
+                )
+            )
             # generator_marginal draw-side calibration (0.0 outside that mode).
             n_hat_w: float = 0.0
             # Path-(A) diagnostics (NaN outside the phi-convention branch); the
@@ -5536,6 +6666,7 @@ class BayesianStatistics:
                 )
                 _a_cat: float = _sigma_glob_sel / n_hat_w if n_hat_w > 0.0 else 0.0
                 D_gen: float = _a_cat + beta_Gbar
+                _den_used = D_gen if D_gen > 0 else 1.0
                 if D_gen > 0:
                     # Diagnostic: P_hat(cat|det,h) = (Sigma_glob_sel/n_hat_w)/D_gen —
                     # the generator-consistent detected-catalogue share (replaces
@@ -5592,10 +6723,23 @@ class BayesianStatistics:
                     beta_Gbar,
                     mode=getattr(self, "_completion_b_scale", "derived"),
                 )
+                _den_used = D_tilde_phi if D_tilde_phi > 0.0 else 1.0
                 if D_tilde_phi > 0.0:
                     w_G = path_a["w_tilde_G"]
+                    # [HIER T2.3] mass-aware 1D catalogue leg instrument
+                    # (PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2.2/§2.3
+                    # site W1, row #255 tree 2 node T2.3): "on" (guarded at
+                    # setup) replaces beta_G_phi by alpha_G_phi -- the
+                    # IDENTICAL float the 2D assembly below already consumes
+                    # (:6501) -- the no-mass-likelihood image of the 2D
+                    # mixture. "off": byte-identical (beta_G_phi, unchanged).
+                    _cat_num_weight_no_bh = (
+                        alpha_G_phi
+                        if getattr(self, "_catalogue_leg_1d_mass_aware", "off") == "on"
+                        else beta_G_phi
+                    )
                     combined_without_bh_mass = float(
-                        (beta_G_phi * L_cat_without_bh_mass + B_num_phi) / D_tilde_phi
+                        (_cat_num_weight_no_bh * L_cat_without_bh_mass + B_num_phi) / D_tilde_phi
                     )
                     combined_with_bh_mass = float(
                         (alpha_G_phi * L_cat_with_bh_mass + B_num_wbh_phi) / D_tilde_phi
@@ -5609,11 +6753,13 @@ class BayesianStatistics:
                     combined_with_bh_mass = float(L_cat_with_bh_mass)
             elif D_h > 0:
                 w_G = beta_G / D_h
+                _den_used = D_h
                 combined_without_bh_mass = float((beta_G * L_cat_without_bh_mass + B_num) / D_h)
                 combined_with_bh_mass = float((beta_G * L_cat_with_bh_mass + B_num) / D_h)
             else:
                 _LOGGER.warning(f"Detection {detection_index}: D(h) is zero, using L_cat only")
                 w_G = 1.0
+                _den_used = 1.0
                 combined_without_bh_mass = float(L_cat_without_bh_mass)
                 combined_with_bh_mass = float(L_cat_with_bh_mass)
             # Diagnostic-only completion likelihood L_comp = B_num/beta_Gbar (the
@@ -5650,6 +6796,19 @@ class BayesianStatistics:
                 "L_comp": L_comp,
                 "combined_no_bh": combined_without_bh_mass,
                 "combined_with_bh": combined_with_bh_mass,
+                # [HIER] C2 (PA-HIER-23): separable per-event ln L decomposition
+                # ln L = num_log_term − den_log_term. The numerator is recovered
+                # as combined × den_used (exactly what the assembly divided);
+                # NaN where the term is non-positive or no denominator applied.
+                "den_log_term": math.log(_den_used)
+                if np.isfinite(_den_used) and _den_used > 0.0
+                else float("nan"),
+                "num_log_term_no_bh": math.log(combined_without_bh_mass * _den_used)
+                if np.isfinite(_den_used) and combined_without_bh_mass * _den_used > 0.0
+                else float("nan"),
+                "num_log_term_with_bh": math.log(combined_with_bh_mass * _den_used)
+                if np.isfinite(_den_used) and combined_with_bh_mass * _den_used > 0.0
+                else float("nan"),
             }
         )
 
@@ -5914,6 +7073,105 @@ def _sigma4d_mass_kernel_expectation(
     return out
 
 
+def catalogue_leg_1d_mass_aware_factor(
+    z: float | npt.NDArray[np.float64],
+    M_g: float | npt.NDArray[np.float64],
+    M_g_error: float | npt.NDArray[np.float64],
+    h: float,
+    sigma4d_mass_kernel: str,
+    eddington_m: str,
+    detection_probability_obj: Any,
+) -> npt.NDArray[np.float64]:
+    r"""catalogue_leg_1d_mass_aware="on" site N1 factor (row #255 tree 2 node
+    T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2.2/§2.3): replaces the
+    population-average catalogue-numerator survival ``S_bar_phi(z;h)`` by the
+    SAME per-galaxy with-BH survival Sigma_4D already evaluates for that
+    galaxy --
+
+    .. math::
+
+        S_{4D}\bigl(d_L(z;h),\, M_g(1+z)\bigr)
+
+    (``sigma4d_mass_kernel="point"``) or its Gaussian-mass-kernel expectation
+
+    .. math::
+
+        \mathbb{E}_{M \sim \mathcal{N}(M_{\mathrm{eff},g},\,\sigma_g^2)}
+        \bigl[S_{4D}(d_L(z;h),\, M(1+z))\bigr]
+
+    (``sigma4d_mass_kernel="kernel"``, REPORTED-ONLY -- no registered F3
+    prediction uses this branch). This mirrors ``self._sigma4d_mass_kernel``
+    exactly, reusing the SAME accessor and SAME isotropic-sky convention as
+    Sigma_4D's own with-BH branch (``precompute_global_catalog_selection``,
+    point query :3022-3038 / kernel query :2996-3020) and the T2.2 hook's
+    ``s_4d_zg_mg`` column -- the registered coupling rule (§2.2): the
+    numerator's mass measure can never differ from the divisor's (Sigma_4D),
+    so an unpaired point/kernel combination is exactly the
+    [NUMERATOR-ONLY-CLEAN] defect class.
+
+    ``z``, ``M_g``, ``M_g_error`` must already share one broadcast shape (the
+    caller's z-node axis) -- callers pass e.g. ``host_M[:, None]`` against
+    ``y_num_nodes`` of shape ``(n, k)``, or a bare scalar/1-D array in the
+    scalar kernel.
+
+    Args:
+        z: Redshift nodes, any shape.
+        M_g: Raw catalogue BH masses [M_sun] (HostGalaxy.M), broadcastable to
+            ``z``'s shape.
+        M_g_error: Catalogue ``BH_MASS_ERROR`` [M_sun], broadcastable to
+            ``z``'s shape (read only when ``sigma4d_mass_kernel="kernel"``).
+        h: Dimensionless Hubble parameter.
+        sigma4d_mass_kernel: "point" or "kernel" -- mirrors
+            ``self._sigma4d_mass_kernel`` (Sigma_4D's own convention); no
+            independent knob (§2.2's registered coupling rule).
+        eddington_m: "on"/"off" -- mirrors ``self._eddington_m`` (read only
+            under "kernel").
+        detection_probability_obj: ``SimulationDetectionProbability`` instance
+            (the SAME accessor Sigma_4D and the T2.2 hook query).
+
+    Returns:
+        S_4D per node, same shape as ``z``.
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7)
+            (assumption A2: the selection integral must use the SAME
+            detection model as the numerator, for a catalogue galaxy of
+            KNOWN mass).
+    """
+    z_arr = np.asarray(z, dtype=np.float64)
+    shape = z_arr.shape
+    z_flat = z_arr.reshape(-1)
+    M_flat = np.broadcast_to(np.asarray(M_g, dtype=np.float64), shape).reshape(-1).copy()
+    zeros = np.zeros_like(z_flat)
+    if sigma4d_mass_kernel == "point":
+        d_L_flat = np.asarray(dist_vectorized(z_flat, h=h), dtype=np.float64)
+        M_z_flat = M_flat * (1.0 + z_flat)
+        out = np.asarray(
+            detection_probability_obj.detection_probability_with_bh_mass_interpolated(
+                d_L_flat,
+                M_z_flat,
+                zeros,
+                zeros,
+                h=h,
+                **_wbh_z_kwargs(detection_probability_obj, z_flat),
+            ),
+            dtype=np.float64,
+        )
+    elif sigma4d_mass_kernel == "kernel":
+        Merr_flat = np.broadcast_to(np.asarray(M_g_error, dtype=np.float64), shape).reshape(-1)
+        M_eff_flat = (
+            _eddington_shifted_host_mass_batch(M_flat, Merr_flat) if eddington_m == "on" else M_flat
+        )
+        out = _sigma4d_mass_kernel_expectation(
+            z_flat, M_eff_flat, Merr_flat, zeros, zeros, h, detection_probability_obj
+        )
+    else:
+        raise ValueError(
+            f"sigma4d_mass_kernel must be 'point' or 'kernel', got {sigma4d_mass_kernel!r}"
+        )
+    return out.reshape(shape)
+
+
 def _mz_sel_2d_expectation(
     mu_star: npt.NDArray[np.float64],
     sigma_star: npt.NDArray[np.float64],
@@ -6091,6 +7349,19 @@ def single_host_likelihood(
     # choice is PENDING the pre-execution review (prereg §2(i)); no silent
     # default.
     catalogue_numerator_survival_2d_center: str = "unset",
+    # [HIER] θ-hook site 2.1 (PHYSICS_CHANGE_THETA_HOOK_20260828.md, ledger row
+    # #216): affine photo-z systematic reparametrization z̃ = z + b(1+z),
+    # σ̃_eff = s·σ_eff. (0.0, 1.0) is the literal-skip identity (GATE T-ID) —
+    # the default path never executes the θ branch.
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
+    # [HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree 2
+    # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2); scalar
+    # twin of the batch flag — same semantics. Worker-level fallback stays
+    # "off": evaluate() always threads its RESOLVED token explicitly (the
+    # 2026-08-31 production flip lives in evaluate()'s "auto" resolution).
+    catalogue_leg_1d_mass_aware: str = "off",
+    sigma4d_mass_kernel: str = "point",
 ) -> list[float]:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -6119,6 +7390,22 @@ def single_host_likelihood(
         if catalogue_survival_table is None:
             raise ValueError("catalogue_numerator_survival='phi' requires catalogue_survival_table")
         _p3_engagement_log_once("scalar")
+
+    # [HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree 2
+    # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2); scalar
+    # twin of the batch validation.
+    if catalogue_leg_1d_mass_aware not in ("off", "on"):
+        raise ValueError(
+            "catalogue_leg_1d_mass_aware must be 'off' or 'on', got "
+            f"{catalogue_leg_1d_mass_aware!r}"
+        )
+    _cat_leg_1d_ma_on = catalogue_leg_1d_mass_aware == "on"
+    if _cat_leg_1d_ma_on and not _cat_surv_on:
+        raise ValueError(
+            "catalogue_leg_1d_mass_aware='on' requires "
+            "catalogue_numerator_survival='phi' (site N1 replaces the phi "
+            "per-candidate survival)"
+        )
 
     # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md §2(i)).
     if catalogue_numerator_survival_2d not in ("off", "mz_sel"):
@@ -6217,11 +7504,27 @@ def single_host_likelihood(
     # top of it. Applied ONCE here: every downstream consumer (window bounds,
     # Z_g renormalization, prior pdf, D_g, MC proposal + sampling_pdf) flows
     # through this single sigma and the one norm() object below, so the term
-    # cannot double-count inside the likelihood. The ball-tree candidate
-    # window and catalogue pruning (handler.py) intentionally keep the bare
-    # catalogue z_error — a ±1σ, second-order candidate-list effect.
+    # cannot double-count inside the likelihood. The ball-tree window keeps
+    # the bare catalogue z_error w.r.t. the (currently zero) peculiar-
+    # velocity fold — second-order at theta=(0,1); see
+    # PHYSICS_CHANGE_THETA_ZWINDOW_20260830.md section 3 for the theta-s/b
+    # window-vs-kernel term, which is NOT second-order under theta != (0,1)
+    # (row #255 tree 2 node T1.3-zwin; the theta_zwindow="on" flag below
+    # (handler.py) removes that term).
     sigma_z_pv = (1.0 + host_z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
     host_z_error_eff = float(np.sqrt(host_z_error**2 + sigma_z_pv**2))
+    if theta_b != 0.0 or theta_s != 1.0:
+        # [HIER] θ-hook site 2.1 — Sec. 2 in Ma, Hu & Huterer (2006),
+        # arXiv:astro-ph/0506614. HIER §1.2 s-placement (row #221 item 4;
+        # 2026-08-29 note in PHYSICS_CHANGE_THETA_HOOK_20260828.md supersedes
+        # the 2026-08-28 "s scales the folded width" pin): s scales the RAW
+        # host_z_error BEFORE the PV quadrature fold; b is unchanged — it
+        # still shifts the kernel centre AFTER the fold, using sigma_z_pv
+        # computed above from the UNSHIFTED host_z.
+        _validate_theta(theta_b, theta_s)
+        _theta_hook_count("site_2_1")
+        host_z_error_eff = float(np.sqrt((theta_s * host_z_error) ** 2 + sigma_z_pv**2))
+        host_z = host_z + theta_b * (1.0 + host_z)
 
     numerator_integration_upper_redshift_limit = dist_to_redshift(
         _det_d_L + integration_limit_sigma_multiplier * _det_d_L_unc, h=h
@@ -6361,12 +7664,25 @@ def single_host_likelihood(
             _log_norm_3d,
         ) * galaxy_redshift_prior_pdf(z)
         if _cat_surv_on:
-            # [P3-IMP] twin cell: per-host S_bar_phi factor (endpoint-clamped
-            # np.interp — the completion_numerator_integrand_sel_1d convention),
-            # from the SAME table the mixture normalizer beta_G_phi integrates.
-            assert catalogue_survival_table is not None
-            _z_s, _s_phi = catalogue_survival_table
-            _num = _num * np.interp(np.asarray(z, dtype=np.float64), _z_s, _s_phi)
+            if _cat_leg_1d_ma_on:
+                # [HIER T2.3] site N1, quadrature path (scalar twin):
+                # S_4D(d_L(z;h), M_g(1+z)) at each quadrature node.
+                _num = _num * catalogue_leg_1d_mass_aware_factor(
+                    np.asarray(z, dtype=np.float64),
+                    host_M,
+                    host_M_error,
+                    h,
+                    sigma4d_mass_kernel,
+                    eddington_m,
+                    detection_probability,
+                )
+            else:
+                # [P3-IMP] twin cell: per-host S_bar_phi factor (endpoint-clamped
+                # np.interp — the completion_numerator_integrand_sel_1d convention),
+                # from the SAME table the mixture normalizer beta_G_phi integrates.
+                assert catalogue_survival_table is not None
+                _z_s, _s_phi = catalogue_survival_table
+                _num = _num * np.interp(np.asarray(z, dtype=np.float64), _z_s, _s_phi)
         return _num
 
     def denominator_integrant_without_bh_mass(z: npt.NDArray[np.float64]) -> Any:
@@ -6408,12 +7724,28 @@ def single_host_likelihood(
             _mvn_pdf(_x_obs_point, _mean_3d, _cov_inv_3d, _log_norm_3d)[0]
         )
         if _cat_surv_on:
-            # [P3-IMP] twin cell, delta-kernel branch: point-evaluated factor.
-            assert catalogue_survival_table is not None
-            _z_s, _s_phi = catalogue_survival_table
-            single_host_likelihood_numerator_without_bh_mass *= float(
-                np.interp(host_z, _z_s, _s_phi)
-            )
+            if _cat_leg_1d_ma_on:
+                # [HIER T2.3] site N1, point path (scalar twin):
+                # S_4D(d_L(z;h), M_g(1+z)) — the T2.2 hook's s_4d_zg_mg
+                # column exactly.
+                single_host_likelihood_numerator_without_bh_mass *= float(
+                    catalogue_leg_1d_mass_aware_factor(
+                        np.array([host_z], dtype=np.float64),
+                        host_M,
+                        host_M_error,
+                        h,
+                        sigma4d_mass_kernel,
+                        eddington_m,
+                        detection_probability,
+                    )[0]
+                )
+            else:
+                # [P3-IMP] twin cell, delta-kernel branch: point-evaluated factor.
+                assert catalogue_survival_table is not None
+                _z_s, _s_phi = catalogue_survival_table
+                single_host_likelihood_numerator_without_bh_mass *= float(
+                    np.interp(host_z, _z_s, _s_phi)
+                )
     else:
         (
             single_host_likelihood_numerator_without_bh_mass,
@@ -6798,6 +8130,22 @@ def single_host_likelihood_batch(
     # the choice is PENDING the pre-execution review (prereg §2(i)); no
     # silent default.
     catalogue_numerator_survival_2d_center: str = "unset",
+    # [HIER] θ-hook site 2.2 — production's actual dispatch path
+    # (PHYSICS_CHANGE_THETA_HOOK_20260828.md, ledger row #216). (0.0, 1.0) is
+    # the literal-skip identity (GATE T-ID); semantics identical to the scalar
+    # twin's site 2.1.
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
+    # [HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree 2
+    # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). Worker
+    # fallback stays "off" — evaluate() threads its RESOLVED token (the
+    # 2026-08-31 production flip lives in evaluate()'s "auto" resolution).
+    # "on" replaces site N1's per-candidate S_bar_phi factor by
+    # S_4D(d_L(z;h), M_g(1+z)) (mirroring sigma4d_mass_kernel). Requires
+    # catalogue_numerator_survival to resolve to "phi" (validated by the
+    # caller, evaluate()'s setup guard).
+    catalogue_leg_1d_mass_aware: str = "off",
+    sigma4d_mass_kernel: str = "point",
 ) -> npt.NDArray[np.float64]:
     """Host-batched twin of :func:`single_host_likelihood`.
 
@@ -6877,6 +8225,17 @@ def single_host_likelihood_batch(
     # identical formula and references as the scalar kernel (issue #16).
     sigma_z_pv = (1.0 + host_z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
     host_z_error_eff = np.sqrt(host_z_error**2 + sigma_z_pv**2)
+    if theta_b != 0.0 or theta_s != 1.0:
+        # [HIER] θ-hook site 2.2 — Sec. 2 in Ma, Hu & Huterer (2006),
+        # arXiv:astro-ph/0506614. HIER §1.2 s-placement (row #221 item 4;
+        # 2026-08-29 note supersedes the 2026-08-28 "s on the folded width"
+        # pin): s scales the RAW host_z_error BEFORE the PV fold; b is
+        # unchanged (still AFTER the fold, using sigma_z_pv from the
+        # UNSHIFTED host_z) — same registered form as the scalar twin (2.1).
+        _validate_theta(theta_b, theta_s)
+        _theta_hook_count("site_2_2")
+        host_z_error_eff = np.sqrt((theta_s * host_z_error) ** 2 + sigma_z_pv**2)
+        host_z = host_z + theta_b * (1.0 + host_z)
 
     # Numerator window depends only on the event (and h): computed once per batch.
     numerator_integration_upper_redshift_limit = dist_to_redshift(
@@ -7074,6 +8433,23 @@ def single_host_likelihood_batch(
             raise ValueError("catalogue_numerator_survival='phi' requires catalogue_survival_table")
         _p3_engagement_log_once("batch")
 
+    # [HIER T2.3] mass-aware 1D catalogue leg instrument (row #255 tree 2
+    # node T2.3, PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2). Defence in
+    # depth: evaluate() already validates this at setup; re-validated here
+    # the same way catalogue_numerator_survival_2d is below.
+    if catalogue_leg_1d_mass_aware not in ("off", "on"):
+        raise ValueError(
+            "catalogue_leg_1d_mass_aware must be 'off' or 'on', got "
+            f"{catalogue_leg_1d_mass_aware!r}"
+        )
+    _cat_leg_1d_ma_on = catalogue_leg_1d_mass_aware == "on"
+    if _cat_leg_1d_ma_on and not _cat_surv_on:
+        raise ValueError(
+            "catalogue_leg_1d_mass_aware='on' requires "
+            "catalogue_numerator_survival='phi' (site N1 replaces the phi "
+            "per-candidate survival)"
+        )
+
     # [P3-2D] the with-BH catalogue-leg twin (PREREGISTRATION_P3_2D_20260825.md §2(i)).
     if catalogue_numerator_survival_2d not in ("off", "mz_sel"):
         raise ValueError(
@@ -7104,16 +8480,46 @@ def single_host_likelihood_batch(
         # DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3.
         numerator_without_bh_mass = gw_3d[:, 0]
         if _cat_surv_on:
-            assert catalogue_survival_table is not None
-            _z_s, _s_phi = catalogue_survival_table
-            numerator_without_bh_mass = numerator_without_bh_mass * np.interp(host_z, _z_s, _s_phi)
+            if _cat_leg_1d_ma_on:
+                # [HIER T2.3] site N1, point path: S_4D(d_L(z;h), M_g(1+z))
+                # in place of S_bar_phi(z) -- the T2.2 hook's s_4d_zg_mg
+                # column exactly.
+                _surv_factor = catalogue_leg_1d_mass_aware_factor(
+                    host_z,
+                    host_M,
+                    host_M_error,
+                    h,
+                    sigma4d_mass_kernel,
+                    eddington_m,
+                    detection_probability,
+                )
+            else:
+                assert catalogue_survival_table is not None
+                _z_s, _s_phi = catalogue_survival_table
+                _surv_factor = np.interp(host_z, _z_s, _s_phi)
+            numerator_without_bh_mass = numerator_without_bh_mass * _surv_factor
     else:
         assert prior_num is not None
         _num_integrand = gw_3d * prior_num
         if _cat_surv_on:
-            assert catalogue_survival_table is not None
-            _z_s, _s_phi = catalogue_survival_table
-            _num_integrand = _num_integrand * np.interp(y_num_nodes, _z_s, _s_phi)
+            if _cat_leg_1d_ma_on:
+                # [HIER T2.3] site N1, quadrature path: S_4D evaluated at
+                # each node's own (z, M_g(1+z)) -- the 2D twin's own
+                # per-node evaluation (:8280-8290 below) mirrored exactly.
+                _surv_factor = catalogue_leg_1d_mass_aware_factor(
+                    y_num_nodes,
+                    host_M[:, None],
+                    host_M_error[:, None],
+                    h,
+                    sigma4d_mass_kernel,
+                    eddington_m,
+                    detection_probability,
+                )
+            else:
+                assert catalogue_survival_table is not None
+                _z_s, _s_phi = catalogue_survival_table
+                _surv_factor = np.interp(y_num_nodes, _z_s, _s_phi)
+            _num_integrand = _num_integrand * _surv_factor
         numerator_without_bh_mass = _batched_gl_reduce(
             num_reduce_lo,
             num_reduce_hi,
@@ -7418,6 +8824,12 @@ def _starmap_host_batches(
     catalogue_survival_table: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
     catalogue_numerator_survival_2d: str = "off",
     catalogue_numerator_survival_2d_center: str = "unset",
+    theta_b: float = 0.0,
+    theta_s: float = 1.0,
+    # Worker fallback "off"; evaluate() threads its resolved token (rows
+    # #284-#286 flip lives in evaluate()'s "auto" resolution).
+    catalogue_leg_1d_mass_aware: str = "off",
+    sigma4d_mass_kernel: str = "point",
 ) -> list[list[float]]:
     """Dispatch the batched host kernel over worker processes.
 
@@ -7453,6 +8865,13 @@ def _starmap_host_batches(
         catalogue_numerator_survival_2d_center: Centering sub-option
             ("unset"/"raw"/"eff"); REQUIRED to be "raw" or "eff" when the
             twin cell is "mz_sel".
+        catalogue_leg_1d_mass_aware: [HIER T2.3] mass-aware 1D catalogue leg
+            instrument ("off"/"on");
+            PHYSICS_CHANGE_MASS_AWARE_1D_LEG_20260830.md §2.
+        sigma4d_mass_kernel: Mirrors ``self._sigma4d_mass_kernel`` for the
+            mass-aware 1D leg's own point/kernel form (§2.2's registered
+            coupling rule); ignored unless
+            ``catalogue_leg_1d_mass_aware="on"``.
 
     Returns:
         Per-host result rows in input order.
@@ -7485,6 +8904,10 @@ def _starmap_host_batches(
             catalogue_survival_table,
             catalogue_numerator_survival_2d,
             catalogue_numerator_survival_2d_center,
+            theta_b,
+            theta_s,
+            catalogue_leg_1d_mass_aware,
+            sigma4d_mass_kernel,
         )
         for idx in chunk_indices
     ]

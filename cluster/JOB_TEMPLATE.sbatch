@@ -52,6 +52,17 @@ ln -sfn "$RUN_DIR/simulations" "$PROJECT_ROOT/simulations"
 #   OUT="$RUN_DIR/simulations/posteriors/h_${H_VALUE//./_}.json"
 #   [[ -f "$OUT" ]] && { echo "SKIP: $OUT exists"; exit 0; }
 
+# ---- 3c. Provenance stamp (do not remove) -------------------------------------
+# `python -m darksiren_emri` writes run_metadata*.json itself (main.py); a job
+# built from THIS template usually calls it below and gets that for free. But
+# any bespoke driver copied from this template that does NOT go through the
+# package entry point (a Python harness script invoked directly, an evaluate-
+# only re-score, etc.) will otherwise emit NOTHING tying its output to a git
+# commit — see cluster/SKILL.md gotcha #12. write_provenance() is fail-soft
+# (never fails the job) and cheap; call it unconditionally.
+source "$PROJECT_ROOT/cluster/write_provenance.sh"
+write_provenance "$RUN_DIR" "template job"
+
 # ---- 4. TODO: the actual work ------------------------------------------------
 # Invoke the package via `python -m darksiren_emri <working_dir> <flags>`.
 # working_dir is $RUN_DIR for sim/inject/evaluate, or $RUN_DIR/simulations for

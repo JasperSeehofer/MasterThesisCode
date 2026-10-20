@@ -1,0 +1,147 @@
+{
+  "arm": "S0-A",
+  "seeds_requested": [
+    900101,
+    900102,
+    900103,
+    900104
+  ],
+  "jobs": 1,
+  "cpu_per_job": 14,
+  "wall_s": 337.21276021003723,
+  "n_seeds_ok": 4,
+  "n_seeds_error": 0,
+  "errors": [],
+  "theta_sites": "all",
+  "smear": "auto",
+  "config": "ft",
+  "h_values": [
+    0.73
+  ],
+  "score_h": null,
+  "node_dir_suffix": "_ft",
+  "per_seed_summary": [
+    {
+      "seed": 900101,
+      "nodes": {
+        "truth": {
+          "elapsed_s": 58.15390491485596,
+          "n_events": 174
+        }
+      }
+    },
+    {
+      "seed": 900102,
+      "nodes": {
+        "truth": {
+          "elapsed_s": 71.20021939277649,
+          "n_events": 184
+        }
+      }
+    },
+    {
+      "seed": 900103,
+      "nodes": {
+        "truth": {
+          "elapsed_s": 61.758241176605225,
+          "n_events": 174
+        }
+      }
+    },
+    {
+      "seed": 900104,
+      "nodes": {
+        "truth": {
+          "elapsed_s": 70.48347330093384,
+          "n_events": 182
+        }
+      }
+    }
+  ],
+  "note": "nodes=('truth',) does not include all 4 off-truth nodes -- scores/gates/verdict require {b_plus,b_minus,s_plus,s_minus}; this is expected for a --smoke run with 1-2 nodes and is NOT a registered read.",
+  "gate_parity": {
+    "900101": {
+      "status": "COMPARED",
+      "n_events_compared": 106,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 106,
+          "max_abs_diff": 8.714923873382519,
+          "max_rel_diff": 1.0042544655655872,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 106,
+          "max_abs_diff": 9.498993652031583,
+          "max_rel_diff": 0.9410925776420072,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    },
+    "900102": {
+      "status": "COMPARED",
+      "n_events_compared": 120,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 120,
+          "max_abs_diff": 5.809299221317769,
+          "max_rel_diff": 3.6022662407609234,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 120,
+          "max_abs_diff": 5.490686665412064,
+          "max_rel_diff": 0.8651167114733362,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    },
+    "900103": {
+      "status": "COMPARED",
+      "n_events_compared": 104,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 104,
+          "max_abs_diff": 3.7661111128695417,
+          "max_rel_diff": 0.6863562395267395,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 104,
+          "max_abs_diff": 4.419002059058354,
+          "max_rel_diff": 0.7466416564344294,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    },
+    "900104": {
+      "status": "COMPARED",
+      "n_events_compared": 129,
+      "diffs": {
+        "ln_L_no_bh": {
+          "n": 129,
+          "max_abs_diff": 4.7117513888361024,
+          "max_rel_diff": 1.3994365629381924,
+          "exact": false
+        },
+        "ln_L_with_bh": {
+          "n": 129,
+          "max_abs_diff": 5.656526534133877,
+          "max_rel_diff": 0.5909439196688808,
+          "exact": false
+        }
+      },
+      "pass_exact": false,
+      "pass_fallback_rtol": false
+    }
+  },
+  "smoke": false,
+  "event_cap": null,
+  "registration": "/home/jasper/Repositories/darksiren-emri/results/campaign51_20260728/realistic_20260729/PREREGISTRATION_HIER_HTHETA_20260826.md"
+}

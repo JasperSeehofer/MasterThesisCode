@@ -1,0 +1,137 @@
+{
+  "node": "T1.2 S0-A re-certification, theta-consistent no-BH divisor (theta_phi_divisor=on)",
+  "role": "independent reader, launched under row #255",
+  "date": "2026-08-30",
+  "run_of_record": "results/campaign51_20260728/realistic_20260729/tree2_20260830/hier_s0_recert_run",
+  "config": {
+    "seeds": [900101, 900102, 900103, 900104],
+    "nodes": ["truth", "b_plus", "b_minus", "s_plus", "s_minus"],
+    "theta_sites": "2.2",
+    "smear": "off",
+    "config": "b0i",
+    "theta_phi_divisor": "on",
+    "sky_cone_k": 1.5,
+    "h": 0.73,
+    "wall_s": 13084.808408021927,
+    "cpu_per_job": 14
+  },
+  "driver_reported": {
+    "source": "hier_s0_recert_run/s0a_full_output.json + s0a_score_output.json (byte-identical scores/gates)",
+    "ln_L_no_bh": {
+      "score_b": {"mean": -0.28878240960372603, "sem": 0.42705252094828333, "Z": -0.6762222336551854, "n_pooled": 461},
+      "score_s": {"mean": -0.07195958393659582, "sem": 0.012051274307800423, "Z": -5.971118248467597, "n_pooled": 461}
+    },
+    "ln_L_with_bh": {
+      "score_b": {"mean": 0.1382981807270816, "sem": 0.36465410051128905, "Z": 0.379258537153897, "n_pooled": 461},
+      "score_s": {"mean": -0.02920333412346437, "sem": 0.014408551690508958, "Z": -2.02680566032885, "n_pooled": 461}
+    },
+    "verdict_string": "B0-A' -- INSTRUMENT-DEFECT -- STOP (prereg sec 4.5)",
+    "gate_eng_mean_fraction_moved": 0.9885755753680282,
+    "gate_parity_pass_exact": false
+  },
+  "score_s_form_used_by_driver": {
+    "finding": "hier_s0_driver.py compute_scores() is UNCHANGED source (confirmed grep: no Es_null_det term, no PA-HIER-32 reference); it computes the OLD/superseded raw secant score_s = (lnL(s=sqrt2) - lnL(s=1/sqrt2)) / (sqrt2 - 1/sqrt2), i.e. score_lns uncorrected for the PA-HIER-32(d) deterministic bias Es_null_det_i.",
+    "consistency_with_own_authorizing_text": "PHYSICS_CHANGE_THETA_DIVISOR_20260830.md sec 5.6 and sec 9 (F2) explicitly predict THIS run (divisor-only, sky_cone_k=1.5, no z_window_k companion) at score_s = -0.073 +/- 0.012 (Z ~ -6) using the raw/uncorrected form, and state the PA-HIER-32 corrected form is 'in force' only for the future enlarged-ball E12 measurement -- the driver's output matches that prediction almost exactly.",
+    "tension_disclosed": "PREREGISTRATION_HIER_HTHETA_20260826.md PA-HIER-32(d) scope note (unqualified) states: 'the S0-A re-certification (tree 2 T1.2 ...) runs UNDER PA-HIER-32 ... it must use score_s and Z_s as defined here, not the superseded score_lns' -- read literally and unconditionally this applies to T1.2 as executed, not only to a future enlarged-ball leg. The two registered texts disagree on scope; this reader discloses the tension and does not adjudicate it.",
+    "disposition": "Not resolved by this reader. Flagged for the orchestrator/author. Does not change this run's own internally-consistent verdict against its own authorizing document (PHYSICS_CHANGE_THETA_DIVISOR sec 5.6/9), but means a literal PA-HIER-32(d) reading would call this specific T1.2 execution non-compliant with its own scope note."
+  },
+  "independent_rederivation": {
+    "method": "recomputed from raw event_likelihoods.csv per (seed, node): h==0.73 filter, dedup on event_idx keep-last, ln(combined_no_bh/with_bh) where >0, inner-join b_plus/b_minus and s_plus/s_minus per (seed, event_idx), pooled mean/SEM/Z over seeds+events (unweighted per-event scatter, per prereg sec 4.1)",
+    "pooled_no_bh": {
+      "score_b": {"mean": -0.28878240960372603, "sem": 0.42705252094828333, "Z": -0.6762222336551854, "n": 461},
+      "score_s": {"mean": -0.07195958393659582, "sem": 0.012051274307800423, "Z": -5.971118248467597, "n": 461}
+    },
+    "pooled_with_bh": {
+      "score_b": {"mean": 0.1382981807270816, "sem": 0.36465410051128905, "Z": 0.379258537153897, "n": 461},
+      "score_s": {"mean": -0.02920333412346437, "sem": 0.014408551690508958, "Z": -2.02680566032885, "n": 461}
+    },
+    "driver_reproduced_to_last_digit": true,
+    "per_seed_no_bh": {
+      "900101": {"score_b": {"mean": -1.7137790201984828, "sem": 1.107394028248666, "Z": -1.547578347436828, "n": 106},
+                  "score_s": {"mean": -0.09095109946515299, "sem": 0.02636599547675367, "Z": -3.449560610952187, "n": 106}},
+      "900102": {"score_b": {"mean": -1.2825823892576786, "sem": 0.879334909920233, "Z": -1.4585823612689566, "n": 120},
+                  "score_s": {"mean": -0.10389838318378025, "sem": 0.027456324180564803, "Z": -3.784133028897059, "n": 120}},
+      "900103": {"score_b": {"mean": 1.111827568775976, "sem": 0.5817923722894229, "Z": 1.9110384077412375, "n": 105},
+                  "score_s": {"mean": -0.038575184816458725, "sem": 0.019541287946117095, "Z": -1.9740349214865192, "n": 105}},
+      "900104": {"score_b": {"mean": 0.6592298254089647, "sem": 0.7578142019084723, "Z": 0.8699095685311339, "n": 130},
+                  "score_s": {"mean": -0.05395654818217433, "sem": 0.021575197707529088, "Z": -2.5008599649283925, "n": 130}}
+    },
+    "per_seed_note": "all four seeds carry the SAME sign on score_s (negative); score_b now spans both signs (2 negative, 2 positive) -- a materially more null-like pattern than the previous (no-divisor) run, where score_b was uniformly negative. Measured per-seed score_b means (-1.714, -1.283, +1.112, +0.659) reproduce the forensic's pre-registered rho-based per-seed prediction (E11/f12_out.json: -1.71, -1.26, +1.17, +0.69) almost exactly -- an independent confirmation of mechanism (i) beyond the pooled Z.",
+    "class_split_no_bh": {
+      "dark": {"n": 5, "score_b": 0.0, "score_s": 0.0, "note": "combined_no_bh bit-identical across all five theta-nodes for these events (instrument-identity check PASSES, matching the previous run and the divisor doc's F4)"},
+      "matched": {"n": 456,
+        "score_b": {"mean": -0.2919488833932405, "sem": 0.43173790706680343, "Z": -0.6762178595266753},
+        "score_s": {"mean": -0.0727486144622164, "sem": 0.012178382287208299, "Z": -5.973586043413067},
+        "note": "matched class carries essentially the entire pooled pull on both axes, as in the previous run"
+      }
+    }
+  },
+  "comparison_to_previous_run": {
+    "previous_run_source": "PREREGISTRATION_HIER_HTHETA_20260826.md, 'Independent re-derivation' section under the PA-HIER-31 block (no divisor, fanout1_20260829/hier_s0_registered_run)",
+    "previous_no_bh": {
+      "score_b": {"mean": -1.61646, "sem": 0.43968, "Z": -3.6764},
+      "score_s": {"mean": -0.08625, "sem": 0.012185, "Z": -7.0786}
+    },
+    "delta": {
+      "score_b_mean_delta": 1.3276775903962738,
+      "Z_b_delta": 3.0001777663448144,
+      "score_s_mean_delta": 0.014290416063404175,
+      "Z_s_delta": 1.107481751532403,
+      "note": "b-axis: |Z_b| fell from 3.676 to 0.676 (a drop of ~82%, magnitude reduced 5.4x) -- large, mechanism-sized move, consistent with the divisor's registered C_b=-2.25/unit slope. s-axis: |Z_s| fell only from 7.079 to 5.971 (~16% reduction) -- small, consistent with the divisor's registered C_s=-0.024/unit (linear s), two orders of magnitude smaller than C_b. The divisor is no-BH-only and theta=(b,s)-dependent, so it perturbs the s-nodes (rho(0,sqrt2)=0.9893, rho(0,1/sqrt2)=1.0059, both != 1) but only mildly."
+    }
+  },
+  "falsifier_evaluation": {
+    "F1_b_axis_mechanism_i": {
+      "registered_band": "|Z_b| <= 3 (prereg sec 4.1 B0-A)",
+      "registered_exactness": "|score_b(re-run) - (-0.268)| <= 0.10",
+      "measured_Z_b": -0.6762222336551854,
+      "measured_score_b": -0.28878240960372603,
+      "band_result": "PASS (|-0.676| <= 3)",
+      "exactness_result": "PASS (|-0.28878 - (-0.268)| = 0.0208 <= 0.10)",
+      "orchestrator_framing_check": "measured Z_b=-0.676 vs the registered point value quoted as 'Z_b -> -0.62' (sec 5.6): delta 0.056, well inside the combined scatter of the E11 estimate (rho estimation error <=0.03 + 2.4-rule <=0.02 + literal truth-skip 0, i.e. roughly the sec-9 F1 exactness tolerance restated in Z units). Note: the orchestrator's framing '-0.62 +/- 0.43' conflates the predicted score_b SEM (0.43) with a Z-uncertainty; the registered text's actual tolerance is the +/-0.10 exactness check on score_b, which is comfortably met.",
+      "verdict": "CONFIRMED -- mechanism (i) (theta-inconsistent no-BH divisor) is the b-axis cause; both the band and the sharper exactness check pass; per-seed pattern matches the pre-registered rho-based forecast."
+    },
+    "s_axis_band": {
+      "registered_band": "|Z_s| <= 3 (prereg sec 4.1 B0-A)",
+      "measured_Z_s": -5.971118248467597,
+      "result": "FAILS (|-5.971| > 3)",
+      "as_predicted": "YES -- PHYSICS_CHANGE_THETA_DIVISOR_20260830.md sec 5.6/sec 9 (F2) registered in advance that the divisor-only configuration (this run: sky_cone_k=1.5, no z_window_k companion) would leave score_s at -0.073 +/- 0.012 (Z~-6) and explicitly states this is 'not a falsifier of this change' -- it is the registered, expected residual attributed to mechanism (ii), the candidate-ball truncation, which this run's flags do not address.",
+      "verdict": "B0-A' persists on the s-axis exactly as registered -- INSTRUMENT-DEFECT (s) STOP stands, unchanged in kind from the previous run, reduced only slightly in magnitude for the reason given in comparison_to_previous_run."
+    },
+    "E12_window_cone_mechanism": {
+      "E12_prediction": "with the ENLARGED ball (sky_cone_k=3.0 AND z_window_k=4.0) and PA-HIER-32's corrected score_s (score_s = score_lns - Es_null_det) in force: c-weighted statistic predicted at -0.005 +/- 0.011 (Z -0.5); unweighted +0.036 +/- 0.016 (the E13 secant bias).",
+      "what_would_confirm_E12": "A future run (this reader's proposed T1.3) with sky_cone_k=3.0, z_window_k=4.0, and the driver re-scored under the PA-HIER-32(d) corrected score_s (requiring a fresh, re-derived Es_null_det_i for that configuration per PA-HIER-32's own scope note -- not the banked theta_sites=2.2/unsmeared values) landing inside |Z_s| <= 3 confirms mechanism (ii, truncation); |Z_s| > 3 there refutes it.",
+      "this_run_relation_to_E12": "This run does NOT test E12: sky_cone_k stayed at its default 1.5 and z_window_k was never engaged (decision-table item 3 of PHYSICS_CHANGE_THETA_DIVISOR_20260830.md routes that knob to the orchestrator's path choice, not yet exercised). This run instead confirms the PRECURSOR half of the same registered chain -- the 'divisor-only, no enlarged ball' leg -- to high precision (measured -0.07196+/-0.01205, Z=-5.971 vs predicted -0.073+/-0.012, Z~-6). That match is necessary-but-not-sufficient supporting evidence for the truncation story motivating E12; E12 itself remains an open, un-run falsifier.",
+      "verdict": "UNTESTED by this run (as registered/expected) -- CONSISTENT so far with the divisor-only precursor prediction, no evidence either way on the enlarged-ball E12 claim itself."
+    }
+  },
+  "overall_verdict": {
+    "band": "B0-A' (unchanged label, s-axis only)",
+    "b_axis": "CERTIFIED -- REPORTED-ONLY cap (PA-HIER-28 item 9, carried without exception)",
+    "s_axis": "INSTRUMENT-DEFECT -- STOP stands (prereg sec 4.5)",
+    "mechanism_i_b_axis": "CONFIRMED",
+    "mechanism_ii_s_axis_truncation": "UNTESTED this run; consistent so far; E12 pending",
+    "licenses": "NOTHING beyond what row #255/the charter already licensed. No Stage-P/F, no S0-B, no C1/C3 launch follows from a partial S0-A pass. S0-B stays unlaunched."
+  },
+  "cost": {
+    "measured_wall_s": 13084.808408021927,
+    "measured_cpu_per_job": 14,
+    "measured_CPU_h": 50.885366031196384,
+    "measured_wall_h": 3.6346690022283132,
+    "registered_anchor_charter": "TREE2_CHARTER_20260830.md T1 branch 2: 'approx 11.5 CPU-h local (approx 6 if venue builds are cached)'",
+    "registered_anchor_gate_sec6": "PHYSICS_CHANGE_THETA_DIVISOR_20260830.md sec 6 item 4: single-process serial ~6.3 h wall; with cached normaliser ~4.4 h wall; with 14-way row parallelism ~1.3 h wall",
+    "comparison": "Measured 50.89 CPU-h is ~4.4x the 11.5 CPU-h charter anchor and ~8.5x the 6 CPU-h cached anchor. Measured wall 3.63 h sits BETWEEN the cached-normaliser (4.4 h, actual is better) and 14-way-row-parallelism (1.3 h, actual is worse) bands of sec 6 -- closer to (and under) the cached-normaliser estimate, suggesting the registered row-chunk-parallelism mitigation (sec 6 item 3) was not fully engaged, though some speedup relative to naive single-core (6.3 h) was present.",
+    "per_cell_divisor_cost": "off-truth cells averaged 701.65 s (11.7 min) each this run vs ~169.5 s (2.8 min) per off-truth cell in the previous (no-divisor) S0-A pass (2960 s wall total, 20 cells) -- roughly a 4.1x per-cell cost increase attributable to the divisor's per-host kernel integral pass, directionally consistent with sec 6's predicted multiplier for the theta-engaged divisor pass. Truth-node cells (literal skip) stayed ~62-77 s, unchanged from baseline."
+  },
+  "orchestrator_path_decision_of_record": "T1.3 = the z-window/cone companion knob as its own gate (the presenter's decision-table item 3, PHYSICS_CHANGE_THETA_DIVISOR_20260830.md sec 10), re-run s-nodes only after it; S0-B stays unlaunched.",
+  "artifacts_written": [
+    "results/campaign51_20260728/realistic_20260729/tree2_20260830/T1_2_RECERT_READOUT_RECORD.md",
+    "results/campaign51_20260728/realistic_20260729/tree2_20260830/t1_2_readout.json",
+    "results/campaign51_20260728/realistic_20260729/tree2_20260830/PHYSICS_CHANGE_THETA_DIVISOR_20260830.md (section 'T1.2 result, 2026-08-30' appended)",
+    "results/campaign51_20260728/realistic_20260729/PREREGISTRATION_HIER_HTHETA_20260826.md (Stage-0-recert record appended at end of file)",
+    "results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md (row #266)",
+    "results/campaign51_20260728/realistic_20260729/fanout1_20260829/COMPUTE_LEDGER.md (T1.2 measured cost entry appended)"
+  ],
+  "no_code_or_git_operations": true,
+  "note": "did not touch candidate_dump_bi_run/ (owned by another reader)"
+}
