@@ -120,18 +120,21 @@ Recommended: **Approve.**
 **Status: RATIFIED, all six questions.** This section records the rulings as relayed. It is
 append-only.
 
-**Source text, verbatim from the relay message:**
+**Jasper's answers, verbatim** from `~/.attine/inbox/feedback/feedback-20261020T094638Z-2c231q/review-answer.json`
+(`preview: m162-r1-t1-governance`, `at: 2026-10-20T09:46:38.995Z`). Each answer is the chip label Jasper tapped,
+on the question text exactly as published in `publish-round-r1/entry.json`:
 
-> Jasper ratified all six questions of your card m162-r1-t1-governance (E-2/E-3 ratified; rail
-> read = banked bound; paired P2/P1 design ratified; prereg + unseal ceremony + dated default
-> ratified; Q4: TRANSFER passes anti-tuning, kill criterion 1 is not triggered by h_inj - 0.064;
-> Q5: read-only cluster reads R-1/R-2 approved inside an M38 window)
+| question id | tag | answer (verbatim) | timestamp |
+|---|---|---|---|
+| Q1 | [RULE] | "Ratify E-2 and E-3" | 2026-10-20T09:46:38Z |
+| Q1b | [RULE] | "Banked bound" | 2026-10-20T09:46:38Z |
+| Q2 | [RULE] | "Ratify the paired P2 / P1 design" | 2026-10-20T09:46:38Z |
+| Q3 | [RULE] | "Ratify" | 2026-10-20T09:46:38Z |
+| Q4 | [RULE] | "No — TRANSFER passes anti-tuning" | 2026-10-20T09:46:38Z |
+| Q5 | [DO] | "Approve (M38 window)" | 2026-10-20T09:46:38Z |
 
-**Attribution note** (per the `BIAS_HISTORY_LEDGER.md` convention):
-- The quote above is the orchestrator's relay. Jasper's own words are not in front of this
-  executor, so the itemisation is relay-derived.
-- The relay gives 2026-10-20 as the date it reached the executor. The exact time of the tap is
-  not recorded here.
+*Corrected 2026-10-22 (R1c, VERIFY-R1b F1/F2):* this table replaces an attribution note that quoted
+only the orchestrator's relay.
 
 | Q | tag | ruling as relayed | what it binds |
 |---|---|---|---|
@@ -140,10 +143,10 @@ append-only.
 | Q2 | [RULE] | "paired P2/P1 design ratified" | E-5: P2 paired with P2-0 ≥ 95 %, the 1e-3 gate on matched rows, before the draw; P1 ≤ 250 GPU-h inside the sealed RUN_DIR as the fallback |
 | Q3 | [RULE] | "prereg + unseal ceremony + dated default ratified" | `PREREG_EXP-MTC-T1.md`, `UNSEAL_CEREMONY_m2.md`, E-6, E-7 (2026-12-15, Europe/Berlin; a banked cell including INTERMEDIATE/AT-RAIL is a verdict; no third extension without a new ruling) |
 | Q4 | [RULE] | "TRANSFER passes anti-tuning, kill criterion 1 is not triggered by h_inj - 0.064" | E-8 TRANSFER row ⇒ anti-tuning PASS. Kill criterion 1's own text is unchanged |
-| Q5 | [DO] | "read-only cluster reads R-1/R-2 approved inside an M38 window" | R-1 (N_tasks/cost of the seed61000 simulate) and R-2 (pin re-reads on emri2), read-only, `cluster/agent_ssh.sh`, one ops agent, in M38's window. **R-3 (the pool-of-record seeds, needed for the P2 pairing) is not named in the relay and is therefore NOT approved**; it returns to the author before P2 can run |
+| Q5 | [DO] | "read-only cluster reads R-1/R-2 approved inside an M38 window" | R-1, R-2 **and R-3**, read-only, in M38's window. The question Jasper answered "Approve (M38 window)" named all three: "R-1 N_tasks/cost of the seed61000 simulate; R-2 pin re-reads on emri2 (pool list-md5, CRB, catalogue; none re-read since the move); R-3 the pool-of-record seeds for the P2 pairing." (*corrected 2026-10-22, R1c: an earlier version of this row said R-3 was not approved, which misstated the answer*) |
 
 **Approval scope (CLAUDE.md):**
 - None of these rulings covers a decision whose inputs do not yet exist: the P2 gate value, the
   cell of the unsealed result, and its E-8 consequence row each return as a fresh [RULE].
-- Ratification does not launch T-1. The launch still needs M38's window, R-1/R-2 green, R-3
-  approved and run, P2 gated, and the L-0 preconditions of `UNSEAL_CEREMONY_m2.md`.
+- Ratification does not launch T-1. The launch still needs M38's window, R-1/R-2/R-3 run and
+  green, P2 gated, and the L-0 preconditions of `UNSEAL_CEREMONY_m2.md`.

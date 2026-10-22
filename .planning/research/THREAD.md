@@ -218,6 +218,7 @@ kill criterion 3 is superseded by `ask-20261018-w223027afac` R2). m1 is banked *
 **Ruling on kill criterion 1 (card `m162-r1-t1-governance` Q4):** a (m2) TRANSFER result, a
 posterior closing at h_inj − 0.064, **passes** anti-tuning and **does not trigger** kill criterion 1.
 The criterion's text above is the author's and is unchanged; this ruling fixes how the erratum's
-E-8 TRANSFER row maps onto it. **Q5:** the read-only cluster reads R-1/R-2
-(`POOL_OPTION_MEMO_m2.md` §5) are approved inside an M38 window; they are not yet run. R-3 (the P2 pairing seeds) is not named in
-the ruling and returns to the author.
+E-8 TRANSFER row maps onto it. **Q5:** the read-only cluster reads R-1/R-2/R-3
+(`POOL_OPTION_MEMO_m2.md` §5) are approved inside an M38 window; they are not yet run.
+*Correction 2026-10-22 (R1c):* Q5's answer "Approve (M38 window)" also covers R-3 (the P2 pairing
+seeds), because the question text named "R-1 … R-2 … R-3"; an earlier version of this line said R-3 was not named.
